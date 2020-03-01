@@ -1,0 +1,74 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "App-Debugging",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/app/bin/app.elf",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb-multiarch",
+      "miDebuggerArgs": "-q -nh",
+      "sourceFileMap": {
+        "/project/app/": "${workspaceFolder}/app",
+        "/project/deps/": "${workspaceFolder}/deps/",
+        "/cargo/": "${env:HOME}/.cargo/"
+      },
+      // "externalConsole": false,
+      // "filterStderr": true,
+      // "filterStdout": true,
+      // "logging": {
+      //     "engineLogging": true,
+      //     "trace": false,
+      //     "traceResponse": false,
+      //     "programOutput": true
+      // },
+      "args": [],
+      // "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Enable remote ARM architecture",
+          "text": "set architecture arm",
+          "ignoreFailures": false
+        },
+        {
+          "description": "Enable remote ARM architecture",
+          "text": "target remote 127.0.0.1:1234",
+          "ignoreFailures": false
+        },
+        {
+          "description": "ignore SIGILL",
+          "text": "handle SIGILL nostop pass noprint",
+          "ignoreFailures": false
+        },
+        {
+          "description": "add symbols",
+          "text": "add-symbol-file ${workspaceFolder}/app/bin/app.elf 0x40000000",
+          "ignoreFailures": false
+        },
+        {
+          "description": "set bracktrace limit",
+          "text": "set backtrace limit 50",
+          "ignoreFailures": false
+        },
+        {
+          "description": "set a breakpoint at 0x4000 0000",
+          "text": "b *0x40000000",
+          "ignoreFailures": false
+        }
+        // {
+        //     "description": "continue until next breakpoint",
+        //     "text": "c",
+        //     "ignoreFailures": false
+        // },
+      ]
+    }
+  ]
+}

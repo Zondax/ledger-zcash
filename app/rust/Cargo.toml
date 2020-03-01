@@ -1,0 +1,30 @@
+[package]
+authors = ["Zondax GmbH <info@zondax.ch>"]
+name = "rslib"
+version = "0.1.0"
+edition = "2018"
+readme = "README.md"
+
+[lib]
+name = "rslib"
+crate-type = ["staticlib"]
+
+[dependencies]
+jubjub = { version = "0.3.0", default-features = false }
+rand = { version = "0.7", default-features = false }
+subtle = { version = "2.2", default-features = false }
+blake2b_simd = {version="0.5", default-features = false}
+blake2s_simd = {version="0.5", default-features = false}
+
+[target.thumbv6m-none-eabi.dev-dependencies]
+panic-halt = "0.2.0"
+
+[profile.release]
+lto=false
+codegen-units = 1
+debug=true
+opt-level = "s"
+
+[profile.dev]
+panic = "abort"
+
