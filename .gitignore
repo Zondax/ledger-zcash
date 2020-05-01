@@ -84,3 +84,5 @@ cmake-build-fuzz/
 !\deps/BLAKE
 /build
 yarn.lock
+!/tests_zemu/yarn.lock
+!/tests_zemu/yarn-error.log

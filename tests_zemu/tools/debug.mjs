@@ -2,7 +2,7 @@ import Zemu from "@zondax/zemu";
 import ZCashApp from "@zondax/ledger-zcash";
 import path from "path";
 
-const APP_PATH = path.resolve(`./../../../app/bin/app.elf`);
+const APP_PATH = path.resolve(`./../../app/bin/app.elf`);
 
 const seed = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const SIM_OPTIONS = {
@@ -65,6 +65,7 @@ async function main() {
     }
 
     const sim = new Zemu.default(APP_PATH);
+
     try {
         await sim.start(SIM_OPTIONS);
         const app = new ZCashApp.default(sim.getTransport());

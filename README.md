@@ -42,6 +42,8 @@ Tip:
     make
     ```
 
+## Running tests
+
 - Running rust tests (x64)
 
     If you installed the what is described above, just run:
@@ -61,51 +63,6 @@ Tip:
    ```bash
     Use Zemu! Explained below!
     ```
-
-## How to prepare your DEVELOPMENT! device:
-
->  You can use an emulated device for development. This is only required if you are using a physical device
->
->    **Please do not use a Ledger device with funds for development purposes.**
->>
->    **Have a separate and marked device that is used ONLY for development and testing**
-
-   There are a few additional steps that increase reproducibility and simplify development:
-
-**1 - Ensure your device works in your OS**
-- In Linux hosts it might be necessary to adjust udev rules, etc.
-
-  Refer to Ledger documentation: https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues
-
-**2 - Set a test mnemonic**
-
-Many of our integration tests expect the device to be configured with a known test mnemonic.
-
-- Plug your device while pressing the right button
-
-- Your device will show "Recovery" in the screen
-
-- Double click
-
-- Run `make dev_init`. This will take about 2 minutes. The device will be initialized to:
-
-   ```
-   PIN: 5555
-   Mnemonic: equip will roof matter pink blind book anxiety banner elbow sun young
-   ```
-
-**3 - Add a development certificate**
-
-- Plug your device while pressing the right button
-
-- Your device will show "Recovery" in the screen
-
-- Click both buttons at the same time
-
-- Enter your pin if necessary
-
-- Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
-
 
 ## How to test with Zemu?
 
@@ -196,3 +153,50 @@ There are a few things to take into account when enabling Ledger App debugging:
     Add breakpoints in other places and continue.
 
     Enjoy :)
+
+## Using a real device
+
+## How to prepare your DEVELOPMENT! device:
+
+>  You can use an emulated device for development. This is only required if you are using a physical device
+>
+>    **Please do not use a Ledger device with funds for development purposes.**
+>>
+>    **Have a separate and marked device that is used ONLY for development and testing**
+
+   There are a few additional steps that increase reproducibility and simplify development:
+
+**1 - Ensure your device works in your OS**
+- In Linux hosts it might be necessary to adjust udev rules, etc.
+
+  Refer to Ledger documentation: https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues
+
+**2 - Set a test mnemonic**
+
+Many of our integration tests expect the device to be configured with a known test mnemonic.
+
+- Plug your device while pressing the right button
+
+- Your device will show "Recovery" in the screen
+
+- Double click
+
+- Run `make dev_init`. This will take about 2 minutes. The device will be initialized to:
+
+   ```
+   PIN: 5555
+   Mnemonic: equip will roof matter pink blind book anxiety banner elbow sun young
+   ```
+
+**3 - Add a development certificate**
+
+- Plug your device while pressing the right button
+
+- Your device will show "Recovery" in the screen
+
+- Click both buttons at the same time
+
+- Enter your pin if necessary
+
+- Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
+
