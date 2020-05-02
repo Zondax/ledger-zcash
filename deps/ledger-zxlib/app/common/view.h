@@ -27,9 +27,6 @@
 #endif
 #endif
 
-#define ADDR_OFFSET_SECP256K1       33
-#define ADDR_OFFSET_SAPLING         43
-
 /// view_init (initializes UI)
 void view_init();
 

@@ -44,12 +44,35 @@ typedef enum {
 // sapling address [11+32]
 #define SAPLING_PK_LEN              43u
 
+#define VIEW_ADDRESS_OFFSET_SECP256K1       33
+#define VIEW_ADDRESS_OFFSET_SAPLING         43
+#define VIEW_ADDRESS_ITEM_COUNT 2
+
 #define MENU_MAIN_APP_LINE1 "Zcash"
 #ifdef TESTING_ENABLED
 #define MENU_MAIN_APP_LINE2 "DO NOT USE!"
 #else
 #define MENU_MAIN_APP_LINE2 "DO NOT USE!"
 #endif
+#define APPVERSION_LINE2 ""
+
+#define VIEW_ADDRESS_PRINT_FUNC  \
+    case addr_secp256k1: { \
+    h_paging_set_page_count(1); \
+    snprintf(viewdata.key, MAX_CHARS_PER_KEY_LINE, "unshielded"); \
+    p = (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1); \
+    p += MAX_CHARS_PER_VALUE1_LINE * viewdata.pageIdx; \
+    snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, "%s", (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1)); \
+    break; \
+    } \
+    case addr_sapling: { \
+    h_paging_set_page_count(3); \
+    snprintf(viewdata.key, MAX_CHARS_PER_KEY_LINE, "shielded [%d/%d]", viewdata.pageIdx + 1, viewdata.pageCount); \
+    p = (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING); \
+    p += MAX_CHARS_PER_VALUE1_LINE * viewdata.pageIdx; \
+    snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, "%s", p); \
+    break; \
+    }
 
 #ifdef __cplusplus
 }

@@ -1098,10 +1098,10 @@
     "@babel/runtime" "^7.9"
     "@ledgerhq/hw-transport" "^5.13"
 
-"@zondax/zemu@^0.2.2":
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/@zondax/zemu/-/zemu-0.2.2.tgz#26ba98bf0525c3fe2e0dd46d1481372acdb6c2fc"
-  integrity sha512-UpENVK0WA0RFnltOyLnBU52a9j9BK4y0XMloqU6LZTZejF+Y8CD4lZHxHD8h2VEJlw9dpB/zAz5N6p8+SBFHBA==
+"@zondax/zemu@^0.2":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@zondax/zemu/-/zemu-0.2.4.tgz#117f7d44ded3c764b918922769fd7f299d1c98ae"
+  integrity sha512-7E2gOJRLaMbm2CLVltu4DB+9F3CyfHSXezIr4oRZGAyUwonaNpGX6GdanUmzTRNyQ97pdk+CHu62F6gD4q4pvw==
   dependencies:
     "@babel/runtime" "^7.9.2"
     "@ledgerhq/hw-transport" "^5.13.1"

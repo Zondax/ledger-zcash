@@ -5,6 +5,8 @@
 
 **This app is still work in progress!**
 
+## ATTENTION
+
 Please:
 
 - **Do not use in production**
@@ -15,7 +17,6 @@ Tip:
 
 - In releases, you will find a precompiled test app. If you are just curious, you can run `zxtool.sh` and avoid building.
 
-
 ## Preconditions
 
 - Be sure you checkout submodules too:
@@ -24,11 +25,25 @@ Tip:
     git submodule update --init --recursive
     ```
 
-- Install `node > v13.0`. We typically recommend using `n`
 - Install Docker CE
     - Instructions can be found here: https://docs.docker.com/install/
+
+- We only officially support Ubuntu. Install the following packages:
+   ```
+   sudo apt update && apt-get -y install build-essential git wget cmake \
+  libssl-dev libgmp-dev autoconf libtool
+   ```
+
+- Install `node > v13.0`. We typically recommend using `n`
+
 - You will need python 3 and then run
     - `make deps`
+
+- This project requires Ledger firmware 1.6
+    - The current repository keeps track of Ledger's SDK but it is possible to override it by changing the git submodule.
+
+*Warning*: Some IDEs may not use the same python interpreter or virtual enviroment as the one you used when running `pip`.
+If you see conan is not found, check that you installed the package in the same interpreter as the one that launches `cmake`.
 
 ## How to build ?
 
@@ -48,14 +63,14 @@ Tip:
 
     If you installed the what is described above, just run:
     ```bash
-    make rust_tests
+    make rust_test
     ```
 
 - Running C/C++ tests (x64)
 
     If you installed the what is described above, just run:
     ```bash
-    make cpp_tests
+    make cpp_test
     ```
 
 - Running device emulation+integration tests!!
@@ -113,7 +128,7 @@ There are a few things to take into account when enabling Ledger App debugging:
 
 1. Build your app
 
-    ```Makefile
+    ```bash
     make
     ```
 
@@ -121,7 +136,7 @@ There are a few things to take into account when enabling Ledger App debugging:
 
     Open `tests/zemu/tools/debug.mjs` and look for the line:
 
-    ```
+    ```bash
     /// TIP you can use zemu commands here to take the app ...
     ```
 
@@ -133,7 +148,7 @@ There are a few things to take into account when enabling Ledger App debugging:
 
     > If you didnt install Zemu yet (previous section), then run `make zemu_install`
 
-    ```Makefile
+    ```bash
     make zemu_debug
     ```
 
@@ -156,7 +171,7 @@ There are a few things to take into account when enabling Ledger App debugging:
 
 ## Using a real device
 
-## How to prepare your DEVELOPMENT! device:
+### How to prepare your DEVELOPMENT! device:
 
 >  You can use an emulated device for development. This is only required if you are using a physical device
 >
@@ -200,3 +215,23 @@ Many of our integration tests expect the device to be configured with a known te
 
 - Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
 
+
+### Loading into your development device
+
+The Makefile will build the firmware in a docker container and leave the binary in the correct directory.
+
+- Build
+
+   ```
+   make                # Builds the app
+   ```
+
+- Upload to a device
+   The following command will upload the application to the ledger. _Warning: The application will be deleted before uploading._
+   ```
+   make load          # Builds and loads the app to the device
+   ```
+
+## APDU Specifications
+
+- [APDU Protocol](docs/APDUSPEC.md)
