@@ -16,7 +16,7 @@
     "zondax"
   ],
   "dependencies": {
-    "@zondax/ledger-zcash": "file:../../js",
+    "@zondax/ledger-zcash": "file:../js",
     "@zondax/zemu": "^0.2"
   },
   "devDependencies": {

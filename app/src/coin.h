@@ -31,6 +31,8 @@ extern "C" {
 #define HDPATH_0_TESTNET     (0x80000000u | 0x2cu)
 #define HDPATH_1_TESTNET     (0x80000000u | 0x1u)
 
+#define HDPATH_LEN_DEFAULT   5
+
 #define COIN_AMOUNT_DECIMAL_PLACES 18
 
 typedef enum {
@@ -44,12 +46,19 @@ typedef enum {
 // sapling address [11+32]
 #define SAPLING_PK_LEN              43u
 
+#define VIEW_ADDRESS_OFFSET_SECP256K1       SECP256K1_PK_LEN
+#define VIEW_ADDRESS_OFFSET_SAPLING         SAPLING_PK_LEN
+#define VIEW_ADDRESS_ITEM_COUNT 2
+
 #define MENU_MAIN_APP_LINE1 "Zcash"
 #ifdef TESTING_ENABLED
 #define MENU_MAIN_APP_LINE2 "DO NOT USE!"
 #else
 #define MENU_MAIN_APP_LINE2 "DO NOT USE!"
 #endif
+#define APPVERSION_LINE2 ""
+
+#define VIEW_ADDRESS_LAST_PAGE_DEFAULT      255;
 
 #ifdef __cplusplus
 }

@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-#define HDPATH_LEN_DEFAULT          5u
-
 #define CHECKSUM_LENGTH             4
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];

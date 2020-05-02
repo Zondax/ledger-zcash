@@ -95,7 +95,7 @@
 #define UI_SCREEN_WIDTH  128
 #define UI_SCREEN_HEIGHT 64
 
-#define BAGL_GLYPH_ICON_LEFT ((const char*)&C_icon_crossmark)
+#define BAGL_GLYPH_ICON_LEFT ((const char*)&C_icon_left)
 #define BAGL_GLYPH_ICON_RIGHT ((const char*)&C_icon_right)
 #define BAGL_GLYPH_ICON_CROSS ((const char*)&C_icon_crossmark)
 #define BAGL_GLYPH_ICON_CHECK ((const char*)&C_icon_validate)
@@ -155,9 +155,8 @@
         NULL,   /* text             */                      \
 }
 
-// FIXME: Up/Down vs Left/Right (not supported in zemu)
 #define UI_BACKGROUND_LEFT_RIGHT_ICONS \
         UI_FillRectangle(0, 0, 0, UI_SCREEN_WIDTH, UI_SCREEN_HEIGHT, 0x000000, 0xFFFFFF), \
-        UI_Icon(UIID_ICONLEFT, 0, 0, 7, 7, BAGL_GLYPH_ICON_UP), \
-        UI_Icon(UIID_ICONRIGHT, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_DOWN)
+        UI_Icon(UIID_ICONLEFT, 0, 0, 7, 7, BAGL_GLYPH_ICON_LEFT), \
+        UI_Icon(UIID_ICONRIGHT, 128 - 7, 0, 7, 7, BAGL_GLYPH_ICON_RIGHT)
 #endif

@@ -1,6 +1,5 @@
 /*******************************************************************************
-*   (c) 2018-2020 Zondax GmbH
-*   (c) 2016 Ledger
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -16,28 +15,6 @@
 ********************************************************************************/
 #pragma once
 
-#include <stdint.h>
-#include "coin.h"
-
-#if defined(LEDGER_SPECIFIC)
-#include "bolos_target.h"
-#if defined(BOLOS_SDK)
-#include "os.h"
-#include "cx.h"
-#endif
-#endif
-
-/// view_init (initializes UI)
-void view_init();
-
-/// view_idle_show (idle view - main menu + status)
-void view_idle_show(unsigned int ignored);
-
-/// view_error (error view)
-void view_error_show();
-
-// shows address in the screen
-void view_address_show(address_kind_e addressKind);
-
-// Shows review screen + later sign menu
-void view_sign_show();
+#define ZXLIB_MAJOR     1
+#define ZXLIB_MINOR     0
+#define ZXLIB_PATCH     0

@@ -34,8 +34,7 @@
 #endif
 #define MAX_CHARS_ADDR              (MAX_CHARS_PER_KEY_LINE + MAX_CHARS_PER_VALUE1_LINE)
 
-// This take data from G_io_apdu_buffer that is prefilled with the address
-// FIXME: We could actually save memory and use apdu_buffer for UI purposes
+// This takes data from G_io_apdu_buffer that is prefilled with the address
 
 typedef struct {
     union {
@@ -45,6 +44,9 @@ typedef struct {
 #if defined(TARGET_NANOS)
             char value2[MAX_CHARS_PER_VALUE2_LINE];
 #endif
+        };
+        struct {
+            char addr[MAX_CHARS_ADDR];
         };
     };
     address_kind_e addrKind;
@@ -103,6 +105,12 @@ void h_paging_increase();
 
 void h_paging_decrease();
 
+void h_paging_set_page_count(uint8_t pageCount);
+
 view_error_t h_review_update_data();
 
 view_error_t h_addr_update_item(uint8_t idx);
+
+view_error_t view_printAddr();
+
+view_error_t view_printPath();

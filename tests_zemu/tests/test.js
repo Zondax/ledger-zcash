@@ -3,7 +3,7 @@ import Zemu from "@zondax/zemu";
 import ZCashApp from "@zondax/ledger-zcash";
 
 const Resolve = require("path").resolve;
-const APP_PATH = Resolve("../../app/bin/app.elf");
+const APP_PATH = Resolve("../app/bin/app.elf");
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
