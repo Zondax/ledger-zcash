@@ -24,7 +24,7 @@
 #include "view.h"
 #include "actions.h"
 #include "tx.h"
-#include "../crypto.h"
+#include "crypto.h"
 #include "coin.h"
 #include "zxmacros.h"
 
@@ -98,10 +98,10 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
     MEMCPY(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_DEFAULT);
 
     const bool mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
-            hdPath[1] == HDPATH_1_DEFAULT;
+                         hdPath[1] == HDPATH_1_DEFAULT;
 
     const bool testnet = hdPath[0] == HDPATH_0_TESTNET &&
-            hdPath[1] == HDPATH_1_TESTNET;
+                         hdPath[1] == HDPATH_1_TESTNET;
 
     if (!mainnet && !testnet) {
         THROW(APDU_CODE_DATA_INVALID);
@@ -193,13 +193,16 @@ void app_main() {
 
                 rx = io_exchange(CHANNEL_APDU | flags, rx);
                 flags = 0;
+                CHECK_APP_CANARY()
 
                 if (rx == 0)
                     THROW(APDU_CODE_EMPTY_BUFFER);
 
                 handle_generic_apdu(&flags, &tx, rx);
+                CHECK_APP_CANARY()
 
                 handleApdu(&flags, &tx, rx);
+                CHECK_APP_CANARY()
             }
             CATCH_OTHER(e);
             {

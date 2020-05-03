@@ -16,7 +16,7 @@ const sim_options = {
 jest.setTimeout(20000)
 
 describe('Basic checks', function () {
-    it('can start and stop container', async function () {
+    test('can start and stop container', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -25,7 +25,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('get app version', async function () {
+    test('get app version', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -39,7 +39,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('get unshielded address', async function () {
+    test('get unshielded address', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -61,7 +61,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('show unshielded address', async function () {
+    test('show unshielded address', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -87,7 +87,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('get shielded address', async function () {
+    test('get shielded address', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -110,7 +110,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('show shielded address', async function () {
+    test('show shielded address', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -136,7 +136,7 @@ describe('Basic checks', function () {
         }
     });
 
-    it('sign unshielded', async function () {
+    test('sign unshielded', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);

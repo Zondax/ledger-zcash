@@ -46,9 +46,6 @@ __Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
 }
 
 __Z_INLINE void app_reply_address(address_kind_e kind) {
-//    const uint8_t replyLen = app_fill_address(kind);
-//    set_code(G_io_apdu_buffer, replyLen, APDU_CODE_OK);
-//    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, replyLen + 2);
     set_code(G_io_apdu_buffer, action_addr_len, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, action_addr_len + 2);
 }

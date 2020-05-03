@@ -18,11 +18,11 @@
 # BOLOS_SDK IS  DEFINED	 	We use the plain Makefile for Ledger
 # BOLOS_SDK NOT DEFINED		We use a containerized build approach
 
-#TESTS_ZEMU_JS_PACKAGE = "@zondax/ledger-zcash"
-#TESTS_ZEMU_JS_DIR = $(CURDIR)/js
+TESTS_ZEMU_JS_PACKAGE = "@zondax/ledger-zcash"
+TESTS_ZEMU_JS_DIR = $(CURDIR)/js
 
 ifeq ($(BOLOS_SDK),)
-	include $(CURDIR)/deps/ledger-zxlib/cmake/dockerized_build.mk
+	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
 else
 default:
 	$(MAKE) -C app
