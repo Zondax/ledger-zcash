@@ -12,6 +12,7 @@ extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn zcash_blake2b_kdf_sapling(a: *const u8, a_len: u32, out: *mut u8);
+    fn zcash_blake2b_prf_ock(a: *const u8, a_len: u32, out: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -49,6 +50,28 @@ pub fn blake2b_kdf_sapling(a: &[u8]) -> [u8; 32] {
 
     let result: [u8; 32] = h.as_bytes().try_into().expect("wrong length");
     result
+}
+
+#[cfg(test)]
+pub fn blake2b_prf_ock(a: &[u8]) -> [u8; 32] {
+    pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
+
+    let h = Blake2bParams::new()
+        .hash_length(32)
+        .personal(PRF_OCK_PERSONALIZATION)
+        .hash(a);
+
+    let result: [u8; 32] = h.as_bytes().try_into().expect("wrong length");
+    result
+}
+
+#[cfg(not(test))]
+pub fn blake2b_prf_ock(a: &[u8]) -> [u8; 32] {
+    let mut hash = [0; 32];
+    unsafe {
+        zcash_blake2b_prf_ock(a.as_ptr(), a.len() as u32, hash.as_mut_ptr());
+    }
+    hash
 }
 
 #[cfg(test)]
