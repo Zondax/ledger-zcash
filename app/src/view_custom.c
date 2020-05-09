@@ -25,11 +25,12 @@
 #include <stdio.h>
 
 view_error_t view_printAddr() {
-#if !defined(HAVE_UX_FLOW)
     if (viewdata.addrKind != addr_secp256k1 &&
         viewdata.addrKind != addr_sapling) {
         return view_error_detected;
     }
+
+#if !defined(HAVE_UX_FLOW)
 
     char *p = NULL;
     switch (viewdata.addrKind) {
@@ -53,7 +54,20 @@ view_error_t view_printAddr() {
             return view_error_detected;
     }
 #else
-    snprintf(viewdata.addr, MAX_CHARS_ADDR, "%s", (char *) (G_io_apdu_buffer + VIEW_ADDRESS_BUFFER_OFFSET));
+    switch (viewdata.addrKind) {
+        case addr_secp256k1: {
+            h_paging_set_page_count(1);
+            snprintf(viewdata.addr, MAX_CHARS_ADDR, "%s", (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1));
+            break;
+        }
+        case addr_sapling: {
+            h_paging_set_page_count(1);
+            snprintf(viewdata.addr, MAX_CHARS_ADDR, "%s", (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING));
+            break;
+        }
+        default:
+            return view_error_detected;
+    }
 #endif
     splitValueField();
     return view_no_error;
