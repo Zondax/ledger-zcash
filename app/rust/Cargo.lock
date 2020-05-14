@@ -195,6 +195,7 @@ dependencies = [
  "binary-ff1",
  "blake2b_simd",
  "blake2s_simd",
+ "byteorder",
  "jubjub",
  "panic-halt",
  "rand",

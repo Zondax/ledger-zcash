@@ -18,6 +18,9 @@ use aes::{
 };
 use binary_ff1::BinaryFF1;
 
+use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
+use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
+
 fn debug(_msg: &str) {}
 
 #[cfg(not(test))]
@@ -25,12 +28,13 @@ use core::panic::PanicInfo;
 use core::mem;
 use core::convert::TryInto;
 
+/*
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
-
+*/
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
     bolos::blake2b_expand_seed(sk, t)
@@ -158,6 +162,112 @@ fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     t.to_bytes()
 }
 
+pub fn master_spending_key_zip32(seed: [u8;32]) -> [u8;64]{
+    let h = Blake2bParams::new() //fixme: SDK call
+        .hash_length(64)
+        .personal(ZIP32_SAPLING_MASTER_PERSONALIZATION)
+        .hash(&seed);
+    let mut output = [0u8;64];
+    output.copy_from_slice(&h.as_bytes());
+    output
+}
+
+pub fn diversifier_key_zip32(in_key: &[u8;32]) -> [u8;32]{
+    let mut dk_m = [0u8; 32];
+    dk_m.copy_from_slice(&prf_expand(in_key, &[0x10])[..32]);
+    dk_m
+}
+
+pub fn outgoingviewingkey(key: &[u8;32]) -> [u8;32]{
+    let mut ovk = [0u8; 32];
+    ovk.copy_from_slice(&prf_expand(key, &[0x02])[..32]);
+    ovk
+}
+
+pub fn expandedspendingkey_zip32(key: [u8;32]) -> [u8;96]{
+    let ask = sapling_derive_dummy_ask(&key);
+    let nsk = sapling_derive_dummy_nsk(&key);
+    let ovk = outgoingviewingkey(&key);
+    let mut result = [0u8;96];
+    result[0..32].copy_from_slice(&ask);
+    result[32..64].copy_from_slice(&nsk);
+    result[64..96].copy_from_slice(&ovk);
+    result
+}
+
+pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
+pub fn prf_expand_vec(sk: &[u8], ts: &[&[u8]]) -> [u8;64] {
+    let mut h = Blake2bParams::new()
+        .hash_length(64)
+        .personal(PRF_EXPAND_PERSONALIZATION)
+        .to_state();
+    h.update(sk);
+    for t in ts {
+        h.update(t);
+    }
+    let mut hash = [0u8;64];
+    hash.copy_from_slice(&h.finalize().as_bytes());
+    hash
+}
+
+pub fn update_dk_zip32(key: &[u8;32], dk: &[u8;32])->[u8;32]{
+    let mut new_divkey = [0u8;32];
+    new_divkey.copy_from_slice(&prf_expand_vec(key, &[&[0x16], dk])[0..32]);
+    new_divkey
+}
+
+pub fn update_exk_zip32(key: &[u8;32], ovk: &[u8]) -> [u8;96]{
+    let mut new_exk = [0u8;96];
+    new_exk[0..32].copy_from_slice(&sapling_derive_dummy_ask(key));
+    new_exk[32..64].copy_from_slice(&sapling_derive_dummy_nsk(key));
+    new_exk[64..96].copy_from_slice(&prf_expand_vec(key, &[&[0x15], ovk])[..32]);
+    new_exk
+}
+
+pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
+//input seed and path = [u32's], output secret key and diversifier key
+pub fn derive_child_zip32(seed: [u8;32], path: &[u32]) -> [u8;64]{
+    let mut tmp = master_spending_key_zip32(seed); //64
+    let mut key= [0u8;32]; //32
+    let mut chain= [0u8;32]; //32
+
+    key.copy_from_slice(&tmp[..32]);
+    chain.copy_from_slice(&tmp[32..]);
+
+    let mut expkey = [0u8;96];
+    expkey = expandedspendingkey_zip32(key); //96
+    //master divkey
+    let mut divkey = diversifier_key_zip32(&key); //32
+
+    for &p in path {
+        //compute expkey needed for zip32 child derivation
+
+        //make index LE
+        let mut le_i = [0; 4];
+        LittleEndian::write_u32(&mut le_i, p + (1 << 31));
+
+        //zip32 child derivation
+        tmp = prf_expand_vec(
+            &chain,
+            &[&[0x11], &expkey, &divkey, &le_i],
+        ); //64
+
+        //extract key and chainkey
+        key.copy_from_slice(&tmp[..32]);
+        chain.copy_from_slice(&tmp[32..]);
+
+
+        //new divkey from old divkey and key
+        divkey = update_dk_zip32(&key,&divkey);
+        expkey = update_exk_zip32(&key,&expkey[64..96]);
+
+    }
+    let mut result= [0u8;64];
+    result[0..32].copy_from_slice(&key);
+    result[32..64].copy_from_slice(&divkey);
+    result
+}
+
 #[no_mangle]
 pub extern "C" fn get_ak(sk_ptr: *mut u8, ak_ptr: *mut u8) {
     let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
@@ -223,6 +333,31 @@ pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *m
 #[cfg(test)]
 mod tests {
     use crate::*;
+
+    #[test]
+    fn test_zip32(){
+        let seed = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31,
+        ];
+
+        let dk: [u8;32] = [0x77, 0xc1, 0x7c, 0xb7, 0x5b, 0x77, 0x96, 0xaf, 0xb3, 0x9f, 0x0f, 0x3e, 0x91,
+            0xc9, 0x24, 0x60, 0x7d, 0xa5, 0x6f, 0xa9, 0xa2, 0x0e, 0x28, 0x35, 0x09, 0xbc,
+            0x8a, 0x3e, 0xf9, 0x96, 0xa1, 0x72];
+        let keys = derive_child_zip32(seed,&[]);
+        assert_eq!(keys[32..64],dk);
+
+    }
+
+    #[test]
+    fn test_zip32_child(){
+        let seed = [0u8;32];
+
+        let dk: [u8;32] = [0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef, 0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40, 0x4f, 0x21, 0x45, 0x47];
+        let keys = derive_child_zip32(seed,&[1]);
+        assert_eq!(keys[32..64],dk);
+
+    }
 
     #[test]
     fn test_div() {
