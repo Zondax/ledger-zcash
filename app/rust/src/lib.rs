@@ -12,6 +12,12 @@ use jubjub::{AffinePoint, Fr, Fq, AffineNielsPoint, ExtendedPoint};
 
 use blake2s_simd::{Hash as Blake2sHash, Params as Blake2sParams, blake2s};
 
+use aes::{
+    block_cipher_trait::{generic_array::GenericArray, BlockCipher},
+    Aes256,
+};
+use binary_ff1::BinaryFF1;
+
 fn debug(_msg: &str) {}
 
 #[cfg(not(test))]
@@ -99,19 +105,31 @@ fn diversifier_group_hash_light(tag: &[u8]) -> bool {
     false
 }
 
-#[inline(never)]
 fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] { //fixme: replace blake2b with aes
-    let mut c: [u8; 2] = [0x03, 0x0];
+    //let mut c: [u8; 2] = [0x03, 0x0];
 
+    let cipher = Aes256::new(GenericArray::from_slice(sk));
+    let mut scratch = [0u8;12];
+    let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
+    let mut d = [0u8;11];
+    let mut counter: [u8;11] = [0u8;11];
     // blake2b sk || 0x03 || c
     loop {
-        let x = prf_expand(sk, &c);
-        if diversifier_group_hash_light(&x[0..11]) {
-            let mut result  = [0u8; 11];
-            result.copy_from_slice(&x[..11]);
-            return result;
+        //let x = prf_expand(sk, &c);
+        d = counter.clone();
+        ff1.encrypt(&mut d).unwrap();
+        if diversifier_group_hash_light(&d[0..11]) {
+            //if diversifier_group_hash_light(&x[0..11]) {
+            return d;
         }
-        c[1] += 1;
+        //c[1] += 1;
+        for k in 0..11 {
+            counter[k] = counter[k].wrapping_add(1);
+            if counter[k] != 0 {
+                // No overflow
+                break;
+            }
+        }
     }
 }
 
@@ -232,7 +250,7 @@ mod tests {
         let seed = [0u8; 32];
         let default_d = default_diversifier(&seed);
         assert_eq!(default_d, [
-            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39
+            0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c
         ]);
     }
 
@@ -247,7 +265,7 @@ mod tests {
         let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
 
         let pkd = default_pkd(&ivk, &default_d);
-        assert_eq!(pkd, [0xdb, 0x4c, 0xd2, 0xb0, 0xaa, 0xc4, 0xf7, 0xeb, 0x8c, 0xa1, 0x31, 0xf1, 0x65, 0x67, 0xc4, 0x45, 0xa9, 0x55, 0x51, 0x26, 0xd3, 0xc2, 0x9f, 0x14, 0xe3, 0xd7, 0x76, 0xe8, 0x41, 0xae, 0x74, 0x15]);
+        assert_eq!(pkd, [0x88, 0x99, 0xc6, 0x44, 0xbf, 0xc6, 0x0f, 0x87, 0x83, 0xf9, 0x2b, 0xa9, 0xf8, 0x18, 0x9e, 0xd2, 0x77, 0xbf, 0x68, 0x3d, 0x5d, 0x1d, 0xae, 0x02, 0xc5, 0x71, 0xff, 0x47, 0x86, 0x9a, 0x0b, 0xa6]);
     }
 
     #[test]
