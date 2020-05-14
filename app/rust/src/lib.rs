@@ -451,13 +451,12 @@ mod tests {
 
         let ivk = aknk_to_ivk(&ak, &nk);
 
-        let list = ff1aes_list(&dk);
-        let default_d = default_diversifier_fromlist(&list);
+        let default_d = default_diversifier(&dk);
 
         let pk_d = default_pkd(&ivk,&default_d);
 
-        assert_eq!(default_d, [0x3b, 0xf6, 0xfa, 0x1f, 0x83, 0xbf, 0x45, 0x63, 0xc8, 0xa7, 0x13]);
-        assert_eq!(pk_d, [0x04, 0x54, 0xc0, 0x14, 0x13, 0x5e, 0xc6, 0x95, 0xa1, 0x86, 0x0f, 0x8d, 0x65, 0xb3, 0x73, 0x54, 0x6b, 0x62, 0x3f, 0x38, 0x8a, 0xbb, 0xec, 0xd0, 0xc8, 0xb2, 0x11, 0x1a, 0xbd, 0xec, 0x30, 0x1d]);
+        assert_eq!(default_d, [187, 142, 161, 44, 12, 136, 207, 102, 117, 215, 30]);
+        assert_eq!(pk_d, [81, 215, 216, 225, 133, 101, 7, 173, 128, 172, 92, 67, 144, 143, 195, 19, 136, 174, 173, 149, 6, 29, 255, 136, 109, 162, 247, 104, 36, 191, 254, 42]);
 
     }
 

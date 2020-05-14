@@ -289,7 +289,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.step1.sk);
+            //crypto_fillSaplingSeed(tmp.step1.sk);
 
             zip32_master(tmp.step1.sk,tmp.step1.sk_new,tmp.step1.dk_new);
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
