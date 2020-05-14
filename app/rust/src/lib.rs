@@ -18,7 +18,9 @@ use aes::{
 };
 use binary_ff1::BinaryFF1;
 
-use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
+
+use byteorder::{ByteOrder, LittleEndian};
+
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
 fn debug(_msg: &str) {}
@@ -28,13 +30,13 @@ use core::panic::PanicInfo;
 use core::mem;
 use core::convert::TryInto;
 
-/*
+
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
-*/
+
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
     bolos::blake2b_expand_seed(sk, t)
@@ -109,23 +111,36 @@ fn diversifier_group_hash_light(tag: &[u8]) -> bool {
     false
 }
 
-fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] { //fixme: replace blake2b with aes
-    //let mut c: [u8; 2] = [0x03, 0x0];
+fn default_diversifier_fromlist(list: &[u8; 44]) -> [u8; 11] {
+    let mut result= [0u8;11];
+    for c in 0..4{
+        result.copy_from_slice(&list[c*11..(c+1)*11]);
+        //c[1] += 1;
+        if diversifier_group_hash_light(&result) {
+            //if diversifier_group_hash_light(&x[0..11]) {
+            return result;
+        }
+    }
+    //return a value that indicates that diversifier not found
+    result
+}
 
+//list of 4 diversifiers
+fn ff1aes_list(sk: &[u8; 32]) -> [u8;44] {
     let cipher = Aes256::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8;12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
     let mut d = [0u8;11];
     let mut counter: [u8;11] = [0u8;11];
-    // blake2b sk || 0x03 || c
-    loop {
+
+    let mut result = [0u8;44];
+    let size = 4;
+
+    for c in 0..size {
         //let x = prf_expand(sk, &c);
         d = counter.clone();
         ff1.encrypt(&mut d).unwrap();
-        if diversifier_group_hash_light(&d[0..11]) {
-            //if diversifier_group_hash_light(&x[0..11]) {
-            return d;
-        }
+        result[c*11..(c+1)*11].copy_from_slice(&d);
         //c[1] += 1;
         for k in 0..11 {
             counter[k] = counter[k].wrapping_add(1);
@@ -134,6 +149,24 @@ fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] { //fixme: replace blake2b wit
                 break;
             }
         }
+    }
+    result
+}
+
+
+fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] { //fixme: replace blake2b with aes
+    //let mut c: [u8; 2] = [0x03, 0x0];
+    // blake2b sk || 0x03 || c
+    let mut c: [u8; 2] = [0x03, 0x0];
+    loop {
+        //let x = prf_expand(sk, &c);
+        let x = prf_expand(sk, &c);
+        if diversifier_group_hash_light(&x[0..11]) {
+            let mut result = [0u8; 11];
+            result.copy_from_slice(&x[..11]);
+            return result;
+        }
+        c[1] += 1;
     }
 }
 
@@ -305,6 +338,25 @@ pub extern "C" fn get_diversifier(sk_ptr: *mut u8, diversifier_ptr: *mut u8) {
 }
 
 #[no_mangle]
+pub extern "C" fn get_diversifier_list(sk_ptr: *mut u8, diversifier_list_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let diversifier: &mut [u8; 88] = unsafe { mem::transmute::<*const u8, &mut [u8; 88]>(diversifier_list_ptr) };
+    let d = ff1aes_list(sk);
+    diversifier.copy_from_slice(&d)
+}
+
+
+#[no_mangle]
+pub extern "C" fn get_diversifier_fromlist(div_ptr: *mut u8, diversifier_list_ptr: *mut u8) {
+    let div: &mut [u8; 11] = unsafe { mem::transmute::<*const u8, &mut [u8; 11]>(div_ptr) };
+    let diversifier_list: &mut [u8; 44] = unsafe { mem::transmute::<*const u8, &mut [u8; 44]>(diversifier_list_ptr) };
+    let d = default_diversifier_fromlist(diversifier_list);
+    div.copy_from_slice(&d)
+}
+
+
+
+#[no_mangle]
 pub extern "C" fn get_pkd(ivk_ptr: *mut u8, diversifier_ptr: *mut u8, pkd_ptr: *mut u8) {
     let ivk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(ivk_ptr) };
     let diversifier: &[u8; 11] = unsafe { mem::transmute::<*const u8, &[u8; 11]>(diversifier_ptr) };
@@ -384,6 +436,16 @@ mod tests {
     fn test_default_diversifier() {
         let seed = [0u8; 32];
         let default_d = default_diversifier(&seed);
+        assert_eq!(default_d, [
+            0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c
+        ]);
+    }
+
+    #[test]
+    fn test_default_diversifier_fromlist() {
+        let seed = [0u8; 32];
+        let list = ff1aes_list(&seed);
+        let default_d = default_diversifier_fromlist(&list);
         assert_eq!(default_d, [
             0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c
         ]);

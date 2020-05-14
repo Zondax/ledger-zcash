@@ -13,3 +13,7 @@ void get_diversifier(const uint8_t *secret_key, uint8_t *diversifier);
 void get_pkd(const uint8_t *ivk_ptr, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void get_address(const uint8_t *secret_key, const uint8_t *ivk, uint8_t *address);
+
+void get_diversifier_list(const uint8_t *secret_key, uint8_t *diversifier_list);
+
+void get_diversifier_fromlist(uint8_t *diversifier, uint8_t *diversifier_list);

@@ -247,6 +247,11 @@ typedef struct {
             uint8_t address_raw[43];
             char address_bech32[100];
         };
+        struct {
+            uint8_t address[43];
+            uint8_t diversifierlist[44];
+        };
+
     };
 } tmp_buf_s;
 
@@ -289,10 +294,17 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
 
             get_ak(tmp.step1.sk, tmp.step1.ak);
             get_nk(tmp.step1.sk, tmp.step1.nk);
+
+            get_diversifier_list(tmp.step1.sk, out->diversifierlist);
+            MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
+            get_diversifier_fromlist(out->diversifier,out->diversifierlist);
+
+
+            /*changed by leon
             get_diversifier(tmp.step1.sk, out->diversifier);
             // Here we can clear up the seed
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
-
+*/
             get_ivk(tmp.step2.ak, tmp.step2.nk, tmp.step2.ivk);
             MEMZERO(tmp.step2.ak, sizeof_field(tmp_sampling_s, step2.ak));
             MEMZERO(tmp.step2.nk, sizeof_field(tmp_sampling_s, step2.nk));
