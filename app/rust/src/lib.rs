@@ -83,6 +83,49 @@ fn prf_ock(
 
     bolos::blake2b_prf_ock(&ock_input)
 }
+/*
+fn loop_over_grouphash(){
+    i = 0
+    while True:
+        if group_hash_check(D, M + bytes([i]))
+    if p is not None:
+    return p
+    i += 1
+    assert i < 256
+}
+
+fn encode_chunk():
+(s0, s1, s2) = mj
+return (1 - 2*s2) * (1 + s0 + 2*s1)
+
+def encode_segment(Mi):
+ki = len(Mi) // 3
+Michunks = [Mi[i:i+3] for i in range(0, len(Mi), 3)]
+assert len(Michunks) == ki
+return Fr(sum([encode_chunk(Michunks[j-1]) * 2**(4*(j-1)) for j in range(1, ki + 1)]))
+
+c = 63
+
+
+
+fn pedersen_hash_to_point(){
+    Mdash = M + [0] * ((-len(M)) % 3)
+    assert (len(Mdash) // 3) * 3 == len(Mdash)
+    n = cldiv(len(Mdash), 3 * c)
+    Msegs = [Mdash[i:i+(3*c)] for i in range(0, len(Mdash), 3*c)]
+    assert len(Msegs) == n
+    return sum([I_D_i(D, i) * encode_segment(Msegs[i-1]) for i in range(1, n + 1)], Point.ZERO)
+}
+
+def pedersen_hash_to_point(D, M):
+# Pad M to a multiple of 3 bits
+Mdash = M + [0] * ((-len(M)) % 3)
+assert (len(Mdash) // 3) * 3 == len(Mdash)
+n = cldiv(len(Mdash), 3 * c)
+Msegs = [Mdash[i:i+(3*c)] for i in range(0, len(Mdash), 3*c)]
+assert len(Msegs) == n
+return sum([I_D_i(D, i) * encode_segment(Msegs[i-1]) for i in range(1, n + 1)], Point.ZERO)
+*/
 
 fn chacha_encryptnote(
     key: [u8; 32],
@@ -99,7 +142,7 @@ fn chacha_decryptnote(
     key: [u8; 32],
     ciphertext: [u8; ENC_CIPHERTEXT_SIZE],
 ) -> [u8; NOTE_PLAINTEXT_SIZE] {
-    let mut plaintext = [0; NOTE_PLAINTEXT_SIZE];
+    let mut plaintext = [0u8; NOTE_PLAINTEXT_SIZE];
     ChachaPolyIetf::aead_cipher()
         .open_to(&mut plaintext, &ciphertext, &[], &key, &[0u8; 12])
         .unwrap();
@@ -151,7 +194,7 @@ fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
 }
 
 #[inline(never)]
-fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
+fn group_hash_check(hash: &[u8; 32]) -> bool {
     let u = AffinePoint::from_bytes(*hash);
     if u.is_some().unwrap_u8() == 1 {
         let v = u.unwrap();
@@ -405,6 +448,7 @@ mod tests {
             0x0e, 0x8a, 0xa0, 0xce, 0xf5, 0x70,
         ];
         assert_eq!(chacha_encryptnote(k_enc, p_enc)[0..32], c_enc[0..32]);
+        assert_eq!(chacha_decryptnote(k_enc, c_enc)[0..32], p_enc[0..32]);
     }
 
     #[test]
