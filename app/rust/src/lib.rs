@@ -1,16 +1,15 @@
 #![no_std]
 #![no_builtins]
-
 #![allow(dead_code, unused_imports)]
 
-mod constants;
 mod bolos;
+mod constants;
 
 extern crate core;
 
-use jubjub::{AffinePoint, Fr, Fq, AffineNielsPoint, ExtendedPoint};
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
-use blake2s_simd::{Hash as Blake2sHash, Params as Blake2sParams, blake2s};
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 use aes::{
     block_cipher_trait::{generic_array::GenericArray, BlockCipher},
@@ -18,18 +17,16 @@ use aes::{
 };
 use binary_ff1::BinaryFF1;
 
-
 use byteorder::{ByteOrder, LittleEndian};
 
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
 fn debug(_msg: &str) {}
 
+use core::convert::TryInto;
+use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
-use core::mem;
-use core::convert::TryInto;
-
 
 #[cfg(not(test))]
 #[panic_handler]
@@ -98,7 +95,7 @@ fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
 fn diversifier_group_hash_light(tag: &[u8]) -> bool {
     let x = bolos::blake2s_diversification(tag);
 
-//    diversifier_group_hash_check(&x)
+    //    diversifier_group_hash_check(&x)
 
     let u = AffinePoint::from_bytes(x);
     if u.is_some().unwrap_u8() == 1 {
@@ -112,9 +109,9 @@ fn diversifier_group_hash_light(tag: &[u8]) -> bool {
 }
 
 fn default_diversifier_fromlist(list: &[u8; 44]) -> [u8; 11] {
-    let mut result= [0u8;11];
-    for c in 0..4{
-        result.copy_from_slice(&list[c*11..(c+1)*11]);
+    let mut result = [0u8; 11];
+    for c in 0..4 {
+        result.copy_from_slice(&list[c * 11..(c + 1) * 11]);
         //c[1] += 1;
         if diversifier_group_hash_light(&result) {
             //if diversifier_group_hash_light(&x[0..11]) {
@@ -126,21 +123,21 @@ fn default_diversifier_fromlist(list: &[u8; 44]) -> [u8; 11] {
 }
 
 //list of 4 diversifiers
-fn ff1aes_list(sk: &[u8; 32]) -> [u8;44] {
+fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     let cipher = Aes256::new(GenericArray::from_slice(sk));
-    let mut scratch = [0u8;12];
+    let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
-    let mut d = [0u8;11];
-    let mut counter: [u8;11] = [0u8;11];
+    let mut d = [0u8; 11];
+    let mut counter: [u8; 11] = [0u8; 11];
 
-    let mut result = [0u8;44];
+    let mut result = [0u8; 44];
     let size = 4;
 
     for c in 0..size {
         //let x = prf_expand(sk, &c);
         d = counter.clone();
         ff1.encrypt(&mut d).unwrap();
-        result[c*11..(c+1)*11].copy_from_slice(&d);
+        result[c * 11..(c + 1) * 11].copy_from_slice(&d);
         //c[1] += 1;
         for k in 0..11 {
             counter[k] = counter[k].wrapping_add(1);
@@ -153,8 +150,8 @@ fn ff1aes_list(sk: &[u8; 32]) -> [u8;44] {
     result
 }
 
-
-fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] { //fixme: replace blake2b with aes
+fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] {
+    //fixme: replace blake2b with aes
     //let mut c: [u8; 2] = [0x03, 0x0];
     // blake2b sk || 0x03 || c
     let mut c: [u8; 2] = [0x03, 0x0];
@@ -195,33 +192,33 @@ fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     t.to_bytes()
 }
 
-pub fn master_spending_key_zip32(seed: [u8;32]) -> [u8;64]{
+pub fn master_spending_key_zip32(seed: &[u8; 32]) -> [u8; 64] {
     let h = Blake2bParams::new() //fixme: SDK call
         .hash_length(64)
         .personal(ZIP32_SAPLING_MASTER_PERSONALIZATION)
-        .hash(&seed);
-    let mut output = [0u8;64];
+        .hash(seed);
+    let mut output = [0u8; 64];
     output.copy_from_slice(&h.as_bytes());
     output
 }
 
-pub fn diversifier_key_zip32(in_key: &[u8;32]) -> [u8;32]{
+pub fn diversifier_key_zip32(in_key: &[u8; 32]) -> [u8; 32] {
     let mut dk_m = [0u8; 32];
     dk_m.copy_from_slice(&prf_expand(in_key, &[0x10])[..32]);
     dk_m
 }
 
-pub fn outgoingviewingkey(key: &[u8;32]) -> [u8;32]{
+pub fn outgoingviewingkey(key: &[u8; 32]) -> [u8; 32] {
     let mut ovk = [0u8; 32];
     ovk.copy_from_slice(&prf_expand(key, &[0x02])[..32]);
     ovk
 }
 
-pub fn expandedspendingkey_zip32(key: [u8;32]) -> [u8;96]{
+pub fn expandedspendingkey_zip32(key: [u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(&key);
     let nsk = sapling_derive_dummy_nsk(&key);
     let ovk = outgoingviewingkey(&key);
-    let mut result = [0u8;96];
+    let mut result = [0u8; 96];
     result[0..32].copy_from_slice(&ask);
     result[32..64].copy_from_slice(&nsk);
     result[64..96].copy_from_slice(&ovk);
@@ -229,7 +226,7 @@ pub fn expandedspendingkey_zip32(key: [u8;32]) -> [u8;96]{
 }
 
 pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
-pub fn prf_expand_vec(sk: &[u8], ts: &[&[u8]]) -> [u8;64] {
+pub fn prf_expand_vec(sk: &[u8], ts: &[&[u8]]) -> [u8; 64] {
     let mut h = Blake2bParams::new()
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)
@@ -238,64 +235,73 @@ pub fn prf_expand_vec(sk: &[u8], ts: &[&[u8]]) -> [u8;64] {
     for t in ts {
         h.update(t);
     }
-    let mut hash = [0u8;64];
+    let mut hash = [0u8; 64];
     hash.copy_from_slice(&h.finalize().as_bytes());
     hash
 }
 
-pub fn update_dk_zip32(key: &[u8;32], dk: &[u8;32])->[u8;32]{
-    let mut new_divkey = [0u8;32];
+pub fn update_dk_zip32(key: &[u8; 32], dk: &[u8; 32]) -> [u8; 32] {
+    let mut new_divkey = [0u8; 32];
     new_divkey.copy_from_slice(&prf_expand_vec(key, &[&[0x16], dk])[0..32]);
     new_divkey
 }
 
-pub fn update_exk_zip32(key: &[u8;32], ovk: &[u8]) -> [u8;96]{
-    let mut new_exk = [0u8;96];
+pub fn update_exk_zip32(key: &[u8; 32], ovk: &[u8]) -> [u8; 96] {
+    let mut new_exk = [0u8; 96];
     new_exk[0..32].copy_from_slice(&sapling_derive_dummy_ask(key));
     new_exk[32..64].copy_from_slice(&sapling_derive_dummy_nsk(key));
     new_exk[64..96].copy_from_slice(&prf_expand_vec(key, &[&[0x15], ovk])[..32]);
     new_exk
 }
 
-pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
-//input seed and path = [u32's], output secret key and diversifier key
-pub fn derive_child_zip32(seed: [u8;32], path: &[u32]) -> [u8;64]{
+pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 64] {
     let mut tmp = master_spending_key_zip32(seed); //64
-    let mut key= [0u8;32]; //32
-    let mut chain= [0u8;32]; //32
+    let mut key = [0u8; 32]; //32
+    let mut chain = [0u8; 32]; //32
 
     key.copy_from_slice(&tmp[..32]);
     chain.copy_from_slice(&tmp[32..]);
 
-    let mut expkey = [0u8;96];
+    let mut divkey = diversifier_key_zip32(&key); //32
+    let mut result = [0u8; 64];
+    result[0..32].copy_from_slice(&key);
+    result[32..64].copy_from_slice(&divkey);
+    result
+}
+
+pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
+//input seed and path = [u32's], output secret key and diversifier key
+pub fn derive_child_zip32(seed: &[u8; 32], p: u32) -> [u8; 64] {
+    let mut tmp = master_spending_key_zip32(seed); //64
+    let mut key = [0u8; 32]; //32
+    let mut chain = [0u8; 32]; //32
+
+    key.copy_from_slice(&tmp[..32]);
+    chain.copy_from_slice(&tmp[32..]);
+
+    let mut expkey = [0u8; 96];
     expkey = expandedspendingkey_zip32(key); //96
-    //master divkey
+                                             //master divkey
     let mut divkey = diversifier_key_zip32(&key); //32
 
-    for &p in path {
-        //compute expkey needed for zip32 child derivation
+    //compute expkey needed for zip32 child derivation
 
-        //make index LE
-        let mut le_i = [0; 4];
-        LittleEndian::write_u32(&mut le_i, p + (1 << 31));
+    //make index LE
+    let mut le_i = [0; 4];
+    LittleEndian::write_u32(&mut le_i, p + (1 << 31));
 
-        //zip32 child derivation
-        tmp = prf_expand_vec(
-            &chain,
-            &[&[0x11], &expkey, &divkey, &le_i],
-        ); //64
+    //zip32 child derivation
+    tmp = prf_expand_vec(&chain, &[&[0x11], &expkey, &divkey, &le_i]); //64
 
-        //extract key and chainkey
-        key.copy_from_slice(&tmp[..32]);
-        chain.copy_from_slice(&tmp[32..]);
+    //extract key and chainkey
+    key.copy_from_slice(&tmp[..32]);
+    chain.copy_from_slice(&tmp[32..]);
 
+    //new divkey from old divkey and key
+    divkey = update_dk_zip32(&key, &divkey);
+    expkey = update_exk_zip32(&key, &expkey[64..96]);
 
-        //new divkey from old divkey and key
-        divkey = update_dk_zip32(&key,&divkey);
-        expkey = update_exk_zip32(&key,&expkey[64..96]);
-
-    }
-    let mut result= [0u8;64];
+    let mut result = [0u8; 64];
     result[0..32].copy_from_slice(&key);
     result[32..64].copy_from_slice(&divkey);
     result
@@ -330,9 +336,30 @@ pub extern "C" fn get_ivk(ak_ptr: *mut u8, nk_ptr: *mut u8, ivk_ptr: *mut u8) {
 }
 
 #[no_mangle]
+pub extern "C" fn zip32_master(sk_ptr: *mut u8, newsk_ptr: *mut u8, newdk_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let sknew: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(newsk_ptr) };
+    let dknew: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(newdk_ptr) };
+
+    let k = derive_zip32_master(sk);
+    sknew.copy_from_slice(&k[0..32]);
+    dknew.copy_from_slice(&k[32..64])
+}
+
+#[no_mangle]
+pub extern "C" fn zip32_from_path(sk_ptr: *mut u8, path: u32, keys_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let keys: &mut [u8; 64] = unsafe { mem::transmute::<*const u8, &mut [u8; 64]>(keys_ptr) };
+
+    let k = derive_child_zip32(sk,path);
+    keys.copy_from_slice(&k)
+}
+
+#[no_mangle]
 pub extern "C" fn get_diversifier(sk_ptr: *mut u8, diversifier_ptr: *mut u8) {
     let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
-    let diversifier: &mut [u8; 11] = unsafe { mem::transmute::<*const u8, &mut [u8; 11]>(diversifier_ptr) };
+    let diversifier: &mut [u8; 11] =
+        unsafe { mem::transmute::<*const u8, &mut [u8; 11]>(diversifier_ptr) };
     let d = default_diversifier(sk);
     diversifier.copy_from_slice(&d)
 }
@@ -340,21 +367,20 @@ pub extern "C" fn get_diversifier(sk_ptr: *mut u8, diversifier_ptr: *mut u8) {
 #[no_mangle]
 pub extern "C" fn get_diversifier_list(sk_ptr: *mut u8, diversifier_list_ptr: *mut u8) {
     let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
-    let diversifier: &mut [u8; 88] = unsafe { mem::transmute::<*const u8, &mut [u8; 88]>(diversifier_list_ptr) };
+    let diversifier: &mut [u8; 44] =
+        unsafe { mem::transmute::<*const u8, &mut [u8; 44]>(diversifier_list_ptr) };
     let d = ff1aes_list(sk);
     diversifier.copy_from_slice(&d)
 }
 
-
 #[no_mangle]
 pub extern "C" fn get_diversifier_fromlist(div_ptr: *mut u8, diversifier_list_ptr: *mut u8) {
     let div: &mut [u8; 11] = unsafe { mem::transmute::<*const u8, &mut [u8; 11]>(div_ptr) };
-    let diversifier_list: &mut [u8; 44] = unsafe { mem::transmute::<*const u8, &mut [u8; 44]>(diversifier_list_ptr) };
+    let diversifier_list: &mut [u8; 44] =
+        unsafe { mem::transmute::<*const u8, &mut [u8; 44]>(diversifier_list_ptr) };
     let d = default_diversifier_fromlist(diversifier_list);
     div.copy_from_slice(&d)
 }
-
-
 
 #[no_mangle]
 pub extern "C" fn get_pkd(ivk_ptr: *mut u8, diversifier_ptr: *mut u8, pkd_ptr: *mut u8) {
@@ -387,38 +413,83 @@ mod tests {
     use crate::*;
 
     #[test]
-    fn test_zip32(){
+    fn test_zip32_master() {
         let seed = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
             24, 25, 26, 27, 28, 29, 30, 31,
         ];
 
-        let dk: [u8;32] = [0x77, 0xc1, 0x7c, 0xb7, 0x5b, 0x77, 0x96, 0xaf, 0xb3, 0x9f, 0x0f, 0x3e, 0x91,
-            0xc9, 0x24, 0x60, 0x7d, 0xa5, 0x6f, 0xa9, 0xa2, 0x0e, 0x28, 0x35, 0x09, 0xbc,
-            0x8a, 0x3e, 0xf9, 0x96, 0xa1, 0x72];
-        let keys = derive_child_zip32(seed,&[]);
-        assert_eq!(keys[32..64],dk);
+        let dk: [u8; 32] = [
+            0x77, 0xc1, 0x7c, 0xb7, 0x5b, 0x77, 0x96, 0xaf, 0xb3, 0x9f, 0x0f, 0x3e, 0x91, 0xc9,
+            0x24, 0x60, 0x7d, 0xa5, 0x6f, 0xa9, 0xa2, 0x0e, 0x28, 0x35, 0x09, 0xbc, 0x8a, 0x3e,
+            0xf9, 0x96, 0xa1, 0x72,
+        ];
+        let keys = derive_zip32_master(&seed);
+        assert_eq!(keys[32..64], dk);
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
+    }
+
+    #[test]
+    fn test_zip32_master_address() {
+        let seed = [0u8;32];
+
+
+        let keys = derive_zip32_master(&seed);
+
+        let mut sk = [0u8;32];
+        sk.copy_from_slice(&keys[0..32]);
+
+        let mut dk = [0u8;32];
+        dk.copy_from_slice(&keys[32..]);
+
+        let ask = sapling_derive_dummy_ask(&sk);
+        let nsk = sapling_derive_dummy_nsk(&sk);
+
+        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let ak: [u8; 32] = sapling_ask_to_ak(&ask);
+
+        let ivk = aknk_to_ivk(&ak, &nk);
+
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
+
+        let pk_d = default_pkd(&ivk,&default_d);
+
+        assert_eq!(default_d, [0x3b, 0xf6, 0xfa, 0x1f, 0x83, 0xbf, 0x45, 0x63, 0xc8, 0xa7, 0x13]);
+        assert_eq!(pk_d, [0x04, 0x54, 0xc0, 0x14, 0x13, 0x5e, 0xc6, 0x95, 0xa1, 0x86, 0x0f, 0x8d, 0x65, 0xb3, 0x73, 0x54, 0x6b, 0x62, 0x3f, 0x38, 0x8a, 0xbb, 0xec, 0xd0, 0xc8, 0xb2, 0x11, 0x1a, 0xbd, 0xec, 0x30, 0x1d]);
 
     }
 
     #[test]
-    fn test_zip32_child(){
-        let seed = [0u8;32];
+    fn test_zip32_child() {
+        let seed = [0u8; 32];
 
-        let dk: [u8;32] = [0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef, 0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40, 0x4f, 0x21, 0x45, 0x47];
-        let keys = derive_child_zip32(seed,&[1]);
-        assert_eq!(keys[32..64],dk);
-
+        let dk: [u8; 32] = [
+            0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef,
+            0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
+            0x4f, 0x21, 0x45, 0x47,
+        ];
+        let keys = derive_child_zip32(&seed, 1);
+        assert_eq!(keys[32..64], dk);
     }
 
     #[test]
     fn test_div() {
-        let nk = [0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b, 0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78, 0xbd, 0x3f, 0xd6, 0xba];
-        let ak = [0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d, 0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa, 0x8e, 0xf1, 0x16, 0x20];
+        let nk = [
+            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
+            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
+            0xbd, 0x3f, 0xd6, 0xba,
+        ];
+        let ak = [
+            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
+            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
+            0x8e, 0xf1, 0x16, 0x20,
+        ];
 
         let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
         let default_d = [
-            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39
+            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39,
         ];
 
         let result = pkd_group_hash(&default_d);
@@ -428,7 +499,14 @@ mod tests {
             let v = y.to_niels().multiply_bits(&ivk);
             let t = super::AffinePoint::from(v);
             let pk_d = t.to_bytes();
-            assert_eq!(pk_d, [0xdb, 0x4c, 0xd2, 0xb0, 0xaa, 0xc4, 0xf7, 0xeb, 0x8c, 0xa1, 0x31, 0xf1, 0x65, 0x67, 0xc4, 0x45, 0xa9, 0x55, 0x51, 0x26, 0xd3, 0xc2, 0x9f, 0x14, 0xe3, 0xd7, 0x76, 0xe8, 0x41, 0xae, 0x74, 0x15]);
+            assert_eq!(
+                pk_d,
+                [
+                    0xdb, 0x4c, 0xd2, 0xb0, 0xaa, 0xc4, 0xf7, 0xeb, 0x8c, 0xa1, 0x31, 0xf1, 0x65,
+                    0x67, 0xc4, 0x45, 0xa9, 0x55, 0x51, 0x26, 0xd3, 0xc2, 0x9f, 0x14, 0xe3, 0xd7,
+                    0x76, 0xe8, 0x41, 0xae, 0x74, 0x15
+                ]
+            );
         }
     }
 
@@ -436,9 +514,10 @@ mod tests {
     fn test_default_diversifier() {
         let seed = [0u8; 32];
         let default_d = default_diversifier(&seed);
-        assert_eq!(default_d, [
-            0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c
-        ]);
+        assert_eq!(
+            default_d,
+            [0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c]
+        );
     }
 
     #[test]
@@ -446,9 +525,10 @@ mod tests {
         let seed = [0u8; 32];
         let list = ff1aes_list(&seed);
         let default_d = default_diversifier_fromlist(&list);
-        assert_eq!(default_d, [
-            0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c
-        ]);
+        assert_eq!(
+            default_d,
+            [0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c]
+        );
     }
 
     #[test]
@@ -456,34 +536,70 @@ mod tests {
         let seed = [0u8; 32];
         let default_d = default_diversifier(&seed);
 
-        let nk = [0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b, 0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78, 0xbd, 0x3f, 0xd6, 0xba];
-        let ak = [0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d, 0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa, 0x8e, 0xf1, 0x16, 0x20];
+        let nk = [
+            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
+            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
+            0xbd, 0x3f, 0xd6, 0xba,
+        ];
+        let ak = [
+            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
+            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
+            0x8e, 0xf1, 0x16, 0x20,
+        ];
 
         let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
 
         let pkd = default_pkd(&ivk, &default_d);
-        assert_eq!(pkd, [0x88, 0x99, 0xc6, 0x44, 0xbf, 0xc6, 0x0f, 0x87, 0x83, 0xf9, 0x2b, 0xa9, 0xf8, 0x18, 0x9e, 0xd2, 0x77, 0xbf, 0x68, 0x3d, 0x5d, 0x1d, 0xae, 0x02, 0xc5, 0x71, 0xff, 0x47, 0x86, 0x9a, 0x0b, 0xa6]);
+        assert_eq!(
+            pkd,
+            [
+                0x88, 0x99, 0xc6, 0x44, 0xbf, 0xc6, 0x0f, 0x87, 0x83, 0xf9, 0x2b, 0xa9, 0xf8, 0x18,
+                0x9e, 0xd2, 0x77, 0xbf, 0x68, 0x3d, 0x5d, 0x1d, 0xae, 0x02, 0xc5, 0x71, 0xff, 0x47,
+                0x86, 0x9a, 0x0b, 0xa6
+            ]
+        );
     }
 
     #[test]
     fn test_grouphash_default() {
         let default_d = [
-            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39
+            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39,
         ];
 
         let result = pkd_group_hash(&default_d);
         let x = super::AffinePoint::from_bytes(result);
         assert_eq!(x.is_some().unwrap_u8(), 1);
-        assert_eq!(result, [0x3a, 0x71, 0xe3, 0x48, 0x16, 0x9e, 0x0c, 0xed, 0xbc, 0x4f, 0x36, 0x33, 0xa2, 0x60, 0xd0, 0xe7, 0x85, 0xea, 0x8f, 0x89, 0x27, 0xce, 0x45, 0x01, 0xce, 0xf3, 0x21, 0x6e, 0xd0, 0x75, 0xce, 0xa2]);
+        assert_eq!(
+            result,
+            [
+                0x3a, 0x71, 0xe3, 0x48, 0x16, 0x9e, 0x0c, 0xed, 0xbc, 0x4f, 0x36, 0x33, 0xa2, 0x60,
+                0xd0, 0xe7, 0x85, 0xea, 0x8f, 0x89, 0x27, 0xce, 0x45, 0x01, 0xce, 0xf3, 0x21, 0x6e,
+                0xd0, 0x75, 0xce, 0xa2
+            ]
+        );
     }
 
     #[test]
     fn test_ak() {
         let seed = [0u8; 32];
         let ask: [u8; 32] = sapling_derive_dummy_ask(&seed);
-        assert_eq!(ask, [0x85, 0x48, 0xa1, 0x4a, 0x47, 0x3e, 0xa5, 0x47, 0xaa, 0x23, 0x78, 0x40, 0x20, 0x44, 0xf8, 0x18, 0xcf, 0x19, 0x11, 0xcf, 0x5d, 0xd2, 0x05, 0x4f, 0x67, 0x83, 0x45, 0xf0, 0x0d, 0x0e, 0x88, 0x06]);
+        assert_eq!(
+            ask,
+            [
+                0x85, 0x48, 0xa1, 0x4a, 0x47, 0x3e, 0xa5, 0x47, 0xaa, 0x23, 0x78, 0x40, 0x20, 0x44,
+                0xf8, 0x18, 0xcf, 0x19, 0x11, 0xcf, 0x5d, 0xd2, 0x05, 0x4f, 0x67, 0x83, 0x45, 0xf0,
+                0x0d, 0x0e, 0x88, 0x06
+            ]
+        );
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
-        assert_eq!(ak, [0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d, 0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa, 0x8e, 0xf1, 0x16, 0x20]);
+        assert_eq!(
+            ak,
+            [
+                0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
+                0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
+                0x8e, 0xf1, 0x16, 0x20
+            ]
+        );
     }
 
     #[test]
@@ -491,18 +607,47 @@ mod tests {
         let seed = [0u8; 32];
 
         let nsk: [u8; 32] = sapling_derive_dummy_nsk(&seed);
-        assert_eq!(nsk, [0x30, 0x11, 0x4e, 0xa0, 0xdd, 0x0b, 0xb6, 0x1c, 0xf0, 0xea, 0xea, 0xb6, 0xec, 0x33, 0x31, 0xf5, 0x81, 0xb0, 0x42, 0x5e, 0x27, 0x33, 0x85, 0x01, 0x26, 0x2d, 0x7e, 0xac, 0x74, 0x5e, 0x6e, 0x05]);
+        assert_eq!(
+            nsk,
+            [
+                0x30, 0x11, 0x4e, 0xa0, 0xdd, 0x0b, 0xb6, 0x1c, 0xf0, 0xea, 0xea, 0xb6, 0xec, 0x33,
+                0x31, 0xf5, 0x81, 0xb0, 0x42, 0x5e, 0x27, 0x33, 0x85, 0x01, 0x26, 0x2d, 0x7e, 0xac,
+                0x74, 0x5e, 0x6e, 0x05
+            ]
+        );
 
         let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
-        assert_eq!(nk, [0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b, 0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78, 0xbd, 0x3f, 0xd6, 0xba]);
+        assert_eq!(
+            nk,
+            [
+                0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
+                0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
+                0xbd, 0x3f, 0xd6, 0xba
+            ]
+        );
     }
 
     #[test]
     fn test_ivk() {
-        let nk = [0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b, 0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78, 0xbd, 0x3f, 0xd6, 0xba];
-        let ak = [0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d, 0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa, 0x8e, 0xf1, 0x16, 0x20];
+        let nk = [
+            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
+            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
+            0xbd, 0x3f, 0xd6, 0xba,
+        ];
+        let ak = [
+            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
+            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
+            0x8e, 0xf1, 0x16, 0x20,
+        ];
 
         let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
-        assert_eq!(ivk, [0xb7, 0x0b, 0x7c, 0xd0, 0xed, 0x03, 0xcb, 0xdf, 0xd7, 0xad, 0xa9, 0x50, 0x2e, 0xe2, 0x45, 0xb1, 0x3e, 0x56, 0x9d, 0x54, 0xa5, 0x71, 0x9d, 0x2d, 0xaa, 0x0f, 0x5f, 0x14, 0x51, 0x47, 0x92, 0x04]);
+        assert_eq!(
+            ivk,
+            [
+                0xb7, 0x0b, 0x7c, 0xd0, 0xed, 0x03, 0xcb, 0xdf, 0xd7, 0xad, 0xa9, 0x50, 0x2e, 0xe2,
+                0x45, 0xb1, 0x3e, 0x56, 0x9d, 0x54, 0xa5, 0x71, 0x9d, 0x2d, 0xaa, 0x0f, 0x5f, 0x14,
+                0x51, 0x47, 0x92, 0x04
+            ]
+        );
     }
 }

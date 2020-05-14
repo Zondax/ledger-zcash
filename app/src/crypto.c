@@ -247,11 +247,6 @@ typedef struct {
             uint8_t address_raw[43];
             char address_bech32[100];
         };
-        struct {
-            uint8_t address[43];
-            uint8_t diversifierlist[44];
-        };
-
     };
 } tmp_buf_s;
 
@@ -260,15 +255,21 @@ typedef struct {
         // STEP 1
         struct {
             uint8_t sk[32];
+            uint8_t sk_new[32];
+            uint8_t dk_new[32];
+        } step1;
+
+        struct {
+            uint8_t sk[32];
             uint8_t ak[32];
             uint8_t nk[32];
-        } step1;
+        } step2;
         // STEP 2
         struct {
             uint8_t ivk[32];
             uint8_t ak[32];
             uint8_t nk[32];
-        } step2;
+        } step3;
     };
 } tmp_sampling_s;
 
@@ -290,27 +291,32 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.sk);
 
-            // TODO: ZIP 32
-
-            get_ak(tmp.step1.sk, tmp.step1.ak);
-            get_nk(tmp.step1.sk, tmp.step1.nk);
-
-            get_diversifier_list(tmp.step1.sk, out->diversifierlist);
+            zip32_master(tmp.step1.sk,tmp.step1.sk_new,tmp.step1.dk_new);
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
-            get_diversifier_fromlist(out->diversifier,out->diversifierlist);
-
-
-            /*changed by leon
-            get_diversifier(tmp.step1.sk, out->diversifier);
-            // Here we can clear up the seed
+            CHECK_APP_CANARY();
+            //get_diversifier_list(tmp.step1.sk, out);
+            /*
+            CHECK_APP_CANARY();
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
+      //      get_diversifier_fromlist(out->diversifier,out->diversifierlist);
+            CHECK_APP_CANARY();
 */
-            get_ivk(tmp.step2.ak, tmp.step2.nk, tmp.step2.ivk);
-            MEMZERO(tmp.step2.ak, sizeof_field(tmp_sampling_s, step2.ak));
-            MEMZERO(tmp.step2.nk, sizeof_field(tmp_sampling_s, step2.nk));
+            get_ak(tmp.step1.sk_new, tmp.step2.ak);
+            get_nk(tmp.step1.sk_new, tmp.step2.nk);
+            MEMZERO(tmp.step1.sk_new, sizeof_field(tmp_sampling_s, step1.sk_new));
 
-            get_pkd(tmp.step2.ivk, out->diversifier, out->pkd);
-            MEMZERO(tmp.step2.ivk, sizeof_field(tmp_sampling_s, step2.ivk));
+            get_diversifier(tmp.step1.dk_new, out->diversifier);
+            MEMZERO(tmp.step1.dk_new, sizeof_field(tmp_sampling_s, step1.dk_new));
+            // Here we can clear up the seed
+
+            get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sampling_s, step3.ak));
+            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sampling_s, step3.nk));
+
+            get_pkd(tmp.step3.ivk, out->diversifier, out->pkd);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sampling_s, step3.ivk));
         }
         FINALLY
         {
