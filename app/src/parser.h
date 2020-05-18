@@ -20,10 +20,12 @@
 extern "C" {
 #endif
 
-#include "parser_impl.h"
+#include "parser_common.h"
+#include "parser_txdef.h"
 #include "hexutils.h"
 #include "crypto.h"
 
+extern parser_tx_t parser_tx_obj;
 const char *parser_getErrorDescription(parser_error_t err);
 
 //// parses a tx buffer

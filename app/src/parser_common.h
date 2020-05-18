@@ -44,6 +44,7 @@ typedef enum {
     parser_required_method,
     ////////////////////////
     // Coin specific
+    parser_invalid_output_script,
     parser_unexpected_type,
     parser_unexpected_method,
     parser_unexpected_buffer_end,

@@ -15,7 +15,13 @@ rand = { version = "0.7", default-features = false }
 subtle = { version = "2.2", default-features = false }
 blake2b_simd = {version="0.5", default-features = false}
 blake2s_simd = {version="0.5", default-features = false}
-nom = {version="5.1.1", default-features = false}
+nom = {version = "5.1.1", default-features = false}
+libc = {version = "0.2.71", defaul-features = false}
+
+[dependencies.bs58]
+version = "0.3.1"
+default-features = false
+features = ["check"]
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"

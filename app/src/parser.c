@@ -18,6 +18,7 @@
 #include <zxmacros.h>
 #include "parser.h"
 #include "coin.h"
+#include "rslib.h"
 
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
@@ -27,12 +28,12 @@ void __assert_fail(const char * assertion, const char * file, unsigned int line,
 #endif
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen) {
-    CHECK_PARSER_ERR(parser_init(ctx, data, dataLen))
+    CHECK_PARSER_ERR(_parser_init(ctx, data, dataLen))
     return _read(ctx, &parser_tx_obj);
 }
 
 parser_error_t parser_validate(const parser_context_t *ctx) {
-    CHECK_PARSER_ERR(_validateTx(ctx, &parser_tx_obj))
+    CHECK_PARSER_ERR(_validate(ctx, &parser_tx_obj))
 
     uint16_t numItems = 0;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems));
@@ -67,6 +68,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     uint16_t numItems;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
     CHECK_APP_CANARY()
+
+    CHECK_PARSER_ERR(_getItem(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount));
 
     if (displayIdx < 0 || displayIdx >= numItems) {
         return parser_no_data;

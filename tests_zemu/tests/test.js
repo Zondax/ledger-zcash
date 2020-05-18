@@ -170,6 +170,7 @@ describe('Basic checks', function () {
         try {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
+            console.log('PARSER TEST')
             console.log(TX_TESTS)
             // const trans = JSON.parse(fs.readFileSync('test_txs.json'))// TX_TESTS;
             // const trans = TX_TESTS
@@ -181,15 +182,12 @@ describe('Basic checks', function () {
             //        raw_tx = tx.raw_tx
             //    }
             // }
-            // const signatureRequest = app.sign("m/44'/133'/5'/0/0", "1234");
-            const signatureRequest = app.sign('010000000107578c9aff7cfd240c36fa1400ee130d540f4c3397d24e8bea50a7f061116a87010000006a473044022011aecead8f48e3b342856a8da2f30c4e05bec5dc147a5bc7b382d01bf68ae5c302204126fd77522ae311a88688bce967532456b08c94322ba182a18fb7786e696c610121027e563beec6765850071067e4fcc7a46d00cbb0d675ef8df1b8d15aaeef91a21fffffffff021cbb0100000000001976a91461aac8b58ac880a45fb06eeedfcf3017679778a988ac32432400000000001976a9144fc16e1766808c0ab090be4376cea9d3a0bbe12988ac00000000');
-            await Zemu.sleep(2000);
+            const blob = Buffer.from("010000000107578c9aff7cfd240c36fa1400ee130d540f4c3397d24e8bea50a7f061116a87010000006a473044022011aecead8f48e3b342856a8da2f30c4e05bec5dc147a5bc7b382d01bf68ae5c302204126fd77522ae311a88688bce967532456b08c94322ba182a18fb7786e696c610121027e563beec6765850071067e4fcc7a46d00cbb0d675ef8df1b8d15aaeef91a21fffffffff021cbb0100000000001976a91461aac8b58ac880a45fb06eeedfcf3017679778a988ac32432400000000001976a9144fc16e1766808c0ab090be4376cea9d3a0bbe12988ac00000000", "hex");
+            const signatureRequest = app.sign("m/44'/133'/5'/0/0", blob);
+            await Zemu.sleep(1000);
 
             // Click right + double
-            await sim.clickRight();
-            await Zemu.sleep(1000);
             await sim.clickBoth();
-            await Zemu.sleep(1000);
 
             let signature = await signatureRequest;
             console.log(signature)

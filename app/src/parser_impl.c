@@ -19,7 +19,7 @@
 
 parser_tx_t parser_tx_obj;
 
-parser_error_t parser_init_context(parser_context_t *ctx,
+/*parser_error_t parser_init_context(parser_context_t *ctx,
                                    const uint8_t *buffer,
                                    uint16_t bufferSize) {
     ctx->offset = 0;
@@ -43,7 +43,7 @@ parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_
         return err;
 
     return err;
-}
+}*/
 
 const char *parser_getErrorDescription(parser_error_t err) {
     switch (err) {
@@ -73,6 +73,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
         case parser_required_method:
             return "Required field method";
             // Coin specific
+        case parser_invalid_output_script:
+            return "Invalid output script";
         case parser_unexpected_type:
             return "Unexpected data type";
         case parser_unexpected_method:
@@ -96,7 +98,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
     }
 }
 
-parser_error_t _read(const parser_context_t *c, parser_tx_t *v) {
+
+/*parser_error_t _read(const parser_context_t *c, parser_tx_t *v) {
     // TODO:
 
     return parser_ok;
@@ -114,4 +117,4 @@ uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v) {
     // TODO:
 
     return itemCount;
-}
+}*/

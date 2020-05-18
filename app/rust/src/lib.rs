@@ -5,11 +5,13 @@
 mod bolos;
 mod constants;
 mod parser;
+mod zxformat;
 
 extern crate core;
 
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
-pub use parser::{_getItem, _getNumItems, _read, _validate};
+pub use parser::{_getItem, _getNumItems, _parser_init, _read, _validate};
+pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 

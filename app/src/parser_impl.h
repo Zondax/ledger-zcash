@@ -25,13 +25,13 @@ extern "C" {
 
 extern parser_tx_t parser_tx_obj;
 
-parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);
+/*parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);
 
-parser_error_t _read(const parser_context_t *c, parser_tx_t *v);
+parser_error_t _read2(const parser_context_t *c, parser_tx_t *v);
 
 parser_error_t _validateTx(const parser_context_t *c, const parser_tx_t *v);
 
-uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v);
+uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v);*/
 
 #ifdef __cplusplus
 }
