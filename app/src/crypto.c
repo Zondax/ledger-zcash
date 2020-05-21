@@ -247,6 +247,10 @@ typedef struct {
             uint8_t address_raw[43];
             char address_bech32[100];
         };
+        struct {
+            uint8_t dummy[43];
+            uint8_t diversifierlist[44];
+        };
     };
 } tmp_buf_s;
 
@@ -254,9 +258,9 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t sk_new[32];
-            uint8_t dk_new[32];
+            uint8_t zip32_seed[32];
             uint8_t sk[32];
+            uint8_t dk[32];
         } step1;
 
         struct {
@@ -277,9 +281,9 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+    MEMZERO(buffer, bufferLen);
 
     tmp_buf_s *out = (tmp_buf_s *) buffer;
-    MEMZERO(out, bufferLen);
 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
@@ -289,26 +293,29 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
         TRY
         {
             // Temporarily get sk from Ed25519
-            //crypto_fillSaplingSeed(tmp.step1.sk);
+            crypto_fillSaplingSeed(tmp.step1.zip32_seed);
+            CHECK_APP_CANARY();
 
-            zip32_master(tmp.step1.sk,tmp.step1.sk_new,tmp.step1.dk_new);
+            zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+
+            get_diversifier_list(tmp.step1.dk, out->diversifierlist);
+            CHECK_APP_CANARY();
+
+            MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+            get_diversifier_fromlist(out->diversifier,out->diversifierlist);
+            CHECK_APP_CANARY();
+
+            get_ak(tmp.step1.sk, tmp.step2.ak);
+            CHECK_APP_CANARY();
+            get_nk(tmp.step1.sk, tmp.step2.nk);
+            CHECK_APP_CANARY();
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
-            CHECK_APP_CANARY();
-            //get_diversifier_list(tmp.step1.sk, out);
-            /*
-            CHECK_APP_CANARY();
-            MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
-      //      get_diversifier_fromlist(out->diversifier,out->diversifierlist);
-            CHECK_APP_CANARY();
-*/
-            get_diversifier(tmp.step1.dk_new, out->diversifier);
-            MEMZERO(tmp.step1.dk_new, sizeof_field(tmp_sampling_s, step1.dk_new));
 
-            get_ak(tmp.step1.sk_new, tmp.step2.ak);
-            get_nk(tmp.step1.sk_new, tmp.step2.nk);
-            MEMZERO(tmp.step1.sk_new, sizeof_field(tmp_sampling_s, step1.sk_new));
-
-            // Here we can clear up the seed
+   //         get_diversifier(tmp.step1.dk, out->diversifier);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step1.dk, sizeof_field(tmp_sampling_s, step1.dk));
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
             CHECK_APP_CANARY();
@@ -331,6 +338,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_s, address_raw));
+    CHECK_APP_CANARY();
 
     return sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
 }
