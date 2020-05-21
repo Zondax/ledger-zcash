@@ -17,6 +17,7 @@ extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
     fn c_zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn c_aes256_encryptblock(k: *const u8, a: *const u8, out: *mut u8);
+    fn c_zcash_blake2b_expand_vec_two(a: *const u8, a_len: u32, b: *const u8, b_len: u32, c: *const u8, c_len:u32, out: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -28,6 +29,23 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
             a.len() as u32,
             b.as_ptr(),
             b.len() as u32,
+            hash.as_mut_ptr(),
+        );
+    }
+    hash
+}
+
+#[cfg(not(test))]
+pub fn blake2b_expand_vec_two(a: &[u8], b: &[u8], c: &[u8]) -> [u8; 64] {
+    let mut hash = [0; 64];
+    unsafe {
+        c_zcash_blake2b_expand_vec_two(
+            a.as_ptr(),
+            a.len() as u32,
+            b.as_ptr(),
+            b.len() as u32,
+            c.as_ptr(),
+            c.len() as u32,
             hash.as_mut_ptr(),
         );
     }
@@ -89,6 +107,22 @@ pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
     let result: [u8; 32] = *h.as_array();
     result
 }
+
+#[cfg(test)]
+pub fn blake2b_expand_vec_two(sk: &[u8],a: &[u8], b: &[u8]) -> [u8; 64] {
+    pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
+    let mut h = Blake2bParams::new()
+        .hash_length(64)
+        .personal(PRF_EXPAND_PERSONALIZATION)
+        .to_state();
+    h.update(sk);
+    h.update(a);
+    h.update(b);
+    let mut hash = [0u8; 64];
+    hash.copy_from_slice(&h.finalize().as_bytes());
+    hash
+}
+
 
 pub struct Trng;
 
