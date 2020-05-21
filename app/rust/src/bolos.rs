@@ -34,6 +34,16 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     hash
 }
 
+#[cfg(not(test))]
+pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
+    let mut out = [0u8; 16];
+    unsafe {
+        c_aes256_encryptblock(k.as_ptr(), a.as_ptr(),out.as_mut_ptr());
+    }
+    out
+}
+
+#[cfg(test)]
 pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
     let cipher: Aes256 = Aes256::new(GenericArray::from_slice(k));
     //cipher.encrypt_block(block);

@@ -137,13 +137,13 @@ impl BlockCipher for AesSDK {
     }
 
     fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>){
-        //let x: [u8;16] = block.as_slice().try_into().expect("err");
-        //let y = bolos::aes_encryptblock(&self.key,&x);
+        let x: [u8;16] = block.as_slice().try_into().expect("err");
+        let y = bolos::aes256_encryptblock(&self.key,&x);
 
-        let mut y : [u8;16] = [0u8;16];
+        /*let mut y : [u8;16] = [0u8;16];
         for i in 0..16{
             y[i] = 0xFF;
-        }
+        }*/
 
         /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
         //cipher.encrypt_block(block);
@@ -474,13 +474,41 @@ mod tests {
         ];
         let keys = derive_zip32_master(&seed);
         assert_eq!(keys[32..64], dk);
-        let list = ff1aes_list(&dk);
-        let default_d = default_diversifier_fromlist(&list);
-        assert_eq!(default_d,dk[0..11]);
     }
 
     #[test]
-    fn test_zip32_master_address() {
+    fn test_zip32_master_address_ledgerkey() {
+        let seed = [0xaa; 32];
+
+
+        let keys = derive_zip32_master(&seed);
+
+        let mut sk = [0u8; 32];
+        sk.copy_from_slice(&keys[0..32]);
+
+        let mut dk = [0u8; 32];
+        dk.copy_from_slice(&keys[32..]);
+
+        let ask = sapling_derive_dummy_ask(&sk);
+        let nsk = sapling_derive_dummy_nsk(&sk);
+
+        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let ak: [u8; 32] = sapling_ask_to_ak(&ask);
+
+        let ivk = aknk_to_ivk(&ak, &nk);
+
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
+
+        let pk_d = default_pkd(&ivk, &default_d);
+
+        assert_eq!(default_d, [248, 213, 30, 83, 89, 99, 14, 96, 108, 140, 105]);
+        assert_eq!(pk_d, [147, 35, 255, 156, 123, 74, 93, 5, 146, 85, 241, 157, 253, 108, 250, 198, 57, 23, 82, 24, 220, 28, 164, 3, 42, 86, 11, 204, 162, 90, 36, 88]);
+
+    }
+
+    #[test]
+    fn test_zip32_master_address_allzero() {
         let seed = [0u8; 32];
 
 
@@ -500,12 +528,16 @@ mod tests {
 
         let ivk = aknk_to_ivk(&ak, &nk);
 
-        let default_d = default_diversifier(&dk);
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
 
         let pk_d = default_pkd(&ivk, &default_d);
 
-        assert_eq!(default_d, [187, 142, 161, 44, 12, 136, 207, 102, 117, 215, 30]);
-        assert_eq!(pk_d, [81, 215, 216, 225, 133, 101, 7, 173, 128, 172, 92, 67, 144, 143, 195, 19, 136, 174, 173, 149, 6, 29, 255, 136, 109, 162, 247, 104, 36, 191, 254, 42]);
+        assert_eq!(default_d, [0x3b, 0xf6, 0xfa, 0x1f, 0x83, 0xbf, 0x45, 0x63, 0xc8, 0xa7,
+            0x13]);
+        assert_eq!(pk_d, [0x04, 0x54, 0xc0, 0x14, 0x13, 0x5e, 0xc6, 0x95, 0xa1, 0x86,
+            0x0f, 0x8d, 0x65, 0xb3, 0x73, 0x54, 0x6b, 0x62, 0x3f, 0x38, 0x8a, 0xbb, 0xec, 0xd0, 0xc8, 0xb2, 0x11, 0x1a, 0xbd, 0xec, 0x30, 0x1d]);
+
     }
 
     #[test]
@@ -515,7 +547,7 @@ mod tests {
         let dk: [u8; 32] = [
             0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef,
             0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
-            0x4f, 0x21, 0x45, 0x47,
+            0x4f, 0x21, 0x45, 0x47
         ];
         let keys = derive_child_zip32(&seed, 1);
         assert_eq!(keys[32..64], dk);
@@ -563,7 +595,7 @@ mod tests {
         let default_d = default_diversifier(&seed);
         assert_eq!(
             default_d,
-            [0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c]
+            [241, 157, 155, 121, 126, 57, 243, 55, 68, 88, 57]
         );
     }
 
@@ -600,9 +632,7 @@ mod tests {
         assert_eq!(
             pkd,
             [
-                0x88, 0x99, 0xc6, 0x44, 0xbf, 0xc6, 0x0f, 0x87, 0x83, 0xf9, 0x2b, 0xa9, 0xf8, 0x18,
-                0x9e, 0xd2, 0x77, 0xbf, 0x68, 0x3d, 0x5d, 0x1d, 0xae, 0x02, 0xc5, 0x71, 0xff, 0x47,
-                0x86, 0x9a, 0x0b, 0xa6
+                219, 76, 210, 176, 170, 196, 247, 235, 140, 161, 49, 241, 101, 103, 196, 69, 169, 85, 81, 38, 211, 194, 159, 20, 227, 215, 118, 232, 65, 174, 116, 21
             ]
         );
     }

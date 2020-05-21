@@ -302,20 +302,16 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
 
             get_diversifier_list(tmp.step1.dk, out->diversifierlist);
             CHECK_APP_CANARY();
+            MEMZERO(tmp.step1.dk, sizeof_field(tmp_sampling_s, step1.dk));
 
             //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             get_diversifier_fromlist(out->diversifier,out->diversifierlist);
             CHECK_APP_CANARY();
 
-            get_ak(tmp.step1.sk, tmp.step2.ak);
-            CHECK_APP_CANARY();
             get_nk(tmp.step1.sk, tmp.step2.nk);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
-
-   //         get_diversifier(tmp.step1.dk, out->diversifier);
+            get_ak(tmp.step1.sk, tmp.step2.ak); //this overwrites step1.sk
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step1.dk, sizeof_field(tmp_sampling_s, step1.dk));
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
             CHECK_APP_CANARY();
