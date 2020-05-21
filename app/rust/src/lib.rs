@@ -12,7 +12,7 @@ use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 use aes::{
-    block_cipher_trait::{generic_array::GenericArray, BlockCipher},
+    block_cipher_trait::{generic_array::GenericArray, BlockCipher,generic_array::typenum::{U8, U16,U32}},
     Aes256,
 };
 use binary_ff1::BinaryFF1;
@@ -122,9 +122,57 @@ fn default_diversifier_fromlist(list: &[u8; 44]) -> [u8; 11] {
     result
 }
 
+struct AesSDK{
+    key: [u8;32]
+}
+
+impl BlockCipher for AesSDK {
+    type KeySize = U32;
+    type BlockSize = U16;
+    type ParBlocks = U8;
+
+    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesSDK{
+        let v: [u8; 32] = k.as_slice().try_into().expect("Wrong length");
+        AesSDK{key:v}
+    }
+
+    fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>){
+        //let x: [u8;16] = block.as_slice().try_into().expect("err");
+        //let y = bolos::aes_encryptblock(&self.key,&x);
+
+        let mut y : [u8;16] = [0u8;16];
+        for i in 0..16{
+            y[i] = 0xFF;
+        }
+
+        /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
+        //cipher.encrypt_block(block);
+
+        let y: [u8;16] = block.as_slice().try_into().expect("err");
+
+        let mut b = GenericArray::clone_from_slice(&y);
+        cipher.encrypt_block(&mut b);
+        */
+        //let x: &[u8;16] = b.as_slice().try_into().expect("err");
+        block.copy_from_slice(&y);
+    }
+
+
+    fn decrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>){
+        /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
+        cipher.decrypt_block(block);*/
+    }
+
+}
+
 //list of 4 diversifiers
 fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
-    let cipher = Aes256::new(GenericArray::from_slice(sk));
+    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
+    //let cipher = Aes256::new(GenericArray::from_slice(sk)); //make this a trait that uses SDK
+    //let mut scratch = [0u8;12];
+    //let mut ff1 = BinaryFF1::new(&c, 11, &[], &mut scratch).unwrap();
+
+    //let cipher = Aes256::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
     let mut d = [0u8; 11];
@@ -374,7 +422,7 @@ pub extern "C" fn get_diversifier_list(sk_ptr: *const u8, diversifier_list_ptr: 
 }
 
 #[no_mangle]
-pub extern "C" fn get_diversifier_fromlist(diversifier_list_ptr: *const u8, div_ptr: *mut u8) {
+pub extern "C" fn get_diversifier_fromlist(div_ptr: *mut u8,diversifier_list_ptr: *const u8) {
     let diversifier_list: &mut [u8; 44] = unsafe { mem::transmute(diversifier_list_ptr) };
     let div: &mut [u8; 11] = unsafe { mem::transmute(div_ptr) };
 
@@ -428,6 +476,7 @@ mod tests {
         assert_eq!(keys[32..64], dk);
         let list = ff1aes_list(&dk);
         let default_d = default_diversifier_fromlist(&list);
+        assert_eq!(default_d,dk[0..11]);
     }
 
     #[test]

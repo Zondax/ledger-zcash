@@ -303,7 +303,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             get_diversifier_list(tmp.step1.dk, out->diversifierlist);
             CHECK_APP_CANARY();
 
-            MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+            //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             get_diversifier_fromlist(out->diversifier,out->diversifierlist);
             CHECK_APP_CANARY();
 

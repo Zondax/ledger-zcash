@@ -7,9 +7,16 @@ use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
+use aes::{
+    block_cipher_trait::{generic_array::GenericArray, BlockCipher,generic_array::typenum::{U8, U16,U32}},
+    Aes256,
+};
+use core::convert::TryInto;
+
 extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
+    fn aes_enc(k: *const u8, a: *const u8, out: *mut u8);
 }
 
 #[cfg(not(test))]
@@ -25,6 +32,17 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
         );
     }
     hash
+}
+
+pub fn aes_encryptblock(k: &[u8],a: &[u8]) -> [u8;16]{
+    let cipher: Aes256 = Aes256::new(GenericArray::from_slice(k));
+    //cipher.encrypt_block(block);
+
+    let mut b = GenericArray::clone_from_slice(a);
+    cipher.encrypt_block(&mut b);
+
+    let out: [u8;16] = b.as_slice().try_into().expect("err");
+    out
 }
 
 #[cfg(test)]
