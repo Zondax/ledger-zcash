@@ -341,18 +341,18 @@ pub fn derive_zip32_child_fromindex(key: &mut [u8; 32], chain: &mut [u8;32], div
         let fvk = full_viewingkey(&key);
         let mut le_i = [0; 4];
         LittleEndian::write_u32(&mut le_i, index);
-        tmp = prf_expand_vec(
+        tmp = bolos::blake2b_expand_vec_four(
             chain,
-            &[&[0x12], &fvk, div_key, &le_i],
+            &[0x12], &fvk, div_key, &le_i
         );
     }else {
         let mut le_i = [0; 4];
         LittleEndian::write_u32(&mut le_i, index + (1 << 31));
         //make index LE
         //zip32 child derivation
-        tmp = prf_expand_vec(
+        tmp = bolos::blake2b_expand_vec_four(
             chain,
-            &[&[0x11], exp_key, div_key, &le_i],
+            &[0x11], exp_key, div_key, &le_i
         ); //64
     }
     //extract key and chainkey
@@ -362,59 +362,6 @@ pub fn derive_zip32_child_fromindex(key: &mut [u8; 32], chain: &mut [u8;32], div
     //new divkey from old divkey and key
     update_dk_zip32(&key,div_key);
     update_exk_zip32(&key, exp_key);
-}
-//input seed and path = [u32's], output secret key and diversifier key
-pub fn derive_zip32_child(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 64] {
-    //ASSERT: len(path) == len(harden)
-
-    let mut tmp = master_spending_key_zip32(seed); //64
-    let mut key= [0u8;32]; //32
-    let mut chain= [0u8;32]; //32
-
-    key.copy_from_slice(&tmp[..32]);
-    chain.copy_from_slice(&tmp[32..]);
-
-    let mut expkey = [0u8;96];
-    expkey = expandedspendingkey_zip32(&key); //96
-    //master divkey
-    let mut divkey = [0u8;32];
-    divkey.copy_from_slice(&diversifier_key_zip32(&key)); //32
-
-    for (&p,&h) in zip(path,harden) {
-        //compute expkey needed for zip32 child derivation
-
-        //non-hardened child
-        if h == 0x00 {
-            let fvk = full_viewingkey(&key);
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, p);
-            tmp = prf_expand_vec(
-                &chain,
-                &[&[0x12], &fvk, &divkey, &le_i],
-            );
-        }else {
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, p + (1 << 31));
-            //make index LE
-            //zip32 child derivation
-            tmp = prf_expand_vec(
-                &chain,
-                &[&[0x11], &expkey, &divkey, &le_i],
-            ); //64
-        }
-        //extract key and chainkey
-        key.copy_from_slice(&tmp[..32]);
-        chain.copy_from_slice(&tmp[32..]);
-
-        //new divkey from old divkey and key
-       update_dk_zip32(&key,&mut divkey);
-       update_exk_zip32(&key,&mut expkey);
-
-    }
-    let mut result= [0u8;64];
-    result[0..32].copy_from_slice(&key);
-    result[32..64].copy_from_slice(&divkey);
-    result
 }
 
 #[no_mangle]
@@ -455,17 +402,19 @@ pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mu
     sk.copy_from_slice(&k[0..32]);
     dk.copy_from_slice(&k[32..64])
 }
+
+//todo: write me
 /*
 #[no_mangle]
-pub extern "C" fn zip32_child(seed_ptr: *const u8, path_ptr: *const u32, hard_ptr: *const u8, keys_ptr: *mut u8) {
+pub extern "C" fn zip32_child(seed_ptr: *const u8, path_ptr: *const u32, harden_ptr: *const u8, keys_ptr: *mut u8) {
     let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
     let keys: &mut [u8; 64] = unsafe { mem::transmute(keys_ptr) };
-    let path: &[u32] = unsafe { mem::transmute(path_ptr) };
-    let harden: &[u8] = unsafe { mem::transmute(path_ptr) };
-    let k = derive_zip32_child(seed, path, harden);
+    let path: u32 = unsafe { mem::transmute(path_ptr) };
+    let harden: u8 = unsafe { mem::transmute(harden_ptr) };
+    let k = derive_zip32_child_fromindex(seed, path, harden[0]);
     keys.copy_from_slice(&k)
-}
-*/
+}*/
+
 #[no_mangle]
 pub extern "C" fn get_diversifier(sk_ptr: *const u8, diversifier_ptr: *mut u8) {
     let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
