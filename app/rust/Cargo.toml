@@ -18,7 +18,7 @@ blake2s_simd = {version="0.5", default-features = false}
 binary-ff1 = "0.1.0"
 aes = "0.3"
 byteorder = { version = "1", default-features = false }
-
+itertools = "0.9.0"
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
 

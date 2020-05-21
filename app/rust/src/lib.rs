@@ -28,6 +28,8 @@ use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 
+use itertools::zip;
+
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -262,6 +264,19 @@ pub fn outgoingviewingkey(key: &[u8; 32]) -> [u8; 32] {
     ovk
 }
 
+pub fn full_viewingkey(key: &[u8;32]) -> [u8;96]{
+    let mut ak = [0u8;32];
+    let mut nk = [0u8;32];
+    get_ak(key.as_ptr(),ak.as_mut_ptr());
+    get_nk(key.as_ptr(),nk.as_mut_ptr());
+    let ovk = outgoingviewingkey(key);
+    let mut result = [0u8;96];
+    result[0..32].copy_from_slice(&ak);
+    result[32..64].copy_from_slice(&nk);
+    result[64..96].copy_from_slice(&ovk);
+    result
+}
+
 pub fn expandedspendingkey_zip32(key: [u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(&key);
     let nsk = sapling_derive_dummy_nsk(&key);
@@ -321,37 +336,53 @@ pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 64] {
 pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
 
 //input seed and path = [u32's], output secret key and diversifier key
-pub fn derive_child_zip32(seed: &[u8; 32], p: u32) -> [u8; 64] {
+pub fn derive_zip32_child(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 64] {
+    //ASSERT: len(path) == len(harden)
+
     let mut tmp = master_spending_key_zip32(seed); //64
-    let mut key = [0u8; 32]; //32
-    let mut chain = [0u8; 32]; //32
+    let mut key= [0u8;32]; //32
+    let mut chain= [0u8;32]; //32
 
     key.copy_from_slice(&tmp[..32]);
     chain.copy_from_slice(&tmp[32..]);
 
-    let mut expkey = [0u8; 96];
+    let mut expkey = [0u8;96];
     expkey = expandedspendingkey_zip32(key); //96
     //master divkey
     let mut divkey = diversifier_key_zip32(&key); //32
 
-    //compute expkey needed for zip32 child derivation
+    for (&p,&h) in zip(path,harden) {
+        //compute expkey needed for zip32 child derivation
 
-    //make index LE
-    let mut le_i = [0; 4];
-    LittleEndian::write_u32(&mut le_i, p + (1 << 31));
+        //make index LE
+        if h == 0x00 {
+            let fvk = full_viewingkey(&key);
+            let mut le_i = [0; 4];
+            LittleEndian::write_u32(&mut le_i, p);
+            tmp = prf_expand_vec(
+                &chain,
+                &[&[0x12], &fvk, &divkey, &le_i],
+            );
+        }else {
+            let mut le_i = [0; 4];
+            LittleEndian::write_u32(&mut le_i, p + (1 << 31));
+            //make index LE
+            //zip32 child derivation
+            tmp = prf_expand_vec(
+                &chain,
+                &[&[0x11], &expkey, &divkey, &le_i],
+            ); //64
+        }
+        //extract key and chainkey
+        key.copy_from_slice(&tmp[..32]);
+        chain.copy_from_slice(&tmp[32..]);
 
-    //zip32 child derivation
-    tmp = prf_expand_vec(&chain, &[&[0x11], &expkey, &divkey, &le_i]); //64
+        //new divkey from old divkey and key
+        divkey = update_dk_zip32(&key,&divkey);
+        expkey = update_exk_zip32(&key,&expkey[64..96]);
 
-    //extract key and chainkey
-    key.copy_from_slice(&tmp[..32]);
-    chain.copy_from_slice(&tmp[32..]);
-
-    //new divkey from old divkey and key
-    divkey = update_dk_zip32(&key, &divkey);
-    expkey = update_exk_zip32(&key, &expkey[64..96]);
-
-    let mut result = [0u8; 64];
+    }
+    let mut result= [0u8;64];
     result[0..32].copy_from_slice(&key);
     result[32..64].copy_from_slice(&divkey);
     result
@@ -397,11 +428,11 @@ pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mu
 }
 
 #[no_mangle]
-pub extern "C" fn zip32_from_path(seed_ptr: *const u8, path: u32, keys_ptr: *mut u8) {
+pub extern "C" fn zip32_child_hardened(seed_ptr: *const u8, path: u32, keys_ptr: *mut u8) {
     let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
     let keys: &mut [u8; 64] = unsafe { mem::transmute(keys_ptr) };
-
-    let k = derive_child_zip32(seed, path);
+    let harden: &[u8] = &[0x11]; //fixme
+    let k = derive_zip32_child(seed, &[path], harden);
     keys.copy_from_slice(&k)
 }
 
@@ -549,7 +580,7 @@ mod tests {
             0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
             0x4f, 0x21, 0x45, 0x47
         ];
-        let keys = derive_child_zip32(&seed, 1);
+        let keys = derive_zip32_child(&seed, &[1], &[1]);
         assert_eq!(keys[32..64], dk);
     }
 
