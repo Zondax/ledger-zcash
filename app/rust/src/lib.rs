@@ -158,7 +158,7 @@ impl BlockCipher for AesSDK {
     }
 
 
-    fn decrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>){
+    fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>){
         /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
         cipher.decrypt_block(block);*/
     }

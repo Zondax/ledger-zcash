@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include "os.h"
 #include "cx.h"
+#include "aes.h"
+#include <zxmacros.h>
 
 #define CTX_REDJUBJUB "Zcash_RedJubjubH"
 #define CTX_REDJUBJUB_LEN 16
@@ -10,16 +12,16 @@
 #define CTX_EXPAND_SEED_LEN 16
 #define CTX_EXPAND_SEED_HASH_LEN 64
 
-void zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
-                               const uint8_t *b, uint32_t b_len,
-                               uint8_t *out) {
+void c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
+                                 const uint8_t *b, uint32_t b_len,
+                                 uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *) CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
     cx_hash(&ctx.header, 0, a, a_len, NULL, 0);
     cx_hash(&ctx.header, CX_LAST, b, b_len, out, CTX_EXPAND_SEED_HASH_LEN);
 }
 
-void zcash_blake2b_hash_two(
+void c_zcash_blake2b_hash_two(
         const uint8_t *perso, uint32_t perso_len,
         const uint8_t *a, uint32_t a_len,
         const uint8_t *b, uint32_t b_len,
@@ -28,6 +30,15 @@ void zcash_blake2b_hash_two(
     cx_blake2b_init2(&zcashHashBlake2b, 8 * out_len, NULL, 0, (uint8_t *) perso, perso_len);
     cx_hash(&zcashHashBlake2b.header, 0, a, a_len, NULL, 0);
     cx_hash(&zcashHashBlake2b.header, CX_LAST, b, b_len, out, out_len);
+}
+
+void c_aes256_encryptblock(const uint8_t *key, const uint8_t *in, uint8_t *out) {
+    struct AES_ctx ctx;
+    AES_init_ctx(&ctx, key);
+
+    // encrypts in place, so we copy and encrypt
+    MEMCPY(out, in, AES_BLOCKLEN);
+    AES_ECB_encrypt(&ctx, out);
 }
 
 // Replace functions affected by non-constant time opcodes
