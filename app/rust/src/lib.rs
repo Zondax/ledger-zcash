@@ -84,15 +84,30 @@ fn prf_ock(
     bolos::blake2b_prf_ock(&ock_input)
 }
 /*
-fn loop_over_grouphash(){
+
+def group_hash(D, M):
+    digest = blake2s(person=D)
+    digest.update(URS)
+    digest.update(M)
+    p = Point.from_bytes(digest.digest())
+    if p is None:
+        return None
+    q = p * JUBJUB_COFACTOR
+    if q == Point.ZERO:
+        return None
+    return q
+
+def find_group_hash(D, M):
     i = 0
     while True:
-        if group_hash_check(D, M + bytes([i]))
-    if p is not None:
-    return p
-    i += 1
-    assert i < 256
-}
+        p = group_hash(D, M + bytes([i]))
+        if p is not None:
+            return p
+        i += 1
+        assert i < 256
+
+def I_D_i(D, i):
+    return find_group_hash(D, i2leosp(32, i - 1))
 
 fn encode_chunk():
 (s0, s1, s2) = mj
