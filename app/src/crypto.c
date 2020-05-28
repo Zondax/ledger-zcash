@@ -258,15 +258,15 @@ typedef struct {
     union {
         // STEP 1
         struct {
+            uint8_t dk[32];
             uint8_t zip32_seed[32];
             uint8_t sk[32];
-            uint8_t dk[32];
         } step1;
 
         struct {
-            uint8_t sk[32];
-            uint8_t ak[32];
-            uint8_t nk[32];
+            uint8_t dk[32];
+            uint8_t ask[32];
+            uint8_t nsk[32];
         } step2;
         // STEP 2
         struct {
@@ -295,23 +295,28 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
-
+            /*
             zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
 
             CHECK_APP_CANARY();
             MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+            */
 
-            get_diversifier_list(tmp.step1.dk, out->diversifierlist);
+            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk);
+
+            get_diversifier_list(tmp.step2.dk, out->diversifierlist);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step1.dk, sizeof_field(tmp_sampling_s, step1.dk));
+            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sampling_s, step2.dk));
 
             //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             get_diversifier_fromlist(out->diversifier,out->diversifierlist);
             CHECK_APP_CANARY();
 
-            get_nk(tmp.step1.sk, tmp.step2.nk);
+            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
+            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            //get_nk(tmp.step1.sk, tmp.step2.nk);
             CHECK_APP_CANARY();
-            get_ak(tmp.step1.sk, tmp.step2.ak); //this overwrites step1.sk
+            //get_ak(tmp.step1.sk, tmp.step2.ak); //this overwrites step1.sk
             CHECK_APP_CANARY();
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);

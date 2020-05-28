@@ -364,7 +364,7 @@ pub fn derive_zip32_child_updatewithindex(key: &mut [u8; 32], chain: &mut [u8;32
     update_exk_zip32(&key, exp_key);
 }
 
-pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 128] {
+pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 96] {
     //ASSERT: len(path) == len(harden)
 
     let mut tmp = master_spending_key_zip32(seed); //64
@@ -420,12 +420,27 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden:
         update_exk_zip32(&key,&mut expkey);
 
     }
-    let mut result= [0u8;128];
-    result[0..32].copy_from_slice(&key);
-    result[32..64].copy_from_slice(&divkey);
-    result[64..96].copy_from_slice(&ask.to_bytes());
-    result[96..128].copy_from_slice(&nsk.to_bytes());
+    let mut result= [0u8;96];
+    result[0..32].copy_from_slice(&divkey);
+    result[32..64].copy_from_slice(&ask.to_bytes());
+    result[64..96].copy_from_slice(&nsk.to_bytes());
     result
+}
+
+#[no_mangle]
+pub extern "C" fn ask_to_ak(ask_ptr: *const u8, ak_ptr: *mut u8) {
+    let ask: &[u8; 32] = unsafe { mem::transmute(ask_ptr) };
+    let ak: &mut [u8; 32] = unsafe { mem::transmute(ak_ptr) };
+    let tmp_ak = sapling_ask_to_ak(&ask);
+    ak.copy_from_slice(&tmp_ak)
+}
+
+#[no_mangle]
+pub extern "C" fn nsk_to_nk(nsk_ptr: *const u8, nk_ptr: *mut u8) {
+    let nsk: &[u8; 32] = unsafe { mem::transmute(nsk_ptr) };
+    let nk: &mut [u8; 32] = unsafe { mem::transmute(nk_ptr) };
+    let tmp_nk = sapling_nsk_to_nk(&nsk);
+    nk.copy_from_slice(&tmp_nk)
 }
 
 
@@ -470,11 +485,15 @@ pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mu
 
 //fixme
 #[no_mangle]
-pub extern "C" fn zip32_child(seed_ptr: *const u8, keys_ptr: *mut u8) {
+pub extern "C" fn zip32_child(seed_ptr: *const u8, dk_ptr: *mut u8,ask_ptr: *mut u8,nsk_ptr: *mut u8) {
     let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
-    let keys: &mut [u8; 64] = unsafe { mem::transmute(keys_ptr) };
+    let dk: &mut [u8; 32] = unsafe { mem::transmute(dk_ptr) };
+    let ask: &mut [u8; 32] = unsafe { mem::transmute(ask_ptr) };
+    let nsk: &mut [u8; 32] = unsafe { mem::transmute(nsk_ptr) };
     let k = derive_zip32_child_fromseedandpath(seed, &[1], &[1]);//todo: fix me
-    keys.copy_from_slice(&k)
+    dk.copy_from_slice(&k[0..32]);
+    ask.copy_from_slice(&k[32..64]);
+    nsk.copy_from_slice(&k[64..96]);
 }
 
 #[no_mangle]
@@ -532,6 +551,7 @@ pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *m
 mod tests {
     use crate::*;
 
+
     #[test]
     fn test_zip32_master() {
         let seed = [
@@ -560,17 +580,14 @@ mod tests {
 
         let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
 
-        let mut sk = [0u8; 32];
-        sk.copy_from_slice(&keys[0..32]);
-
         let mut dk = [0u8; 32];
-        dk.copy_from_slice(&keys[32..64]);
+        dk.copy_from_slice(&keys[0..32]);
 
         let mut ask = [0u8;32];
-        ask.copy_from_slice(&keys[64..96]);
+        ask.copy_from_slice(&keys[32..64]);
 
         let mut nsk = [0u8;32];
-        nsk.copy_from_slice(&keys[96..128]);
+        nsk.copy_from_slice(&keys[64..96]);
 
         //fixme: add ecc operations
         let ask_test: [u8;32] = [0x66, 0x5e, 0xd6, 0xf7, 0xb7, 0x93, 0xaf, 0xa1, 0x82, 0x21, 0xe1, 0x57, 0xba, 0xd5, 0x43, 0x3c, 0x54, 0x23, 0xf4, 0xfe, 0xc9, 0x46, 0xe0, 0x8e, 0xd6, 0x30, 0xa0, 0xc6, 0x0a, 0x1f, 0xac, 0x02];
@@ -594,6 +611,36 @@ mod tests {
 
         assert_eq!(default_d, [0x10, 0xaa, 0x8e, 0xe1, 0xe1, 0x91, 0x48, 0xe7, 0x49, 0x7d, 0x3c]);
         assert_eq!(pk_d, [0xb3, 0xbe, 0x9e, 0xb3, 0xe7, 0xa9, 0x61, 0x17, 0x95, 0x17, 0xae, 0x28, 0xab, 0x19, 0xb4, 0x84, 0xae, 0x17, 0x2f, 0x1f, 0x33, 0xd1, 0x16, 0x33, 0xe9, 0xec, 0x05, 0xee, 0xa1, 0xe8, 0xa9, 0xd6]);
+
+    }
+
+    #[test]
+    fn test_zip32_childaddress_ledgerkey() {
+        let seed = [0xaa; 32];
+
+        let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
+
+        let mut dk = [0u8; 32];
+        dk.copy_from_slice(&keys[0..32]);
+
+        let mut ask = [0u8;32];
+        ask.copy_from_slice(&keys[32..64]);
+
+        let mut nsk = [0u8;32];
+        nsk.copy_from_slice(&keys[64..96]);
+
+        let mut nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let mut ak: [u8; 32] = sapling_ask_to_ak(&ask);
+
+        let ivk = aknk_to_ivk(&ak, &nk);
+
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
+
+        let pk_d = default_pkd(&ivk, &default_d);
+
+        assert_eq!(default_d, [146, 193, 108, 21, 165, 143, 76, 1, 239, 107, 168]);
+        assert_eq!(pk_d, [108, 98, 97, 177, 110, 87, 72, 33, 234, 26, 254, 4, 192, 163, 78, 6, 152, 106, 154, 139, 195, 76, 198, 120, 131, 88, 237, 224, 197, 240, 255, 155]);
 
     }
 
@@ -625,7 +672,6 @@ mod tests {
 
         assert_eq!(default_d, [248, 213, 30, 83, 89, 99, 14, 96, 108, 140, 105]);
         assert_eq!(pk_d, [147, 35, 255, 156, 123, 74, 93, 5, 146, 85, 241, 157, 253, 108, 250, 198, 57, 23, 82, 24, 220, 28, 164, 3, 42, 86, 11, 204, 162, 90, 36, 88]);
-
     }
 
     #[test]
@@ -659,31 +705,6 @@ mod tests {
         assert_eq!(pk_d, [0x04, 0x54, 0xc0, 0x14, 0x13, 0x5e, 0xc6, 0x95, 0xa1, 0x86,
             0x0f, 0x8d, 0x65, 0xb3, 0x73, 0x54, 0x6b, 0x62, 0x3f, 0x38, 0x8a, 0xbb, 0xec, 0xd0, 0xc8, 0xb2, 0x11, 0x1a, 0xbd, 0xec, 0x30, 0x1d]);
 
-    }
-
-    #[test]
-    fn test_zip32_child() {
-        let seed = [0u8; 32];
-        let dk: [u8; 32] = [
-            0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef,
-            0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
-        0x4f, 0x21, 0x45, 0x47
-        ];
-
-        let keys = master_spending_key_zip32(&seed);
-        let mut key = [0u8;32];
-        key.copy_from_slice(&keys[0..32]);
-        let mut chain = [0u8;32];
-        chain.copy_from_slice(&keys[32..64]);
-        let mut expkey = [0u8;96];
-        expkey.copy_from_slice(&expandedspendingkey_zip32(&key)); //96
-        //master divkey
-        let mut div_key = [0u8;32];
-        div_key.copy_from_slice(&diversifier_key_zip32(&key));
-        derive_zip32_child_updatewithindex(&mut key, &mut chain, &mut div_key, &mut expkey,1,1);
-        assert_eq!(div_key, dk);
-        let other = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
-        assert_eq!(other[32..64],dk);
     }
 
     #[test]

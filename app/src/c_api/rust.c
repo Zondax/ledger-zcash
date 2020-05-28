@@ -35,6 +35,8 @@ void c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len,
 void c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len,
                                     const uint8_t *b, uint32_t b_len,
                                     const uint8_t *c, uint32_t c_len,
+                                     const uint8_t *d, uint32_t d_len,
+                                     const uint8_t *e, uint32_t e_len,
                                     uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *) CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
