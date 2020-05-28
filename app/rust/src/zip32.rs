@@ -251,7 +251,7 @@ pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 64] {
     result
 }
 
-pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 96] {
+pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 96] {
     //ASSERT: len(path) == len(harden)
 
     let mut tmp = master_spending_key_zip32(seed); //64
@@ -270,27 +270,28 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden:
     //master divkey
     let mut divkey = [0u8;32];
     divkey.copy_from_slice(&diversifier_key_zip32(&key)); //32
-    for (&p,&h) in zip(path,harden) {
+    for &p in path {
         //compute expkey needed for zip32 child derivation
-
         //non-hardened child
-        if h == 0x00 {
-            let fvk = full_viewingkey(&key);
+        let hardened = (p & 0x80000000 ) != 0;
+        let c = p&0x7FFFFFFF;
+        if hardened {
             let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, p);
-            tmp = bolos::blake2b_expand_vec_four(
-                &chain,
-                &[0x12], &fvk, &divkey, &le_i
-            );
-        }else {
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, p + (1 << 31));
+            LittleEndian::write_u32(&mut le_i, c + (1 << 31));
             //make index LE
             //zip32 child derivation
             tmp = bolos::blake2b_expand_vec_four(
                 &chain,
                 &[0x11], &expkey, &divkey, &le_i
             ); //64
+        }else {
+            let fvk = full_viewingkey(&key);
+            let mut le_i = [0; 4];
+            LittleEndian::write_u32(&mut le_i, c);
+            tmp = bolos::blake2b_expand_vec_four(
+                &chain,
+                &[0x12], &fvk, &divkey, &le_i
+            );
         }
         //extract key and chainkey
         key.copy_from_slice(&tmp[..32]);

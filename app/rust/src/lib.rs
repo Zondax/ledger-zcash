@@ -92,7 +92,8 @@ pub extern "C" fn zip32_child(seed_ptr: *const u8, dk_ptr: *mut u8,ask_ptr: *mut
     let dk: &mut [u8; 32] = unsafe { mem::transmute(dk_ptr) };
     let ask: &mut [u8; 32] = unsafe { mem::transmute(ask_ptr) };
     let nsk: &mut [u8; 32] = unsafe { mem::transmute(nsk_ptr) };
-    let k = zip32::derive_zip32_child_fromseedandpath(seed, &[1], &[1]);//todo: fix me
+    let p: u32 = 0x80000001;
+    let k = zip32::derive_zip32_child_fromseedandpath(seed, &[p]);//todo: fix me
     dk.copy_from_slice(&k[0..32]);
     ask.copy_from_slice(&k[32..64]);
     nsk.copy_from_slice(&k[64..96]);
@@ -157,8 +158,8 @@ mod tests {
             0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
             0x4f, 0x21, 0x45, 0x47
         ];
-
-        let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
+        let p: u32 = 0x80000001;
+        let keys = derive_zip32_child_fromseedandpath(&seed,&[p]);
 
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&keys[0..32]);
@@ -198,8 +199,8 @@ mod tests {
     fn test_zip32_childaddress_ledgerkey() {
         let s = hex::decode("b08e3d98da431cef4566a13c1bb348b982f7d8e743b43bb62557ba51994b1257").expect("error");
         let seed: [u8;32] = s.as_slice().try_into().expect("er");
-
-        let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
+        let p: u32 = 0x80000001;
+        let keys = derive_zip32_child_fromseedandpath(&seed,&[p]);
 
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&keys[0..32]);
