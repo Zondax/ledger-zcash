@@ -226,11 +226,7 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
             0x80000000,
     };
 
-    // FIXME: Zemu/Speculos still does not emulate the derivation correctly
-    // FIXME: so the seed that is generated is still fixed
-    // This is fine for Milestone 1
-
-    os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519,
+    os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519,
                                         path, HDPATH_LEN_DEFAULT,
                                         sk,
                                         NULL,

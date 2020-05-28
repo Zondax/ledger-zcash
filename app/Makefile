@@ -28,7 +28,7 @@ include $(BOLOS_SDK)/Makefile.defines
 APPNAME = "Zcash"
 APPVERSION_M=2
 APPVERSION_N=0
-APPVERSION_P=1
+APPVERSION_P=2
 
 APPPATH = "44'/133'"
 APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path ${APPPATH} --path "44'/1'"
