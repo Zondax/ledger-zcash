@@ -288,10 +288,17 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     {
         TRY
         {
+            // TODO: IT IS NOW DOING CHILD DERIVATION WITH PATH = [1]
+            // TODO: take as input path = [u32;5]
+
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
+
             /*
+             * TODO: THIS IS OLD CODE FOR MASTER ADDRESS
+             * TODO: MAKE A SEPERATE C FUNCTION FOR THIS
+
             zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
 
             CHECK_APP_CANARY();

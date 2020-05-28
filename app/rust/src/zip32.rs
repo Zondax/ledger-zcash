@@ -121,27 +121,12 @@ impl BlockCipher for AesSDK {
         let x: [u8;16] = block.as_slice().try_into().expect("err");
         let y = bolos::aes256_encryptblock(&self.key,&x);
 
-        /*let mut y : [u8;16] = [0u8;16];
-        for i in 0..16{
-            y[i] = 0xFF;
-        }*/
-
-        /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
-        //cipher.encrypt_block(block);
-
-        let y: [u8;16] = block.as_slice().try_into().expect("err");
-
-        let mut b = GenericArray::clone_from_slice(&y);
-        cipher.encrypt_block(&mut b);
-        */
-        //let x: &[u8;16] = b.as_slice().try_into().expect("err");
         block.copy_from_slice(&y);
     }
 
 
     fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>){
-        /*let cipher: Aes256 = Aes256::new(GenericArray::from_slice(&self.key));
-        cipher.decrypt_block(block);*/
+        //not used but has to be defined
     }
 
 }
@@ -149,11 +134,6 @@ impl BlockCipher for AesSDK {
 //list of 4 diversifiers
 pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
-    //let cipher = Aes256::new(GenericArray::from_slice(sk)); //make this a trait that uses SDK
-    //let mut scratch = [0u8;12];
-    //let mut ff1 = BinaryFF1::new(&c, 11, &[], &mut scratch).unwrap();
-
-    //let cipher = Aes256::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
     let mut d = [0u8; 11];
@@ -163,11 +143,9 @@ pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     let size = 4;
 
     for c in 0..size {
-        //let x = prf_expand(sk, &c);
         d = counter.clone();
         ff1.encrypt(&mut d).unwrap();
         result[c * 11..(c + 1) * 11].copy_from_slice(&d);
-        //c[1] += 1;
         for k in 0..11 {
             counter[k] = counter[k].wrapping_add(1);
             if counter[k] != 0 {
@@ -179,22 +157,6 @@ pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     result
 }
 
-pub fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] {
-    //fixme: replace blake2b with aes
-    //let mut c: [u8; 2] = [0x03, 0x0];
-    // blake2b sk || 0x03 || c
-    let mut c: [u8; 2] = [0x03, 0x0];
-    loop {
-        //let x = prf_expand(sk, &c);
-        let x = prf_expand(sk, &c);
-        if diversifier_group_hash_light(&x[0..11]) {
-            let mut result = [0u8; 11];
-            result.copy_from_slice(&x[..11]);
-            return result;
-        }
-        c[1] += 1;
-    }
-}
 
 #[inline(never)]
 pub fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
@@ -212,9 +174,6 @@ pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
 
     let v = AffinePoint::from_bytes(h).unwrap();
     let y = v.mul_by_cofactor();
-
-    // FIXME: We should avoid asserts in ledger code
-    //assert_eq!(x.is_some().unwrap_u8(), 1);
 
     let v = y.to_niels().multiply_bits(ivk);
     let t = AffinePoint::from(v);

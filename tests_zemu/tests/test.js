@@ -97,8 +97,8 @@ describe('Basic checks', function () {
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
+            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49lpwx5l";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -123,8 +123,8 @@ describe('Basic checks', function () {
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
+            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49lpwx5l";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);

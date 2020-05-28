@@ -16,6 +16,9 @@ use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
 fn debug(_msg: &str) {}
 
+#[cfg(test)]
+extern crate hex;
+
 use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
@@ -96,14 +99,6 @@ pub extern "C" fn zip32_child(seed_ptr: *const u8, dk_ptr: *mut u8,ask_ptr: *mut
 }
 
 #[no_mangle]
-pub extern "C" fn get_diversifier(sk_ptr: *const u8, diversifier_ptr: *mut u8) {
-    let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let diversifier: &mut [u8; 11] = unsafe { mem::transmute(diversifier_ptr) };
-    let d = zip32::default_diversifier(sk);
-    diversifier.copy_from_slice(&d)
-}
-
-#[no_mangle]
 pub extern "C" fn get_diversifier_list(sk_ptr: *const u8, diversifier_list_ptr: *mut u8) {
     let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
     let diversifier: &mut [u8; 44] = unsafe { mem::transmute(diversifier_list_ptr) };
@@ -130,26 +125,11 @@ pub extern "C" fn get_pkd(ivk_ptr: *mut u8, diversifier_ptr: *mut u8, pkd_ptr: *
     pkd.copy_from_slice(&tmp_pkd)
 }
 
-//fixme
-//fixme: we need to add a prefix to exported functions.. as there are no namespaces in C :(
-//get seed from the ledger
-#[no_mangle]
-pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *mut u8) {
-    let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let ivk: &[u8; 32] = unsafe { mem::transmute(ivk_ptr) };
-    let address: &mut [u8; 43] = unsafe { mem::transmute(address_ptr) };
-
-    let div = zip32::default_diversifier(sk);
-    let pkd = zip32::default_pkd(&ivk, &div);
-
-    address[..11].copy_from_slice(&div);
-    address[11..].copy_from_slice(&pkd);
-}
-
 #[cfg(test)]
 mod tests {
     use crate::*;
     use crate::zip32::*;
+    use core::convert::TryInto;
 
 
     #[test]
@@ -216,7 +196,8 @@ mod tests {
 
     #[test]
     fn test_zip32_childaddress_ledgerkey() {
-        let seed = [0xaa; 32];
+        let s = hex::decode("b08e3d98da431cef4566a13c1bb348b982f7d8e743b43bb62557ba51994b1257").expect("error");
+        let seed: [u8;32] = s.as_slice().try_into().expect("er");
 
         let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
 
@@ -239,15 +220,15 @@ mod tests {
 
         let pk_d = default_pkd(&ivk, &default_d);
 
-        assert_eq!(default_d, [146, 193, 108, 21, 165, 143, 76, 1, 239, 107, 168]);
-        assert_eq!(pk_d, [108, 98, 97, 177, 110, 87, 72, 33, 234, 26, 254, 4, 192, 163, 78, 6, 152, 106, 154, 139, 195, 76, 198, 120, 131, 88, 237, 224, 197, 240, 255, 155]);
+        assert_eq!(default_d, [250, 115, 180, 200, 239, 11, 123, 73, 187, 60, 148]);
+        assert_eq!(pk_d, [191, 46, 29, 241, 178, 127, 191, 115, 187, 149, 153, 207, 116, 119, 20, 209, 250, 139, 59, 242, 251, 143, 230, 0, 172, 160, 16, 248, 117, 182, 234, 83]);
 
     }
 
     #[test]
     fn test_zip32_master_address_ledgerkey() {
-        let seed = [0xaa; 32];
-
+        let s = hex::decode("b08e3d98da431cef4566a13c1bb348b982f7d8e743b43bb62557ba51994b1257").expect("error");
+        let seed: [u8;32] = s.as_slice().try_into().expect("er");
 
         let keys = derive_zip32_master(&seed);
 
@@ -270,8 +251,9 @@ mod tests {
 
         let pk_d = default_pkd(&ivk, &default_d);
 
-        assert_eq!(default_d, [248, 213, 30, 83, 89, 99, 14, 96, 108, 140, 105]);
-        assert_eq!(pk_d, [147, 35, 255, 156, 123, 74, 93, 5, 146, 85, 241, 157, 253, 108, 250, 198, 57, 23, 82, 24, 220, 28, 164, 3, 42, 86, 11, 204, 162, 90, 36, 88]);
+        assert_eq!(default_d, [249, 61, 207, 226, 4, 114, 83, 238, 188, 23, 212]);
+        assert_eq!(pk_d, [220, 53, 23, 146, 73, 107, 157, 1, 78, 98, 108, 59, 201, 41, 230, 211, 47, 80, 127, 184, 11, 102, 79, 92, 174, 151, 211, 123, 247, 66, 219, 169]);
+
     }
 
     #[test]
@@ -344,16 +326,6 @@ mod tests {
     }
 
     #[test]
-    fn test_default_diversifier() {
-        let seed = [0u8; 32];
-        let default_d = default_diversifier(&seed);
-        assert_eq!(
-            default_d,
-            [241, 157, 155, 121, 126, 57, 243, 55, 68, 88, 57]
-        );
-    }
-
-    #[test]
     fn test_default_diversifier_fromlist() {
         let seed = [0u8; 32];
         let list = ff1aes_list(&seed);
@@ -364,32 +336,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_defaultpkd() {
-        let seed = [0u8; 32];
-        let default_d = default_diversifier(&seed);
-
-        let nk = [
-            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
-            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
-            0xbd, 0x3f, 0xd6, 0xba,
-        ];
-        let ak = [
-            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
-            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
-            0x8e, 0xf1, 0x16, 0x20,
-        ];
-
-        let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
-
-        let pkd = default_pkd(&ivk, &default_d);
-        assert_eq!(
-            pkd,
-            [
-                219, 76, 210, 176, 170, 196, 247, 235, 140, 161, 49, 241, 101, 103, 196, 69, 169, 85, 81, 38, 211, 194, 159, 20, 227, 215, 118, 232, 65, 174, 116, 21
-            ]
-        );
-    }
 
     #[test]
     fn test_grouphash_default() {
