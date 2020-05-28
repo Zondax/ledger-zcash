@@ -146,7 +146,7 @@ mod tests {
             0xf9, 0x96, 0xa1, 0x72,
         ];
         let keys = derive_zip32_master(&seed);
-        assert_eq!(keys[32..64], dk);
+        assert_eq!(keys[0..32], dk);
     }
 
     #[test]
@@ -233,14 +233,14 @@ mod tests {
 
         let keys = derive_zip32_master(&seed);
 
-        let mut sk = [0u8; 32];
-        sk.copy_from_slice(&keys[0..32]);
-
         let mut dk = [0u8; 32];
-        dk.copy_from_slice(&keys[32..]);
+        dk.copy_from_slice(&keys[0..32]);
 
-        let ask = sapling_derive_dummy_ask(&sk);
-        let nsk = sapling_derive_dummy_nsk(&sk);
+        let mut ask = [0u8;32];
+        ask.copy_from_slice(&keys[32..64]);
+
+        let mut nsk = [0u8;32];
+        nsk.copy_from_slice(&keys[64..96]);
 
         let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
@@ -264,14 +264,15 @@ mod tests {
 
         let keys = derive_zip32_master(&seed);
 
-        let mut sk = [0u8; 32];
-        sk.copy_from_slice(&keys[0..32]);
 
         let mut dk = [0u8; 32];
-        dk.copy_from_slice(&keys[32..]);
+        dk.copy_from_slice(&keys[0..32]);
 
-        let ask = sapling_derive_dummy_ask(&sk);
-        let nsk = sapling_derive_dummy_nsk(&sk);
+        let mut ask = [0u8;32];
+        ask.copy_from_slice(&keys[32..64]);
+
+        let mut nsk = [0u8;32];
+        nsk.copy_from_slice(&keys[64..96]);
 
         let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);

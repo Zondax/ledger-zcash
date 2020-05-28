@@ -236,7 +236,7 @@ pub fn update_exk_zip32(key: &[u8; 32], exk: &mut [u8;96]){
     exk[64..96].copy_from_slice(&bolos::blake2b_expand_vec_two(key, &[0x15], &ovkcopy)[..32]);
 }
 
-pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 64] {
+pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 96] {
     let tmp = master_spending_key_zip32(seed); //64
     let mut key = [0u8; 32]; //32
     let mut chain = [0u8; 32]; //32
@@ -244,10 +244,15 @@ pub fn derive_zip32_master(seed: &[u8; 32]) -> [u8; 64] {
     key.copy_from_slice(&tmp[..32]);
     chain.copy_from_slice(&tmp[32..]);
 
+    let ask = Fr::from_bytes_wide(&prf_expand(&key, &[0x00]));
+
+    let nsk = Fr::from_bytes_wide(&prf_expand(&key, &[0x01]));
+
     let divkey = diversifier_key_zip32(&key); //32
-    let mut result = [0u8; 64];
-    result[0..32].copy_from_slice(&key);
-    result[32..64].copy_from_slice(&divkey);
+    let mut result = [0u8; 96];
+    result[0..32].copy_from_slice(&divkey);
+    result[32..64].copy_from_slice(&ask.to_bytes());
+    result[64..96].copy_from_slice(&nsk.to_bytes());
     result
 }
 
