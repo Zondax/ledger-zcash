@@ -297,6 +297,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             CHECK_APP_CANARY();
 
             zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
+
             CHECK_APP_CANARY();
             MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
 

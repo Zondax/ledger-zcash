@@ -20,4 +20,4 @@ void get_diversifier_fromlist(const uint8_t *diversifier_list, uint8_t *diversif
 
 void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
-void zip32_from_path(const uint8_t *seed_ptr, uint32_t path_ptr, uint8_t *keys);
+void zip32_child(const uint8_t *seed_ptr, uint8_t *keys); //fixme

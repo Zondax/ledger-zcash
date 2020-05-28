@@ -364,7 +364,7 @@ pub fn derive_zip32_child_updatewithindex(key: &mut [u8; 32], chain: &mut [u8;32
     update_exk_zip32(&key, exp_key);
 }
 
-pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 64] {
+pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden: &[u8]) -> [u8; 128] {
     //ASSERT: len(path) == len(harden)
 
     let mut tmp = master_spending_key_zip32(seed); //64
@@ -373,6 +373,10 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden:
 
     key.copy_from_slice(&tmp[..32]);
     chain.copy_from_slice(&tmp[32..]);
+
+    let mut ask = Fr::from_bytes_wide(&prf_expand(&key, &[0x00]));
+
+    let mut nsk = Fr::from_bytes_wide(&prf_expand(&key, &[0x01]));
 
     let mut expkey = [0u8;96];
     expkey = expandedspendingkey_zip32(&key); //96
@@ -405,14 +409,22 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], harden:
         key.copy_from_slice(&tmp[..32]);
         chain.copy_from_slice(&tmp[32..]);
 
+        let ask_cur = Fr::from_bytes_wide(&prf_expand(&key, &[0x13]));
+        let nsk_cur = Fr::from_bytes_wide(&prf_expand(&key, &[0x14]));
+
+        ask += ask_cur;
+        nsk += nsk_cur;
+
         //new divkey from old divkey and key
         update_dk_zip32(&key,&mut divkey);
         update_exk_zip32(&key,&mut expkey);
 
     }
-    let mut result= [0u8;64];
+    let mut result= [0u8;128];
     result[0..32].copy_from_slice(&key);
     result[32..64].copy_from_slice(&divkey);
+    result[64..96].copy_from_slice(&ask.to_bytes());
+    result[96..128].copy_from_slice(&nsk.to_bytes());
     result
 }
 
@@ -456,17 +468,14 @@ pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mu
     dk.copy_from_slice(&k[32..64])
 }
 
-//todo: write me
-/*
+//fixme
 #[no_mangle]
-pub extern "C" fn zip32_child(seed_ptr: *const u8, path_ptr: *const u32, harden_ptr: *const u8, keys_ptr: *mut u8) {
+pub extern "C" fn zip32_child(seed_ptr: *const u8, keys_ptr: *mut u8) {
     let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
     let keys: &mut [u8; 64] = unsafe { mem::transmute(keys_ptr) };
-    let path: u32 = unsafe { mem::transmute(path_ptr) };
-    let harden: u8 = unsafe { mem::transmute(harden_ptr) };
-    let k = derive_zip32_child_fromindex(seed, path, harden[0]);
+    let k = derive_zip32_child_fromseedandpath(seed, &[1], &[1]);//todo: fix me
     keys.copy_from_slice(&k)
-}*/
+}
 
 #[no_mangle]
 pub extern "C" fn get_diversifier(sk_ptr: *const u8, diversifier_ptr: *mut u8) {
@@ -537,6 +546,55 @@ mod tests {
         ];
         let keys = derive_zip32_master(&seed);
         assert_eq!(keys[32..64], dk);
+    }
+
+    #[test]
+    fn test_zip32_childaddress() {
+        let seed = [0u8;32];
+
+        let dk_test: [u8; 32] = [
+            0xcb, 0xf6, 0xca, 0x4d, 0x57, 0x0f, 0xaf, 0x7e, 0xb0, 0xad, 0xcd, 0xab, 0xbf, 0xef,
+            0x36, 0x1b, 0x62, 0x95, 0x4b, 0x08, 0x10, 0x25, 0x18, 0x2f, 0x50, 0x16, 0x1d, 0x40,
+            0x4f, 0x21, 0x45, 0x47
+        ];
+
+        let keys = derive_zip32_child_fromseedandpath(&seed,&[1],&[1]);
+
+        let mut sk = [0u8; 32];
+        sk.copy_from_slice(&keys[0..32]);
+
+        let mut dk = [0u8; 32];
+        dk.copy_from_slice(&keys[32..64]);
+
+        let mut ask = [0u8;32];
+        ask.copy_from_slice(&keys[64..96]);
+
+        let mut nsk = [0u8;32];
+        nsk.copy_from_slice(&keys[96..128]);
+
+        //fixme: add ecc operations
+        let ask_test: [u8;32] = [0x66, 0x5e, 0xd6, 0xf7, 0xb7, 0x93, 0xaf, 0xa1, 0x82, 0x21, 0xe1, 0x57, 0xba, 0xd5, 0x43, 0x3c, 0x54, 0x23, 0xf4, 0xfe, 0xc9, 0x46, 0xe0, 0x8e, 0xd6, 0x30, 0xa0, 0xc6, 0x0a, 0x1f, 0xac, 0x02];
+
+        assert_eq!(ask,ask_test);
+
+        let mut nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let mut ak: [u8; 32] = sapling_ask_to_ak(&ask);
+
+        let ivk_test: [u8;32] = [
+            0x2c, 0x57, 0xfb, 0x12, 0x8c, 0x35, 0xa4, 0x4d, 0x2d, 0x5b, 0xf2, 0xfd, 0x21, 0xdc, 0x3b, 0x44, 0x11, 0x4c, 0x36, 0x6c, 0x9c, 0x49, 0x60, 0xc4, 0x91, 0x66, 0x17, 0x38, 0x3e, 0x89, 0xfd, 0x00
+        ];
+        let ivk = aknk_to_ivk(&ak, &nk);
+
+        assert_eq!(ivk,ivk_test);
+
+        let list = ff1aes_list(&dk);
+        let default_d = default_diversifier_fromlist(&list);
+
+        let pk_d = default_pkd(&ivk, &default_d);
+
+        assert_eq!(default_d, [0x10, 0xaa, 0x8e, 0xe1, 0xe1, 0x91, 0x48, 0xe7, 0x49, 0x7d, 0x3c]);
+        assert_eq!(pk_d, [0xb3, 0xbe, 0x9e, 0xb3, 0xe7, 0xa9, 0x61, 0x17, 0x95, 0x17, 0xae, 0x28, 0xab, 0x19, 0xb4, 0x84, 0xae, 0x17, 0x2f, 0x1f, 0x33, 0xd1, 0x16, 0x33, 0xe9, 0xec, 0x05, 0xee, 0xa1, 0xe8, 0xa9, 0xd6]);
+
     }
 
     #[test]
