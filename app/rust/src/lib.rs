@@ -18,6 +18,9 @@ use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 
+extern crate hex;
+
+
 /*#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -83,31 +86,95 @@ fn prf_ock(
 
     bolos::blake2b_prf_ock(&ock_input)
 }
+//make map for this let result = [1,-1,3,-3,2,-2,4,-4];
+fn encode_chunk(v: u8) -> i32{
+    assert_eq!(v & 0xF8,0x00); //only 3 LSBs must be set
+    let s0: i32 = ((v & 0x04)>>2) as i32;
+    let s1: i32 = ((v & 0x02)>>1) as i32;
+    let s2: i32 = (v & 0x01) as i32;
+
+    (1 - 2*s2) * (1 + s0 + 2*s1)
+}
+
+fn pedersen_hash(m: &[u8]){
+
+    let points = [
+    AffinePoint::from_bytes(hex::decode("ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8").expect("err").try_into().expect("err")).unwrap(),
+    AffinePoint::from_bytes(hex::decode("9118bf4e3cc50d7be8d3fa98ebbe3a1f25d901c0421189f733fe435b7f8c5d01").expect("err").try_into().expect("err")).unwrap(),
+    AffinePoint::from_bytes(hex::decode("57d493972c50ed8098b484177f2ab28b53e88c8e6ca400e09eee4ed200152eb6").expect("err").try_into().expect("err")).unwrap(),
+    AffinePoint::from_bytes(hex::decode("e97035a3ec4b7184856a1fa1a1af0351b747d9d8cb0a0791d8ca564b0ce47e2f").expect("err").try_into().expect("err")).unwrap(),
+    ];
+
+    let encodings: [i32;8] = [1,-1,3,-3,2,-2,4,-4];
+
+
+    let mut i = 0;
+    let mut counter: usize = 0;
+    let mut pointcounter: usize = 0;
+    let c = 63;
+    let mut scalar = 0; //convert to number in Fr!
+
+    //handle first u8 different as only 6 bits are possibly set
+    scalar += (encodings[(m[i] >> 3) & 7])* 2**(4*counter);
+    counter += 1;
+    scalar +=(encodings[(m[i]) & 7])* 2**(4*counter);
+    counter += 1;
+    i += 1;
+
+    let mut result_point = AffinePoint::identity();
+
+    while i < m.len(){
+        let mut x: u64 = 0;
+        if i + 6 > m.len(){
+            for _ in 0..6 {
+                x += m[i] as u64;
+                x <<=8;
+                i+=1;
+            }
+            for j in 0..16 {
+                let index = ((x >> (16 - (j+1))*3) & 7) as usize;
+                scalar += encodings[index]*16**(counter);
+                counter += 1;
+                if counter == c{
+
+                    //add point to result_point
+                    let mut p = points[pointcounter].to_niels();
+                    counter = 0;
+                    pointcounter += 1;
+                }
+            }
+        }else{
+            let rem = (m.len()-i);
+            for _ in 0..rem {
+                x += m[i] as u64;
+                x <<=8;
+                i+=1;
+            }
+            let remchunks = [(0,0),(3,1),(6,2),(8,0),(11,1),(13,2)];
+            for j in 0..16 {
+                let index = ((x >> (16 - (j+1))*3) & 7) as usize;
+                scalar += encodings[index]*2**(4*counter);
+                counter += 1;
+                if counter == c{
+                    //add point to result_point
+                    counter = 0;
+                    pointcounter += 1;
+                }
+            }
+        }
+    }
+
+}
 /*
+ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8
+9118bf4e3cc50d7be8d3fa98ebbe3a1f25d901c0421189f733fe435b7f8c5d01
+57d493972c50ed8098b484177f2ab28b53e88c8e6ca400e09eee4ed200152eb6
+e97035a3ec4b7184856a1fa1a1af0351b747d9d8cb0a0791d8ca564b0ce47e2f
+ef8a65c3998296994cd1595809d8b9b3e5c90614383278390a9dab0321c54bc9
+9a628d9f11826043a7136bc6d20002a8286a130a07b1cd64e5b6bfe88946ece4
+5685df0a659f3d07fc2393791839a4e549b057d93c5083cfa64542e0f2566de1
+1451d527e6cf3f90302f17432af0e322b1e28907f7ada9b4d8b8ca86e63e4c26
 
-def group_hash(D, M):
-    digest = blake2s(person=D)
-    digest.update(URS)
-    digest.update(M)
-    p = Point.from_bytes(digest.digest())
-    if p is None:
-        return None
-    q = p * JUBJUB_COFACTOR
-    if q == Point.ZERO:
-        return None
-    return q
-
-def find_group_hash(D, M):
-    i = 0
-    while True:
-        p = group_hash(D, M + bytes([i]))
-        if p is not None:
-            return p
-        i += 1
-        assert i < 256
-
-def I_D_i(D, i):
-    return find_group_hash(D, i2leosp(32, i - 1))
 
 fn encode_chunk():
 (s0, s1, s2) = mj
@@ -120,17 +187,6 @@ assert len(Michunks) == ki
 return Fr(sum([encode_chunk(Michunks[j-1]) * 2**(4*(j-1)) for j in range(1, ki + 1)]))
 
 c = 63
-
-
-
-fn pedersen_hash_to_point(){
-    Mdash = M + [0] * ((-len(M)) % 3)
-    assert (len(Mdash) // 3) * 3 == len(Mdash)
-    n = cldiv(len(Mdash), 3 * c)
-    Msegs = [Mdash[i:i+(3*c)] for i in range(0, len(Mdash), 3*c)]
-    assert len(Msegs) == n
-    return sum([I_D_i(D, i) * encode_segment(Msegs[i-1]) for i in range(1, n + 1)], Point.ZERO)
-}
 
 def pedersen_hash_to_point(D, M):
 # Pad M to a multiple of 3 bits
@@ -156,8 +212,8 @@ fn chacha_encryptnote(
 fn chacha_decryptnote(
     key: [u8; 32],
     ciphertext: [u8; ENC_CIPHERTEXT_SIZE],
-) -> [u8; NOTE_PLAINTEXT_SIZE] {
-    let mut plaintext = [0u8; NOTE_PLAINTEXT_SIZE];
+) -> [u8; ENC_CIPHERTEXT_SIZE] {
+    let mut plaintext = [0u8; ENC_CIPHERTEXT_SIZE];
     ChachaPolyIetf::aead_cipher()
         .open_to(&mut plaintext, &ciphertext, &[], &key, &[0u8; 12])
         .unwrap();
@@ -346,6 +402,21 @@ pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *m
 #[cfg(test)]
 mod tests {
     use crate::*;
+
+    #[test]
+    fn test_bits(){
+        let m: &[u8] = &[0x3f];
+        let v1 = m[0] >> 3;
+        let v2 = m[0] & 7;
+        assert_eq!(v1,7);
+        assert_eq!(v2,7);
+
+        let arr: [u8;8] = [0,1,2,3,4,5,6,7];
+        let result = [1,-1,3,-3,2,-2,4,-4];
+        for i in 0..8{
+            assert_eq!(encode_chunk(arr[i]),result[i]);
+        }
+    }
 
     #[test]
     fn test_sharedsecret() {
