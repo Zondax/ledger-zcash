@@ -19,6 +19,8 @@ extern "C" {
     fn c_aes256_encryptblock(k: *const u8, a: *const u8, out: *mut u8);
     fn c_zcash_blake2b_expand_vec_two(a: *const u8, a_len: u32, b: *const u8, b_len: u32, c: *const u8, c_len:u32, out: *mut u8);
     fn c_zcash_blake2b_expand_vec_four(a: *const u8, a_len: u32, b: *const u8, b_len: u32, c: *const u8, c_len:u32, d: *const u8, d_len: u32, e: *const u8, e_len: u32, out: *mut u8);
+    fn c_zcash_blake2b_zip32master(a: *const u8, a_len: u32, out: *mut u8);
+
 }
 
 #[cfg(not(test))]
@@ -143,6 +145,28 @@ pub fn blake2b_expand_vec_two(sk: &[u8],a: &[u8], b: &[u8]) -> [u8; 64] {
     let mut hash = [0u8; 64];
     hash.copy_from_slice(&h.finalize().as_bytes());
     hash
+}
+
+#[cfg(test)]
+pub fn blake2b_zip32master(seed: &[u8]) -> [u8; 64] {
+    pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
+    let mut h = Blake2bParams::new()
+        .hash_length(64)
+        .personal(ZIP32_SAPLING_MASTER_PERSONALIZATION)
+        .hash(seed);
+
+    let mut hash = [0u8; 64];
+    hash.copy_from_slice(&h.as_bytes());
+    hash
+}
+
+#[cfg(not(test))]
+pub fn blake2b_zip32master(seed: &[u8]) -> [u8; 64]{
+    let mut out = [0u8; 64];
+    unsafe {
+        c_zcash_blake2b_zip32master(seed.as_ptr(), seed.len() as u32,out.as_mut_ptr());
+    }
+    out
 }
 
 #[cfg(test)]
