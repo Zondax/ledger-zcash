@@ -35,7 +35,7 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t d
 parser_error_t parser_validate(const parser_context_t *ctx) {
     CHECK_PARSER_ERR(_validateTx(ctx, &parser_tx_obj))
 
-    uint16_t numItems = 0;
+    uint8_t numItems = 0;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems));
 
     char tmpKey[40];
@@ -49,7 +49,7 @@ parser_error_t parser_validate(const parser_context_t *ctx) {
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx, uint16_t *num_items) {
+parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
     *num_items = _getNumItems(ctx, &parser_tx_obj);
     return parser_ok;
 }
@@ -65,7 +65,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     snprintf(outVal, outValLen, " ");
     *pageCount = 0;
 
-    uint16_t numItems;
+    uint8_t numItems;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
     CHECK_APP_CANARY()
 
