@@ -89,45 +89,22 @@ fn prf_ock(
 }
 
 fn handle_chunk_2(bits: u8, cur: &mut Fr) -> Fr{
-    let a = bits & 1;
-    let b = (bits >> 1) & 1;
-    let c = (bits >> 2) & 1;
+    let c = bits & 1;
+    let b = bits & 2;
+    let a = bits & 4;
     let mut tmp = *cur;
-    if a == 1 {
-        tmp.add(&cur);
+    if a == 4 {
+        tmp = tmp.add(cur);
     }
     *cur = cur.double(); // 2^1 * cur
-    if b == 1 {
-        tmp.add(&cur);
+    if b == 2 {
+        tmp = tmp.add(cur);
     }
-
     // conditionally negate
     if c == 1 {
         tmp = tmp.neg();
     }
     return tmp;
-}
-
-
-fn handle_chunk(bits: u8, scale: Fr) -> (Fr,Fr){
-    let mut cur = scale;
-    let a = bits & 1;
-    let b = (bits >> 1) & 1;
-    let c = (bits >> 2) & 1;
-    let mut tmp = cur;
-    if a == 1 {
-        tmp.add(&cur);
-    }
-    cur = cur.double(); // 2^1 * cur
-    if b == 1 {
-        tmp.add(&cur);
-    }
-
-    // conditionally negate
-    if c == 1 {
-        tmp = tmp.neg();
-    }
-    return (cur,tmp);
 }
 
 fn pedersen_hash(m: &[u8]) -> [u8;32]{
@@ -171,8 +148,8 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
     let mut bits = (m[i] >> 3) & 7;
     tmp = handle_chunk_2(bits,&mut cur);
     cur = cur.double().double().double();
-
     acc = acc.add(&tmp);
+
     bits = (m[i]) & 7;
     tmp = handle_chunk_2(bits,&mut cur);
     cur = cur.double().double().double();
@@ -183,11 +160,9 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
 
     let mut result_point = ExtendedPoint::identity();
     if i == m.len(){ //empty message
-        assert_eq!(acc.to_bytes(),[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
         let mut str = points[pointcounter];
         let q = AffinePoint::from_bytes(str).unwrap().to_niels();
         let mut p = q.multiply_bits(&acc.to_bytes());
-        p = p.mul_by_cofactor();
         result_point = result_point + p;
         return AffinePoint::from(result_point).get_u().to_bytes()
     }
@@ -200,11 +175,10 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
                 x += m[i] as u64;
                 x <<=8;
                 i+=1;
-            }
+            } //change to loop
             for j in 0..16 {
                 bits = ((x >> (16 - (j+1))*3) & 7) as u8;
-                let scalar = cur;
-                let (mut cur,mut tmp) = handle_chunk(bits,scalar);
+                tmp = handle_chunk_2(bits,&mut cur);
                 acc = acc.add(&tmp);
 
                 //extract bits from index
@@ -215,8 +189,7 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
                     let mut str = points[pointcounter];
                     let q = AffinePoint::from_bytes(str).unwrap().to_niels();
                     let mut p = q.multiply_bits(&acc.to_bytes());
-                    p = p.mul_by_cofactor();
-                    result_point = result_point + &p;
+                    result_point = result_point + p;
 
                     counter = 0;
                     pointcounter += 1;
@@ -228,6 +201,29 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
             }
         }else{
             let rem = (m.len()-i);
+            assert_eq!(rem,1);
+            x += m[i] as u64;
+            i+=1;
+            //change to loop
+
+            bits = ((x >> 5) & 7) as u8;
+            tmp = handle_chunk_2(bits,&mut cur);
+            acc = acc.add(&tmp);
+            cur = cur.double().double().double();
+
+            bits = ((x >> 2) & 7) as u8;
+            tmp = handle_chunk_2(bits,&mut cur);
+            acc = acc.add(&tmp);
+            cur = cur.double().double().double();
+
+            bits = ((x & 3) << 1) as u8;
+            tmp = handle_chunk_2(bits,&mut cur);
+
+            acc = acc.add(&tmp);
+            cur = cur.double().double().double();
+
+
+            /*
             for _ in 0..rem {
                 x += m[i] as u64;
                 x <<=8;
@@ -237,8 +233,7 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
             let (r,p,l) = table[rem];
             for j in 0..r {
                 bits = ((x >> (r - (j+1))*3) & 7) as u8;
-                let scalar = cur;
-                let (mut cur,mut tmp) = handle_chunk(bits,scalar);
+                tmp = handle_chunk_2(bits,&mut cur);
                 acc = acc.add(&tmp);
 
                 //extract bits from index
@@ -250,9 +245,7 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
 
                     let q = AffinePoint::from_bytes(str).unwrap().to_niels();
                     let mut p = q.multiply_bits(&acc.to_bytes());
-                    p = p.mul_by_cofactor();
-
-                    result_point = result_point + &p;
+                    result_point = result_point + p;
 
                     counter = 0;
                     pointcounter += 1;
@@ -265,13 +258,14 @@ fn pedersen_hash(m: &[u8]) -> [u8;32]{
             //p = #leftoverbits
             //l = #shifts
             bits = ((x & (p as u64)) << (2-(l as u64))) as u8;
-            let (mut cur,mut tmp) = handle_chunk(bits,cur);
-            acc = acc.add(&tmp);
+            */
+
+           // assert_eq!(acc.to_bytes(),[0xbc, 0x10, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
             let mut str = points[pointcounter];
             let q = AffinePoint::from_bytes(str).unwrap().to_niels();
             let mut p = q.multiply_bits(&acc.to_bytes());
-            p = p.mul_by_cofactor();
-            result_point = result_point + &p;
+            result_point = result_point + p;
         }
     }
     return AffinePoint::from(result_point).get_u().to_bytes()
@@ -515,14 +509,40 @@ mod tests {
     use crate::*;
 
     #[test]
+    fn test_handlechunk(){
+        let bits: u8 = 1;
+        let mut cur = Fr::one();
+        let tmp = handle_chunk_2(bits, &mut cur);
+   //     assert_eq!(tmp.to_bytes(),[3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
     fn test_pedersen(){
-        let m: [u8;1] = [
-0        ];
-        let h: [u8;32] = [
-            0x1d, 0x48, 0x9d, 0xde, 0x58, 0x35, 0xaf, 0x21, 0x12, 0x32, 0x21, 0x64, 0xe0, 0x3d, 0xef, 0xe0, 0xcf, 0x12, 0xd5, 0xf0, 0xde, 0xf3, 0x10, 0x0d, 0x93, 0xb3, 0x89, 0x72, 0x95, 0x4a, 0x45, 0x62
+  /*      let h0: [u8;32] = [
+            0x1d, 0x48, 0x9d, 0xde, 0x58, 0x35, 0xaf, 0x21, 0x12, 0x32, 0x21, 0x64, 0xe0, 0x3d, 0xef, 0xe0, 0xcf, 0x12, 0xd5, 0xf0, 0xde, 0xf3, 0x10, 0x0d, 0x93, 0xb3, 0x89, 0x72, 0x95, 0x4a, 0x45, 0x62        ];
+        assert_eq!( pedersen_hash(&[0x00]),h0);
+
+
+        let h1: [u8;32] = [
+        0x85, 0xc8, 0x75, 0xe7, 0x93, 0xc8, 0xfc, 0xaf, 0x35, 0xb1, 0xdb, 0x93, 0x84, 0x5b, 0x5e, 0x4f, 0x57, 0xc3, 0x2d, 0xd8, 0x8d, 0xcd, 0xf4, 0x2f, 0xaa, 0x20, 0xa5, 0x3d, 0xc6, 0x54, 0x4c, 0x4b
         ];
-        let output = pedersen_hash(&m);
-        assert_eq!(output,h);
+
+
+        assert_eq!(pedersen_hash(&[1]),h1);
+
+        let h2: [u8;32] = [
+            0x83, 0xb5, 0x6b, 0x4c, 0xec, 0x17, 0xd6, 0xb5, 0x5a, 0x64, 0x9f, 0xc9, 0x26, 0xf0, 0xfc, 0x25, 0xdf, 0x5a, 0x85, 0x99, 0x66, 0x81, 0x14, 0x50, 0xdc, 0x82, 0xde, 0xf6, 0xfe, 0xef, 0xa3, 0x05        ];
+
+        assert_eq!( pedersen_hash(&[2]),h2);
+
+        let h: [u8;32] = [
+            0x0b, 0x4d, 0x5e, 0xed, 0xea, 0xa5, 0x65, 0xec, 0x87, 0x91, 0x02, 0xb5, 0x38, 0x73, 0x61, 0xd3, 0x3a, 0xde, 0xbb, 0x0d, 0x0d, 0x2e, 0x3b, 0x38, 0xb4, 0x4f, 0xca, 0x11, 0x7c, 0x18, 0xb1, 0x06];
+
+        assert_eq!(pedersen_hash(&[63]),h);
+*/
+        let h8: [u8;32] = [
+            0x90, 0x49, 0xcd, 0xd0, 0xb1, 0x5a, 0xf0, 0x8a, 0x28, 0x75, 0x9b, 0xe4, 0x3e, 0x9f, 0x20, 0x2b, 0x4f, 0x6e, 0xcc, 0x33, 0x9c, 0xb7, 0x60, 0xd5, 0xeb, 0x74, 0xcd, 0x45, 0xba, 0x81, 0xd9, 0x41];
+        assert_eq!(pedersen_hash(&[63,1]),h8);
     }
 
     #[test]
