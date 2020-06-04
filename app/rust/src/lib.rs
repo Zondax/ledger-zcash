@@ -7,7 +7,7 @@ mod constants;
 
 extern crate core;
 
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr, ExtendedNielsPoint};
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
@@ -27,7 +27,8 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }*/
 
-use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf}; //TODO: replace me with no-std version
+use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf};
+use subtle::ConditionallySelectable; //TODO: replace me with no-std version
 
 const COMPACT_NOTE_SIZE: usize = (
     1  + // version
@@ -86,61 +87,143 @@ fn prf_ock(
 
     bolos::blake2b_prf_ock(&ock_input)
 }
-//make map for this let result = [1,-1,3,-3,2,-2,4,-4];
-fn encode_chunk(v: u8) -> i32{
-    assert_eq!(v & 0xF8,0x00); //only 3 LSBs must be set
-    let s0: i32 = ((v & 0x04)>>2) as i32;
-    let s1: i32 = ((v & 0x02)>>1) as i32;
-    let s2: i32 = (v & 0x01) as i32;
 
-    (1 - 2*s2) * (1 + s0 + 2*s1)
+fn handle_chunk_2(bits: u8, cur: &mut Fr) -> Fr{
+    let a = bits & 1;
+    let b = (bits >> 1) & 1;
+    let c = (bits >> 2) & 1;
+    let mut tmp = *cur;
+    if a == 1 {
+        tmp.add(&cur);
+    }
+    *cur = cur.double(); // 2^1 * cur
+    if b == 1 {
+        tmp.add(&cur);
+    }
+
+    // conditionally negate
+    if c == 1 {
+        tmp = tmp.neg();
+    }
+    return tmp;
 }
 
-fn pedersen_hash(m: &[u8]){
 
-    let points = [
+fn handle_chunk(bits: u8, scale: Fr) -> (Fr,Fr){
+    let mut cur = scale;
+    let a = bits & 1;
+    let b = (bits >> 1) & 1;
+    let c = (bits >> 2) & 1;
+    let mut tmp = cur;
+    if a == 1 {
+        tmp.add(&cur);
+    }
+    cur = cur.double(); // 2^1 * cur
+    if b == 1 {
+        tmp.add(&cur);
+    }
+
+    // conditionally negate
+    if c == 1 {
+        tmp = tmp.neg();
+    }
+    return (cur,tmp);
+}
+
+fn pedersen_hash(m: &[u8]) -> [u8;32]{
+
+    /*let points = [
     AffinePoint::from_bytes(hex::decode("ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8").expect("err").try_into().expect("err")).unwrap(),
     AffinePoint::from_bytes(hex::decode("9118bf4e3cc50d7be8d3fa98ebbe3a1f25d901c0421189f733fe435b7f8c5d01").expect("err").try_into().expect("err")).unwrap(),
     AffinePoint::from_bytes(hex::decode("57d493972c50ed8098b484177f2ab28b53e88c8e6ca400e09eee4ed200152eb6").expect("err").try_into().expect("err")).unwrap(),
     AffinePoint::from_bytes(hex::decode("e97035a3ec4b7184856a1fa1a1af0351b747d9d8cb0a0791d8ca564b0ce47e2f").expect("err").try_into().expect("err")).unwrap(),
     ];
+*/
+    let points = [
+        [
+            0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e, 0x47, 0xf9, 0x5e, 0xdc, 0x7e, 0x83, 0x6b, 0x16, 0xc9, 0x79, 0x57, 0x1b, 0x52, 0xd3, 0xa2, 0x87, 0x9e, 0xa8
+        ],
+        [
+            0x91, 0x18, 0xbf, 0x4e, 0x3c, 0xc5, 0x0d, 0x7b, 0xe8, 0xd3, 0xfa, 0x98, 0xeb, 0xbe, 0x3a, 0x1f, 0x25, 0xd9, 0x01, 0xc0, 0x42, 0x11, 0x89, 0xf7, 0x33, 0xfe, 0x43, 0x5b, 0x7f, 0x8c, 0x5d, 0x01
+        ],
+        [
+            0x57, 0xd4, 0x93, 0x97, 0x2c, 0x50, 0xed, 0x80, 0x98, 0xb4, 0x84, 0x17, 0x7f, 0x2a, 0xb2, 0x8b, 0x53, 0xe8, 0x8c, 0x8e, 0x6c, 0xa4, 0x00, 0xe0, 0x9e, 0xee, 0x4e, 0xd2, 0x00, 0x15, 0x2e, 0xb6
+        ],
+        [
+            0xe9, 0x70, 0x35, 0xa3, 0xec, 0x4b, 0x71, 0x84, 0x85, 0x6a, 0x1f, 0xa1, 0xa1, 0xaf, 0x03, 0x51, 0xb7, 0x47, 0xd9, 0xd8, 0xcb, 0x0a, 0x07, 0x91, 0xd8, 0xca, 0x56, 0x4b, 0x0c, 0xe4, 0x7e, 0x2f
+        ],
+    ];
 
-    let encodings: [i32;8] = [1,-1,3,-3,2,-2,4,-4];
-
+    let table= [(0,0,0),(2,3,1),(5,1,2),(8,0,0),(10,3,1),(13,1,2)];
 
     let mut i = 0;
     let mut counter: usize = 0;
     let mut pointcounter: usize = 0;
-    let c = 63;
-    let mut scalar = 0; //convert to number in Fr!
+    let maxcounter: usize = 63;
 
     //handle first u8 different as only 6 bits are possibly set
-    scalar += (encodings[(m[i] >> 3) & 7])* 2**(4*counter);
-    counter += 1;
-    scalar +=(encodings[(m[i]) & 7])* 2**(4*counter);
+    //todo: here we assume 6 LSB of M[0] are possibly set, depends on encoding!
+
+    let mut acc = Fr::zero();
+    let mut cur = Fr::one();
+    let mut tmp = Fr::zero();
+
+    let mut bits = (m[i] >> 3) & 7;
+    tmp = handle_chunk_2(bits,&mut cur);
+    cur = cur.double().double().double();
+
+    acc = acc.add(&tmp);
+    bits = (m[i]) & 7;
+    tmp = handle_chunk_2(bits,&mut cur);
+    cur = cur.double().double().double();
+
+    acc = acc.add(&tmp);
     counter += 1;
     i += 1;
 
-    let mut result_point = AffinePoint::identity();
+    let mut result_point = ExtendedPoint::identity();
+    if i == m.len(){ //empty message
+        assert_eq!(acc.to_bytes(),[0x11, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+        let mut str = points[pointcounter];
+        let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+        let mut p = q.multiply_bits(&acc.to_bytes());
+        p = p.mul_by_cofactor();
+        result_point = result_point + p;
+        return AffinePoint::from(result_point).get_u().to_bytes()
+    }
+
 
     while i < m.len(){
         let mut x: u64 = 0;
-        if i + 6 > m.len(){
+        if i + 6 <= m.len(){
             for _ in 0..6 {
                 x += m[i] as u64;
                 x <<=8;
                 i+=1;
             }
             for j in 0..16 {
-                let index = ((x >> (16 - (j+1))*3) & 7) as usize;
-                scalar += encodings[index]*16**(counter);
+                bits = ((x >> (16 - (j+1))*3) & 7) as u8;
+                let scalar = cur;
+                let (mut cur,mut tmp) = handle_chunk(bits,scalar);
+                acc = acc.add(&tmp);
+
+                //extract bits from index
                 counter += 1;
-                if counter == c{
+                if counter == maxcounter{
 
                     //add point to result_point
-                    let mut p = points[pointcounter].to_niels();
+                    let mut str = points[pointcounter];
+                    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+                    let mut p = q.multiply_bits(&acc.to_bytes());
+                    p = p.mul_by_cofactor();
+                    result_point = result_point + &p;
+
                     counter = 0;
                     pointcounter += 1;
+                    acc = Fr::zero();
+                    cur = Fr::one();
+                }else{
+                    cur = cur.double().double().double();
                 }
             }
         }else{
@@ -150,20 +233,48 @@ fn pedersen_hash(m: &[u8]){
                 x <<=8;
                 i+=1;
             }
-            let remchunks = [(0,0),(3,1),(6,2),(8,0),(11,1),(13,2)];
-            for j in 0..16 {
-                let index = ((x >> (16 - (j+1))*3) & 7) as usize;
-                scalar += encodings[index]*2**(4*counter);
+            assert_eq!(m.len(),i);
+            let (r,p,l) = table[rem];
+            for j in 0..r {
+                bits = ((x >> (r - (j+1))*3) & 7) as u8;
+                let scalar = cur;
+                let (mut cur,mut tmp) = handle_chunk(bits,scalar);
+                acc = acc.add(&tmp);
+
+                //extract bits from index
                 counter += 1;
-                if counter == c{
+                if counter == maxcounter{
+
                     //add point to result_point
+                    let str = points[pointcounter];
+
+                    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+                    let mut p = q.multiply_bits(&acc.to_bytes());
+                    p = p.mul_by_cofactor();
+
+                    result_point = result_point + &p;
+
                     counter = 0;
                     pointcounter += 1;
+                    acc = Fr::zero();
+                    cur = Fr::one();
+                }else{
+                    cur = cur.double().double().double();
                 }
             }
+            //p = #leftoverbits
+            //l = #shifts
+            bits = ((x & (p as u64)) << (2-(l as u64))) as u8;
+            let (mut cur,mut tmp) = handle_chunk(bits,cur);
+            acc = acc.add(&tmp);
+            let mut str = points[pointcounter];
+            let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+            let mut p = q.multiply_bits(&acc.to_bytes());
+            p = p.mul_by_cofactor();
+            result_point = result_point + &p;
         }
     }
-
+    return AffinePoint::from(result_point).get_u().to_bytes()
 }
 /*
 ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8
@@ -404,18 +515,14 @@ mod tests {
     use crate::*;
 
     #[test]
-    fn test_bits(){
-        let m: &[u8] = &[0x3f];
-        let v1 = m[0] >> 3;
-        let v2 = m[0] & 7;
-        assert_eq!(v1,7);
-        assert_eq!(v2,7);
-
-        let arr: [u8;8] = [0,1,2,3,4,5,6,7];
-        let result = [1,-1,3,-3,2,-2,4,-4];
-        for i in 0..8{
-            assert_eq!(encode_chunk(arr[i]),result[i]);
-        }
+    fn test_pedersen(){
+        let m: [u8;1] = [
+0        ];
+        let h: [u8;32] = [
+            0x1d, 0x48, 0x9d, 0xde, 0x58, 0x35, 0xaf, 0x21, 0x12, 0x32, 0x21, 0x64, 0xe0, 0x3d, 0xef, 0xe0, 0xcf, 0x12, 0xd5, 0xf0, 0xde, 0xf3, 0x10, 0x0d, 0x93, 0xb3, 0x89, 0x72, 0x95, 0x4a, 0x45, 0x62
+        ];
+        let output = pedersen_hash(&m);
+        assert_eq!(output,h);
     }
 
     #[test]
