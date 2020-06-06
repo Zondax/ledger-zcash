@@ -1,5 +1,5 @@
 #![allow(non_camel_case_types, non_snake_case)]
-use core::cell::UnsafeCell;
+use core::{cell::UnsafeCell, option::Option};
 
 use crate::parser::{
     parser_common::ParserError,

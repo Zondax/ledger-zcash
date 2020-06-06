@@ -1,4 +1,5 @@
 use core::fmt::{self, Write};
+use core::option::Option;
 use nom::{branch::permutation, number::complete::le_u32};
 
 use crate::parser::{
@@ -87,14 +88,15 @@ impl<'a> Transaction<'a> {
 
 impl<'a> From<TxTuple<'a>> for Transaction<'a> {
     fn from(raw: TxTuple<'a>) -> Self {
-        Self {
+        let tx = Self {
             version: raw.0,
             inputs: (raw.1).0,
             ilen: (raw.1).1 as _,
             outputs: (raw.2).0,
             olen: (raw.2).1 as _,
             locktime: raw.3,
-        }
+        };
+        tx
     }
 }
 
