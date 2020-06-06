@@ -4,13 +4,6 @@
 #include "parser_common.h"
 #include "parser_txdef.h"
 
-/****************************** zxformat.rs ***************************************************************************/
-
-void rs_fpuint64_to_str(char *out, uint16_t outLen, const uint64_t value, uint8_t decimals);
-void rs_fpint64_to_str(char *out, uint16_t outLen, const uint64_t value, uint8_t decimals);
-
-// uint8_t rs_fpstr_to_str(char *out, uint16_t outLen, const char *number, uint8_t decimals);
-
 /****************************** others ********************************************************************************/
 
 void get_ak(const uint8_t *sk_ptr, uint8_t *ak_ptr);

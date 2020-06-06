@@ -21,10 +21,6 @@ const MAX_DECIMAL_BUFF_LEN: usize = 70;
 // P2SH, P2WPKH, P2WSH
 const MAX_ADDRESS_BUFFER_LEN: usize = 40;
 
-extern "C" {
-    pub fn fpuint64_to_str(out: *mut i8, outLen: u16, value: u64, decimals: u8);
-}
-
 #[repr(C)]
 #[derive(Copy, Clone)]
 // A transaction output
@@ -148,7 +144,6 @@ impl<'a> TxOutput<'a> {
         self.script.destination()
     }
 
-    #[cfg(not(test))]
     pub fn value_in_btc(&self) -> Result<[u8; MAX_DECIMAL_BUFF_LEN], ParserError> {
         let mut output = [0u8; MAX_DECIMAL_BUFF_LEN];
         crate::zxformat::fpu64_to_str(output.as_mut(), self.value, MAX_DECIMAL_PLACES as _)

@@ -17,7 +17,6 @@ pub type TxTuple<'a> = (
 );
 
 #[repr(C)]
-// #[derive(Default)]
 pub struct Transaction<'a> {
     version: u32,
     inputs: [Option<TxInput<'a>>; MAX_TX_INPUTS],

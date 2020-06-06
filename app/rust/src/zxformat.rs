@@ -2,7 +2,6 @@
 
 use bs58::decode::Error;
 use core::fmt::{self, Write};
-use libc::{c_char, c_int, c_uint};
 use nom::error::ParseError;
 
 use crate::parser::ParserError;
@@ -27,7 +26,6 @@ impl<'a> fmt::Write for Writer<'a> {
 
         if remainder.len() < bytes.len() {
             return Err(core::fmt::Error);
-            // overflow wit zero decimals
         }
         let remainder = &mut remainder[..bytes.len()];
         remainder.copy_from_slice(bytes);
@@ -35,27 +33,6 @@ impl<'a> fmt::Write for Writer<'a> {
         self.offset += bytes.len();
 
         Ok(())
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn rs_fpuint64_to_str(out: *mut c_char, outLen: u16, value: u64, decimals: u8) {
-    let output = unsafe { core::slice::from_raw_parts_mut(out as *mut u8, outLen as usize) };
-
-    let res = fpu64_to_str(output, value, decimals);
-    if res.is_err() && outLen >= 3 {
-        //(&mut output[..3]).copy_from_slice(b"ERR".as_ref());
-        output.copy_from_slice(b"ERR".as_ref());
-    }
-}
-
-#[no_mangle]
-pub extern "C" fn rs_fpint64_to_str(out: *mut c_char, outLen: u16, value: i64, decimals: u8) {
-    let output = unsafe { core::slice::from_raw_parts_mut(out as *mut u8, outLen as usize) };
-
-    let res = fpi64_to_str(output, value, decimals);
-    if res.is_err() && outLen >= 3 {
-        output.copy_from_slice(b"ERR".as_ref());
     }
 }
 
@@ -304,7 +281,7 @@ mod test {
 
     #[test]
     fn test_paging_string() {
-        let mut inValue = b"abcdabcdabcd";
+        let inValue = b"abcdabcdabcd";
         let mut outValue = [0u8; 6];
         let mut idx = 0;
         // the pageString will left over the last byte

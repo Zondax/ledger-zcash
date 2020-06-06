@@ -23,8 +23,8 @@ impl<'a> TxHandler<'a> {
         unsafe { (*self.0.get()).as_ref() }
     }
 
-    fn replace(&'a self, tx: Transaction<'a>) -> Option<Transaction<'_>> {
-        unsafe { (*self.0.get()).replace(tx) }
+    fn replace(&'a self, tx: Transaction<'a>) {
+        unsafe {(*self.0.get()).replace(tx); }
     }
 }
 
