@@ -22,6 +22,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
+#define CLA                             0x85
+
 #define HDPATH_LEN_DEFAULT   5
 
 #define HDPATH_0_DEFAULT     (0x80000000u | 0x2cu)
@@ -34,26 +36,28 @@ extern "C" {
 #define HDPATH_1_TESTNET     (0x80000000u | 0x1u)
 
 // compressed key
-#define SECP256K1_PK_LEN            33u
+#define PK_LEN_SECP256K1            33u
 
 // sapling address [11+32]
-#define SAPLING_PK_LEN              43u
+#define PK_LEN_SAPLING              43u
 
 typedef enum {
     addr_secp256k1 = 0,
     addr_sapling   = 1
 } address_kind_e;
 
-#define VIEW_ADDRESS_OFFSET_SECP256K1       SECP256K1_PK_LEN
-#define VIEW_ADDRESS_OFFSET_SAPLING         SAPLING_PK_LEN
+#define VIEW_ADDRESS_OFFSET_SECP256K1       PK_LEN_SECP256K1
+#define VIEW_ADDRESS_OFFSET_SAPLING         PK_LEN_SAPLING
 #define VIEW_ADDRESS_ITEM_COUNT             2
 #define VIEW_ADDRESS_LAST_PAGE_DEFAULT      255
 
 #define MENU_MAIN_APP_LINE1 "Zcash"
 #define MENU_MAIN_APP_LINE2 "DO NOT USE!"
-#define APPVERSION_LINE2 ""
+#define APPVERSION_LINE1 "Zcash"
+#define APPVERSION_LINE2 "v"APPVERSION
 
-#define COIN_AMOUNT_DECIMAL_PLACES 18
+#define COIN_AMOUNT_DECIMAL_PLACES  18      // FIXME: Check this
+#define CRYPTO_BLOB_SKIP_BYTES      0
 
 #ifdef __cplusplus
 }

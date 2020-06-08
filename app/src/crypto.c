@@ -38,7 +38,7 @@ void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
 }
 
 typedef struct {
-    uint8_t publicKey[SECP256K1_PK_LEN];
+    uint8_t publicKey[PK_LEN_SECP256K1];
     uint8_t address[50];
 } __attribute__((packed)) answer_t;
 
@@ -91,7 +91,7 @@ uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len) {
     // extended-ripemd-160 = [version][ripemd-160(sha256(pk))]
     address_temp.version[0] = VERSION_P2PKH >> 8;
     address_temp.version[1] = VERSION_P2PKH & 0xFF;
-    cx_hash_sha256(answer->publicKey, SECP256K1_PK_LEN, address_temp.sha256_pk, CX_SHA256_SIZE);      // SHA256
+    cx_hash_sha256(answer->publicKey, PK_LEN_SECP256K1, address_temp.sha256_pk, CX_SHA256_SIZE);      // SHA256
     ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk);         // RIPEMD-160
 
     // checksum = sha256(sha256(extended-ripe))
@@ -103,7 +103,7 @@ uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len) {
     size_t outLen = sizeof_field(answer_t, address);
     encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
 
-    return SECP256K1_PK_LEN + outLen;
+    return PK_LEN_SECP256K1 + outLen;
 }
 
 void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {
@@ -111,7 +111,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[32];
 
-    if (pubKeyLen < SECP256K1_PK_LEN) {
+    if (pubKeyLen < PK_LEN_SECP256K1) {
         return;
     }
 
@@ -143,7 +143,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
         pubKey[31] |= 0x80;
     }
 
-    memcpy(pubKey, cx_publicKey.W, SECP256K1_PK_LEN);
+    memcpy(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
 }
 
 typedef struct {
@@ -226,11 +226,7 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
             0x80000000,
     };
 
-    // FIXME: Zemu/Speculos still does not emulate the derivation correctly
-    // FIXME: so the seed that is generated is still fixed
-    // This is fine for Milestone 1
-
-    os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519,
+    os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519,
                                         path, HDPATH_LEN_DEFAULT,
                                         sk,
                                         NULL,
