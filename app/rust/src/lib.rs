@@ -135,7 +135,7 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
-fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
+fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
     let points = [
         [
             0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
@@ -176,16 +176,12 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
     let mut remainingbits = bitsize;
 
     let mut x: u64 = 0;
-    let mut bits: u8 = 0;
 
     let mut acc = Fr::zero();
     let mut cur = Fr::one();
-    let mut tmp = Fr::zero();
     let mut result_point = ExtendedPoint::identity();
 
     let mut rem: u64 = 0;
-    let mut el: u64 = 0;
-
     let mut k = 1;
     while i < m.len() {
         x = 0;
@@ -203,6 +199,7 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
             i += 1;
             j += 1;
         }
+        let el;
         if i == m.len() {
             //handling last bytes
             remainingbits %= 48;
@@ -213,17 +210,17 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
         }
         k = 1;
         while k < (el + 1) {
-            bits = (x >> (rem * 8 - k * 3) & 7) as u8;
-            tmp = handle_chunk(bits, &mut cur);
+            let bits = (x >> (rem * 8 - k * 3) & 7) as u8;
+            let tmp = handle_chunk(bits, &mut cur);
             acc = acc.add(&tmp);
 
             //extract bits from index
             counter += 1;
             if counter == maxcounter {
                 //add point to result_point
-                let mut str = points[pointcounter];
+                let str = points[pointcounter];
                 let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-                let mut p = q.multiply_bits(&acc.to_bytes());
+                let p = q.multiply_bits(&acc.to_bytes());
                 result_point = result_point + p;
 
                 counter = 0;
@@ -237,152 +234,23 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
         }
     } //change to loop
     if remainingbits > 0 {
+        let bits: u8;
         if rem * 8 < k * 3 {
             let tr = if rem % 3 == 1 { 3 } else { 1 };
             bits = ((x & tr) << (rem % 3)) as u8;
         } else {
             bits = (x >> (rem * 8 - k * 3) & 7) as u8;
         }
-        tmp = handle_chunk(bits, &mut cur);
+        let tmp = handle_chunk(bits, &mut cur);
         acc = acc.add(&tmp);
         counter += 1;
     }
     if counter > 0 {
-        let mut str = points[pointcounter];
+        let str = points[pointcounter];
         let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-        let mut p = q.multiply_bits(&acc.to_bytes());
+        let p = q.multiply_bits(&acc.to_bytes());
         result_point = result_point + p;
     }
-    return AffinePoint::from(result_point).get_u().to_bytes();
-}
-
-fn pedersen_hash(m: &[u8]) -> [u8; 32] {
-    let points = [
-        [
-            0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
-            0x47, 0xf9, 0x5e, 0xdc, 0x7e, 0x83, 0x6b, 0x16, 0xc9, 0x79, 0x57, 0x1b, 0x52, 0xd3,
-            0xa2, 0x87, 0x9e, 0xa8,
-        ],
-        [
-            0x91, 0x18, 0xbf, 0x4e, 0x3c, 0xc5, 0x0d, 0x7b, 0xe8, 0xd3, 0xfa, 0x98, 0xeb, 0xbe,
-            0x3a, 0x1f, 0x25, 0xd9, 0x01, 0xc0, 0x42, 0x11, 0x89, 0xf7, 0x33, 0xfe, 0x43, 0x5b,
-            0x7f, 0x8c, 0x5d, 0x01,
-        ],
-        [
-            0x57, 0xd4, 0x93, 0x97, 0x2c, 0x50, 0xed, 0x80, 0x98, 0xb4, 0x84, 0x17, 0x7f, 0x2a,
-            0xb2, 0x8b, 0x53, 0xe8, 0x8c, 0x8e, 0x6c, 0xa4, 0x00, 0xe0, 0x9e, 0xee, 0x4e, 0xd2,
-            0x00, 0x15, 0x2e, 0xb6,
-        ],
-        [
-            0xe9, 0x70, 0x35, 0xa3, 0xec, 0x4b, 0x71, 0x84, 0x85, 0x6a, 0x1f, 0xa1, 0xa1, 0xaf,
-            0x03, 0x51, 0xb7, 0x47, 0xd9, 0xd8, 0xcb, 0x0a, 0x07, 0x91, 0xd8, 0xca, 0x56, 0x4b,
-            0x0c, 0xe4, 0x7e, 0x2f,
-        ],
-    ];
-
-    let table = [
-        (0, 0, 0),
-        (2, 3, 1),
-        (5, 1, 2),
-        (8, 0, 0),
-        (10, 3, 1),
-        (13, 1, 2),
-        (16, 0, 0),
-    ];
-
-    let mut i = 0;
-    let mut counter: usize = 1;
-    let mut pointcounter: usize = 0;
-    let maxcounter: usize = 63;
-
-    //handle first u8 different as only 6 bits are possibly set
-    //todo: here we assume 6 LSB of M[0] are possibly set, depends on encoding!
-
-    let mut acc = Fr::zero();
-    let mut cur = Fr::one();
-    let mut tmp = Fr::zero();
-
-    let mut bits = (m[i] >> 3) & 7;
-    tmp = handle_chunk(bits, &mut cur);
-    cur = cur.double().double().double();
-    acc = acc.add(&tmp);
-
-    bits = (m[i]) & 7;
-    tmp = handle_chunk(bits, &mut cur);
-    cur = cur.double().double().double();
-
-    acc = acc.add(&tmp);
-    counter += 1;
-    i += 1;
-
-    let mut result_point = ExtendedPoint::identity();
-    if i == m.len() {
-        //empty message
-        let mut str = points[pointcounter];
-        let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-        let mut p = q.multiply_bits(&acc.to_bytes());
-        result_point = result_point + p;
-        return AffinePoint::from(result_point).get_u().to_bytes();
-    }
-    let mut el: u64 = 0;
-    let mut ft = 0;
-    let mut tr = 0;
-    let mut x: u64 = 0;
-    while i < m.len() {
-        x = 0;
-        let rem: u64 = if i + 6 <= m.len() {
-            6
-        } else {
-            (m.len() - i) as u64
-        };
-        x += m[i] as u64;
-        i += 1;
-        let mut j = 1;
-        while j < rem {
-            x <<= 8;
-            x += m[i] as u64;
-            i += 1;
-            j += 1;
-        }
-
-        let entry = table[rem as usize];
-        el = entry.0 as u64;
-        ft = entry.1 as u64;
-        tr = entry.2 as u64;
-
-        for j in 1..(el + 1) {
-            bits = (x >> (rem * 8 - j * 3) & 7) as u8;
-            tmp = handle_chunk(bits, &mut cur);
-            acc = acc.add(&tmp);
-
-            //extract bits from index
-            counter += 1;
-            if counter == maxcounter {
-                //add point to result_point
-                let mut str = points[pointcounter];
-                let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-                let mut p = q.multiply_bits(&acc.to_bytes());
-                result_point = result_point + p;
-
-                counter = 1;
-                pointcounter += 1;
-                acc = Fr::zero();
-                cur = Fr::one();
-            } else {
-                cur = cur.double().double().double();
-            }
-        }
-    }
-    if ft > 0 {
-        bits = ((x & ft) << tr) as u8;
-        tmp = handle_chunk(bits, &mut cur);
-        acc = acc.add(&tmp);
-    }
-    let mut str = points[pointcounter];
-    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-    let mut p = q.multiply_bits(&acc.to_bytes());
-    result_point = result_point + p;
-
     return AffinePoint::from(result_point).get_u().to_bytes();
 }
 
@@ -431,8 +299,8 @@ mod tests {
     fn test_pedersen_small() {
         let input_bits: [u8; 9] = [1, 1, 1, 1, 1, 1, 1, 0, 0];
         let m = encode_test(&input_bits);
-        let h = pedersen_hash_len(&m, 9);
-        assert_eq!(pedersen_hash_len(&[254, 0], 9), h);
+        let h = pedersen_hash(&m, 9);
+        assert_eq!(pedersen_hash(&[254, 0], 9), h);
     }
 
     #[test]
@@ -447,7 +315,7 @@ mod tests {
             1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0,
         ];
         let m = encode_test(&input_bits);
-        let h = pedersen_hash_len(&m, input_bits.len() as u64);
+        let h = pedersen_hash(&m, input_bits.len() as u64);
         assert_eq!(
             h,
             [
@@ -470,7 +338,7 @@ mod tests {
             0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
         ];
         let m = encode_test(&input_bits);
-        let h = pedersen_hash_len(&m, input_bits.len() as u64);
+        let h = pedersen_hash(&m, input_bits.len() as u64);
         assert_eq!(
             h,
             [
@@ -510,7 +378,7 @@ mod tests {
             1, 1,
         ];
         let m2 = encode_test(&inp2);
-        let h2 = pedersen_hash_len(&m2, inp2.len() as u64);
+        let h2 = pedersen_hash(&m2, inp2.len() as u64);
         assert_eq!(
             h2,
             [
@@ -556,7 +424,7 @@ mod tests {
             0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0,
         ];
         let m3 = encode_test(&inp3);
-        let h3 = pedersen_hash_len(&m3, inp3.len() as u64);
+        let h3 = pedersen_hash(&m3, inp3.len() as u64);
         assert_eq!(
             h3,
             [
