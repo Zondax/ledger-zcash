@@ -134,14 +134,128 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
     return tmp;
 }
 
+//assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
+fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
+    let points = [
+        [
+            0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
+            0x47, 0xf9, 0x5e, 0xdc, 0x7e, 0x83, 0x6b, 0x16, 0xc9, 0x79, 0x57, 0x1b, 0x52, 0xd3,
+            0xa2, 0x87, 0x9e, 0xa8,
+        ],
+        [
+            0x91, 0x18, 0xbf, 0x4e, 0x3c, 0xc5, 0x0d, 0x7b, 0xe8, 0xd3, 0xfa, 0x98, 0xeb, 0xbe,
+            0x3a, 0x1f, 0x25, 0xd9, 0x01, 0xc0, 0x42, 0x11, 0x89, 0xf7, 0x33, 0xfe, 0x43, 0x5b,
+            0x7f, 0x8c, 0x5d, 0x01,
+        ],
+        [
+            0x57, 0xd4, 0x93, 0x97, 0x2c, 0x50, 0xed, 0x80, 0x98, 0xb4, 0x84, 0x17, 0x7f, 0x2a,
+            0xb2, 0x8b, 0x53, 0xe8, 0x8c, 0x8e, 0x6c, 0xa4, 0x00, 0xe0, 0x9e, 0xee, 0x4e, 0xd2,
+            0x00, 0x15, 0x2e, 0xb6,
+        ],
+        [
+            0xe9, 0x70, 0x35, 0xa3, 0xec, 0x4b, 0x71, 0x84, 0x85, 0x6a, 0x1f, 0xa1, 0xa1, 0xaf,
+            0x03, 0x51, 0xb7, 0x47, 0xd9, 0xd8, 0xcb, 0x0a, 0x07, 0x91, 0xd8, 0xca, 0x56, 0x4b,
+            0x0c, 0xe4, 0x7e, 0x2f,
+        ],
+    ];
+
+    let mut i = 0;
+    let mut counter: usize = 1;
+    let mut pointcounter: usize = 0;
+    let maxcounter: usize = 63;
+    let mut remainingbits = bitsize;
+
+    let mut x: u64 = 0;
+    let mut bits: u8 = 0;
+
+    //handle first u8 different as only 6 bits are possibly set
+    //todo: here we assume 6 LSB of M[0] are possibly set, depends on encoding!
+
+    let mut acc = Fr::zero();
+    let mut cur = Fr::one();
+    let mut tmp = Fr::zero();
+    let mut result_point = ExtendedPoint::identity();
+
+    let mut rem: u64 = 0;
+    let mut el: u64 = 0;
+
+    let mut k = 1;
+
+    while i < m.len() {
+        x = 0;
+        rem = if i + 6 <= m.len() {
+            6
+        } else {
+            (m.len() - i) as u64
+        };
+        x += m[i] as u64;
+        i += 1;
+        let mut j = 1;
+        while j < rem {
+            x <<= 8;
+            x += m[i] as u64;
+            i += 1;
+            j += 1;
+        }
+        if i == m.len() {
+            //handling last bytes
+            remainingbits %= 48;
+            el = remainingbits / 3;
+            assert_eq!(el,5);
+            remainingbits %= 3;
+        } else {
+            el = 16;
+        }
+        k = 1;
+        while k < (el + 1) {
+            bits = (x >> (rem * 8 - k * 3) & 7) as u8;
+            tmp = handle_chunk(bits, &mut cur);
+            acc = acc.add(&tmp);
+
+            //extract bits from index
+            counter += 1;
+            if counter == maxcounter {
+                //add point to result_point
+                let mut str = points[pointcounter];
+                let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+                let mut p = q.multiply_bits(&acc.to_bytes());
+                result_point = result_point + p;
+
+                counter = 1;
+                pointcounter += 1;
+                acc = Fr::zero();
+                cur = Fr::one();
+            } else {
+                cur = cur.double().double().double();
+            }
+            k += 1;
+        }
+    } //change to loop
+    if remainingbits > 0 {
+        if rem * 8 < k * 3 {
+            let tr= if rem % 3 == 1{
+                3
+            }else{
+                1
+            };
+            bits = ((x & tr) << (rem % 3)) as u8;
+        } else {
+            bits = (x >> (rem * 8 - k * 3) & 7) as u8;
+        }
+        tmp = handle_chunk(bits, &mut cur);
+
+        acc = acc.add(&tmp);
+        cur = cur.double().double().double();
+    }
+    let mut str = points[pointcounter];
+    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+    let mut p = q.multiply_bits(&acc.to_bytes());
+    result_point = result_point + p;
+
+    return AffinePoint::from(result_point).get_u().to_bytes();
+}
+
 fn pedersen_hash(m: &[u8]) -> [u8; 32] {
-    /*let points = [
-        AffinePoint::from_bytes(hex::decode("ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8").expect("err").try_into().expect("err")).unwrap(),
-        AffinePoint::from_bytes(hex::decode("9118bf4e3cc50d7be8d3fa98ebbe3a1f25d901c0421189f733fe435b7f8c5d01").expect("err").try_into().expect("err")).unwrap(),
-        AffinePoint::from_bytes(hex::decode("57d493972c50ed8098b484177f2ab28b53e88c8e6ca400e09eee4ed200152eb6").expect("err").try_into().expect("err")).unwrap(),
-        AffinePoint::from_bytes(hex::decode("e97035a3ec4b7184856a1fa1a1af0351b747d9d8cb0a0791d8ca564b0ce47e2f").expect("err").try_into().expect("err")).unwrap(),
-        ];
-    */
     let points = [
         [
             0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
@@ -172,7 +286,7 @@ fn pedersen_hash(m: &[u8]) -> [u8; 32] {
         (8, 0, 0),
         (10, 3, 1),
         (13, 1, 2),
-        (16,0,0)
+        (16, 0, 0),
     ];
 
     let mut i = 0;
@@ -215,7 +329,11 @@ fn pedersen_hash(m: &[u8]) -> [u8; 32] {
     let mut x: u64 = 0;
     while i < m.len() {
         x = 0;
-        let rem: u64 = if i + 6 <= m.len() { 6 } else { (m.len() - i) as u64 };
+        let rem: u64 = if i + 6 <= m.len() {
+            6
+        } else {
+            (m.len() - i) as u64
+        };
         x += m[i] as u64;
         i += 1;
         let mut j = 1;
@@ -230,7 +348,6 @@ fn pedersen_hash(m: &[u8]) -> [u8; 32] {
         el = entry.0 as u64;
         ft = entry.1 as u64;
         tr = entry.2 as u64;
-
 
         for j in 1..(el + 1) {
             bits = (x >> (rem * 8 - j * 3) & 7) as u8;
@@ -254,53 +371,19 @@ fn pedersen_hash(m: &[u8]) -> [u8; 32] {
                 cur = cur.double().double().double();
             }
         }
-    } //change to loop
+    }
     if ft > 0 {
         bits = ((x & ft) << tr) as u8;
         tmp = handle_chunk(bits, &mut cur);
-
         acc = acc.add(&tmp);
-        cur = cur.double().double().double();
-
-        let mut str = points[pointcounter];
-        let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-        let mut p = q.multiply_bits(&acc.to_bytes());
-        result_point = result_point + p;
     }
+    let mut str = points[pointcounter];
+    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+    let mut p = q.multiply_bits(&acc.to_bytes());
+    result_point = result_point + p;
+
     return AffinePoint::from(result_point).get_u().to_bytes();
 }
-/*
-ca3c2432d4abbf7732464ec08b2e47f95edc7e836b16c979571b52d3a2879ea8
-9118bf4e3cc50d7be8d3fa98ebbe3a1f25d901c0421189f733fe435b7f8c5d01
-57d493972c50ed8098b484177f2ab28b53e88c8e6ca400e09eee4ed200152eb6
-e97035a3ec4b7184856a1fa1a1af0351b747d9d8cb0a0791d8ca564b0ce47e2f
-ef8a65c3998296994cd1595809d8b9b3e5c90614383278390a9dab0321c54bc9
-9a628d9f11826043a7136bc6d20002a8286a130a07b1cd64e5b6bfe88946ece4
-5685df0a659f3d07fc2393791839a4e549b057d93c5083cfa64542e0f2566de1
-1451d527e6cf3f90302f17432af0e322b1e28907f7ada9b4d8b8ca86e63e4c26
-
-
-fn encode_chunk():
-(s0, s1, s2) = mj
-return (1 - 2*s2) * (1 + s0 + 2*s1)
-
-def encode_segment(Mi):
-ki = len(Mi) // 3
-Michunks = [Mi[i:i+3] for i in range(0, len(Mi), 3)]
-assert len(Michunks) == ki
-return Fr(sum([encode_chunk(Michunks[j-1]) * 2**(4*(j-1)) for j in range(1, ki + 1)]))
-
-c = 63
-
-def pedersen_hash_to_point(D, M):
-# Pad M to a multiple of 3 bits
-Mdash = M + [0] * ((-len(M)) % 3)
-assert (len(Mdash) // 3) * 3 == len(Mdash)
-n = cldiv(len(Mdash), 3 * c)
-Msegs = [Mdash[i:i+(3*c)] for i in range(0, len(Mdash), 3*c)]
-assert len(Msegs) == n
-return sum([I_D_i(D, i) * encode_segment(Msegs[i-1]) for i in range(1, n + 1)], Point.ZERO)
-*/
 
 #[cfg(test)]
 mod tests {
@@ -323,8 +406,10 @@ mod tests {
         ];
         //let m = [63, 255,255,255, 255,255,255, 255,255,255, 255,255,255, 255,255,255
         //    , 255,255,255, 255,255,255,255,255];
-        let m = [63,1];
+        let m = [63, 1];
         assert_eq!(pedersen_hash(&m), h8);
+        let m1 = [252,0];
+        assert_eq!(pedersen_hash_len(&m1, 16), h8);
     }
 
     #[test]
