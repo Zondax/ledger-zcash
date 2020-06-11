@@ -1,4 +1,4 @@
-#![no_std]
+//#![no_std]
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
@@ -157,19 +157,22 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
             0x03, 0x51, 0xb7, 0x47, 0xd9, 0xd8, 0xcb, 0x0a, 0x07, 0x91, 0xd8, 0xca, 0x56, 0x4b,
             0x0c, 0xe4, 0x7e, 0x2f,
         ],
+        [
+            0xef, 0x8a, 0x65, 0xc3, 0x99, 0x82, 0x96, 0x99, 0x4c, 0xd1, 0x59, 0x58, 0x09, 0xd8, 0xb9, 0xb3, 0xe5, 0xc9, 0x06, 0x14, 0x38, 0x32, 0x78, 0x39, 0x0a, 0x9d, 0xab, 0x03, 0x21, 0xc5, 0x4b, 0xc9
+        ],
+        [
+            0x9a, 0x62, 0x8d, 0x9f, 0x11, 0x82, 0x60, 0x43, 0xa7, 0x13, 0x6b, 0xc6, 0xd2, 0x00, 0x02, 0xa8, 0x28, 0x6a, 0x13, 0x0a, 0x07, 0xb1, 0xcd, 0x64, 0xe5, 0xb6, 0xbf, 0xe8, 0x89, 0x46, 0xec, 0xe4
+        ],
     ];
 
     let mut i = 0;
-    let mut counter: usize = 1;
+    let mut counter: usize = 0;
     let mut pointcounter: usize = 0;
     let maxcounter: usize = 63;
     let mut remainingbits = bitsize;
 
     let mut x: u64 = 0;
     let mut bits: u8 = 0;
-
-    //handle first u8 different as only 6 bits are possibly set
-    //todo: here we assume 6 LSB of M[0] are possibly set, depends on encoding!
 
     let mut acc = Fr::zero();
     let mut cur = Fr::one();
@@ -180,7 +183,6 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
     let mut el: u64 = 0;
 
     let mut k = 1;
-
     while i < m.len() {
         x = 0;
         rem = if i + 6 <= m.len() {
@@ -201,7 +203,6 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
             //handling last bytes
             remainingbits %= 48;
             el = remainingbits / 3;
-            assert_eq!(el,5);
             remainingbits %= 3;
         } else {
             el = 16;
@@ -221,7 +222,7 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
                 let mut p = q.multiply_bits(&acc.to_bytes());
                 result_point = result_point + p;
 
-                counter = 1;
+                counter = 0;
                 pointcounter += 1;
                 acc = Fr::zero();
                 cur = Fr::one();
@@ -246,12 +247,15 @@ fn pedersen_hash_len(m: &[u8], bitsize: u64) -> [u8; 32] {
 
         acc = acc.add(&tmp);
         cur = cur.double().double().double();
+        counter += 1;
     }
-    let mut str = points[pointcounter];
-    let q = AffinePoint::from_bytes(str).unwrap().to_niels();
-    let mut p = q.multiply_bits(&acc.to_bytes());
-    result_point = result_point + p;
-
+    if counter > 0 {
+        let mut str = points[pointcounter];
+        let q = AffinePoint::from_bytes(str).unwrap().to_niels();
+        let mut p = q.multiply_bits(&acc.to_bytes());
+        result_point = result_point + p;
+    }
+   // assert_eq!(pointcounter,0);
     return AffinePoint::from(result_point).get_u().to_bytes();
 }
 
@@ -386,8 +390,41 @@ fn pedersen_hash(m: &[u8]) -> [u8; 32] {
 }
 
 #[cfg(test)]
+fn encode_test(v: &[u8]) -> Vec<u8>{
+    let n = if v.len() % 8 > 0 {
+        1 + v.len() / 8
+    }else{
+        v.len() / 8
+    };
+    let mut result: Vec<u8> = std::vec::Vec::new();
+    let mut i = 0;
+    while i < n {
+        result.push(0);
+        for j in 0..8 {
+            let s = if i*8 +j < v.len() {
+                v[i*8 + j]
+            }else{
+                0
+            };
+            result[i] += s;
+            if j < 7 {
+                result[i] <<= 1;
+            }
+        }
+        i+=1;
+    }
+    result
+}
+#[cfg(test)]
 mod tests {
     use crate::*;
+    use hex::encode;
+
+    #[test]
+    fn test_encode_test(){
+        let f1: [u8;9] = [0,0,0,0,0,0,0,1,1];
+        assert_eq!(encode_test(&f1).as_slice(), &[1,128]);
+    }
 
     #[test]
     fn test_handlechunk() {
@@ -407,9 +444,88 @@ mod tests {
         //let m = [63, 255,255,255, 255,255,255, 255,255,255, 255,255,255, 255,255,255
         //    , 255,255,255, 255,255,255,255,255];
         let m = [63, 1];
-        assert_eq!(pedersen_hash(&m), h8);
-        let m1 = [252,0];
-        assert_eq!(pedersen_hash_len(&m1, 16), h8);
+    //    assert_eq!(pedersen_hash(&m), h8);
+        let m1 = [0];
+      //  assert_eq!(pedersen_hash_len(&m1, 6), h8);
+        let input_bits: [u8;6] = [0, 0, 0, 0, 0, 0];
+    }
+
+    #[test]
+    fn test_pedersen_small() {
+        let input_bits: [u8;9] = [1, 1, 1, 1, 1, 1, 1, 0, 0];
+        let m = encode_test(&input_bits);
+        let h = pedersen_hash_len(&m,9);
+        assert_eq!(pedersen_hash_len(&[254,0],9),h);
+
+    }
+
+    #[test]
+    fn test_pedersen_onechunk() {
+        let input_bits :[u8;189] = [
+            1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0,
+            0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0,
+            1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1,
+            1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+            0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0,
+            1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, ];
+        let m = encode_test(&input_bits);
+        let h = pedersen_hash_len(&m,input_bits.len() as u64);
+       assert_eq!(h,[
+           0xdd, 0xf5, 0x21, 0xad, 0xc3, 0xa5, 0x97, 0xf5, 0xcf, 0x72, 0x29, 0xff, 0x02, 0xcf, 0xed, 0x7e, 0x94, 0x9f, 0x01, 0xb6, 0x1d, 0xf3, 0xe1, 0xdc, 0xdf, 0xf5, 0x20, 0x76, 0x31, 0x10, 0xa5, 0x2d        ]);
+    }
+
+    #[test]
+    fn test_pedersen_big(){
+        let input_bits: [u8;190] = [
+            1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+            0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0,
+            1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0,
+            0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+            0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1
+
+        ];
+        let m = encode_test(&input_bits);
+        let h = pedersen_hash_len(&m,input_bits.len() as u64);
+        assert_eq!(h,[
+            0x40, 0x0c, 0xf2, 0x1e, 0xeb, 0x6f, 0x8e, 0x59, 0x4a, 0x0e, 0xcd, 0x2b, 0x7f, 0x7a, 0x68, 0x46, 0x34, 0xd9, 0x6e, 0xdf, 0x51, 0xfb, 0x3d, 0x19, 0x2d, 0x99, 0x40, 0xe6, 0xc7, 0x47, 0x12, 0x60        ]);
+
+
+        let inp2 : [u8;756] = [
+            1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+            0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0,
+            1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1,
+            0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0,
+            1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1,
+            1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1,
+            0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1,
+            1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0,
+            1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0,
+            0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0,
+            1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0,
+            1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+            0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0,
+            1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0,
+            0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1,
+            1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0,
+            0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1,
+            0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0,
+            1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1,
+            0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1,
+            1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1,
+            1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1,
+            0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0,
+            0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0,
+            1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1,
+            1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1
+        ];
+        let m2 = encode_test(&inp2);
+        let h2 = pedersen_hash_len(&m2,inp2.len() as u64);
+        assert_eq!(h2,[
+           0x27, 0xae, 0xf2, 0xe8, 0xeb, 0xed, 0xad, 0x19, 0x39, 0x37, 0x9f, 0x4f, 0x44, 0x7e, 0xfb, 0xd9, 0x25, 0x5a, 0x87, 0x4c, 0x70, 0x08, 0x81, 0x6a, 0x80, 0xd8, 0xf2, 0xb1, 0xec, 0x92, 0x41, 0x31        ]);
     }
 
     #[test]
