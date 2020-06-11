@@ -136,6 +136,7 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
+    //todo: store this in flash
     let points = [
         [
             0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
@@ -185,6 +186,7 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
     let mut k = 1;
     while i < m.len() {
         x = 0;
+        //take 6 bytes = 48 bits or less, depending on remaining length
         rem = if i + 6 <= m.len() {
             6
         } else {
@@ -193,6 +195,7 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
         x += m[i] as u64;
         i += 1;
         let mut j = 1;
+        //fill x with bytes
         while j < rem {
             x <<= 8;
             x += m[i] as u64;
@@ -214,10 +217,9 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
             let tmp = handle_chunk(bits, &mut cur);
             acc = acc.add(&tmp);
 
-            //extract bits from index
             counter += 1;
+            //check if we need to move to the next curvepoint
             if counter == maxcounter {
-                //add point to result_point
                 let str = points[pointcounter];
                 let q = AffinePoint::from_bytes(str).unwrap().to_niels();
                 let p = q.multiply_bits(&acc.to_bytes());
@@ -232,7 +234,8 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
             }
             k += 1;
         }
-    } //change to loop
+    }
+    //handle remaining bits if there are any
     if remainingbits > 0 {
         let bits: u8;
         if rem * 8 < k * 3 {
@@ -245,6 +248,7 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
         acc = acc.add(&tmp);
         counter += 1;
     }
+    //multiply with curve point if needed
     if counter > 0 {
         let str = points[pointcounter];
         let q = AffinePoint::from_bytes(str).unwrap().to_niels();
