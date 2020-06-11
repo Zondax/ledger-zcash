@@ -1,4 +1,4 @@
-//#![no_std]
+#![no_std]
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
@@ -18,16 +18,193 @@ use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 
-extern crate hex;
-
-/*#[cfg(not(test))]
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
-}*/
+}
 
-use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf};
-use subtle::ConditionallySelectable; //TODO: replace me with no-std version
+#[inline(always)]
+pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
+    bolos::blake2b_expand_seed(sk, t)
+}
+
+fn sapling_derive_dummy_ask(sk_in: &[u8]) -> [u8; 32] {
+    let t = prf_expand(&sk_in, &[0x00]);
+    let ask = Fr::from_bytes_wide(&t);
+    ask.to_bytes()
+}
+
+fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> [u8; 32] {
+    let t = prf_expand(&sk_in, &[0x01]);
+    let nsk = Fr::from_bytes_wide(&t);
+    nsk.to_bytes()
+}
+
+fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
+    let ak = constants::SPENDING_KEY_BASE.multiply_bits(&ask);
+    AffinePoint::from(ak).to_bytes()
+}
+
+fn sapling_nsk_to_nk(nsk: &[u8; 32]) -> [u8; 32] {
+    let nk = constants::PROVING_KEY_BASE.multiply_bits(&nsk);
+    AffinePoint::from(nk).to_bytes()
+}
+
+fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
+    pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk"; //move to constants
+
+    // blake2s CRH_IVK_PERSONALIZATION || ak || nk
+    let h = Blake2sParams::new()
+        .hash_length(32)
+        .personal(CRH_IVK_PERSONALIZATION)
+        .to_state()
+        .update(ak)
+        .update(nk)
+        .finalize();
+
+    let mut x: [u8; 32] = *h.as_array();
+    x[31] &= 0b0000_0111; //check this
+    x
+}
+
+#[inline(never)]
+fn group_hash_check(hash: &[u8; 32]) -> bool {
+    let u = AffinePoint::from_bytes(*hash);
+    if u.is_some().unwrap_u8() == 1 {
+        let v = u.unwrap();
+        let q = v.mul_by_cofactor();
+        let i = ExtendedPoint::identity();
+        return q != i;
+    }
+
+    false
+}
+
+#[inline(never)]
+fn diversifier_group_hash_light(tag: &[u8]) -> bool {
+    let x = bolos::blake2s_diversification(tag);
+
+    //    diversifier_group_hash_check(&x)
+
+    let u = AffinePoint::from_bytes(x);
+    if u.is_some().unwrap_u8() == 1 {
+        let v = u.unwrap();
+        let q = v.mul_by_cofactor();
+        let i = ExtendedPoint::identity();
+        return q != i;
+    }
+
+    false
+}
+
+#[inline(never)]
+fn default_diversifier(sk: &[u8; 32]) -> [u8; 11] {
+    //fixme: replace blake2b with aes
+    let mut c: [u8; 2] = [0x03, 0x0];
+
+    // blake2b sk || 0x03 || c
+    loop {
+        let x = prf_expand(sk, &c);
+        if diversifier_group_hash_light(&x[0..11]) {
+            let mut result = [0u8; 11];
+            result.copy_from_slice(&x[..11]);
+            return result;
+        }
+        c[1] += 1;
+    }
+}
+
+#[inline(never)]
+fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
+    let h = bolos::blake2s_diversification(d);
+
+    let v = AffinePoint::from_bytes(h).unwrap();
+    let q = v.mul_by_cofactor();
+    let t = AffinePoint::from(q);
+    t.to_bytes()
+}
+
+#[inline(never)]
+fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
+    let h = bolos::blake2s_diversification(d);
+
+    let v = AffinePoint::from_bytes(h).unwrap();
+    let y = v.mul_by_cofactor();
+
+    // FIXME: We should avoid asserts in ledger code
+    //assert_eq!(x.is_some().unwrap_u8(), 1);
+
+    let v = y.to_niels().multiply_bits(ivk);
+    let t = AffinePoint::from(v);
+    t.to_bytes()
+}
+
+#[no_mangle]
+pub extern "C" fn get_ak(sk_ptr: *mut u8, ak_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let ak: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(ak_ptr) };
+    let ask = sapling_derive_dummy_ask(sk);
+    let tmp_ak = sapling_ask_to_ak(&ask);
+    ak.copy_from_slice(&tmp_ak)
+}
+
+#[no_mangle]
+pub extern "C" fn get_nk(sk_ptr: *mut u8, nk_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let nk: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(nk_ptr) };
+    let nsk = sapling_derive_dummy_nsk(sk);
+    let tmp_nk = sapling_nsk_to_nk(&nsk);
+    nk.copy_from_slice(&tmp_nk)
+}
+
+#[no_mangle]
+pub extern "C" fn get_ivk(ak_ptr: *mut u8, nk_ptr: *mut u8, ivk_ptr: *mut u8) {
+    let ak: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(ak_ptr) };
+    let nk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(nk_ptr) };
+    let ivk: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(ivk_ptr) };
+
+    let tmp_ivk = aknk_to_ivk(&ak, &nk);
+    ivk.copy_from_slice(&tmp_ivk)
+}
+
+#[no_mangle]
+pub extern "C" fn get_diversifier(sk_ptr: *mut u8, diversifier_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let diversifier: &mut [u8; 11] =
+        unsafe { mem::transmute::<*const u8, &mut [u8; 11]>(diversifier_ptr) };
+    let d = default_diversifier(sk);
+    diversifier.copy_from_slice(&d)
+}
+
+#[no_mangle]
+pub extern "C" fn get_pkd(ivk_ptr: *mut u8, diversifier_ptr: *mut u8, pkd_ptr: *mut u8) {
+    let ivk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(ivk_ptr) };
+    let diversifier: &[u8; 11] = unsafe { mem::transmute::<*const u8, &[u8; 11]>(diversifier_ptr) };
+    let pkd: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(pkd_ptr) };
+
+    let tmp_pkd = default_pkd(&ivk, &diversifier);
+    pkd.copy_from_slice(&tmp_pkd)
+}
+
+//fixme
+//fixme: we need to add a prefix to exported functions.. as there are no namespaces in C :(
+//get seed from the ledger
+#[no_mangle]
+pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *mut u8) {
+    let sk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(sk_ptr) };
+    let ivk: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(ivk_ptr) };
+    let address: &mut [u8; 43] = unsafe { mem::transmute::<*const u8, &mut [u8; 43]>(address_ptr) };
+
+    let div = default_diversifier(sk);
+    let pkd = default_pkd(&ivk, &div);
+
+    address[..11].copy_from_slice(&div);
+    address[11..].copy_from_slice(&pkd);
+}
+
+//use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf};
+//use subtle::ConditionallySelectable; //TODO: replace me with no-std version
 
 const COMPACT_NOTE_SIZE: usize = (
     1  + // version
@@ -83,16 +260,7 @@ fn prf_ock(ovk: [u8; 32], cv: [u8; 32], cmu: [u8; 32], epk: [u8; 32]) -> [u8; 32
     bolos::blake2b_prf_ock(&ock_input)
 }
 
-#[inline(never)]
-fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
-    let h = bolos::blake2s_diversification(d);
-
-    let v = AffinePoint::from_bytes(h).unwrap();
-    let q = v.mul_by_cofactor();
-    let t = AffinePoint::from(q);
-    t.to_bytes()
-}
-
+/*
 fn chacha_encryptnote(
     key: [u8; 32],
     plaintext: [u8; NOTE_PLAINTEXT_SIZE],
@@ -114,7 +282,7 @@ fn chacha_decryptnote(
         .unwrap();
     plaintext
 }
-
+*/
 fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
     let c = bits & 1;
     let b = bits & 2;
@@ -280,11 +448,23 @@ fn encode_test(v: &[u8]) -> Vec<u8> {
     }
     result
 }
+
+//assume that encoding of bits is done before this
+//todo: encode length?
+#[no_mangle]
+pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
+    let input_msg: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(input_ptr) };
+    let output_msg: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
+
+    let h = pedersen_hash(input_msg.as_ref(),21);
+
+    output_msg.copy_from_slice(&h);
+}
+
+
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use hex::encode;
-
     #[test]
     fn test_encode_test() {
         let f1: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 1, 1];
@@ -436,7 +616,7 @@ mod tests {
             ]
         );
     }
-
+/*
     #[test]
     fn test_sharedsecret() {
         let esk: [u8; 32] = [
@@ -622,4 +802,5 @@ mod tests {
 
         assert_eq!(prf_ock(ovk, cv, cmu, epk), ock);
     }
+    */
 }

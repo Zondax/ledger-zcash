@@ -10,11 +10,11 @@
 #define CTX_EXPAND_SEED_LEN 16
 #define CTX_EXPAND_SEED_HASH_LEN 64
 
-#define CTX_KDF_SAPLING "Zcash_SaplingKDF";
+#define CTX_KDF_SAPLING "Zcash_SaplingKDF"
 #define CTX_KDF_SAPLING_LEN 16
 #define CTX_KDF_SAPLING_HASH_LEN 32
 
-#define CTX_PRF_OCK "Zcash_SaplingKDF";
+#define CTX_PRF_OCK "Zcash_SaplingKDF"
 #define CTX_PRF_OCK_LEN 16
 #define CTX_PRF_OCK_HASH_LEN 32
 

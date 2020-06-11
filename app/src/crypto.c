@@ -294,6 +294,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             MEMZERO(tmp.step2.nk, sizeof_field(tmp_sampling_s, step2.nk));
 
             get_pkd(tmp.step2.ivk, out->diversifier, out->pkd);
+
             MEMZERO(tmp.step2.ivk, sizeof_field(tmp_sampling_s, step2.ivk));
         }
         FINALLY
