@@ -1,4 +1,6 @@
 #include <inttypes.h>
+#include <zxmacros.h>
+#include <zxformat.h>
 #include "os.h"
 #include "cx.h"
 
@@ -28,6 +30,10 @@ void zcash_blake2b_hash_two(
     cx_blake2b_init2(&zcashHashBlake2b, 8 * out_len, NULL, 0, (uint8_t *) perso, perso_len);
     cx_hash(&zcashHashBlake2b.header, 0, a, a_len, NULL, 0);
     cx_hash(&zcashHashBlake2b.header, CX_LAST, b, b_len, out, out_len);
+}
+
+uint16_t fp_uint64_to_str(char *out, uint16_t outLen, const uint64_t value, uint8_t decimals) {
+    return fpuint64_to_str(out, outLen, value, decimals);
 }
 
 // Replace functions affected by non-constant time opcodes

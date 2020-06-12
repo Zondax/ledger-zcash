@@ -1,11 +1,10 @@
 #![allow(non_snake_case)]
 
-use bs58::decode::Error;
 use core::fmt::{self, Write};
-use nom::error::ParseError;
 
 use crate::parser::ParserError;
-
+use bs58::decode::Error;
+use nom::error::ParseError;
 pub const MAX_NUM_STR_BUFF_LEN: usize = 30;
 
 pub struct Writer<'a> {
@@ -43,7 +42,7 @@ macro_rules! num_to_str {
                 return Err(ParserError::parser_unexpected_buffer_end);
             }
             let mut writer = Writer::new(output);
-            let _ = write!(writer, "{}", number)
+            core::write!(writer, "{}", number)
                 .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
             Ok(writer.offset)
         }
@@ -107,17 +106,19 @@ pub(crate) fn fpstr_to_str(
     // or the input value
     if decimals == 0 {
         if in_len == 0 {
-            return write!(&mut writer, "{}", 0)
+            return writer
+                .write_char('0')
                 .map(|_| 1)
                 .map_err(|_| ParserError::parser_unexpected_buffer_end);
         }
-        return write!(&mut writer, "{}", str)
+        return writer
+            .write_str(str)
             .map(|_| writer.offset)
             .map_err(|_| ParserError::parser_unexpected_buffer_end);
     }
 
     if in_len <= decimals as usize {
-        if str.starts_with("-") {
+        if str.starts_with('-') {
             // we need to remove the sign before continuing
             let remainder = str
                 .get(1..)

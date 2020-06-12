@@ -8,28 +8,6 @@ use crate::parser::{
     tx_output::TxOutput,
 };
 
-type TxCell<T> = UnsafeCell<Option<T>>;
-
-struct TxHandler<'a>(TxCell<Transaction<'a>>);
-
-const TX_INIT: TxCell<Transaction> = UnsafeCell::new(None);
-
-// This is the rust version of the parser_context_t..?
-// the handler is a parsed raw transaction
-static TRANSACTION: TxHandler = TxHandler(TX_INIT);
-
-impl<'a> TxHandler<'a> {
-    fn get(&self) -> Option<&Transaction> {
-        unsafe { (*self.0.get()).as_ref() }
-    }
-
-    fn replace(&'a self, tx: Transaction<'a>) {
-        unsafe {(*self.0.get()).replace(tx); }
-    }
-}
-
-unsafe impl<'a> Sync for TxHandler<'a> {}
-
 #[repr(C)]
 #[no_mangle]
 pub struct parser_context_t {
@@ -41,7 +19,8 @@ pub struct parser_context_t {
 #[repr(C)]
 #[no_mangle]
 pub struct parse_tx_t {
-    method: u64,
+    state: *mut u8,
+    len: u16,
 }
 
 #[no_mangle]
@@ -49,8 +28,17 @@ pub extern "C" fn _parser_init(
     ctx: *mut parser_context_t,
     buffer: *const u8,
     bufferSize: u16,
+    alloc_size: *mut u16,
 ) -> u32 {
-    parser_init_context(ctx, buffer, bufferSize).into_c()
+    // Lets the caller know how much memory we need for allocating
+    // our global state
+    if alloc_size.is_null() {
+        return ParserError::parser_no_memory_for_state as u32;
+    }
+    unsafe {
+        *alloc_size = core::mem::size_of::<Transaction>() as u16;
+    }
+    parser_init_context(ctx, buffer, bufferSize) as u32
 }
 
 fn parser_init_context(
@@ -62,7 +50,6 @@ fn parser_init_context(
         (*ctx).offset = 0;
 
         if bufferSize == 0 || buffer.is_null() {
-            // Not available, use defaults
             (*ctx).buffer = core::ptr::null_mut();
             (*ctx).bufferLen = 0;
             return ParserError::parser_init_context_empty;
@@ -75,34 +62,43 @@ fn parser_init_context(
 }
 
 #[no_mangle]
-pub extern "C" fn _read(context: *const parser_context_t, _tx_t: *mut parse_tx_t) -> u32 {
-    let slice = unsafe {
+pub extern "C" fn _read(context: *const parser_context_t, parser_state: *mut parse_tx_t) -> u32 {
+    unsafe {
         let data = core::slice::from_raw_parts((*context).buffer, (*context).bufferLen as _);
-        core::mem::transmute::<&[u8], &'static [u8]>(data)
-    };
-    // Parsing bytes to transaction occurs here
-    match Transaction::from_bytes(slice) {
-        Ok(transaction) => {
-            TRANSACTION.replace(transaction);
-            ParserError::parser_ok.into_c()
+        match Transaction::from_bytes(data) {
+            Ok(transaction) => {
+                if parser_state.is_null()
+                    || (*parser_state).state.is_null()
+                    || (*parser_state).len < core::mem::size_of::<Transaction>() as _
+                {
+                    return ParserError::parser_no_memory_for_state as u32;
+                }
+                let tx = &transaction as *const _ as *const u8;
+                core::ptr::copy_nonoverlapping(tx, (*parser_state).state, (*parser_state).len as _);
+                ParserError::parser_ok as u32
+            }
+            Err(e) => e as u32,
         }
-        Err(e) => e.into_c(),
     }
 }
 
 #[no_mangle]
 pub extern "C" fn _validate(_ctx: *const parser_context_t, _tx_t: *const parse_tx_t) -> u32 {
     // TODO
-    ParserError::parser_ok.into_c()
+    ParserError::parser_ok as u32
 }
 
 #[no_mangle]
-pub extern "C" fn _getNumItems(_ctx: *const parser_context_t, _tx_t: *const parse_tx_t) -> u8 {
-    // TODO this can not be changed if so, some tests fail
-    if let Some(tx) = TRANSACTION.get() {
-        return tx.num_items() as _;
+pub extern "C" fn _getNumItems(_ctx: *const parser_context_t, tx_t: *const parse_tx_t) -> u8 {
+    unsafe {
+        if tx_t.is_null() || (*tx_t).state.is_null() {
+            return 0;
+        }
+        if let Some(tx) = ((*tx_t).state as *const Transaction).as_ref() {
+            return tx.num_items() as u8;
+        }
+        return 0;
     }
-    0
 }
 
 #[no_mangle]
@@ -115,22 +111,24 @@ pub extern "C" fn _getItem(
     outValueLen: u16,
     pageIdx: u8,
     pageCount: *mut u8,
+    tx_t: *const parse_tx_t,
 ) -> u32 {
     unsafe {
         *pageCount = 0u8;
         let key = core::slice::from_raw_parts_mut(outKey as *mut u8, outKeyLen as usize);
         let value = core::slice::from_raw_parts_mut(outValue as *mut u8, outValueLen as usize);
-        if let Some(tx) = TRANSACTION.get() {
-            match tx.get_item(displayIdx, key, value, pageIdx) {
+        if tx_t.is_null() || (*tx_t).state.is_null() {
+            return ParserError::parser_context_mismatch as _;
+        }
+        if let Some(tx) = ((*tx_t).state as *const Transaction).as_ref() {
+            return match tx.get_item(displayIdx, key, value, pageIdx) {
                 Ok(page) => {
                     *pageCount = page;
-                    return ParserError::parser_ok.into_c();
+                    ParserError::parser_ok as _
                 }
-                Err(e) => {
-                    return e.into_c();
-                }
-            }
+                Err(e) => e as _,
+            };
         }
-        ParserError::parser_context_mismatch.into_c()
+        ParserError::parser_context_mismatch as _
     }
 }

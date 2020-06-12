@@ -30,8 +30,7 @@ pub const MAX_SCRIPT_SIG_LEN: usize = 253;
 /// he max length for the scriptPubKey
 pub const MAX_SCRIPT_PUB_KEY_LEN: usize = 253;
 
-#[repr(C)]
-#[no_mangle]
+#[repr(u32)]
 #[derive(Copy, Clone, Debug)]
 /// ParserError is the counterpart of
 /// the parse_error_t in c,
@@ -45,14 +44,13 @@ pub enum ParserError {
     parser_display_idx_out_of_range,
     parser_display_page_out_of_range,
     parser_unexpected_error,
+    parser_no_memory_for_state,
     // Context related errors
     parser_context_mismatch,
     parser_context_unexpected_size,
     parser_context_invalid_chars,
     parser_context_unknown_prefix,
     // Required fields
-    parser_required_nonce,
-    parser_required_method,
     ////////////////////////
     // Coin specific
     parser_invalid_output_script,
@@ -65,12 +63,6 @@ pub enum ParserError {
     parser_unexpected_field,
     parser_value_out_of_range,
     parser_invalid_address,
-}
-
-impl ParserError {
-    pub(crate) fn into_c(self) -> u32 {
-        unsafe { core::mem::transmute::<Self, u32>(self) }
-    }
 }
 
 impl From<ErrorKind> for ParserError {

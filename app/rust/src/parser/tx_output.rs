@@ -21,6 +21,10 @@ const MAX_DECIMAL_BUFF_LEN: usize = 70;
 // P2SH, P2WPKH, P2WSH
 const MAX_ADDRESS_BUFFER_LEN: usize = 40;
 
+extern "C" {
+    fn fp_uint64_to_str(out: *mut i8, outLen: u16, value: u64, decimals: u8) -> u16;
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 // A transaction output
@@ -36,7 +40,6 @@ pub struct Script<'a> {
     script_type: OutputScriptType,
 }
 
-#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Address {
     addr: [u8; MAX_ADDRESS_BUFFER_LEN],
@@ -90,7 +93,6 @@ impl<'a> Script<'a> {
         Ok(Self { data, script_type })
     }
 
-    // https://bitcoin.stackexchange.com/questions/73758/what-are-the-standard-formats-of-transaction-outputs
     pub fn script_type(&self) -> OutputScriptType {
         self.script_type
     }
@@ -144,11 +146,28 @@ impl<'a> TxOutput<'a> {
         self.script.destination()
     }
 
-    pub fn value_in_btc(&self) -> Result<[u8; MAX_DECIMAL_BUFF_LEN], ParserError> {
-        let mut output = [0u8; MAX_DECIMAL_BUFF_LEN];
-        crate::zxformat::fpu64_to_str(output.as_mut(), self.value, MAX_DECIMAL_PLACES as _)
-            .map_err(|_| ParserError::parser_value_out_of_range)?;
-        Ok(output)
+    //zxformat::pageString(out_value, amount_buffer[..written].as_mut(), page_idx)?
+    //#[cfg(not(test))]
+    pub fn value_in_btc(
+        &self,
+    ) -> Result<(usize, [u8; crate::zxformat::MAX_NUM_STR_BUFF_LEN]), ParserError> {
+        let mut output = [0u8; crate::zxformat::MAX_NUM_STR_BUFF_LEN];
+        if cfg!(test) {
+            let written =
+                crate::zxformat::fpu64_to_str(output.as_mut(), self.value, MAX_DECIMAL_PLACES as _)
+                    .map_err(|_| ParserError::parser_value_out_of_range)?;
+            Ok((written, output))
+        } else {
+            unsafe {
+                let written = fp_uint64_to_str(
+                    output.as_mut_ptr() as _,
+                    output.len() as _,
+                    self.value as _,
+                    MAX_DECIMAL_PLACES as _,
+                );
+                Ok((written as usize, output))
+            }
+        }
     }
 
     fn script_type(&self) -> OutputScriptType {
