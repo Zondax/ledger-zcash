@@ -25,7 +25,7 @@ extern "C" {
 #include "hexutils.h"
 #include "crypto.h"
 
-extern parser_tx_t parser_tx_obj;
+extern parser_tx_t parser_state;
 const char *parser_getErrorDescription(parser_error_t err);
 
 //// parses a tx buffer
@@ -45,6 +45,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
                               char *outKey, uint16_t outKeyLen,
                               char *outValue, uint16_t outValueLen,
                               uint8_t pageIdx, uint8_t *pageCount);
+
+void parser_resetState();
 
 #ifdef __cplusplus
 }

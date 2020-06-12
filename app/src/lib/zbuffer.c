@@ -46,9 +46,9 @@ zbuffer_error_e zb_allocate(uint16_t size) {
         return zb_misaligned_buffer;
     }
     _internal.size = size;
-    _internal.ptr = ((uint8_t *) app_stack_canary + size + 4);
+    _internal.ptr = (uint8_t *) (&app_stack_canary + 4);
 
-    uint32_t *zb_canary = (uint32_t *) (_internal.ptr + 4);
+    uint32_t *zb_canary = (uint32_t *) (_internal.ptr + size);
     *zb_canary = CANARY_EXPECTED;
 
     return zb_no_error;
