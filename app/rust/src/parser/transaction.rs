@@ -1,5 +1,4 @@
-use core::fmt::{self, Write};
-use core::option::Option;
+use core::fmt::{self, write, Write};
 use nom::{branch::permutation, number::complete::le_u32};
 
 use crate::parser::{
@@ -70,14 +69,14 @@ impl<'a> Transaction<'a> {
             .as_ref()
             .ok_or(ParserError::parser_unexpected_error)?;
         let page = if out_item == 0 {
-            write!(&mut writer_key, "{}", "Value")
+            writer_key
+                .write_str("Value")
                 .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
-            let amount = tx_output.value();
-            let mut amount_buffer = [0u8; zxformat::MAX_NUM_STR_BUFF_LEN];
-            let written = zxformat::fpu64_to_str(amount_buffer.as_mut(), amount, 8)?;
-            zxformat::pageString(out_value, amount_buffer[..written].as_mut(), page_idx)?
+            let (written, btc) = tx_output.value_in_btc()?;
+            zxformat::pageString(out_value, btc[..written].as_ref(), page_idx)?
         } else {
-            write!(&mut writer_key, "{}", "To")
+            writer_key
+                .write_str("To")
                 .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
             let address = tx_output.address()?;
             zxformat::pageString(out_value, address.destination(), page_idx)?
@@ -88,15 +87,14 @@ impl<'a> Transaction<'a> {
 
 impl<'a> From<TxTuple<'a>> for Transaction<'a> {
     fn from(raw: TxTuple<'a>) -> Self {
-        let tx = Self {
+        Self {
             version: raw.0,
             inputs: (raw.1).0,
             ilen: (raw.1).1 as _,
             outputs: (raw.2).0,
             olen: (raw.2).1 as _,
             locktime: raw.3,
-        };
-        tx
+        }
     }
 }
 
@@ -107,7 +105,6 @@ mod test {
     use serde_json::{Result, Value};
 
     use super::*;
-    use std::fs;
     use std::path::PathBuf;
     use std::string::String;
     use std::string::ToString;
@@ -209,7 +206,7 @@ mod test {
             r.set_extension("json");
             r
         };
-        let str = fs::read_to_string(input_path).expect("Error opening json file");
+        let str = std::fs::read_to_string(input_path).expect("Error opening json file");
         let json: TxJson = serde_json::from_str(&str).unwrap();
 
         let bytes = hex::decode(&json.raw_tx).unwrap();
