@@ -1,9 +1,4 @@
 #![allow(non_camel_case_types, non_upper_case_globals, non_snake_case)]
-
-// http://www.righto.com/2014/02/bitcoins-hard-way-using-raw-bitcoin.html
-// https://bitcoin.stackexchange.com/questions/32628/redeeming-a-raw-transaction-step-by-step-example-required
-// https://klmoney.wordpress.com/bitcoin-dissecting-transactions-part-2-building-a-transaction-by-hand/
-
 use nom::{
     branch::permutation,
     bytes::complete::take,
