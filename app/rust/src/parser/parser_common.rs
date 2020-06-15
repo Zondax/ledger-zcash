@@ -4,26 +4,18 @@ use nom::{
     bytes::complete::take,
     combinator::{iterator, map_parser},
     error::ErrorKind,
-    number::complete::{le_u32, le_u64, le_u8},
+    number::complete::le_u8,
 };
 
 use crate::parser::tx_input::{OutPoint, TxInput};
 use crate::parser::tx_output::TxOutput;
 
-/// The max length of the previous transaction id
-pub const TRANSACTION_ID_LEN: usize = 32;
-const UNSHIELDED_TX_VERSION: u32 = 0x01000000;
-pub const UNSHIELDED_TX_SEQUENCE: u32 = 0xffffffff;
 /// The max number of inputs
 /// allowed per transaction
 pub const MAX_TX_INPUTS: usize = 8;
 /// The max number of outputs
 /// allowed per transaction
 pub const MAX_TX_OUTPUTS: usize = 4;
-/// The max length for the ScriptSig
-pub const MAX_SCRIPT_SIG_LEN: usize = 253;
-/// he max length for the scriptPubKey
-pub const MAX_SCRIPT_PUB_KEY_LEN: usize = 253;
 
 #[repr(u32)]
 #[derive(Copy, Clone, Debug)]
@@ -95,9 +87,6 @@ pub enum OutputScriptType {
 }
 
 /******************************* NOM parser combinators *******************************************/
-pub fn previous_tx_id(bytes: &[u8]) -> nom::IResult<&[u8], &[u8], ParserError> {
-    take(TRANSACTION_ID_LEN)(bytes)
-}
 
 pub fn u8_with_limits(limit: u8, bytes: &[u8]) -> nom::IResult<&[u8], u8, ParserError> {
     if !bytes.is_empty() && bytes[0] <= limit {
@@ -107,42 +96,12 @@ pub fn u8_with_limits(limit: u8, bytes: &[u8]) -> nom::IResult<&[u8], u8, Parser
     }
 }
 
-fn get_outpoint(bytes: &[u8]) -> nom::IResult<&[u8], OutPoint, ParserError> {
-    let res = permutation((previous_tx_id, le_u32))(bytes)?;
-    let outpoint = OutPoint::new((res.1).1, (res.1).0);
-    Ok((res.0, outpoint))
-}
-
-fn get_input_script(bytes: &[u8]) -> nom::IResult<&[u8], &[u8], ParserError> {
-    let len = u8_with_limits(MAX_SCRIPT_SIG_LEN as _, bytes)?;
-    let res = take(len.1 as usize)(len.0)?;
-    Ok(res)
-}
-
-fn get_output_script(bytes: &[u8]) -> nom::IResult<&[u8], &[u8], ParserError> {
-    let script_len = u8_with_limits(MAX_SCRIPT_PUB_KEY_LEN as _, bytes)?;
-    let script = take(script_len.1)(script_len.0)?;
-    Ok(script)
-}
-
-fn tx_input(bytes: &[u8]) -> nom::IResult<&[u8], TxInput, ParserError> {
-    let res = permutation((get_outpoint, get_input_script, le_u32))(bytes)?;
-    let input = TxInput::new((res.1).0, (res.1).2, (res.1).1);
-    Ok((res.0, input))
-}
-
-fn tx_output(bytes: &[u8]) -> nom::IResult<&[u8], TxOutput, ParserError> {
-    let res = permutation((le_u64, get_output_script))(bytes)?;
-    let output = TxOutput::new((res.1).0, (res.1).1).map_err(|e| nom::Err::Error(e))?;
-    Ok((res.0, output))
-}
-
 pub fn get_inputs(
     bytes: &[u8],
 ) -> nom::IResult<&[u8], ([Option<TxInput>; MAX_TX_INPUTS], u8), ParserError> {
     let num_inputs = u8_with_limits(MAX_TX_INPUTS as _, bytes)?;
     let mut inputs: [Option<TxInput>; MAX_TX_INPUTS] = [None; MAX_TX_INPUTS];
-    let mut iter = iterator(num_inputs.0, tx_input);
+    let mut iter = iterator(num_inputs.0, TxInput::from_bytes);
     iter.take(num_inputs.1 as _).enumerate().for_each(|i| {
         inputs[i.0] = Some(i.1);
     });
@@ -157,7 +116,7 @@ pub fn get_outputs(
     // Not all outputs might be supported
     num_outputs.1 = 0;
     let mut outputs: [Option<TxOutput>; MAX_TX_OUTPUTS] = [None; MAX_TX_OUTPUTS];
-    let mut iter = iterator(num_outputs.0, tx_output);
+    let mut iter = iterator(num_outputs.0, TxOutput::from_bytes);
     iter.enumerate().for_each(|i| {
         outputs[i.0] = Some(i.1);
         num_outputs.1 += 1;

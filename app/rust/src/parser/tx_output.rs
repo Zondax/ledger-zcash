@@ -1,11 +1,18 @@
-use crate::parser::parser_common::{OutputScriptType, ParserError};
+use nom::{
+    branch::permutation,
+    bytes::complete::take,
+    number::complete::{be_u32, le_u32, le_u64, le_u8},
+};
+
+use crate::parser::parser_common::{u8_with_limits, OutputScriptType, ParserError};
 use bs58::encode;
-use nom::bytes::complete::take;
 
 const P2SH_LEN: usize = 23;
 const P2PKH_LEN: usize = 25;
 const P2SH_ADDRESS_HAS_LEN: usize = 20;
 const P2PKH_ADDRESS_HAS_LEN: usize = 20;
+/// he max length for the scriptPubKey
+pub const MAX_SCRIPT_PUB_KEY_LEN: usize = 253;
 
 // The max number of digits after
 // the decimal point
@@ -81,7 +88,7 @@ impl Default for Address {
 }
 
 impl<'a> Script<'a> {
-    fn new(data: &'a [u8]) -> Result<Self, ParserError> {
+    pub fn new(data: &'a [u8]) -> Result<Self, ParserError> {
         let script_type = match data {
             [0xa9, 0x14, .., 0x87] if data.len() == P2SH_LEN => OutputScriptType::p2sh,
             [0x76, 0xa9, 0x14, .., 0x88, 0xac] if data.len() == P2PKH_LEN => {
@@ -91,6 +98,13 @@ impl<'a> Script<'a> {
             _ => return Err(ParserError::parser_invalid_output_script),
         };
         Ok(Self { data, script_type })
+    }
+    pub fn from_bytes(bytes: &'a [u8]) -> nom::IResult<&[u8], Self, ParserError> {
+        let script_len = u8_with_limits(MAX_SCRIPT_PUB_KEY_LEN as _, bytes)?;
+        let script = take(script_len.1)(script_len.0)?;
+        let s = Self::new(script.1)
+            .map_err(|_| nom::Err::Error(ParserError::parser_invalid_output_script))?;
+        Ok((script.0, s))
     }
 
     pub fn script_type(&self) -> OutputScriptType {
@@ -125,13 +139,14 @@ impl<'a> Script<'a> {
 }
 
 impl<'a> TxOutput<'a> {
-    /// Creates a new output
-    ///
-    /// This method would return None if the script_pub_key
-    /// is unsupported
-    pub fn new(value: u64, script: &'a [u8]) -> Result<Self, ParserError> {
-        let script = Script::new(script)?;
-        Ok(Self { value, script })
+    /// Creates a new output from a byte array
+    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], TxOutput, ParserError> {
+        let res = permutation((le_u64, Script::from_bytes))(bytes)?;
+        let out = TxOutput {
+            value: (res.1).0,
+            script: (res.1).1,
+        };
+        Ok((res.0, out))
     }
 
     pub fn value(&self) -> u64 {
