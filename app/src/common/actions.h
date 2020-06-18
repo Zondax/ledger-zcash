@@ -22,7 +22,7 @@
 #include <os_io_seproxyhal.h>
 #include "coin.h"
 
-uint8_t app_sign();
+void app_sign();
 
 extern uint8_t action_addr_len;
 
