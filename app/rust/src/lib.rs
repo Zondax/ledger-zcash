@@ -398,7 +398,9 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
                 acc = Fr::zero();
                 cur = Fr::one();
             } else {
-                cur = cur.double().double().double();
+                cur = cur.double();
+                cur = cur.double();
+                cur = cur.double();
             }
             k += 1;
         }
@@ -455,9 +457,7 @@ fn encode_test(v: &[u8]) -> Vec<u8> {
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
     let input_msg: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
-
     let h = pedersen_hash(input_msg.as_ref(),21);
-
     output_msg.copy_from_slice(&h);
 }
 

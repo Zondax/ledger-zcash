@@ -280,9 +280,11 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
         {
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.sk);
+            CHECK_APP_CANARY();
+            do_pedersen_hash(tmp.step1.sk, out->pkd);
+            CHECK_APP_CANARY();
 
-            // TODO: ZIP 32
-
+            /*
             get_ak(tmp.step1.sk, tmp.step1.ak);
             get_nk(tmp.step1.sk, tmp.step1.nk);
             get_diversifier(tmp.step1.sk, out->diversifier);
@@ -294,7 +296,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             MEMZERO(tmp.step2.nk, sizeof_field(tmp_sampling_s, step2.nk));
 
             get_pkd(tmp.step2.ivk, out->diversifier, out->pkd);
-
+            */
             MEMZERO(tmp.step2.ivk, sizeof_field(tmp_sampling_s, step2.ivk));
         }
         FINALLY
