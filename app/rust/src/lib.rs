@@ -1,4 +1,4 @@
-#![no_std]
+//#![no_std]
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
@@ -283,6 +283,7 @@ fn chacha_decryptnote(
     plaintext
 }
 */
+//#[inline(never)]
 fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
     let c = bits & 1;
     let b = bits & 2;
@@ -303,8 +304,8 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
+//#[inline(never)]
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
-    //todo: store this in flash
     let points = [
         [
             0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
@@ -455,12 +456,11 @@ fn encode_test(v: &[u8]) -> Vec<u8> {
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-    let input_msg: &[u8; 32] = unsafe { mem::transmute::<*const u8, &[u8; 32]>(input_ptr) };
+    let input_msg: &[u8; 1] = unsafe { mem::transmute::<*const u8, &[u8; 1]>(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
-    let h = pedersen_hash(input_msg.as_ref(),21);
+    let h = pedersen_hash(input_msg.as_ref(),3);
     output_msg.copy_from_slice(&h);
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -477,6 +477,20 @@ mod tests {
         let mut cur = Fr::one();
         let tmp = handle_chunk(bits, &mut cur);
         //     assert_eq!(tmp.to_bytes(),[3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_key_small() {
+        let m: [u8; 1] = [0xb0;1];
+        assert_eq!(pedersen_hash(&m,3),[115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114, 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22]);
+    }
+
+    #[test]
+    fn test_pedersen_ledger(){
+        let m: [u8;32] = [0xb0;32];
+        let mut output = [0u8;32];
+        do_pedersen_hash(m.as_ptr(),output.as_mut_ptr());
+        assert_eq!(output,[115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114, 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22]);
     }
 
     #[test]

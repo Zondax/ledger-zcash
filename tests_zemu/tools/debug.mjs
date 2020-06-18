@@ -87,7 +87,7 @@ async function main() {
         ////////////
         /// TIP you can use zemu commands here to take the app to the point where you trigger a breakpoint
 
-        await debugScenario2(sim, app);
+        await debugScenario1(sim, app);
 
         /// TIP
 
