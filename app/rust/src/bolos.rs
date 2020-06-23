@@ -1,24 +1,39 @@
 //! Rust interfaces to Ledger SDK APIs.
 
+use cstr_core::CStr;
 use rand::{CryptoRng, RngCore};
 
 #[cfg(test)]
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
-use blake2s_simd::{Hash as Blake2sHash, Params as Blake2sParams, blake2s};
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
+    fn zemu_log_stack(buffer: *const u8);
+    fn check_app_canary();
+}
+
+pub fn c_zemu_log_stack(s: &[u8]) {
+    unsafe { zemu_log_stack(s.as_ptr()) }
+}
+
+pub fn c_check_app_canary() {
+    unsafe { check_app_canary() }
 }
 
 #[cfg(not(test))]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
-        zcash_blake2b_expand_seed(a.as_ptr(), a.len() as u32,
-                                  b.as_ptr(), b.len() as u32,
-                                  hash.as_mut_ptr());
+        zcash_blake2b_expand_seed(
+            a.as_ptr(),
+            a.len() as u32,
+            b.as_ptr(),
+            b.len() as u32,
+            hash.as_mut_ptr(),
+        );
     }
     hash
 }
@@ -43,7 +58,8 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
 #[inline(never)]
 pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
     pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"Zcash_gd";
-    pub const GH_FIRST_BLOCK: &[u8; 64] = b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
+    pub const GH_FIRST_BLOCK: &[u8; 64] =
+        b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
 
     let h = Blake2sParams::new()
         .hash_length(32)

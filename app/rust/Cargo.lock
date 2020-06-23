@@ -59,6 +59,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
+name = "cstr_core"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8758514b5f03968703f1db1f1e196e031d5268f5295ff99a5bf345008790ba85"
+dependencies = [
+ "cty",
+ "memchr",
+]
+
+[[package]]
+name = "cty"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7313c0d620d0cb4dbd9d019e461a4beb501071ff46ec0ab933efb4daa76d73e3"
+
+[[package]]
 name = "jubjub"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -67,6 +83,12 @@ dependencies = [
  "bls12_381",
  "subtle",
 ]
+
+[[package]]
+name = "memchr"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 
 [[package]]
 name = "panic-halt"
@@ -122,6 +144,7 @@ version = "0.1.0"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
+ "cstr_core",
  "jubjub",
  "panic-halt",
  "rand",

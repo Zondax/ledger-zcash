@@ -98,7 +98,7 @@ describe('Basic checks', function () {
             expect(addr.return_code).toEqual(0x9000);
 
             const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsdp";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -124,7 +124,7 @@ describe('Basic checks', function () {
             expect(addr.return_code).toEqual(0x9000);
 
             const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsdp";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -145,8 +145,6 @@ describe('Basic checks', function () {
             const signatureRequest = app.sign("m/44'/133'/5'/0/0", "1234");
             await Zemu.sleep(2000);
 
-            // Click right + double
-            await sim.clickRight();
             await sim.clickBoth();
 
             let signature = await signatureRequest;

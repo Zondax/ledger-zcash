@@ -202,6 +202,27 @@ __Z_INLINE void fpuint64_to_str(char *out, uint16_t outLen, const uint64_t value
     fpstr_to_str(out, outLen, buffer, decimals);
 }
 
+__Z_INLINE void number_inplace_trimming(char *s) {
+    const size_t len = strlen(s);
+    if (len == 0 || len == 1 || len > 1024) {
+        return;
+    }
+
+    int16_t dec_point = -1;
+    for (int16_t i = 0; i < (int16_t) len && dec_point < 0; i++) {
+        if (s[i] == '.') {
+            dec_point = i;
+        }
+    }
+    if (dec_point < 0) {
+        return;
+    }
+
+    for (int16_t i = (int16_t) len - 1; i > (dec_point + 1) && s[i] == '0'; i--) {
+        s[i] = 0;
+    }
+}
+
 __Z_INLINE uint64_t uint64_from_BEarray(const uint8_t data[8]) {
     uint64_t result = 0;
     for (uint8_t i = 0; i < 8u; i++) {
@@ -217,7 +238,7 @@ __Z_INLINE uint32_t array_to_hexstr(char *dst, uint16_t dstLen, const uint8_t *s
         return 0;
     }
 
-    const char hexchars[] = "0123456789ABCDEF";
+    const char hexchars[] = "0123456789abcdef";
     for (uint8_t i = 0; i < count; i++, src++) {
         *dst++ = hexchars[*src >> 4u];
         *dst++ = hexchars[*src & 0x0Fu];

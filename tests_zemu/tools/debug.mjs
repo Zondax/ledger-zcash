@@ -8,7 +8,7 @@ const seed = "equip will roof matter pink blind book anxiety banner elbow sun yo
 const SIM_OPTIONS = {
     logging: true,
     start_delay: 4000,
-    X11: true,
+//    X11: true,
     custom: `-s "${seed}" --color LAGOON_BLUE`
 };
 
@@ -71,6 +71,12 @@ async function debugScenario2(sim, app) {
     console.log(signature)
 }
 
+async function debugScenario3(sim, app) {
+    // Here you can customize what you want to do :)
+    const addrRequest = await app.getAddressAndPubKey("m/44'/133'/5'/0/0");
+    console.log(addrRequest)
+}
+
 async function main() {
     await beforeStart();
 
@@ -87,7 +93,7 @@ async function main() {
         ////////////
         /// TIP you can use zemu commands here to take the app to the point where you trigger a breakpoint
 
-        await debugScenario2(sim, app);
+        await debugScenario3(sim, app);
 
         /// TIP
 
