@@ -61,6 +61,10 @@ void tx_reset() {
     buffering_reset();
 }
 
+void tx_reset_state() {
+    parser_resetState();
+}
+
 uint32_t tx_append(unsigned char *buffer, uint32_t length) {
     return buffering_append(buffer, length);
 }
@@ -124,7 +128,8 @@ tx_error_t tx_getItem(int8_t displayIdx,
                                       outKey, outKeyLen,
                                       outVal, outValLen,
                                       pageIdx, pageCount);
-
+    uint16_t count = *pageCount;
+    uint8_t idx = pageIdx;
     // Convert error codes
     if (err == parser_no_data ||
         err == parser_display_idx_out_of_range ||

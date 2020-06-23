@@ -81,6 +81,8 @@ uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len) {
         return 0;
     }
 
+    zemu_log_stack("crypto_fillAddress_secp256k1");
+
     MEMZERO(buffer, buffer_len);
     answer_t *const answer = (answer_t *) buffer;
 
@@ -217,8 +219,10 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
     // Get seed from Ed25519
     MEMZERO(sk, 32);
 
+    zemu_log_stack("crypto_fillSaplingSeed");
+
     // Generate randomness using a fixed path related to the device mnemonic
-    uint32_t path[HDPATH_LEN_DEFAULT] = {
+    const uint32_t path[HDPATH_LEN_DEFAULT] = {
             0x8000002c,
             0x80000085,
             0x80000000,
@@ -243,6 +247,10 @@ typedef struct {
             uint8_t address_raw[43];
             char address_bech32[100];
         };
+        struct {
+            uint8_t dummy[43];
+            uint8_t diversifierlist[44];
+        };
     };
 } tmp_buf_s;
 
@@ -250,16 +258,22 @@ typedef struct {
     union {
         // STEP 1
         struct {
+            uint8_t dk[32];
+            uint8_t zip32_seed[32];
             uint8_t sk[32];
-            uint8_t ak[32];
-            uint8_t nk[32];
         } step1;
+
+        struct {
+            uint8_t dk[32];
+            uint8_t ask[32];
+            uint8_t nsk[32];
+        } step2;
         // STEP 2
         struct {
             uint8_t ivk[32];
             uint8_t ak[32];
             uint8_t nk[32];
-        } step2;
+        } step3;
     };
 } tmp_sampling_s;
 
@@ -267,8 +281,11 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+    MEMZERO(buffer, bufferLen);
 
-    tmp_buf_s *out = (tmp_buf_s *) buffer;
+    zemu_log_stack("crypto_fillAddress_sapling");
+
+    tmp_buf_s *const out = (tmp_buf_s *) buffer;
     MEMZERO(out, bufferLen);
 
     tmp_sampling_s tmp;
@@ -278,6 +295,9 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     {
         TRY
         {
+            // TODO: IT IS NOW DOING CHILD DERIVATION WITH PATH = [1]
+            // TODO: take as input path = [u32;5]
+
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.sk);
             CHECK_APP_CANARY();
@@ -292,9 +312,9 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             // Here we can clear up the seed
             MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
 
-            get_ivk(tmp.step2.ak, tmp.step2.nk, tmp.step2.ivk);
-            MEMZERO(tmp.step2.ak, sizeof_field(tmp_sampling_s, step2.ak));
-            MEMZERO(tmp.step2.nk, sizeof_field(tmp_sampling_s, step2.nk));
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+            */
 
             get_pkd(tmp.step2.ivk, out->diversifier, out->pkd);
             */
@@ -311,7 +331,9 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
-                          sizeof_field(tmp_buf_s, address_raw));
+                          sizeof_field(tmp_buf_s, address_raw),
+                          1);
+    CHECK_APP_CANARY();
 
     return sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
 }

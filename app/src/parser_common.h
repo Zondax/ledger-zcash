@@ -34,16 +34,16 @@ typedef enum {
     parser_display_idx_out_of_range,
     parser_display_page_out_of_range,
     parser_unexepected_error,
+    parser_no_memory_for_state,
     // Context related errors
     parser_context_mismatch,
     parser_context_unexpected_size,
     parser_context_invalid_chars,
     parser_context_unknown_prefix,
     // Required fields
-    parser_required_nonce,
-    parser_required_method,
     ////////////////////////
     // Coin specific
+    parser_invalid_output_script,
     parser_unexpected_type,
     parser_unexpected_method,
     parser_unexpected_buffer_end,

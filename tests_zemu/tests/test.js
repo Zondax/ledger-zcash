@@ -2,8 +2,11 @@ import { expect, test } from "jest";
 import Zemu from "@zondax/zemu";
 import ZCashApp from "@zondax/ledger-zcash";
 
+import { TX_TESTS } from './unshielded_tx';
+
 const Resolve = require("path").resolve;
 const APP_PATH = Resolve("../app/bin/app.elf");
+const fs = require('fs');
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
@@ -97,8 +100,8 @@ describe('Basic checks', function () {
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
+            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49xhd74ga";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -123,8 +126,8 @@ describe('Basic checks', function () {
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "30fac80e962eb83353ff39d8f4fc255bc3464d0d842a257f849682f4903c11f16ab174aaabe27ff7f60269";
-            const expected_addr = "zs1xravsr5k96urx5ll88v0flp9t0p5vngdss4z2luyj6p0fypuz8ck4vt54247yllh7cpxjjcxsv";
+            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
+            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49xhd74ga";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -135,17 +138,22 @@ describe('Basic checks', function () {
         }
     });
 
-    test('sign unshielded', async function () {
+    // This test tries to demonstrate
+    // the functionality of the unshielded raw transaction
+    // parser for an input transaction with 1 input and two outputs
+    test('sign unshielded transaction with 1 input - 2 output', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
-
-            // Do not await.. we need to click asynchronously
-            const signatureRequest = app.sign("m/44'/133'/5'/0/0", "1234");
-            await Zemu.sleep(2000);
+            const blob = Buffer.from("010000000107578c9aff7cfd240c36fa1400ee130d540f4c3397d24e8bea50a7f061116a87010000006a473044022011aecead8f48e3b342856a8da2f30c4e05bec5dc147a5bc7b382d01bf68ae5c302204126fd77522ae311a88688bce967532456b08c94322ba182a18fb7786e696c610121027e563beec6765850071067e4fcc7a46d00cbb0d675ef8df1b8d15aaeef91a21fffffffff021cbb0100000000001976a91461aac8b58ac880a45fb06eeedfcf3017679778a988ac32432400000000001976a9144fc16e1766808c0ab090be4376cea9d3a0bbe12988ac00000000", "hex");
+            const signatureRequest = app.sign("m/44'/133'/5'/0/0", blob);
+            await Zemu.sleep(1000);
 
             // Click right + double
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
 
