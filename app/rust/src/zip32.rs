@@ -136,7 +136,7 @@ pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
-    let mut d = [0u8; 11];
+    let mut d: [u8; 11];
     let mut counter: [u8; 11] = [0u8; 11];
 
     let mut result = [0u8; 44];
@@ -270,7 +270,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
 
     let mut nsk = Fr::from_bytes_wide(&prf_expand(&key, &[0x01]));
 
-    let mut expkey = [0u8;96];
+    let mut expkey: [u8;96];
     expkey = expandedspendingkey_zip32(&key); //96
     //master divkey
     let mut divkey = [0u8;32];
