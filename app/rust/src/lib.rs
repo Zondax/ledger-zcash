@@ -1,4 +1,4 @@
-//#![no_std]
+#![no_std]
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
@@ -207,9 +207,9 @@ pub extern "C" fn get_address(sk_ptr: *mut u8, ivk_ptr: *mut u8, address_ptr: *m
 //use subtle::ConditionallySelectable; //TODO: replace me with no-std version
 
 const COMPACT_NOTE_SIZE: usize = (
-    1  + // version
+    1 + // version
         11 + // diversifier
-        8  + // value
+        8 + // value
         32
     // rcv
 );
@@ -429,42 +429,44 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
     return AffinePoint::from(result_point).get_u().to_bytes();
 }
 
-#[cfg(test)]
-fn encode_test(v: &[u8]) -> Vec<u8> {
-    let n = if v.len() % 8 > 0 {
-        1 + v.len() / 8
-    } else {
-        v.len() / 8
-    };
-    let mut result: Vec<u8> = std::vec::Vec::new();
-    let mut i = 0;
-    while i < n {
-        result.push(0);
-        for j in 0..8 {
-            let s = if i * 8 + j < v.len() { v[i * 8 + j] } else { 0 };
-            result[i] += s;
-            if j < 7 {
-                result[i] <<= 1;
-            }
-        }
-        i += 1;
-    }
-    result
-}
-
 //assume that encoding of bits is done before this
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
     let input_msg: &[u8; 1] = unsafe { mem::transmute::<*const u8, &[u8; 1]>(input_ptr) };
-    let output_msg: &mut [u8; 32] = unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
-    let h = pedersen_hash(input_msg.as_ref(),3);
+    let output_msg: &mut [u8; 32] =
+        unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
+    let h = pedersen_hash(input_msg.as_ref(), 3);
     output_msg.copy_from_slice(&h);
 }
 
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use alloc::vec::Vec;
+
+    fn encode_test(v: &[u8]) -> Vec<u8> {
+        let n = if v.len() % 8 > 0 {
+            1 + v.len() / 8
+        } else {
+            v.len() / 8
+        };
+        let mut result: Vec<u8> = std::vec::Vec::new();
+        let mut i = 0;
+        while i < n {
+            result.push(0);
+            for j in 0..8 {
+                let s = if i * 8 + j < v.len() { v[i * 8 + j] } else { 0 };
+                result[i] += s;
+                if j < 7 {
+                    result[i] <<= 1;
+                }
+            }
+            i += 1;
+        }
+        result
+    }
+
     #[test]
     fn test_encode_test() {
         let f1: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 1, 1];
@@ -481,16 +483,28 @@ mod tests {
 
     #[test]
     fn test_key_small() {
-        let m: [u8; 1] = [0xb0;1];
-        assert_eq!(pedersen_hash(&m,3),[115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114, 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22]);
+        let m: [u8; 1] = [0xb0; 1];
+        assert_eq!(
+            pedersen_hash(&m, 3),
+            [
+                115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
+                188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22
+            ]
+        );
     }
 
     #[test]
-    fn test_pedersen_ledger(){
-        let m: [u8;32] = [0xb0;32];
-        let mut output = [0u8;32];
-        do_pedersen_hash(m.as_ptr(),output.as_mut_ptr());
-        assert_eq!(output,[115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114, 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22]);
+    fn test_pedersen_ledger() {
+        let m: [u8; 32] = [0xb0; 32];
+        let mut output = [0u8; 32];
+        do_pedersen_hash(m.as_ptr(), output.as_mut_ptr());
+        assert_eq!(
+            output,
+            [
+                115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
+                188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22
+            ]
+        );
     }
 
     #[test]
@@ -626,11 +640,13 @@ mod tests {
         assert_eq!(
             h3,
             [
-                0x37, 0x5f, 0xdd, 0x7b, 0x29, 0xde, 0x6e, 0x22, 0x5e, 0xbb, 0x7a, 0xe4, 0x20, 0x3c, 0xa5, 0x0e, 0xca, 0x7c, 0x9b, 0xab, 0x97, 0x1c, 0xc6, 0x91, 0x3c, 0x6f, 0x13, 0xed, 0xf3, 0x27, 0xe8, 0x00
+                0x37, 0x5f, 0xdd, 0x7b, 0x29, 0xde, 0x6e, 0x22, 0x5e, 0xbb, 0x7a, 0xe4, 0x20, 0x3c,
+                0xa5, 0x0e, 0xca, 0x7c, 0x9b, 0xab, 0x97, 0x1c, 0xc6, 0x91, 0x3c, 0x6f, 0x13, 0xed,
+                0xf3, 0x27, 0xe8, 0x00
             ]
         );
     }
-/*
+    /*
     #[test]
     fn test_sharedsecret() {
         let esk: [u8; 32] = [
