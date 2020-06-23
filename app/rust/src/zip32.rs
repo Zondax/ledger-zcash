@@ -1,7 +1,11 @@
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use aes::{
-    block_cipher_trait::{generic_array::GenericArray, BlockCipher,generic_array::typenum::{U8, U16,U32}},
+    block_cipher_trait::{
+        generic_array::typenum::{U16, U32, U8},
+        generic_array::GenericArray,
+        BlockCipher,
+    },
     Aes256,
 };
 use binary_ff1::BinaryFF1;
@@ -12,8 +16,7 @@ use byteorder::{ByteOrder, LittleEndian};
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
-
-use crate::{constants,bolos};
+use crate::{bolos, constants};
 
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
@@ -103,8 +106,8 @@ pub fn default_diversifier_fromlist(list: &[u8; 44]) -> [u8; 11] {
     result
 }
 
-struct AesSDK{
-    key: [u8;32]
+struct AesSDK {
+    key: [u8; 32],
 }
 
 impl BlockCipher for AesSDK {
@@ -112,23 +115,21 @@ impl BlockCipher for AesSDK {
     type BlockSize = U16;
     type ParBlocks = U8;
 
-    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesSDK{
+    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesSDK {
         let v: [u8; 32] = k.as_slice().try_into().expect("Wrong length");
-        AesSDK{key:v}
+        AesSDK { key: v }
     }
 
-    fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>){
-        let x: [u8;16] = block.as_slice().try_into().expect("err");
-        let y = bolos::aes256_encryptblock(&self.key,&x);
+    fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>) {
+        let x: [u8; 16] = block.as_slice().try_into().expect("err");
+        let y = bolos::aes256_encryptblock(&self.key, &x);
 
         block.copy_from_slice(&y);
     }
 
-
-    fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>){
+    fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>) {
         //not used but has to be defined
     }
-
 }
 
 //list of 4 diversifiers
@@ -156,7 +157,6 @@ pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     }
     result
 }
-
 
 #[inline(never)]
 pub fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
@@ -196,7 +196,7 @@ pub fn outgoingviewingkey(key: &[u8; 32]) -> [u8; 32] {
     ovk
 }
 
-pub fn full_viewingkey(key: &[u8;32]) -> [u8;96]{
+pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(key);
     let ak = sapling_ask_to_ak(&ask);
 
@@ -204,7 +204,7 @@ pub fn full_viewingkey(key: &[u8;32]) -> [u8;96]{
     let nk = sapling_nsk_to_nk(&nsk);
 
     let ovk = outgoingviewingkey(key);
-    let mut result = [0u8;96];
+    let mut result = [0u8; 96];
     result[0..32].copy_from_slice(&ak);
     result[32..64].copy_from_slice(&nk);
     result[64..96].copy_from_slice(&ovk);
@@ -222,16 +222,16 @@ pub fn expandedspendingkey_zip32(key: &[u8; 32]) -> [u8; 96] {
     result
 }
 
-pub fn update_dk_zip32(key: &[u8; 32], dk: &mut [u8; 32]){
-    let mut dkcopy = [0u8;32];
+pub fn update_dk_zip32(key: &[u8; 32], dk: &mut [u8; 32]) {
+    let mut dkcopy = [0u8; 32];
     dkcopy.copy_from_slice(dk);
     dk.copy_from_slice(&bolos::blake2b_expand_vec_two(key, &[0x16], &dkcopy)[0..32]);
 }
 
-pub fn update_exk_zip32(key: &[u8; 32], exk: &mut [u8;96]){
+pub fn update_exk_zip32(key: &[u8; 32], exk: &mut [u8; 96]) {
     exk[0..32].copy_from_slice(&sapling_derive_dummy_ask(key));
     exk[32..64].copy_from_slice(&sapling_derive_dummy_nsk(key));
-    let mut ovkcopy = [0u8;32];
+    let mut ovkcopy = [0u8; 32];
     ovkcopy.copy_from_slice(&exk[64..96]);
     exk[64..96].copy_from_slice(&bolos::blake2b_expand_vec_two(key, &[0x15], &ovkcopy)[..32]);
 }
@@ -260,8 +260,8 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
     //ASSERT: len(path) == len(harden)
 
     let mut tmp = master_spending_key_zip32(seed); //64
-    let mut key= [0u8;32]; //32
-    let mut chain= [0u8;32]; //32
+    let mut key = [0u8; 32]; //32
+    let mut chain = [0u8; 32]; //32
 
     key.copy_from_slice(&tmp[..32]);
     chain.copy_from_slice(&tmp[32..]);
@@ -270,33 +270,28 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
 
     let mut nsk = Fr::from_bytes_wide(&prf_expand(&key, &[0x01]));
 
-    let mut expkey: [u8;96];
+    let mut expkey: [u8; 96];
     expkey = expandedspendingkey_zip32(&key); //96
-    //master divkey
-    let mut divkey = [0u8;32];
+                                              //master divkey
+    let mut divkey = [0u8; 32];
     divkey.copy_from_slice(&diversifier_key_zip32(&key)); //32
     for &p in path {
         //compute expkey needed for zip32 child derivation
         //non-hardened child
-        let hardened = (p & 0x80000000 ) != 0;
-        let c = p&0x7FFFFFFF;
+        let hardened = (p & 0x80000000) != 0;
+        let c = p & 0x7FFFFFFF;
         if hardened {
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
             //make index LE
             //zip32 child derivation
-            tmp = bolos::blake2b_expand_vec_four(
-                &chain,
-                &[0x11], &expkey, &divkey, &le_i
-            ); //64
-        }else {
+            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
+        //64
+        } else {
             let fvk = full_viewingkey(&key);
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            tmp = bolos::blake2b_expand_vec_four(
-                &chain,
-                &[0x12], &fvk, &divkey, &le_i
-            );
+            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x12], &fvk, &divkey, &le_i);
         }
         //extract key and chainkey
         key.copy_from_slice(&tmp[..32]);
@@ -309,11 +304,10 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
         nsk += nsk_cur;
 
         //new divkey from old divkey and key
-        update_dk_zip32(&key,&mut divkey);
-        update_exk_zip32(&key,&mut expkey);
-
+        update_dk_zip32(&key, &mut divkey);
+        update_exk_zip32(&key, &mut expkey);
     }
-    let mut result= [0u8;96];
+    let mut result = [0u8; 96];
     result[0..32].copy_from_slice(&divkey);
     result[32..64].copy_from_slice(&ask.to_bytes());
     result[64..96].copy_from_slice(&nsk.to_bytes());

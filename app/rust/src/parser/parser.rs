@@ -56,7 +56,7 @@ fn parser_init_context(
 
         (*ctx).buffer = buffer;
         (*ctx).bufferLen = bufferSize;
-        return ParserError::parser_ok;
+        ParserError::parser_ok
     }
 }
 
@@ -96,7 +96,8 @@ pub extern "C" fn _getNumItems(_ctx: *const parser_context_t, tx_t: *const parse
         if let Some(tx) = ((*tx_t).state as *const Transaction).as_ref() {
             return tx.num_items() as u8;
         }
-        return 0;
+
+        0
     }
 }
 

@@ -138,31 +138,10 @@ describe('Basic checks', function () {
         }
     });
 
-    test('sign unshielded', async function () {
-        const sim = new Zemu(APP_PATH);
-        try {
-            await sim.start(sim_options);
-            const app = new ZCashApp(sim.getTransport());
-
-            // Do not await.. we need to click asynchronously
-            const signatureRequest = app.sign("m/44'/133'/5'/0/0", "1234");
-            await Zemu.sleep(2000);
-
-            await sim.clickBoth();
-
-            let signature = await signatureRequest;
-            console.log(signature)
-
-            expect(signature.return_code).toEqual(0x9000);
-        } finally {
-            await sim.close();
-        }
-    });
-
     // This test tries to demonstrate
     // the functionality of the unshielded raw transaction
     // parser for an input transaction with 1 input and two outputs
-    test('parse raw transaction with 1 input - 2 output', async function () {
+    test('sign unshielded transaction with 1 input - 2 output', async function () {
         const sim = new Zemu(APP_PATH);
         try {
             await sim.start(sim_options);
@@ -172,6 +151,10 @@ describe('Basic checks', function () {
             await Zemu.sleep(1000);
 
             // Click right + double
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
             await sim.clickBoth();
 
             let signature = await signatureRequest;
