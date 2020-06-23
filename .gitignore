@@ -80,7 +80,7 @@ cmake-build-fuzz/
 \deps/*
 !\deps/nanos-secure-sdk
 !\deps/ledger-zxlib
-!\deps/tinycbor
+!\deps/tiny-aes
 !\deps/BLAKE
 /build
 yarn.lock
