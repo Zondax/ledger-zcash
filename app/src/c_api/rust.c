@@ -26,7 +26,7 @@
 #define CTX_PRF_OCK_LEN 16
 #define CTX_PRF_OCK_HASH_LEN 32
 
-void zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
+void c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
                                const uint8_t *b, uint32_t b_len,
                                uint8_t *out) {
     cx_blake2b_t ctx;

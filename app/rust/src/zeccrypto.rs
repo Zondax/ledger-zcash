@@ -4,6 +4,7 @@ use core::mem;
 use crate::constants;
 use crate::{bolos, zip32};
 
+use crate::bolos::c_zemu_log_stack;
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
@@ -357,6 +358,8 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 //#[inline(never)]
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
+    c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
+
     let points = [
         [
             0xca, 0x3c, 0x24, 0x32, 0xd4, 0xab, 0xbf, 0x77, 0x32, 0x46, 0x4e, 0xc0, 0x8b, 0x2e,
@@ -484,9 +487,10 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-    let input_msg: &[u8; 1] = unsafe { mem::transmute::<*const u8, &[u8; 1]>(input_ptr) };
-    let output_msg: &mut [u8; 32] =
-        unsafe { mem::transmute::<*const u8, &mut [u8; 32]>(output_ptr) };
+    c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
+
+    let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
+    let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
     let h = pedersen_hash(input_msg.as_ref(), 3);
     output_msg.copy_from_slice(&h);
 }

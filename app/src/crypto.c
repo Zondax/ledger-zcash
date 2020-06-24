@@ -299,26 +299,45 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
             // TODO: take as input path = [u32;5]
 
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.step1.sk);
-            CHECK_APP_CANARY();
-            memcpy(out->diversifier, tmp.step1.sk, 11);
-            do_pedersen_hash(tmp.step1.sk, out->pkd);
+            crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
             /*
-            get_ak(tmp.step1.sk, tmp.step1.ak);
-            get_nk(tmp.step1.sk, tmp.step1.nk);
-            get_diversifier(tmp.step1.sk, out->diversifier);
-            // Here we can clear up the seed
-            MEMZERO(tmp.step1.sk, sizeof_field(tmp_sampling_s, step1.sk));
+             * TODO: THIS IS OLD CODE FOR MASTER ADDRESS
+             * TODO: MAKE A SEPERATE C FUNCTION FOR THIS
+
+            zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
 
             CHECK_APP_CANARY();
             MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             */
 
-            // FIXME: IVK goes away?
-            // get_pkd(tmp.step2.ivk, out->diversifier, out->pkd);
-            // MEMZERO(tmp.step2.ivk, sizeof_field(tmp_sampling_s, step2.ivk));
+            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk);
+
+            get_diversifier_list(tmp.step2.dk, out->diversifierlist);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sampling_s, step2.dk));
+
+            //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
+            get_diversifier_fromlist(out->diversifier,out->diversifierlist);
+            CHECK_APP_CANARY();
+
+            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
+            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            //get_nk(tmp.step1.sk, tmp.step2.nk);
+            CHECK_APP_CANARY();
+            //get_ak(tmp.step1.sk, tmp.step2.ak); //this overwrites step1.sk
+            CHECK_APP_CANARY();
+
+            get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sampling_s, step3.ak));
+            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sampling_s, step3.nk));
+
+            zemu_log_stack("get_pkd");
+            get_pkd(tmp.step3.ivk, out->diversifier, out->pkd);
+            CHECK_APP_CANARY();
+            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sampling_s, step3.ivk));
         }
         FINALLY
         {
