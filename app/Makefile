@@ -22,6 +22,11 @@ endif
 
 MY_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
+ifeq ($(APP_TESTING),1)
+DEFINES += APP_TESTING
+DEFINES += ZEMU_LOGGING
+endif
+
 all: bin/app.elf
 	@echo "#!/usr/bin/env bash" > $(CURDIR)/pkg/zxtool.sh
 	@echo "APPNAME=\"${APPNAME}\"" >> $(CURDIR)/pkg/zxtool.sh
@@ -36,7 +41,6 @@ all: bin/app.elf
 	@chmod +x $(CURDIR)/pkg/zxtool.sh
 
 include $(BOLOS_SDK)/Makefile.defines
-DEFINES += ZEMU_LOGGING
 
 # Main app configuration
 APPNAME = "Zcash"

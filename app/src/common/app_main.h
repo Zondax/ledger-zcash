@@ -36,6 +36,10 @@
 #define INS_GET_ADDR_SAPLING            0x11
 #define INS_SIGN_SAPLING                0x12
 
+#if defined(APP_TESTING)
+#define INS_TEST                        0xFF
+#endif
+
 void app_init();
 
 void app_main();

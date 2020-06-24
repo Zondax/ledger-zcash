@@ -60,7 +60,7 @@ define run_docker
 	-u $(USERID) \
 	-v $(shell pwd):/project \
 	$(DOCKER_IMAGE) \
-	"COIN=$(COIN) $(2)"
+	"COIN=$(COIN) APP_TESTING=$(APP_TESTING) $(2)"
 endef
 
 all: build

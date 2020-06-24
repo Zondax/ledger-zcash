@@ -85,6 +85,22 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags, volatile uint32_t *t
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
 }
 
+#if defined(APP_TESTING)
+__Z_INLINE void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    uint8_t input = G_io_apdu_buffer[OFFSET_DATA+0];
+
+    // You can add anything that helps testing here.
+    zemu_log_stack("handleTest");
+
+    G_io_apdu_buffer[0] = 0xCA;
+    G_io_apdu_buffer[1] = 0xFE;
+    G_io_apdu_buffer[2] = input+1;
+
+    *tx = 3;
+    THROW(APDU_CODE_OK);
+}
+#endif
+
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     uint16_t sw = 0;
 
@@ -126,6 +142,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+#if defined(APP_TESTING)
+                case INS_TEST: {
+                    handleTest(flags, tx, rx);
+                    break;
+                }
+#endif
                 default:
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }
