@@ -8,7 +8,6 @@ use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 use aes::{
     block_cipher_trait::{
@@ -18,7 +17,6 @@ use aes::{
     },
     Aes256,
 };
-use core::convert::TryInto;
 
 extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
@@ -40,6 +38,7 @@ extern "C" {
         out: *mut u8,
     );
 
+    // FIXME: We should probably consider exposing context + update to minimize so many arguments + stack usage
     fn c_zcash_blake2b_expand_vec_four(
         input_a: *const u8,
         input_a_len: u32,

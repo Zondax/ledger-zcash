@@ -151,7 +151,6 @@ SDK_SOURCE_PATH  += lib_ux
 
 .PHONY: rust
 rust:
-	@echo "................ BUILDING RUST "
 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target thumbv6m-none-eabi --release
 
 # Before linking, we need to be sure rust lib is there
@@ -159,7 +158,6 @@ bin/app.elf: rust
 
 .PHONY: rust_clean
 rust_clean:
-	@echo "................ CLEANING RUST "
 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo clean
 
 clean: rust_clean
