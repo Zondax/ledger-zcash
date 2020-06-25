@@ -4,7 +4,7 @@ use core::mem;
 use crate::constants;
 use crate::{bolos, zip32};
 
-use crate::bolos::c_zemu_log_stack;
+//use crate::bolos::c_zemu_log_stack;
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
@@ -140,7 +140,7 @@ static POINTS: [[u8; 32]; 6] = [
 //#[inline(never)]
 #[inline(never)]
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
-    c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
+  //  c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
     const MAXCOUNTER: usize = 63;
 
     let mut i = 0;
@@ -239,7 +239,7 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-    c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
+   // c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
 
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
@@ -250,10 +250,9 @@ pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
 
 #[cfg(test)]
 mod tests {
-    use crate::zeccrypto::default_diversifier;
+    use crate::zeccrypto::*;
     use crate::zip32::*;
     use crate::*;
-    use alloc::vec::Vec;
     use core::convert::TryInto;
 
     #[test]
@@ -495,35 +494,6 @@ mod tests {
     }
 
     #[test]
-    fn test_defaultpkd() {
-        let seed = [0u8; 32];
-        let default_d = default_diversifier(&seed);
-
-        let nk = [
-            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
-            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
-            0xbd, 0x3f, 0xd6, 0xba,
-        ];
-        let ak = [
-            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
-            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
-            0x8e, 0xf1, 0x16, 0x20,
-        ];
-
-        let ivk: [u8; 32] = aknk_to_ivk(&ak, &nk);
-
-        let pkd = default_pkd(&ivk, &default_d);
-        assert_eq!(
-            pkd,
-            [
-                0xdb, 0x4c, 0xd2, 0xb0, 0xaa, 0xc4, 0xf7, 0xeb, 0x8c, 0xa1, 0x31, 0xf1, 0x65, 0x67,
-                0xc4, 0x45, 0xa9, 0x55, 0x51, 0x26, 0xd3, 0xc2, 0x9f, 0x14, 0xe3, 0xd7, 0x76, 0xe8,
-                0x41, 0xae, 0x74, 0x15
-            ]
-        );
-    }
-
-    #[test]
     fn test_grouphash_default() {
         let default_d = [
             0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39,
@@ -613,7 +583,7 @@ mod tests {
             ]
         );
     }
-
+/*
     fn encode_test(v: &[u8]) -> Vec<u8> {
         let n = if v.len() % 8 > 0 {
             1 + v.len() / 8
@@ -641,7 +611,7 @@ mod tests {
         let f1: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 1, 1];
         assert_eq!(encode_test(&f1).as_slice(), &[1, 128]);
     }
-
+*/
     #[test]
     fn test_handlechunk() {
         let bits: u8 = 1;
@@ -675,7 +645,7 @@ mod tests {
             ]
         );
     }
-
+/*
     #[test]
     fn test_pedersen_small() {
         let input_bits: [u8; 9] = [1, 1, 1, 1, 1, 1, 1, 0, 0];
@@ -815,6 +785,8 @@ mod tests {
             ]
         );
     }
+    */
+
     /*
     #[test]
     fn test_sharedsecret() {
