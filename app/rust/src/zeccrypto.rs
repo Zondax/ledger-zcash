@@ -4,7 +4,7 @@ use core::mem;
 use crate::constants;
 use crate::{bolos, zip32};
 
-//use crate::bolos::c_zemu_log_stack;
+use crate::bolos::c_zemu_log_stack;
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
@@ -83,7 +83,7 @@ fn chacha_decryptnote(
 */
 
 #[inline(never)]
-fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
+fn handle_chunk(bits: u8, cur: &mut Fr, acc: &mut Fr) {
     let c = bits & 1;
     let b = bits & 2;
     let a = bits & 4;
@@ -99,7 +99,7 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
     if c == 1 {
         tmp = tmp.neg();
     }
-    return tmp;
+    *acc = acc.add(&tmp);
 }
 
 static POINTS: [[u8; 32]; 6] = [
@@ -135,6 +135,27 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
+#[inline(never)]
+fn add_point(point: &mut ExtendedPoint, acc: &mut Fr, index: usize) {
+    let s = POINTS[index];
+    let q = AffinePoint::from_bytes(s).unwrap().to_niels();
+    let p = q.multiply_bits(&acc.to_bytes());
+    *point = *point + p;
+}
+
+#[inline(never)]
+fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
+    let v = AffinePoint::from(*point).get_u().to_bytes();
+    v
+}
+
+#[inline(never)]
+fn squarings(cur: &mut Fr) {
+    *cur = cur.double();
+    *cur = cur.double();
+    *cur = cur.double();
+}
+
 struct Bitstreamer<'a> {
     input_bytes: &'a [u8],
     byte_index: usize,
@@ -146,6 +167,7 @@ struct Bitstreamer<'a> {
 }
 
 impl<'a> Bitstreamer<'a> {
+    #[inline(never)]
     fn peek(&self) -> bool {
         if self.bit_index >= self.bitsize {
             return false;
@@ -159,6 +181,7 @@ static ADDBITS: [u8; 3] = [1, 0, 2];
 
 impl<'a> Iterator for Bitstreamer<'a> {
     type Item = u8;
+    #[inline(never)]
     fn next(&mut self) -> Option<u8> {
         if self.bit_index >= self.bitsize {
             return None;
@@ -184,7 +207,8 @@ impl<'a> Iterator for Bitstreamer<'a> {
     }
 }
 
-fn pedersen_bitstream(m: &[u8], bitsize: u32) -> [u8; 32] {
+fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
+    c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
     const MAXCOUNTER: usize = 63;
 
     let mut counter: usize = 0;
@@ -206,137 +230,32 @@ fn pedersen_bitstream(m: &[u8], bitsize: u32) -> [u8; 32] {
 
     while b.peek() {
         let bits = b.next().unwrap();
-        let tmp = handle_chunk(bits, &mut cur);
-        acc = acc.add(&tmp);
+        handle_chunk(bits, &mut cur, &mut acc);
+
         counter += 1;
         //check if we need to move to the next curvepoint
         if counter == MAXCOUNTER {
-            let s = POINTS[pointcounter];
-            let q = AffinePoint::from_bytes(s).unwrap().to_niels();
-            let p = q.multiply_bits(&acc.to_bytes());
-            result_point = result_point + p;
-
+            add_point(&mut result_point, &mut acc, pointcounter);
             counter = 0;
             pointcounter += 1;
             acc = Fr::zero();
             cur = Fr::one();
         } else {
-            cur = cur.double();
-            cur = cur.double();
-            cur = cur.double()
+            squarings(&mut cur);
         }
     }
 
     if counter > 0 {
-        let s = POINTS[pointcounter];
-        let q = AffinePoint::from_bytes(s).unwrap().to_niels();
-        let p = q.multiply_bits(&acc.to_bytes());
-        result_point = result_point + p;
+        add_point(&mut result_point, &mut acc, pointcounter);
     }
 
     //handle remaining bits if there are any
-
-    return AffinePoint::from(result_point).get_u().to_bytes();
+    let result = return_bytes(&mut result_point);
+    result
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 //#[inline(never)]
-#[inline(never)]
-fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
-    //  c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
-    const MAXCOUNTER: usize = 63;
-
-    let mut i = 0;
-    let mut counter: usize = 0;
-    let mut pointcounter: usize = 0;
-    let mut remainingbits = bitsize;
-
-    let mut x: u64 = 0;
-
-    let mut acc = Fr::zero();
-    let mut cur = Fr::one();
-    let mut result_point = ExtendedPoint::identity();
-
-    let mut rem: u64 = 0;
-    let mut k = 1;
-    while i < m.len() {
-        x = 0;
-        //take 6 bytes = 48 bits or less, depending on remaining length
-        rem = if i + 6 <= m.len() {
-            6
-        } else {
-            (m.len() - i) as u64
-        };
-        x += m[i] as u64;
-        i += 1;
-        let mut j = 1;
-        //fill x with bytes
-        while j < rem {
-            x <<= 8;
-            x += m[i] as u64;
-            i += 1;
-            j += 1;
-        }
-        let el;
-        if i == m.len() {
-            //handling last bytes
-            remainingbits %= 48;
-            el = remainingbits / 3;
-            remainingbits %= 3;
-        } else {
-            el = 16;
-        }
-        k = 1;
-        while k < (el + 1) {
-            let bits = (x >> (rem * 8 - k * 3) & 7) as u8;
-            let tmp = handle_chunk(bits, &mut cur);
-            acc = acc.add(&tmp);
-
-            counter += 1;
-            //check if we need to move to the next curvepoint
-            if counter == MAXCOUNTER {
-                let s = POINTS[pointcounter];
-                let q = AffinePoint::from_bytes(s).unwrap().to_niels();
-                let p = q.multiply_bits(&acc.to_bytes());
-                result_point = result_point + p;
-
-                counter = 0;
-                pointcounter += 1;
-                acc = Fr::zero();
-                cur = Fr::one();
-            } else {
-                cur = cur.double();
-                cur = cur.double();
-                cur = cur.double();
-            }
-            k += 1;
-        }
-    }
-
-    //handle remaining bits if there are any
-    if remainingbits > 0 {
-        let bits: u8;
-        if rem * 8 < k * 3 {
-            let tr = if rem % 3 == 1 { 3 } else { 1 };
-            bits = ((x & tr) << (rem % 3)) as u8;
-        } else {
-            bits = (x >> (rem * 8 - k * 3) & 7) as u8;
-        }
-        let tmp = handle_chunk(bits, &mut cur);
-        acc = acc.add(&tmp);
-        counter += 1;
-    }
-
-    //multiply with curve point if needed
-    if counter > 0 {
-        let s = POINTS[pointcounter];
-        let q = AffinePoint::from_bytes(s).unwrap().to_niels();
-        let p = q.multiply_bits(&acc.to_bytes());
-        result_point = result_point + p;
-    }
-
-    return AffinePoint::from(result_point).get_u().to_bytes();
-}
 
 //assume that encoding of bits is done before this
 //todo: encode length?
@@ -733,19 +652,12 @@ mod tests {
             assert_eq!(encode_test(&f1).as_slice(), &[1, 128]);
         }
     */
-    #[test]
-    fn test_handlechunk() {
-        let bits: u8 = 1;
-        let mut cur = Fr::one();
-        let tmp = handle_chunk(bits, &mut cur);
-        //     assert_eq!(tmp.to_bytes(),[3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-    }
 
     #[test]
     fn test_key_small() {
         let m: [u8; 1] = [0xb0; 1];
         assert_eq!(
-            pedersen_bitstream(&m, 3),
+            pedersen_hash(&m, 3),
             [
                 115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
                 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22
@@ -768,14 +680,6 @@ mod tests {
     }
 
     #[test]
-    fn test_pedersen_small() {
-        assert_eq!(
-            pedersen_hash(&[254, 0], 9),
-            pedersen_bitstream(&[254, 0], 9)
-        );
-    }
-
-    #[test]
     fn test_pedersen_onechunk() {
         let input_bits: [u8; 189] = [
             1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
@@ -791,7 +695,7 @@ mod tests {
             242, 166, 138, 85, 64,
         ];
 
-        let h = pedersen_bitstream(&m, input_bits.len() as u32);
+        let h = pedersen_hash(&m, input_bits.len() as u32);
         assert_eq!(
             h,
             [
@@ -817,7 +721,7 @@ mod tests {
             254, 141, 17, 3, 7, 195, 142, 207, 149, 11, 103, 209, 80, 192, 57, 97, 146, 64, 183,
             222, 198, 120, 95, 12,
         ];
-        let h = pedersen_bitstream(&m, input_bits.len() as u32);
+        let h = pedersen_hash(&m, input_bits.len() as u32);
         assert_eq!(
             h,
             [
@@ -867,7 +771,7 @@ mod tests {
             89, 173, 234, 120, 191, 83, 245, 237, 82, 43, 31, 82, 45, 4, 164, 107, 205, 32, 64,
             112,
         ];
-        let h2 = pedersen_bitstream(&m2, inp2.len() as u32);
+        let h2 = pedersen_hash(&m2, inp2.len() as u32);
         assert_eq!(
             h2,
             [
@@ -923,7 +827,7 @@ mod tests {
             175, 74, 97, 157, 13, 242, 81, 236, 19, 24, 119, 193, 149, 223, 27, 110, 115, 56, 74,
             3, 23, 147, 0,
         ];
-        let h3 = pedersen_bitstream(&m3, inp3.len() as u32);
+        let h3 = pedersen_hash(&m3, inp3.len() as u32);
         assert_eq!(
             h3,
             [
