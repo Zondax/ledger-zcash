@@ -264,7 +264,8 @@ fn group_hash_check(hash: &[u8; 32]) -> bool {
 }
 
 //use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf};
-//use subtle::ConditionallySelectable; //TODO: replace me with no-std version
+//use subtle::ConditionallySelectable; 
+//TODO: replace me with no-std version
 
 const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
 
@@ -357,6 +358,7 @@ fn handle_chunk(bits: u8, cur: &mut Fr) -> Fr {
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 //#[inline(never)]
+#[inline(never)]
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
     c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
 
@@ -491,6 +493,7 @@ pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
 
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
+
     let h = pedersen_hash(input_msg.as_ref(), 3);
     output_msg.copy_from_slice(&h);
 }
@@ -501,6 +504,7 @@ mod tests {
     use crate::zip32::*;
     use crate::*;
     use core::convert::TryInto;
+    use alloc::vec::Vec;
 
     #[test]
     fn test_zip32_master() {
@@ -859,9 +863,6 @@ mod tests {
             ]
         );
     }
-
-    use crate::*;
-    use alloc::vec::Vec;
 
     fn encode_test(v: &[u8]) -> Vec<u8> {
         let n = if v.len() % 8 > 0 {
