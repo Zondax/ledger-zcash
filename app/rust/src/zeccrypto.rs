@@ -8,7 +8,6 @@ use crate::{bolos, zip32};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
-
 //use crypto_api_chachapoly::{ChaCha20Ietf, ChachaPolyIetf};
 //use subtle::ConditionallySelectable;
 //TODO: replace me with no-std version
@@ -136,11 +135,115 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
+struct Bitstreamer<'a> {
+    input_bytes: &'a [u8],
+    byte_index: usize,
+    bitsize: u32,
+    bit_index: u32,
+    curr: u32,
+    shift: i8,
+    carry: i8,
+}
+
+impl<'a> Bitstreamer<'a> {
+    fn peek(&self) -> bool {
+        if self.bit_index >= self.bitsize {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+static ADDBITS: [u8; 3] = [1, 0, 2];
+
+impl<'a> Iterator for Bitstreamer<'a> {
+    type Item = u8;
+    fn next(&mut self) -> Option<u8> {
+        if self.bit_index >= self.bitsize {
+            return None;
+        }
+        let s = ((self.curr >> (self.shift as u32)) & 7) as u8;
+        self.bit_index += 3;
+        if self.shift - 3 < 0 {
+            self.byte_index += 1;
+            if self.byte_index < self.input_bytes.len() {
+                self.carry = ((self.carry - 1) + 3) % 3;
+                self.curr <<= 8;
+                self.curr += (self.input_bytes[self.byte_index] as u32);
+                self.shift = 5 + self.carry;
+            } else {
+                let sh = ADDBITS[self.carry as usize];
+                self.curr <<= (sh as u32);
+                self.shift = 0;
+            }
+        } else {
+            self.shift -= 3;
+        }
+        Some(s)
+    }
+}
+
+fn pedersen_bitstream(m: &[u8], bitsize: u32) -> [u8; 32] {
+    const MAXCOUNTER: usize = 63;
+
+    let mut counter: usize = 0;
+    let mut pointcounter: usize = 0;
+
+    let mut acc = Fr::zero();
+    let mut cur = Fr::one();
+    let mut result_point = ExtendedPoint::identity();
+
+    let mut b = Bitstreamer {
+        input_bytes: m,
+        byte_index: 0,
+        bitsize: bitsize,
+        bit_index: 0,
+        curr: m[0] as u32,
+        shift: 5,
+        carry: 0,
+    };
+
+    while b.peek() {
+        let bits = b.next().unwrap();
+        let tmp = handle_chunk(bits, &mut cur);
+        acc = acc.add(&tmp);
+        counter += 1;
+        //check if we need to move to the next curvepoint
+        if counter == MAXCOUNTER {
+            let s = POINTS[pointcounter];
+            let q = AffinePoint::from_bytes(s).unwrap().to_niels();
+            let p = q.multiply_bits(&acc.to_bytes());
+            result_point = result_point + p;
+
+            counter = 0;
+            pointcounter += 1;
+            acc = Fr::zero();
+            cur = Fr::one();
+        } else {
+            cur = cur.double();
+            cur = cur.double();
+            cur = cur.double()
+        }
+    }
+
+    if counter > 0 {
+        let s = POINTS[pointcounter];
+        let q = AffinePoint::from_bytes(s).unwrap().to_niels();
+        let p = q.multiply_bits(&acc.to_bytes());
+        result_point = result_point + p;
+    }
+
+    //handle remaining bits if there are any
+
+    return AffinePoint::from(result_point).get_u().to_bytes();
+}
+
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 //#[inline(never)]
 #[inline(never)]
 fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
-  //  c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
+    //  c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
     const MAXCOUNTER: usize = 63;
 
     let mut i = 0;
@@ -239,7 +342,7 @@ fn pedersen_hash(m: &[u8], bitsize: u64) -> [u8; 32] {
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-   // c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
+    // c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
 
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
@@ -254,6 +357,24 @@ mod tests {
     use crate::zip32::*;
     use crate::*;
     use core::convert::TryInto;
+
+    #[test]
+    fn test_bitstreamer() {
+        let a: [u8; 2] = [254, 0];
+        let mut b = Bitstreamer {
+            input_bytes: &a,
+            byte_index: 0,
+            bitsize: 9,
+            bit_index: 0,
+            curr: a[0] as u32,
+            shift: 5,
+            carry: 0,
+        };
+        assert_eq!(b.next(), Some(7 as u8));
+        assert_eq!(b.next(), Some(7 as u8));
+        assert_eq!(b.next(), Some(4 as u8));
+        assert_eq!(b.next(), None);
+    }
 
     #[test]
     fn test_zip32_master() {
@@ -583,35 +704,35 @@ mod tests {
             ]
         );
     }
-/*
-    fn encode_test(v: &[u8]) -> Vec<u8> {
-        let n = if v.len() % 8 > 0 {
-            1 + v.len() / 8
-        } else {
-            v.len() / 8
-        };
-        let mut result: Vec<u8> = std::vec::Vec::new();
-        let mut i = 0;
-        while i < n {
-            result.push(0);
-            for j in 0..8 {
-                let s = if i * 8 + j < v.len() { v[i * 8 + j] } else { 0 };
-                result[i] += s;
-                if j < 7 {
-                    result[i] <<= 1;
+    /*
+        fn encode_test(v: &[u8]) -> Vec<u8> {
+            let n = if v.len() % 8 > 0 {
+                1 + v.len() / 8
+            } else {
+                v.len() / 8
+            };
+            let mut result: Vec<u8> = std::vec::Vec::new();
+            let mut i = 0;
+            while i < n {
+                result.push(0);
+                for j in 0..8 {
+                    let s = if i * 8 + j < v.len() { v[i * 8 + j] } else { 0 };
+                    result[i] += s;
+                    if j < 7 {
+                        result[i] <<= 1;
+                    }
                 }
+                i += 1;
             }
-            i += 1;
+            result
         }
-        result
-    }
 
-    #[test]
-    fn test_encode_test() {
-        let f1: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 1, 1];
-        assert_eq!(encode_test(&f1).as_slice(), &[1, 128]);
-    }
-*/
+        #[test]
+        fn test_encode_test() {
+            let f1: [u8; 9] = [0, 0, 0, 0, 0, 0, 0, 1, 1];
+            assert_eq!(encode_test(&f1).as_slice(), &[1, 128]);
+        }
+    */
     #[test]
     fn test_handlechunk() {
         let bits: u8 = 1;
@@ -624,7 +745,7 @@ mod tests {
     fn test_key_small() {
         let m: [u8; 1] = [0xb0; 1];
         assert_eq!(
-            pedersen_hash(&m, 3),
+            pedersen_bitstream(&m, 3),
             [
                 115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
                 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22
@@ -645,13 +766,13 @@ mod tests {
             ]
         );
     }
-/*
+
     #[test]
     fn test_pedersen_small() {
-        let input_bits: [u8; 9] = [1, 1, 1, 1, 1, 1, 1, 0, 0];
-        let m = encode_test(&input_bits);
-        let h = pedersen_hash(&m, 9);
-        assert_eq!(pedersen_hash(&[254, 0], 9), h);
+        assert_eq!(
+            pedersen_hash(&[254, 0], 9),
+            pedersen_bitstream(&[254, 0], 9)
+        );
     }
 
     #[test]
@@ -665,8 +786,12 @@ mod tests {
             1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0,
             1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0,
         ];
-        let m = encode_test(&input_bits);
-        let h = pedersen_hash(&m, input_bits.len() as u64);
+        let m = [
+            254, 15, 113, 194, 19, 173, 26, 16, 40, 190, 235, 147, 77, 195, 179, 41, 127, 194, 233,
+            242, 166, 138, 85, 64,
+        ];
+
+        let h = pedersen_bitstream(&m, input_bits.len() as u32);
         assert_eq!(
             h,
             [
@@ -678,7 +803,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pedersen_big() {
+    fn test_pedersen_big1() {
         let input_bits: [u8; 190] = [
             1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0,
             0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1,
@@ -688,8 +813,11 @@ mod tests {
             0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0,
             0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
         ];
-        let m = encode_test(&input_bits);
-        let h = pedersen_hash(&m, input_bits.len() as u64);
+        let m = [
+            254, 141, 17, 3, 7, 195, 142, 207, 149, 11, 103, 209, 80, 192, 57, 97, 146, 64, 183,
+            222, 198, 120, 95, 12,
+        ];
+        let h = pedersen_bitstream(&m, input_bits.len() as u32);
         assert_eq!(
             h,
             [
@@ -698,7 +826,10 @@ mod tests {
                 0xc7, 0x47, 0x12, 0x60
             ]
         );
+    }
 
+    #[test]
+    fn test_pedersen_big2() {
         let inp2: [u8; 756] = [
             1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
             1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1,
@@ -728,8 +859,15 @@ mod tests {
             0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
             1, 1,
         ];
-        let m2 = encode_test(&inp2);
-        let h2 = pedersen_hash(&m2, inp2.len() as u64);
+        let m2 = [
+            255, 36, 160, 101, 235, 56, 100, 228, 238, 208, 119, 207, 198, 202, 232, 39, 23, 27,
+            131, 65, 235, 16, 213, 241, 92, 152, 205, 100, 247, 156, 81, 34, 24, 5, 216, 141, 144,
+            165, 43, 101, 240, 136, 5, 121, 122, 237, 122, 98, 110, 14, 84, 78, 249, 4, 45, 86, 50,
+            228, 71, 208, 239, 239, 66, 145, 145, 147, 81, 104, 233, 145, 2, 218, 138, 184, 136,
+            89, 173, 234, 120, 191, 83, 245, 237, 82, 43, 31, 82, 45, 4, 164, 107, 205, 32, 64,
+            112,
+        ];
+        let h2 = pedersen_bitstream(&m2, inp2.len() as u32);
         assert_eq!(
             h2,
             [
@@ -738,7 +876,9 @@ mod tests {
                 0xec, 0x92, 0x41, 0x31
             ]
         );
-
+    }
+    #[test]
+    fn test_pedersen_big3() {
         let inp3: [u8; 945] = [
             0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
             0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0,
@@ -774,8 +914,16 @@ mod tests {
             1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1,
             0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0,
         ];
-        let m3 = encode_test(&inp3);
-        let h3 = pedersen_hash(&m3, inp3.len() as u64);
+        let m3 = [
+            0, 131, 64, 18, 244, 170, 220, 23, 227, 251, 49, 181, 100, 41, 38, 163, 234, 27, 126,
+            10, 209, 190, 115, 98, 64, 1, 96, 32, 71, 234, 76, 114, 243, 223, 144, 182, 204, 62,
+            155, 226, 96, 238, 236, 150, 71, 106, 54, 184, 51, 107, 169, 39, 7, 174, 250, 1, 41, 4,
+            70, 179, 39, 20, 136, 59, 65, 112, 243, 171, 143, 37, 227, 9, 97, 216, 211, 53, 193,
+            241, 73, 135, 18, 61, 164, 87, 94, 204, 203, 243, 59, 99, 115, 20, 194, 38, 244, 221,
+            175, 74, 97, 157, 13, 242, 81, 236, 19, 24, 119, 193, 149, 223, 27, 110, 115, 56, 74,
+            3, 23, 147, 0,
+        ];
+        let h3 = pedersen_bitstream(&m3, inp3.len() as u32);
         assert_eq!(
             h3,
             [
@@ -785,7 +933,6 @@ mod tests {
             ]
         );
     }
-    */
 
     /*
     #[test]
