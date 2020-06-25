@@ -60,10 +60,12 @@ extern "C" {
     fn zcash_blake2b_kdf_sapling(a: *const u8, a_len: u32, out: *mut u8);
     fn zcash_blake2b_prf_ock(a: *const u8, a_len: u32, out: *mut u8);
 }
-
+#[cfg(not(test))]
 pub fn c_zemu_log_stack(s: &[u8]) {
     unsafe { zemu_log_stack(s.as_ptr()) }
 }
+#[cfg(test)]
+pub fn c_zemu_log_stack(s: &[u8]) {}
 
 pub fn c_check_app_canary() {
     unsafe { check_app_canary() }

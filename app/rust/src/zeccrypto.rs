@@ -136,11 +136,36 @@ static POINTS: [[u8; 32]; 6] = [
 ];
 
 #[inline(never)]
-fn add_point(point: &mut ExtendedPoint, acc: &mut Fr, index: usize) {
+fn get_point(index: usize) -> [u8; 32] {
+    c_zemu_log_stack(b"getpoint\x00".as_ref());
     let s = POINTS[index];
-    let q = AffinePoint::from_bytes(s).unwrap().to_niels();
-    let p = q.multiply_bits(&acc.to_bytes());
+    let q = AffinePoint::from_bytes(s).unwrap();
+    q.to_bytes()
+}
+
+#[inline(never)]
+fn mult_bits(q: &[u8; 32], bits: &[u8; 32]) -> [u8; 32] {
+    c_zemu_log_stack(b"multbits_begin\x00".as_ref());
+    let t = AffinePoint::from_bytes(*q).unwrap().to_niels();
+    let p = t.multiply_bits(bits);
+    let x = AffinePoint::from(&p).to_bytes();
+    x
+}
+
+#[inline(never)]
+fn add_to_point(point: &mut ExtendedPoint, bytes: &[u8; 32]) {
+    let q = AffinePoint::from_bytes(*bytes).unwrap();
+    let p = ExtendedPoint::from(q);
+    c_zemu_log_stack(b"addtopoint_begin\x00".as_ref());
     *point = *point + p;
+}
+
+#[inline(never)]
+fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
+    c_zemu_log_stack(b"addpoint_begin\x00".as_ref());
+    let q = get_point(index);
+    let p = mult_bits(&q, acc);
+    add_to_point(point, &p);
 }
 
 #[inline(never)]
@@ -235,7 +260,7 @@ fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
         counter += 1;
         //check if we need to move to the next curvepoint
         if counter == MAXCOUNTER {
-            add_point(&mut result_point, &mut acc, pointcounter);
+            add_point(&mut result_point, &acc.to_bytes(), pointcounter);
             counter = 0;
             pointcounter += 1;
             acc = Fr::zero();
@@ -244,12 +269,13 @@ fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
             squarings(&mut cur);
         }
     }
-
+    c_zemu_log_stack(b"pedersen_hash_beforeadd\x00".as_ref());
     if counter > 0 {
-        add_point(&mut result_point, &mut acc, pointcounter);
+        add_point(&mut result_point, &acc.to_bytes(), pointcounter);
     }
 
     //handle remaining bits if there are any
+    c_zemu_log_stack(b"return bytes\x00".as_ref());
     let result = return_bytes(&mut result_point);
     result
 }
@@ -266,7 +292,7 @@ pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
 
-    let h = pedersen_hash(input_msg.as_ref(), 3);
+    let h = pedersen_hash(input_msg, 3);
     output_msg.copy_from_slice(&h);
 }
 
