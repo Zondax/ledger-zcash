@@ -144,18 +144,20 @@ fn get_point(index: usize) -> [u8; 32] {
 }
 
 #[inline(never)]
-fn mult_bits(q: &[u8; 32], bits: &[u8; 32]) -> [u8; 32] {
-    c_zemu_log_stack(b"multbits_begin\x00".as_ref());
-    let t = AffinePoint::from_bytes(*q).unwrap().to_niels();
-    let p = t.multiply_bits(bits);
-    let x = AffinePoint::from(&p).to_bytes();
-    x
+fn bytes_to_niels(bytes: &[u8; 32]) -> AffineNielsPoint {
+    AffinePoint::from_bytes(*bytes).unwrap().to_niels()
 }
 
 #[inline(never)]
-fn add_to_point(point: &mut ExtendedPoint, bytes: &[u8; 32]) {
-    let q = AffinePoint::from_bytes(*bytes).unwrap();
-    let p = ExtendedPoint::from(q);
+fn mult_bits(q: &[u8; 32], bits: &[u8; 32]) -> ExtendedPoint {
+    c_zemu_log_stack(b"multbits_begin\x00".as_ref());
+    let t = bytes_to_niels(q);
+    let p = t.multiply_bits(bits);
+    p
+}
+
+#[inline(never)]
+fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
     c_zemu_log_stack(b"addtopoint_begin\x00".as_ref());
     *point = *point + p;
 }
