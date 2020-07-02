@@ -136,23 +136,17 @@ static POINTS: [[u8; 32]; 6] = [
 ];
 
 #[inline(never)]
-fn get_point(index: usize) -> [u8; 32] {
+fn get_point(index: usize) -> AffineNielsPoint {
     c_zemu_log_stack(b"getpoint\x00".as_ref());
     let s = POINTS[index];
     let q = AffinePoint::from_bytes(s).unwrap();
-    q.to_bytes()
+    q.to_niels()
 }
 
 #[inline(never)]
-fn bytes_to_niels(bytes: &[u8; 32]) -> AffineNielsPoint {
-    AffinePoint::from_bytes(*bytes).unwrap().to_niels()
-}
-
-#[inline(never)]
-fn mult_bits(q: &[u8; 32], bits: &[u8; 32]) -> ExtendedPoint {
+fn mult_bits(q: &AffineNielsPoint, bits: &[u8; 32]) -> ExtendedPoint {
     c_zemu_log_stack(b"multbits_begin\x00".as_ref());
-    let t = bytes_to_niels(q);
-    let p = t.multiply_bits(bits);
+    let p = q.multiply_bits(bits);
     p
 }
 
@@ -223,7 +217,7 @@ impl<'a> Iterator for Bitstreamer<'a> {
                 self.curr += (self.input_bytes[self.byte_index] as u32);
                 self.shift = 5 + self.carry;
             } else {
-                let sh = ADDBITS[self.carry as usize];
+                let sh = ((self.carry & 2) + ((self.carry & 2) >> 1) ^ (self.carry & 1) ^ 1) as u8;
                 self.curr <<= (sh as u32);
                 self.shift = 0;
             }
@@ -304,6 +298,15 @@ mod tests {
     use crate::zip32::*;
     use crate::*;
     use core::convert::TryInto;
+    pub use jubjub::*;
+
+    #[test]
+    fn test_bitops() {
+        for x in 0..2 as u8 {
+            let sh = (x & 2) + ((x & 2) >> 1) ^ (x & 1) ^ 1;
+            assert_eq!(sh, ADDBITS[x as usize]);
+        }
+    }
 
     #[test]
     fn test_bitstreamer() {
