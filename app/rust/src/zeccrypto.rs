@@ -135,7 +135,7 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
-pub const MYTEST: [jubjub::AffineNielsPoint; 6] = [
+pub const NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x194e42926f661b51,
@@ -252,7 +252,7 @@ fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
 #[inline(never)]
 fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
     c_zemu_log_stack(b"addpoint_begin\x00".as_ref());
-    let q = MYTEST[index];
+    let q = NIELSPOINTS[index];
     let p = mult_bits(&q, acc);
     add_to_point(point, &p);
 }
@@ -381,7 +381,7 @@ pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
 
-    let h = pedersen_hash(input_msg, 3);
+    let h = pedersen_hash(input_msg, 3); //fixme: take variable length bitsize?
     output_msg.copy_from_slice(&h);
 }
 
