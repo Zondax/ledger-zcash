@@ -135,21 +135,98 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
-pub const MYTEST: [jubjub::AffineNielsPoint; 1] = [AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0x194e42926f661b51,
-        0x2f0c718f6f0fbadd,
-        0xb5ea25de7ec0e378,
-        0x73c016a42ded9578,
-    ]),
-    Fq::from_raw([
-        0x77bfabd432243cca,
-        0xf9472e8bc04e4632,
-        0x79c9166b837edc5e,
-        0x289e87a2d3521b57,
-    ]),
-)
-.to_niels()];
+pub const MYTEST: [jubjub::AffineNielsPoint; 6] = [
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0x194e42926f661b51,
+            0x2f0c718f6f0fbadd,
+            0xb5ea25de7ec0e378,
+            0x73c016a42ded9578,
+        ]),
+        Fq::from_raw([
+            0x77bfabd432243cca,
+            0xf9472e8bc04e4632,
+            0x79c9166b837edc5e,
+            0x289e87a2d3521b57,
+        ]),
+    )
+    .to_niels(),
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0xb9819dc82d90607e,
+            0xa361ee3fd48fdf77,
+            0x52a35a8c1908dd87,
+            0x15a36d1f0f390d88,
+        ]),
+        Fq::from_raw([
+            0x7b0dc53c4ebf1891,
+            0x1f3abeeb98fad3e8,
+            0xf7891142c001d925,
+            0x015d8c7f5b43fe33,
+        ]),
+    )
+    .to_niels(),
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0x76d6f7c2b67fc475,
+            0xbae8e5c46641ae5c,
+            0xeb69ae39f5c84210,
+            0x664321a58246e2f6,
+        ]),
+        Fq::from_raw([
+            0x80ed502c9793d457,
+            0x8bb22a7f1784b498,
+            0xe000a46c8e8ce853,
+            0x362e1500d24eee9e,
+        ]),
+    )
+    .to_niels(),
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0x4c767804c1c4a2cc,
+            0x7d02d50e654b87f2,
+            0xedc5f4a9cff29fd5,
+            0x323a6548ce9d9876,
+        ]),
+        Fq::from_raw([
+            0x84714beca33570e9,
+            0x5103afa1a11f6a85,
+            0x91070acbd8d947b7,
+            0x2f7ee40c4b56cad8,
+        ]),
+    )
+    .to_niels(),
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0x46809430657f82d1,
+            0xefd5931305f2f0bf,
+            0x89b64b4e03362796,
+            0x3bd2666000b54796,
+        ]),
+        Fq::from_raw([
+            0x99968299c3658aef,
+            0xb3b9d8095859d14c,
+            0x397832381406c9e5,
+            0x494bc52103ab9d0a,
+        ]),
+    )
+    .to_niels(),
+    AffinePoint::from_raw_unchecked(
+        Fq::from_raw([
+            0xcb3c023258d32079,
+            0x1d9e5ca21135ff6f,
+            0xda049746d76d3ee5,
+            0x63447b2ba31bb28a,
+        ]),
+        Fq::from_raw([
+            0x436082119f8d629a,
+            0xa80200d2c66b13a7,
+            0x64cdb1070a136a28,
+            0x64ec4689e8bfb6e5,
+        ]),
+    )
+    .to_niels(),
+];
 
 #[inline(never)]
 fn get_point(index: usize) -> AffineNielsPoint {
@@ -175,8 +252,7 @@ fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
 #[inline(never)]
 fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
     c_zemu_log_stack(b"addpoint_begin\x00".as_ref());
-    let q = get_point(index);
-    //let q = MYTEST[index];
+    let q = MYTEST[index];
     let p = mult_bits(&q, acc);
     add_to_point(point, &p);
 }
@@ -315,14 +391,6 @@ mod tests {
     use crate::zip32::*;
     use crate::*;
     use core::convert::TryInto;
-
-    #[test]
-    fn test_point() {
-        let a = jubjub::AffinePoint::from_bytes(POINTS[0]).unwrap();
-        let b = MYTEST[0];
-        let c = (a == b);
-        assert_eq!(c, true);
-    }
 
     #[test]
     fn test_bitops() {
