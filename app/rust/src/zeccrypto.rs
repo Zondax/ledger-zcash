@@ -135,7 +135,7 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
-pub const NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
+static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x194e42926f661b51,
@@ -307,11 +307,11 @@ impl<'a> Iterator for Bitstreamer<'a> {
             if self.byte_index < self.input_bytes.len() {
                 self.carry = ((self.carry - 1) + 3) % 3;
                 self.curr <<= 8;
-                self.curr += (self.input_bytes[self.byte_index] as u32);
+                self.curr += self.input_bytes[self.byte_index] as u32;
                 self.shift = 5 + self.carry;
             } else {
-                let sh = ((self.carry & 2) + ((self.carry & 2) >> 1) ^ (self.carry & 1) ^ 1) as u8;
-                self.curr <<= (sh as u32);
+                let sh = ((self.carry & 2) + ((self.carry & 2) >> 1) ^ (self.carry & 1) ^ 1) as u32;
+                self.curr <<= sh;
                 self.shift = 0;
             }
         } else {
