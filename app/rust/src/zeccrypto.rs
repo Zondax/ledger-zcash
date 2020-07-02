@@ -210,7 +210,7 @@ impl<'a> Iterator for Bitstreamer<'a> {
     type Item = u8;
     #[inline(never)]
     fn next(&mut self) -> Option<u8> {
-        if self.bit_index >= self.bitsize {
+        if self.bit_index >= self.bitsize || self.byte_index >= self.input_bytes.len() {
             return None;
         }
         let s = ((self.curr >> (self.shift as u32)) & 7) as u8;
