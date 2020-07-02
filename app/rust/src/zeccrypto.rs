@@ -376,8 +376,6 @@ fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
 //todo: encode length?
 #[no_mangle]
 pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-    // c_zemu_log_stack(b"do_pedersen_hash\x00".as_ref());
-
     let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
     let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
 

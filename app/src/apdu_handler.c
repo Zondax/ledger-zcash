@@ -88,31 +88,15 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags, volatile uint32_t *t
 #if defined(APP_TESTING)
 #include "rslib.h"
 
-__Z_INLINE void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    uint8_t input = G_io_apdu_buffer[OFFSET_DATA+0];
-
+void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     // You can add anything that helps testing here.
     zemu_log_stack("handleTest");
 
-    uint8_t sk[32];
-    uint8_t diversifier[11];
-    uint8_t pkd[32];
+    uint8_t input[32];
+    uint8_t output[32];
 
-    crypto_fillSaplingSeed(sk);
+    do_pedersen_hash(input, output);
     CHECK_APP_CANARY();
-
-    memcpy(diversifier, sk, 11);
-    CHECK_APP_CANARY();
-
-    do_pedersen_hash(sk, pkd);
-    CHECK_APP_CANARY();
-
-    G_io_apdu_buffer[0] = 0xCA;
-    G_io_apdu_buffer[1] = 0xFE;
-    G_io_apdu_buffer[2] = input+1;
-
-    *tx = 3;
-    THROW(APDU_CODE_OK);
 }
 #endif
 
@@ -160,6 +144,10 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 #if defined(APP_TESTING)
                 case INS_TEST: {
                     handleTest(flags, tx, rx);
+                    G_io_apdu_buffer[0] = 0xCA;
+                    G_io_apdu_buffer[1] = 0xFE;
+                    *tx = 3;
+                    THROW(APDU_CODE_OK);
                     break;
                 }
 #endif

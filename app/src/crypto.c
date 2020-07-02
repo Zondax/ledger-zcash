@@ -219,8 +219,6 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
     // Get seed from Ed25519
     MEMZERO(sk, 32);
 
-    zemu_log_stack("crypto_fillSaplingSeed");
-
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
             0x8000002c,
