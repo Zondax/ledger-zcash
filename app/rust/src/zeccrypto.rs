@@ -135,6 +135,22 @@ static POINTS: [[u8; 32]; 6] = [
     ],
 ];
 
+pub const MYTEST: [jubjub::AffineNielsPoint; 1] = [AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0x194e42926f661b51,
+        0x2f0c718f6f0fbadd,
+        0xb5ea25de7ec0e378,
+        0x73c016a42ded9578,
+    ]),
+    Fq::from_raw([
+        0x77bfabd432243cca,
+        0xf9472e8bc04e4632,
+        0x79c9166b837edc5e,
+        0x289e87a2d3521b57,
+    ]),
+)
+.to_niels()];
+
 #[inline(never)]
 fn get_point(index: usize) -> AffineNielsPoint {
     c_zemu_log_stack(b"getpoint\x00".as_ref());
@@ -160,6 +176,7 @@ fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
 fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
     c_zemu_log_stack(b"addpoint_begin\x00".as_ref());
     let q = get_point(index);
+    //let q = MYTEST[index];
     let p = mult_bits(&q, acc);
     add_to_point(point, &p);
 }
@@ -298,7 +315,14 @@ mod tests {
     use crate::zip32::*;
     use crate::*;
     use core::convert::TryInto;
-    pub use jubjub::*;
+
+    #[test]
+    fn test_point() {
+        let a = jubjub::AffinePoint::from_bytes(POINTS[0]).unwrap();
+        let b = MYTEST[0];
+        let c = (a == b);
+        assert_eq!(c, true);
+    }
 
     #[test]
     fn test_bitops() {
