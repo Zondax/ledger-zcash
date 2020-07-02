@@ -85,6 +85,21 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags, volatile uint32_t *t
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
 }
 
+#if defined(APP_TESTING)
+#include "rslib.h"
+
+void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    // You can add anything that helps testing here.
+    zemu_log_stack("handleTest");
+
+    uint8_t input[32];
+    uint8_t output[32];
+
+    do_pedersen_hash(input, output);
+    CHECK_APP_CANARY();
+}
+#endif
+
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     uint16_t sw = 0;
 
@@ -126,6 +141,16 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+#if defined(APP_TESTING)
+                case INS_TEST: {
+                    handleTest(flags, tx, rx);
+                    G_io_apdu_buffer[0] = 0xCA;
+                    G_io_apdu_buffer[1] = 0xFE;
+                    *tx = 3;
+                    THROW(APDU_CODE_OK);
+                    break;
+                }
+#endif
                 default:
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }

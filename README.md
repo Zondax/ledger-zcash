@@ -231,7 +231,7 @@ Many of our integration tests expect the device to be configured with a known te
    Mnemonic: equip will roof matter pink blind book anxiety banner elbow sun young
    ```
 
-**3 - Add a development certificate**
+### 3. Add a development certificate
 
 - Plug your device while pressing the right button
 
@@ -243,6 +243,7 @@ Many of our integration tests expect the device to be configured with a known te
 
 - Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
 
+## Building the Ledger App
 
 ### Loading into your development device
 
@@ -255,7 +256,10 @@ The Makefile will build the firmware in a docker container and leave the binary 
    ```
 
 - Upload to a device
-   The following command will upload the application to the ledger. _Warning: The application will be deleted before uploading._
+
+   The following command will upload the application to the ledger:
+
+   _Warning: The application will be deleted before uploading._
    ```
    make load          # Builds and loads the app to the device
    ```

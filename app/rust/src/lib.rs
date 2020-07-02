@@ -16,7 +16,7 @@ pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
 
 fn debug(_msg: &str) {}
 

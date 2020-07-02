@@ -93,6 +93,15 @@ async function debugScenario4(sim, app) {
     console.log(signature)
 }
 
+async function callTestFunction(sim, app) {
+    let input = 10;
+
+    let response = await sim.getTransport()
+        .send(0x85, 0xFF, 0, 0, Buffer.from([input]), [0x9000, 0x6e00]);
+
+    console.log(response.toString("hex"));
+}
+
 async function main() {
     await beforeStart();
 
@@ -109,7 +118,7 @@ async function main() {
         ////////////
         /// TIP you can use zemu commands here to take the app to the point where you trigger a breakpoint
 
-        await debugScenario1(sim, app);
+        await callTestFunction(sim, app);
 
         /// TIP
 

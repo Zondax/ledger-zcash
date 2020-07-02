@@ -219,8 +219,6 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
     // Get seed from Ed25519
     MEMZERO(sk, 32);
 
-    zemu_log_stack("crypto_fillSaplingSeed");
-
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
             0x8000002c,
@@ -295,24 +293,19 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     {
         TRY
         {
-            // TODO: IT IS NOW DOING CHILD DERIVATION WITH PATH = [1]
-            // TODO: take as input path = [u32;5]
-
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            /*
-             * TODO: THIS IS OLD CODE FOR MASTER ADDRESS
-             * TODO: MAKE A SEPERATE C FUNCTION FOR THIS
+            // TODO: hdPath contains the path
+            // TODO: IT IS NOW DOING CHILD DERIVATION WITH PATH = [1]
+            // TODO: take as input path = [u32;5]
 
-            zip32_master(tmp.step1.zip32_seed, tmp.step1.sk, tmp.step1.dk);
-
-            CHECK_APP_CANARY();
-            MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
-            */
-
+            // TODO: Add hdpath as input. It will iterate
             zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk);
+            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
+            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            CHECK_APP_CANARY();
 
             get_diversifier_list(tmp.step2.dk, out->diversifierlist);
             CHECK_APP_CANARY();
@@ -320,13 +313,6 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
 
             //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             get_diversifier_fromlist(out->diversifier,out->diversifierlist);
-            CHECK_APP_CANARY();
-
-            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
-            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
-            //get_nk(tmp.step1.sk, tmp.step2.nk);
-            CHECK_APP_CANARY();
-            //get_ak(tmp.step1.sk, tmp.step2.ak); //this overwrites step1.sk
             CHECK_APP_CANARY();
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);

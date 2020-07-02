@@ -42,3 +42,5 @@ parser_error_t _getItem(const parser_context_t *ctx,
                               char *outValue, uint16_t outValueLen,
                               uint8_t pageIdx, uint8_t *pageCount,
                               const parser_tx_t *v);
+
+void do_pedersen_hash(const uint8_t *input_ptr, uint8_t *output_ptr);

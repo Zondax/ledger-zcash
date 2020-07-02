@@ -22,6 +22,11 @@ endif
 
 MY_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
+ifeq ($(APP_TESTING),1)
+DEFINES += APP_TESTING
+DEFINES += ZEMU_LOGGING
+endif
+
 all: bin/app.elf
 	@echo "#!/usr/bin/env bash" > $(CURDIR)/pkg/zxtool.sh
 	@echo "APPNAME=\"${APPNAME}\"" >> $(CURDIR)/pkg/zxtool.sh
@@ -36,7 +41,6 @@ all: bin/app.elf
 	@chmod +x $(CURDIR)/pkg/zxtool.sh
 
 include $(BOLOS_SDK)/Makefile.defines
-DEFINES += ZEMU_LOGGING
 
 # Main app configuration
 APPNAME = "Zcash"
@@ -94,7 +98,7 @@ DEFINES       += HAVE_UX_FLOW
 
 else
 # Assume Nano S
-DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=64
+DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
 DEFINES       += HAVE_BOLOS_UX COMPLIANCE_UX_160 HAVE_UX_LEGACY
 endif
 
@@ -145,13 +149,10 @@ APP_SOURCE_PATH += $(MY_DIR)/../deps/ledger-zxlib/app/common
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
 SDK_SOURCE_PATH += lib_stusb lib_stusb_impl
-
-#SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
 
 .PHONY: rust
 rust:
-	@echo "................ BUILDING RUST "
 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target thumbv6m-none-eabi --release
 
 # Before linking, we need to be sure rust lib is there
@@ -159,7 +160,6 @@ bin/app.elf: rust
 
 .PHONY: rust_clean
 rust_clean:
-	@echo "................ CLEANING RUST "
 	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo clean
 
 clean: rust_clean
