@@ -29,7 +29,7 @@ const sim_options = {
     logging: true,
     start_delay: 3000,
     custom: `-s "${APP_SEED}"`
-//    ,X11: true
+    ,X11: true
 };
 
 jest.setTimeout(20000)
@@ -88,6 +88,7 @@ describe('Basic checks', function () {
 
             const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0/1", true);
             await Zemu.sleep(1000);
+            await sim.clickRight();
             await sim.clickBoth();
 
             const addr = await addrRequest;
@@ -135,7 +136,10 @@ describe('Basic checks', function () {
             const app = new ZCashApp(sim.getTransport());
 
             const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0'/1");
-            await Zemu.sleep(1000);
+            await Zemu.sleep(2000);
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
             await sim.clickBoth();
 
             const addr = await addrRequest;
