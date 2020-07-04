@@ -79,16 +79,14 @@ fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
 
 #[inline(never)]
 fn diversifier_group_hash_light(tag: &[u8]) -> bool {
-    let x = bolos::blake2s_diversification(tag);
+    let hash_tag = bolos::blake2s_diversification(tag);
 
     //    diversifier_group_hash_check(&x)
 
-    let u = AffinePoint::from_bytes(x);
+    let u = AffinePoint::from_bytes(hash_tag);
     if u.is_some().unwrap_u8() == 1 {
-        let v = u.unwrap();
-        let q = v.mul_by_cofactor();
-        let i = ExtendedPoint::identity();
-        return q != i;
+        let q = u.unwrap().mul_by_cofactor();
+        return q != ExtendedPoint::identity();
     }
 
     false

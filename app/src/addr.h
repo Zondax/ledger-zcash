@@ -1,7 +1,5 @@
 /*******************************************************************************
-*   Ledger App - Bitcoin Wallet
-*   (c) 2019 ZondaX GmbH
-*   (c) 2016-2019 Ledger
+*   (c) 2020 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -18,20 +16,18 @@
 
 #pragma once
 
-#include <stdlib.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int decode_base58(const char *in, size_t length,
-                  unsigned char *out, size_t *outlen);
+/// Return the number of items in the address view
+zxerr_t addr_getNumItems(uint8_t *num_items);
 
-int encode_base58(const unsigned char *in, size_t length,
-                  unsigned char *out, size_t *outlen);
-
-char encode_base58_clip(const unsigned char v);
+/// Gets an specific item from the address view (including paging)
+zxerr_t addr_getItem(int8_t displayIdx,
+                     char *outKey, uint16_t outKeyLen,
+                     char *outValue, uint16_t outValueLen,
+                     uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }

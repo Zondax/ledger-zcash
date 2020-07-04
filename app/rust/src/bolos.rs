@@ -87,16 +87,16 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
 }
 
 #[cfg(not(test))]
-pub fn blake2b_expand_vec_two(a: &[u8], b: &[u8], c: &[u8]) -> [u8; 64] {
+pub fn blake2b_expand_vec_two(in_a: &[u8], in_b: &[u8], in_c: &[u8]) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
         c_zcash_blake2b_expand_vec_two(
-            a.as_ptr(),
-            a.len() as u32,
-            b.as_ptr(),
-            b.len() as u32,
-            c.as_ptr(),
-            c.len() as u32,
+            in_a.as_ptr(),
+            in_a.len() as u32,
+            in_b.as_ptr(),
+            in_b.len() as u32,
+            in_c.as_ptr(),
+            in_c.len() as u32,
             hash.as_mut_ptr(),
         );
     }
@@ -104,20 +104,26 @@ pub fn blake2b_expand_vec_two(a: &[u8], b: &[u8], c: &[u8]) -> [u8; 64] {
 }
 
 #[cfg(not(test))]
-pub fn blake2b_expand_vec_four(a: &[u8], b: &[u8], c: &[u8], d: &[u8], e: &[u8]) -> [u8; 64] {
+pub fn blake2b_expand_vec_four(
+    in_a: &[u8],
+    in_b: &[u8],
+    in_c: &[u8],
+    in_d: &[u8],
+    in_e: &[u8],
+) -> [u8; 64] {
     let mut hash = [0; 64];
     unsafe {
         c_zcash_blake2b_expand_vec_four(
-            a.as_ptr(),
-            a.len() as u32,
-            b.as_ptr(),
-            b.len() as u32,
-            c.as_ptr(),
-            c.len() as u32,
-            d.as_ptr(),
-            d.len() as u32,
-            e.as_ptr(),
-            e.len() as u32,
+            in_a.as_ptr(),
+            in_a.len() as u32,
+            in_b.as_ptr(),
+            in_b.len() as u32,
+            in_c.as_ptr(),
+            in_c.len() as u32,
+            in_d.as_ptr(),
+            in_d.len() as u32,
+            in_e.as_ptr(),
+            in_e.len() as u32,
             hash.as_mut_ptr(),
         );
     }
@@ -262,19 +268,25 @@ pub fn blake2b_zip32master(seed: &[u8]) -> [u8; 64] {
 }
 
 #[cfg(test)]
-pub fn blake2b_expand_vec_four(a: &[u8], b: &[u8], c: &[u8], d: &[u8], e: &[u8]) -> [u8; 64] {
+pub fn blake2b_expand_vec_four(
+    in_a: &[u8],
+    in_b: &[u8],
+    in_c: &[u8],
+    in_d: &[u8],
+    in_e: &[u8],
+) -> [u8; 64] {
     pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
-    let mut h = Blake2bParams::new()
+    let mut blake2b_state = Blake2bParams::new()
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)
         .to_state();
-    h.update(a);
-    h.update(b);
-    h.update(c);
-    h.update(d);
-    h.update(e);
+    blake2b_state.update(in_a);
+    blake2b_state.update(in_b);
+    blake2b_state.update(in_c);
+    blake2b_state.update(in_d);
+    blake2b_state.update(in_e);
     let mut hash = [0u8; 64];
-    hash.copy_from_slice(&h.finalize().as_bytes());
+    hash.copy_from_slice(&blake2b_state.finalize().as_bytes());
     hash
 }
 

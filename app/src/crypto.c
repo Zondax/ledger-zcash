@@ -31,12 +31,6 @@ bool isTestnet() {
 #if defined(TARGET_NANOS) || defined(TARGET_NANOX)
 #include "cx.h"
 
-void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
-    cx_ripemd160_t rip160;
-    cx_ripemd160_init(&rip160);
-    cx_hash(&rip160.header, CX_LAST, in, inLen, out, CX_RIPEMD160_SIZE);
-}
-
 typedef struct {
     uint8_t publicKey[PK_LEN_SECP256K1];
     uint8_t address[50];
@@ -44,6 +38,12 @@ typedef struct {
 
 #define VERSION_SIZE            2
 #define CHECKSUM_SIZE           4
+
+void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
+    cx_ripemd160_t rip160;
+    cx_ripemd160_init(&rip160);
+    cx_hash(&rip160.header, CX_LAST, in, inLen, out, CX_RIPEMD160_SIZE);
+}
 
 // According to 5.6 Encodings of Addresses and Keys
 typedef struct {
@@ -121,9 +121,9 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
     {
         TRY {
             os_perso_derive_node_bip32(CX_CURVE_256K1,
-                                                      path,
-                                                      HDPATH_LEN_DEFAULT,
-                                                      privateKeyData, NULL);
+                                       path,
+                                       HDPATH_LEN_DEFAULT,
+                                       privateKeyData, NULL);
 
             cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &cx_privateKey);
             cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
@@ -168,6 +168,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
     cx_hash_sha256(message, messageLen, tmp, CX_SHA256_SIZE);
     cx_hash_sha256(tmp, CX_SHA256_SIZE, message_digest, CX_SHA256_SIZE);
 
+    /// Now sign
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[32];
     int signatureLength;
