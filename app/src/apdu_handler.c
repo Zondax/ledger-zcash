@@ -31,13 +31,11 @@
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     extractHDPath(rx, OFFSET_DATA);
 
-    zemu_log_stack("handleGetAddrSecp256K1");
-
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     if (requireConfirmation) {
         app_fill_address(addr_secp256k1);
-        view_address_show(addr_secp256k1);
+        view_address_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }

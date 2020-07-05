@@ -16,14 +16,14 @@
 
 #pragma once
 
-#include <zxmacros.h>
-#include "coin.h"
-#include <stdbool.h>
-#include <sigutils.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    #include <zxmacros.h>
+#include "coin.h"
+#include <stdbool.h>
+#include <sigutils.h>
 
 #define CHECKSUM_LENGTH             4
 

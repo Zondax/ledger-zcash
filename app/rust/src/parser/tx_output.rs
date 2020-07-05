@@ -29,7 +29,7 @@ const MAX_DECIMAL_BUFF_LEN: usize = 70;
 const MAX_ADDRESS_BUFFER_LEN: usize = 40;
 
 extern "C" {
-    fn fp_uint64_to_str(out: *mut i8, outLen: u16, value: u64, decimals: u8) -> u16;
+    fn fp_uint64_to_str(out: *mut i8, out_len: u16, value: u64, decimals: u8) -> u16;
 }
 
 #[repr(C)]
