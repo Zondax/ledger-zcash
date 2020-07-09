@@ -7,6 +7,7 @@ extern crate core;
 mod bolos;
 mod constants;
 mod parser;
+mod pedersen;
 mod zeccrypto;
 mod zip32;
 mod zxformat;
