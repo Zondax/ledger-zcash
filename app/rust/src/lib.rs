@@ -2,8 +2,10 @@
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
+extern crate chacha20poly1305;
 extern crate core;
 
+mod aead;
 mod bolos;
 mod constants;
 mod parser;

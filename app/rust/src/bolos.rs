@@ -65,7 +65,7 @@ pub fn c_zemu_log_stack(s: &[u8]) {
     unsafe { zemu_log_stack(s.as_ptr()) }
 }
 #[cfg(test)]
-pub fn c_zemu_log_stack(s: &[u8]) {}
+pub fn c_zemu_log_stack(_s: &[u8]) {}
 
 pub fn c_check_app_canary() {
     unsafe { check_app_canary() }

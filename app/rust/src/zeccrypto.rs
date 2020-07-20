@@ -8,14 +8,6 @@ use crate::bolos::c_zemu_log_stack;
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
-const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
-
-const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
-const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
-
-const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
-const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
-
 pub fn generate_esk(buffer: [u8; 64]) -> [u8; 32] {
     //Rng.fill_bytes(&mut buffer); fill with random bytes
     let esk = Fr::from_bytes_wide(&buffer);
