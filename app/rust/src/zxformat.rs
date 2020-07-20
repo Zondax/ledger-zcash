@@ -186,7 +186,7 @@ mod test {
         assert!(u64_to_str(output.as_mut(), 125_550).is_ok());
         assert_eq!(&output[..6], b"125550");
         // overflow
-        assert!(u64_to_str(output.as_mut(), 12521547982).is_err());
+        assert!(u64_to_str(output.as_mut(), 12_521_547_982).is_err());
     }
 
     #[test]
@@ -195,13 +195,13 @@ mod test {
         assert!(i64_to_str(output.as_mut(), -125_550).is_ok());
         assert_eq!(&output[..7], b"-125550");
         // overflow
-        assert!(i64_to_str(output.as_mut(), -1234567890).is_err());
+        assert!(i64_to_str(output.as_mut(), -1_234_567_890).is_err());
     }
 
     #[test]
     fn test_fpi64_8decimals() {
         let mut output = [0u8; 15];
-        let len = fpi64_to_str(output.as_mut(), -1234567, 8).unwrap();
+        let len = fpi64_to_str(output.as_mut(), -1_234_567, 8).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "-0.01234567");
     }
@@ -210,7 +210,7 @@ mod test {
     fn test_fpi64_10decimals() {
         let mut output = [0u8; 15];
         // With 10 decimals
-        let len = fpi64_to_str(output.as_mut(), -1234567, 10).unwrap();
+        let len = fpi64_to_str(output.as_mut(), -1_234_567, 10).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "-0.0001234567");
     }
@@ -218,7 +218,7 @@ mod test {
     #[test]
     fn test_fpi64_0decimals() {
         let mut output = [0u8; 15];
-        let len = fpi64_to_str(output.as_mut(), -1234567, 0).unwrap();
+        let len = fpi64_to_str(output.as_mut(), -1_234_567, 0).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "-1234567");
     }
@@ -226,7 +226,7 @@ mod test {
     #[test]
     fn test_fpi64_4decimals() {
         let mut output = [0u8; 15];
-        let len = fpi64_to_str(output.as_mut(), -1234567, 4).unwrap();
+        let len = fpi64_to_str(output.as_mut(), -1_234_567, 4).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "-123.4567");
     }
@@ -235,14 +235,14 @@ mod test {
     fn test_fpi64_overflow() {
         let mut output = [0u8; 5];
         // overflow wit zero decimals
-        let result = fpi64_to_str(output.as_mut(), -102123456, 0);
+        let result = fpi64_to_str(output.as_mut(), -102_123_456, 0);
         assert!(result.is_err());
     }
 
     #[test]
     fn test_fpu64_8decimals() {
         let mut output = [0u8; 15];
-        let len = fpu64_to_str(output.as_mut(), 1234567, 8).unwrap();
+        let len = fpu64_to_str(output.as_mut(), 1_234_567, 8).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "0.01234567");
     }
@@ -251,7 +251,7 @@ mod test {
     fn test_fpu64_10decimals() {
         let mut output = [0u8; 15];
         // With 10 decimals
-        let len = fpu64_to_str(output.as_mut(), 1234567, 10).unwrap();
+        let len = fpu64_to_str(output.as_mut(), 1_234_567, 10).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "0.0001234567");
     }
@@ -260,7 +260,7 @@ mod test {
     fn test_fpu64_0decimals() {
         let mut output = [0u8; 15];
         // 0 decimals
-        let len = fpu64_to_str(output.as_mut(), 1234567, 0).unwrap();
+        let len = fpu64_to_str(output.as_mut(), 1_234_567, 0).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "1234567");
     }
@@ -268,7 +268,7 @@ mod test {
     #[test]
     fn test_fpu64_4decimals() {
         let mut output = [0u8; 15];
-        let len = fpu64_to_str(output.as_mut(), 1234567, 4).unwrap();
+        let len = fpu64_to_str(output.as_mut(), 1_234_567, 4).unwrap();
         let result = core::str::from_utf8(&output[..len]).unwrap();
         assert_eq!(result, "123.4567");
     }
@@ -276,7 +276,7 @@ mod test {
     #[test]
     fn test_fpu64_overflow() {
         let mut output = [0u8; 5];
-        let result = fpu64_to_str(output.as_mut(), 1234567, 0);
+        let result = fpu64_to_str(output.as_mut(), 1_234_567, 0);
         assert!(result.is_err());
     }
 
@@ -284,13 +284,11 @@ mod test {
     fn test_paging_string() {
         let inValue = b"abcdabcdabcd";
         let mut outValue = [0u8; 6];
-        let mut idx = 0;
         // the pageString will left over the last byte
         // as a string terminator, so we make chunks of outValue.len() - 1
-        for chunk in inValue.chunks(outValue.len() - 1) {
-            pageString(outValue.as_mut(), inValue.as_ref(), idx).unwrap();
+        for (idx, chunk) in inValue.chunks(outValue.len() - 1).enumerate() {
+            pageString(outValue.as_mut(), inValue.as_ref(), idx as u8).unwrap();
             assert_eq!(outValue[..chunk.len()].as_ref(), chunk);
-            idx += 1;
         }
     }
 }

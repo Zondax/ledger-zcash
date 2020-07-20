@@ -20,9 +20,9 @@ pub type TxTuple<'a> = (
 pub struct Transaction<'a> {
     version: u32,
     inputs: [Option<TxInput<'a>>; MAX_TX_INPUTS],
-    pub ilen: usize,
+    pub inputs_len: usize,
     outputs: [Option<TxOutput<'a>>; MAX_TX_OUTPUTS],
-    pub olen: usize,
+    pub outputs_len: usize,
     pub locktime: u32,
 }
 
@@ -35,16 +35,16 @@ impl<'a> Transaction<'a> {
     }
 
     pub fn inputs(&self) -> &[Option<TxInput>] {
-        self.inputs[..self.ilen].as_ref()
+        self.inputs[..self.inputs_len].as_ref()
     }
 
     pub fn outputs(&self) -> &[Option<TxOutput>] {
-        self.outputs[..self.olen].as_ref()
+        self.outputs[..self.outputs_len].as_ref()
     }
 
     pub fn num_items(&self) -> usize {
         // outputs have two values, the destination address and amount
-        2 * self.olen
+        2 * self.outputs_len
     }
 
     pub fn get_item(
@@ -61,7 +61,7 @@ impl<'a> Transaction<'a> {
         // until now there are just two elements per output
         // the amount and destination
         let items_per_output = 2;
-        let out_idx = (display_idx as usize) / self.olen;
+        let out_idx = (display_idx as usize) / self.outputs_len;
         let out_item = display_idx % items_per_output;
 
         let mut writer_key = zxformat::Writer::new(out_key);
@@ -90,9 +90,9 @@ impl<'a> From<TxTuple<'a>> for Transaction<'a> {
         Self {
             version: raw.0,
             inputs: (raw.1).0,
-            ilen: (raw.1).1 as _,
+            inputs_len: (raw.1).1 as _,
             outputs: (raw.2).0,
-            olen: (raw.2).1 as _,
+            outputs_len: (raw.2).1 as _,
             locktime: raw.3,
         }
     }
@@ -213,8 +213,8 @@ mod test {
         let transaction = Transaction::from_bytes(&bytes).unwrap();
 
         // We know the number of inputs and outputs so:
-        assert_eq!(transaction.ilen, 1);
-        assert_eq!(transaction.olen, 2);
+        assert_eq!(transaction.inputs_len, 1);
+        assert_eq!(transaction.outputs_len, 2);
 
         // for now we just verify if the locktime and amount are valid
         let tx_output_values = transaction

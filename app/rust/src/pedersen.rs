@@ -121,14 +121,13 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
 fn mult_bits(index: usize, bits: &[u8; 32]) -> ExtendedPoint {
     c_zemu_log_stack(b"multbits_begin\x00".as_ref());
     let q = NIELSPOINTS[index];
-    let p = q.multiply_bits(bits);
-    p
+    q.multiply_bits(bits)
 }
 
 #[inline(never)]
 fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
     c_zemu_log_stack(b"addtopoint_begin\x00".as_ref());
-    *point = *point + p;
+    *point += p;
 }
 
 #[inline(never)]
@@ -140,8 +139,7 @@ fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
 
 #[inline(never)]
 fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
-    let v = AffinePoint::from(*point).get_u().to_bytes();
-    v
+    AffinePoint::from(*point).get_u().to_bytes()
 }
 
 #[inline(never)]
@@ -164,11 +162,7 @@ pub struct Bitstreamer<'a> {
 impl<'a> Bitstreamer<'a> {
     #[inline(never)]
     fn peek(&self) -> bool {
-        if self.bit_index >= self.bitsize {
-            return false;
-        } else {
-            return true;
-        }
+        self.bit_index < self.bitsize
     }
 }
 
@@ -189,7 +183,8 @@ impl<'a> Iterator for Bitstreamer<'a> {
                 self.curr += self.input_bytes[self.byte_index] as u32;
                 self.shift = 5 + self.carry;
             } else {
-                let sh = ((self.carry & 2) + ((self.carry & 2) >> 1) ^ (self.carry & 1) ^ 1) as u32;
+                let sh =
+                    (((self.carry & 2) + ((self.carry & 2) >> 1)) ^ (self.carry & 1) ^ 1) as u32;
                 self.curr <<= sh;
                 self.shift = 0;
             }
@@ -244,20 +239,18 @@ pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
 
     //handle remaining bits if there are any
     c_zemu_log_stack(b"return bytes\x00".as_ref());
-    let result = return_bytes(&mut result_point);
-    result
+
+    return_bytes(&mut result_point)
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 //#[inline(never)]
 
-//assume that encoding of bits is done before this
-//todo: encode length?
 #[no_mangle]
-pub extern "C" fn do_pedersen_hash(input_ptr: *const u8, output_ptr: *mut u8) {
-    let input_msg: &[u8; 1] = unsafe { mem::transmute(input_ptr) };
-    let output_msg: &mut [u8; 32] = unsafe { mem::transmute(output_ptr) };
+pub extern "C" fn pedersen_hash_1byte(input: u8, output_ptr: *mut [u8; 32]) {
+    let input_msg = [input];
+    let output_msg = unsafe { &mut *output_ptr };
 
-    let h = pedersen_hash(input_msg, 3); //fixme: take variable length bitsize?
+    let h = pedersen_hash(&input_msg, 3); //fixme: take variable length bitsize?
     output_msg.copy_from_slice(&h);
 }

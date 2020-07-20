@@ -10,7 +10,7 @@ mod bolos;
 mod constants;
 mod parser;
 mod pedersen;
-mod tests;
+mod tests_crypto;
 mod zeccrypto;
 mod zip32;
 mod zxformat;

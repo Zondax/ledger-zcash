@@ -144,7 +144,7 @@ pub fn ff1aes_list(sk: &[u8; 32]) -> [u8; 44] {
     let size = 4;
 
     for c in 0..size {
-        d = counter.clone();
+        d = counter;
         ff1.encrypt(&mut d).unwrap();
         result[c * 11..(c + 1) * 11].copy_from_slice(&d);
         for k in 0..11 {
@@ -278,8 +278,8 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
     for &p in path {
         //compute expkey needed for zip32 child derivation
         //non-hardened child
-        let hardened = (p & 0x80000000) != 0;
-        let c = p & 0x7FFFFFFF;
+        let hardened = (p & 0x8000_0000) != 0;
+        let c = p & 0x7FFF_FFFF;
         if hardened {
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
@@ -315,54 +315,62 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
 }
 
 #[no_mangle]
-pub extern "C" fn ask_to_ak(ask_ptr: *const u8, ak_ptr: *mut u8) {
-    let ask: &[u8; 32] = unsafe { mem::transmute(ask_ptr) };
-    let ak: &mut [u8; 32] = unsafe { mem::transmute(ak_ptr) };
+pub extern "C" fn ask_to_ak(ask_ptr: *const [u8; 32], ak_ptr: *mut [u8; 32]) {
+    let ask = unsafe { &*ask_ptr };
+    let ak = unsafe { &mut *ak_ptr };
     let tmp_ak = sapling_ask_to_ak(&ask);
     ak.copy_from_slice(&tmp_ak)
 }
 
 #[no_mangle]
-pub extern "C" fn nsk_to_nk(nsk_ptr: *const u8, nk_ptr: *mut u8) {
-    let nsk = unsafe { &*(nsk_ptr as *const [u8; 32]) };
-    let nk: &mut [u8; 32] = unsafe { mem::transmute(nk_ptr) };
+pub extern "C" fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
+    let nsk = unsafe { &*nsk_ptr };
+    let nk = unsafe { &mut *nk_ptr };
     let tmp_nk = sapling_nsk_to_nk(&nsk);
     nk.copy_from_slice(&tmp_nk)
 }
 
 #[no_mangle]
-pub extern "C" fn get_ak(sk_ptr: *const u8, ak_ptr: *mut u8) {
-    let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let ak: &mut [u8; 32] = unsafe { mem::transmute(ak_ptr) };
+pub extern "C" fn get_ak(sk_ptr: *const [u8; 32], ak_ptr: *mut [u8; 32]) {
+    let sk = unsafe { &*sk_ptr };
+    let ak = unsafe { &mut *ak_ptr };
     let ask = sapling_derive_dummy_ask(sk);
     let tmp_ak = sapling_ask_to_ak(&ask);
     ak.copy_from_slice(&tmp_ak)
 }
 
 #[no_mangle]
-pub extern "C" fn get_nk(sk_ptr: *const u8, nk_ptr: *mut u8) {
-    let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let nk: &mut [u8; 32] = unsafe { mem::transmute(nk_ptr) };
+pub extern "C" fn get_nk(sk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
+    let sk = unsafe { &*sk_ptr };
+    let nk = unsafe { &mut *nk_ptr };
     let nsk = sapling_derive_dummy_nsk(sk);
     let tmp_nk = sapling_nsk_to_nk(&nsk);
     nk.copy_from_slice(&tmp_nk)
 }
 
 #[no_mangle]
-pub extern "C" fn get_ivk(ak_ptr: *const u8, nk_ptr: *mut u8, ivk_ptr: *mut u8) {
-    let ak: &[u8; 32] = unsafe { mem::transmute(ak_ptr) };
-    let nk: &[u8; 32] = unsafe { mem::transmute(nk_ptr) };
-    let ivk: &mut [u8; 32] = unsafe { mem::transmute(ivk_ptr) };
+pub extern "C" fn get_ivk(
+    ak_ptr: *const [u8; 32],
+    nk_ptr: *const [u8; 32],
+    ivk_ptr: *mut [u8; 32],
+) {
+    let ak = unsafe { &*ak_ptr };
+    let nk = unsafe { &*nk_ptr };
+    let ivk = unsafe { &mut *ivk_ptr };
 
     let tmp_ivk = aknk_to_ivk(&ak, &nk);
     ivk.copy_from_slice(&tmp_ivk)
 }
 
 #[no_mangle]
-pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mut u8) {
-    let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
-    let sk: &mut [u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let dk: &mut [u8; 32] = unsafe { mem::transmute(dk_ptr) };
+pub extern "C" fn zip32_master(
+    seed_ptr: *const [u8; 32],
+    sk_ptr: *mut [u8; 32],
+    dk_ptr: *mut [u8; 32],
+) {
+    let seed = unsafe { &*seed_ptr };
+    let sk = unsafe { &mut *sk_ptr };
+    let dk = unsafe { &mut *dk_ptr };
 
     let k = derive_zip32_master(seed);
     sk.copy_from_slice(&k[0..32]);
@@ -372,16 +380,16 @@ pub extern "C" fn zip32_master(seed_ptr: *const u8, sk_ptr: *mut u8, dk_ptr: *mu
 //fixme
 #[no_mangle]
 pub extern "C" fn zip32_child(
-    seed_ptr: *const u8,
-    dk_ptr: *mut u8,
-    ask_ptr: *mut u8,
-    nsk_ptr: *mut u8,
+    seed_ptr: *const [u8; 32],
+    dk_ptr: *mut [u8; 32],
+    ask_ptr: *mut [u8; 32],
+    nsk_ptr: *mut [u8; 32],
 ) {
-    let seed: &[u8; 32] = unsafe { mem::transmute(seed_ptr) };
-    let dk: &mut [u8; 32] = unsafe { mem::transmute(dk_ptr) };
-    let ask: &mut [u8; 32] = unsafe { mem::transmute(ask_ptr) };
-    let nsk: &mut [u8; 32] = unsafe { mem::transmute(nsk_ptr) };
-    let p: u32 = 0x80000001;
+    let seed = unsafe { &*seed_ptr };
+    let dk = unsafe { &mut *dk_ptr };
+    let ask = unsafe { &mut *ask_ptr };
+    let nsk = unsafe { &mut *nsk_ptr };
+    let p: u32 = 0x8000_0001;
     let k = derive_zip32_child_fromseedandpath(seed, &[p]); //todo: fix me
     dk.copy_from_slice(&k[0..32]);
     ask.copy_from_slice(&k[32..64]);
@@ -389,27 +397,37 @@ pub extern "C" fn zip32_child(
 }
 
 #[no_mangle]
-pub extern "C" fn get_diversifier_list(sk_ptr: *const u8, diversifier_list_ptr: *mut u8) {
-    let sk: &[u8; 32] = unsafe { mem::transmute(sk_ptr) };
-    let diversifier: &mut [u8; 44] = unsafe { mem::transmute(diversifier_list_ptr) };
+pub extern "C" fn get_diversifier_list(
+    sk_ptr: *const [u8; 32],
+    diversifier_list_ptr: *mut [u8; 44],
+) {
+    let sk = unsafe { &*sk_ptr };
+    let diversifier = unsafe { &mut *diversifier_list_ptr };
     let d = ff1aes_list(sk);
     diversifier.copy_from_slice(&d)
 }
 
 #[no_mangle]
-pub extern "C" fn get_diversifier_fromlist(div_ptr: *mut u8, diversifier_list_ptr: *const u8) {
-    let diversifier_list: &mut [u8; 44] = unsafe { mem::transmute(diversifier_list_ptr) };
-    let div: &mut [u8; 11] = unsafe { mem::transmute(div_ptr) };
+pub extern "C" fn get_diversifier_fromlist(
+    div_ptr: *mut [u8; 11],
+    diversifier_list_ptr: *const [u8; 44],
+) {
+    let diversifier_list = unsafe { &*diversifier_list_ptr };
+    let div = unsafe { &mut *div_ptr };
 
     let d = default_diversifier_fromlist(diversifier_list);
     div.copy_from_slice(&d)
 }
 
 #[no_mangle]
-pub extern "C" fn get_pkd(ivk_ptr: *mut u8, diversifier_ptr: *mut u8, pkd_ptr: *mut u8) {
-    let ivk: &[u8; 32] = unsafe { mem::transmute(ivk_ptr) };
-    let diversifier: &[u8; 11] = unsafe { mem::transmute(diversifier_ptr) };
-    let pkd: &mut [u8; 32] = unsafe { mem::transmute(pkd_ptr) };
+pub extern "C" fn get_pkd(
+    ivk_ptr: *const [u8; 32],
+    diversifier_ptr: *const [u8; 11],
+    pkd_ptr: *mut [u8; 32],
+) {
+    let ivk = unsafe { &*ivk_ptr };
+    let diversifier = unsafe { &*diversifier_ptr };
+    let pkd = unsafe { &mut *pkd_ptr };
 
     let tmp_pkd = default_pkd(&ivk, &diversifier);
     pkd.copy_from_slice(&tmp_pkd)

@@ -1,5 +1,7 @@
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
+// TODO: These tests should move to their respective files
+
 #[cfg(test)]
 mod tests {
     use crate::pedersen::*;
@@ -46,7 +48,7 @@ mod tests {
     fn test_zip32_childaddress() {
         let seed = [0u8; 32];
 
-        let p: u32 = 0x80000001;
+        let p: u32 = 0x8000_0001;
         let keys = derive_zip32_child_fromseedandpath(&seed, &[p]);
 
         let mut dk = [0u8; 32];
@@ -103,7 +105,7 @@ mod tests {
         let s = hex::decode("b08e3d98da431cef4566a13c1bb348b982f7d8e743b43bb62557ba51994b1257")
             .expect("error");
         let seed: [u8; 32] = s.as_slice().try_into().expect("er");
-        let p: u32 = 0x80000001;
+        let p: u32 = 0x8000_0001;
         let keys = derive_zip32_child_fromseedandpath(&seed, &[p]);
 
         let mut dk = [0u8; 32];
@@ -369,9 +371,8 @@ mod tests {
 
     #[test]
     fn test_pedersen_ledger() {
-        let m: [u8; 32] = [0xb0; 32];
-        let mut output = [0u8; 32];
-        do_pedersen_hash(m.as_ptr(), output.as_mut_ptr());
+        let output = [0u8; 32];
+        pedersen_hash_1byte(0xb0, output.as_ptr() as *mut [u8; 32]);
         assert_eq!(
             output,
             [
@@ -483,6 +484,7 @@ mod tests {
             ]
         );
     }
+
     #[test]
     fn test_pedersen_big3() {
         let inp3: [u8; 945] = [
