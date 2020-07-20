@@ -55,30 +55,6 @@ const ux_menu_entry_t menu_main[] = {
     UX_MENU_END
 };
 
-#if !defined(HAVE_UX_FLOW)
-#else
-UX_STEP_NOCB_INIT(ux_addr_flow_1_step, paging,
-        { h_addr_update_item(CUR_FLOW.index); },
-        { .title = "Address", .text = viewdata.addr, });
-UX_STEP_NOCB_INIT(ux_addr_flow_2_step, paging,
-        { h_addr_update_item(CUR_FLOW.index); },
-        { .title = "Path", .text = viewdata.addr, });
-UX_STEP_VALID(ux_addr_flow_3_step, pb, h_address_accept(0), { &C_icon_validate_14, "Ok"});
-
-UX_FLOW(
-    ux_addr_flow_no_path,
-    &ux_addr_flow_1_step,
-    &ux_addr_flow_3_step
-);
-
-UX_FLOW(
-    ux_addr_flow_with_path,
-    &ux_addr_flow_1_step,
-    &ux_addr_flow_2_step,
-    &ux_addr_flow_3_step
-);
-#endif
-
 void h_review(unsigned int _) { UNUSED(_); view_sign_show_impl(); }
 
 const ux_menu_entry_t menu_decision_sign[] = {
@@ -249,9 +225,9 @@ void h_expert_toggle() {
 }
 
 void h_expert_update() {
-    strcpy(viewdata.value, "disabled");
+    snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "disabled");
     if (app_mode_expert()) {
-        strcpy(viewdata.value, "enabled");
+        snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "enabled");
     }
 }
 
@@ -273,8 +249,6 @@ void view_sign_show_impl() {
 }
 
 void view_address_show_impl() {
-    // In nano S we have two implementation in case we are memory restricted
-#if !defined(HAVE_UX_FLOW)
     h_paging_init();
     zxerr_t err = h_review_update_data();
     switch(err) {
@@ -288,17 +262,5 @@ void view_address_show_impl() {
             view_error_show();
             break;
     }
-#else
-    ux_layout_paging_reset();
-    if(G_ux.stack_count == 0) {
-        ux_stack_push();
-    }
-
-    if (app_mode_expert()) {
-        ux_flow_init(0, ux_addr_flow_with_path, NULL);
-    } else {
-        ux_flow_init(0, ux_addr_flow_no_path, NULL);
-    }
-#endif
 }
 #endif

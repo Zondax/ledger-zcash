@@ -170,61 +170,21 @@ void handle_generic_apdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32
 
 void app_init() {
     io_seproxyhal_init();
+
+#ifdef TARGET_NANOX
+    // grab the current plane mode setting
+    G_io_app.plane_mode = os_setting_get(OS_SETTING_PLANEMODE, NULL, 0);
+#endif // TARGET_NANOX
+
     USB_power(0);
     USB_power(1);
     view_idle_show(0);
-    zemu_log_stack("app_init");
+
+#ifdef HAVE_BLE
+    // Enable Bluetooth
+    BLE_power(0, NULL);
+    BLE_power(1, "Nano X");
+#endif // HAVE_BLE
+
+    zb_init();
 }
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-
-void app_main() {
-    volatile uint32_t rx = 0, tx = 0, flags = 0;
-
-    for (;;) {
-        volatile uint16_t sw = 0;
-
-        BEGIN_TRY;
-        {
-            TRY;
-            {
-                rx = tx;
-                tx = 0;
-
-                rx = io_exchange(CHANNEL_APDU | flags, rx);
-                flags = 0;
-                CHECK_APP_CANARY()
-
-                if (rx == 0)
-                    THROW(APDU_CODE_EMPTY_BUFFER);
-
-                handle_generic_apdu(&flags, &tx, rx);
-                CHECK_APP_CANARY()
-
-                handleApdu(&flags, &tx, rx);
-                CHECK_APP_CANARY()
-            }
-            CATCH_OTHER(e);
-            {
-                switch (e & 0xF000) {
-                    case 0x6000:
-                    case 0x9000:
-                        sw = e;
-                        break;
-                    default:
-                        sw = 0x6800 | (e & 0x7FF);
-                        break;
-                }
-                G_io_apdu_buffer[tx] = sw >> 8;
-                G_io_apdu_buffer[tx + 1] = sw;
-                tx += 2;
-            }
-            FINALLY;
-            {}
-        }
-        END_TRY;
-    }
-}
-
-#pragma clang diagnostic pop
