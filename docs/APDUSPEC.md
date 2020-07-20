@@ -184,7 +184,7 @@ Data is defined as:
 | Field | Type     | Content                | Expected  |
 | ----- | -------- | ---------------------- | --------- |
 | CLA   | byte (1) | Application Identifier | 0xE0      |
-| INS   | byte (1) | Instruction ID         | 0x02      |
+| INS   | byte (1) | Instruction ID         | 0x12      |
 | P1    | byte (1) | Payload desc           | 0 = init  |
 |       |          |                        | 1 = add   |
 |       |          |                        | 2 = last  |
