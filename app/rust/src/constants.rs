@@ -31,3 +31,9 @@ pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     ]),
 )
 .to_niels();
+
+pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
+pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
+pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
+pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
+pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
