@@ -16,8 +16,8 @@
     "zondax"
   ],
   "dependencies": {
-    "@zondax/ledger-zcash": "file:../js",
-    "@zondax/zemu": "^0.2"
+    "@zondax/ledger-zcash": "^0.0",
+    "@zondax/zemu": "^0.4.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
