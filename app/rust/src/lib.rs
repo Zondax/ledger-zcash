@@ -2,6 +2,10 @@
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
 extern crate chacha20poly1305;
 extern crate core;
 

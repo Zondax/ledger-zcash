@@ -7,7 +7,7 @@ pub const MAX_SCRIPT_SIG_LEN: usize = 253;
 pub const TRANSACTION_ID_LEN: usize = 32;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct OutPoint<'a> {
     /// Previous transaction id
     pub txid: &'a [u8], // should be shown in reverse order
@@ -27,7 +27,7 @@ impl<'a> OutPoint<'a> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 /// An unsigned transaction input
 pub struct TxInput<'a> {
     pub out_point: OutPoint<'a>,

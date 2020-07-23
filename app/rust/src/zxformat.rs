@@ -5,7 +5,12 @@ use core::fmt::{self, Write};
 use crate::parser::ParserError;
 use bs58::decode::Error;
 use nom::error::ParseError;
-pub const MAX_NUM_STR_BUFF_LEN: usize = 30;
+
+pub const MAX_STR_BUFF_LEN: usize = 30;
+
+extern "C" {
+    pub fn fp_uint64_to_str(out: *mut i8, outLen: u16, value: u64, decimals: u8) -> u16;
+}
 
 pub struct Writer<'a> {
     buf: &'a mut [u8],
@@ -41,10 +46,25 @@ macro_rules! num_to_str {
             if output.len() < 2 {
                 return Err(ParserError::parser_unexpected_buffer_end);
             }
-            let mut writer = Writer::new(output);
-            core::write!(writer, "{}", number)
-                .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
-            Ok(writer.offset)
+            let len = if cfg!(test) {
+                let mut writer = Writer::new(output);
+                core::write!(writer, "{}", number)
+                    .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
+                writer.offset
+            } else {
+                // We add this path here because of the issue with the write! fmt trait
+                // so that it is preferable to use the c implementation when running on
+                // the ledger nano, nanoX.
+                unsafe {
+                    fp_uint64_to_str(
+                        output.as_mut_ptr() as _,
+                        output.len() as u16,
+                        number as _,
+                        0,
+                    ) as usize
+                }
+            };
+            Ok(len)
         }
     };
 }
@@ -63,9 +83,34 @@ num_to_str!(i64_to_str, i64);
 /// # Returns
 /// The number of bytes written if success or Error otherwise
 pub fn fpu64_to_str(out: &mut [u8], value: u64, decimals: u8) -> Result<usize, ParserError> {
-    let mut temp = [0u8; MAX_NUM_STR_BUFF_LEN];
+    let mut temp = [0u8; MAX_STR_BUFF_LEN];
     let len = u64_to_str(temp.as_mut(), value)?;
     fpstr_to_str(out, &temp[..len], decimals)
+}
+
+/// Fixed point u64 number with native/test support
+///
+/// Converts an u64 number into its fixed point string representation
+/// using #decimals padding zeros. This functions is intended to be used where
+/// linking to the native zxformat library is needed, and also be able to run tests
+/// which dont have access to this native library.
+/// # Arguments
+/// * * `out`: the output buffer where the conversion result is written
+/// * `value`: The number to convert to
+/// * `decimals`: the number of decimals after the decimal point
+/// # Returns
+/// The number of bytes written if success or Error otherwise
+pub fn fpu64_to_str_check_test(
+    out: &mut [u8],
+    value: u64,
+    decimals: u8,
+) -> Result<usize, ParserError> {
+    let len = if cfg!(test) {
+        fpu64_to_str(out, value, decimals)? as usize
+    } else {
+        unsafe { fp_uint64_to_str(out.as_mut_ptr() as _, out.len() as _, value, decimals) as usize }
+    };
+    Ok(len)
 }
 
 /// Fixed point i64 number
@@ -79,7 +124,7 @@ pub fn fpu64_to_str(out: &mut [u8], value: u64, decimals: u8) -> Result<usize, P
 /// # Returns
 /// The number of bytes written if success or Error otherwise
 pub fn fpi64_to_str(out: &mut [u8], value: i64, decimals: u8) -> Result<usize, ParserError> {
-    let mut temp = [0u8; MAX_NUM_STR_BUFF_LEN];
+    let mut temp = [0u8; MAX_STR_BUFF_LEN];
     let len = i64_to_str(temp.as_mut(), value)?;
     fpstr_to_str(out, &temp[..len], decimals)
 }
@@ -140,6 +185,7 @@ pub(crate) fn fpstr_to_str(
         .map_err(|_| ParserError::parser_unexpected_buffer_end)
 }
 
+#[inline(never)]
 pub fn pageString(out_value: &mut [u8], in_value: &[u8], page_idx: u8) -> Result<u8, ParserError> {
     // Just ensure the buffer is clear
     for i in out_value.iter_mut() {

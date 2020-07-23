@@ -11,18 +11,17 @@ use crate::zxformat;
 
 pub type TxTuple<'a> = (
     u32, // version number
-    ([Option<TxInput<'a>>; MAX_TX_INPUTS], u8),
-    ([Option<TxOutput<'a>>; MAX_TX_OUTPUTS], u8),
+    arrayvec::ArrayVec<[TxInput<'a>; MAX_TX_INPUTS]>,
+    arrayvec::ArrayVec<[TxOutput<'a>; MAX_TX_OUTPUTS]>,
     u32, // locktime
 );
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct Transaction<'a> {
     version: u32,
-    inputs: [Option<TxInput<'a>>; MAX_TX_INPUTS],
-    pub inputs_len: usize,
-    outputs: [Option<TxOutput<'a>>; MAX_TX_OUTPUTS],
-    pub outputs_len: usize,
+    inputs: arrayvec::ArrayVec<[TxInput<'a>; MAX_TX_INPUTS]>,
+    outputs: arrayvec::ArrayVec<[TxOutput<'a>; MAX_TX_OUTPUTS]>,
     pub locktime: u32,
 }
 
@@ -34,17 +33,17 @@ impl<'a> Transaction<'a> {
         }
     }
 
-    pub fn inputs(&self) -> &[Option<TxInput>] {
-        self.inputs[..self.inputs_len].as_ref()
+    pub fn inputs(&self) -> &[TxInput] {
+        self.inputs.as_ref()
     }
 
-    pub fn outputs(&self) -> &[Option<TxOutput>] {
-        self.outputs[..self.outputs_len].as_ref()
+    pub fn outputs(&self) -> &[TxOutput] {
+        self.outputs.as_ref()
     }
 
     pub fn num_items(&self) -> usize {
         // outputs have two values, the destination address and amount
-        2 * self.outputs_len
+        2 * self.outputs.len()
     }
 
     pub fn get_item(
@@ -61,25 +60,23 @@ impl<'a> Transaction<'a> {
         // until now there are just two elements per output
         // the amount and destination
         let items_per_output = 2;
-        let out_idx = (display_idx as usize) / self.outputs_len;
+        let out_idx = (display_idx as usize) / self.outputs.len();
         let out_item = display_idx % items_per_output;
 
         let mut writer_key = zxformat::Writer::new(out_key);
-        let tx_output = self.outputs[out_idx]
-            .as_ref()
-            .ok_or(ParserError::parser_unexpected_error)?;
+        let tx_output = &self.outputs[out_idx];
         let page = if out_item == 0 {
             writer_key
                 .write_str("Value")
                 .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
-            let (written, btc) = tx_output.value_in_btc()?;
-            zxformat::pageString(out_value, btc[..written].as_ref(), page_idx)?
+            let value = tx_output.value_in_btc()?;
+            zxformat::pageString(out_value, value.as_ref(), page_idx)?
         } else {
             writer_key
                 .write_str("To")
                 .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
             let address = tx_output.address()?;
-            zxformat::pageString(out_value, address.destination(), page_idx)?
+            zxformat::pageString(out_value, address.as_ref(), page_idx)?
         };
         Ok(page)
     }
@@ -89,10 +86,8 @@ impl<'a> From<TxTuple<'a>> for Transaction<'a> {
     fn from(raw: TxTuple<'a>) -> Self {
         Self {
             version: raw.0,
-            inputs: (raw.1).0,
-            inputs_len: (raw.1).1 as _,
-            outputs: (raw.2).0,
-            outputs_len: (raw.2).1 as _,
+            inputs: raw.1,
+            outputs: raw.2,
             locktime: raw.3,
         }
     }
@@ -130,7 +125,7 @@ mod test {
         inputs: Vec<Inputs>,
     }
 
-    const MAX_DISPLAY_SIZE: usize = 15;
+    const MAX_DISPLAY_SIZE: usize = 30;
 
     fn check_validity(raw_tx: &Transaction, json_tx: &TxJson) {
         let mut key = [0u8; MAX_DISPLAY_SIZE];
@@ -213,15 +208,14 @@ mod test {
         let transaction = Transaction::from_bytes(&bytes).unwrap();
 
         // We know the number of inputs and outputs so:
-        assert_eq!(transaction.inputs_len, 1);
-        assert_eq!(transaction.outputs_len, 2);
+        assert_eq!(transaction.inputs.len(), 1);
+        assert_eq!(transaction.outputs.len(), 2);
 
         // for now we just verify if the locktime and amount are valid
         let tx_output_values = transaction
             .outputs()
             .iter()
-            .filter_map(|&out| out)
-            .map(|out| out.value())
+            .filter_map(|&out| out.value().ok())
             .collect::<Vec<u64>>();
 
         let json_output_values = json.outputs.iter().map(|v| v.value).collect::<Vec<u64>>();
@@ -230,15 +224,12 @@ mod test {
         assert_eq!(&tx_output_values, &json_output_values);
 
         // checks input sequence
-        assert_eq!(
-            json.inputs[0].sequence,
-            transaction.inputs()[0].unwrap().sequence
-        );
+        assert_eq!(json.inputs[0].sequence, transaction.inputs()[0].sequence);
 
         // checks transaction output index
         assert_eq!(
             json.inputs[0].output_index,
-            transaction.inputs()[0].unwrap().out_point.vout
+            transaction.inputs()[0].out_point.vout
         );
 
         // similar to an integration test
