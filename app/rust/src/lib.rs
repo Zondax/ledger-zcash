@@ -7,6 +7,7 @@ extern crate core;
 
 mod aead;
 mod bolos;
+mod commitments;
 mod constants;
 mod parser;
 mod pedersen;

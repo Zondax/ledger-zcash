@@ -143,6 +143,16 @@ fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
 }
 
 #[inline(never)]
+pub fn extended_to_u_bytes(point: &ExtendedPoint) -> [u8; 32] {
+    AffinePoint::from(*point).get_u().to_bytes()
+}
+
+#[inline(never)]
+pub fn extended_to_bytes(point: &ExtendedPoint) -> [u8; 32] {
+    AffinePoint::from(*point).to_bytes()
+}
+
+#[inline(never)]
 fn squarings(cur: &mut Fr) {
     *cur = cur.double();
     *cur = cur.double();
@@ -194,8 +204,8 @@ impl<'a> Iterator for Bitstreamer<'a> {
         Some(s)
     }
 }
-
-pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
+#[inline(never)]
+pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
     c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
     const MAXCOUNTER: usize = 63;
 
@@ -237,20 +247,21 @@ pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
         add_point(&mut result_point, &acc.to_bytes(), pointcounter);
     }
 
-    //handle remaining bits if there are any
-    c_zemu_log_stack(b"return bytes\x00".as_ref());
+    result_point
+}
 
-    return_bytes(&mut result_point)
+#[inline(never)]
+pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
+    let result_point = pedersen_hash_to_point(&m, bitsize);
+    extended_to_u_bytes(&result_point)
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
-//#[inline(never)]
-
 #[no_mangle]
 pub extern "C" fn pedersen_hash_1byte(input: u8, output_ptr: *mut [u8; 32]) {
     let input_msg = [input];
     let output_msg = unsafe { &mut *output_ptr };
 
-    let h = pedersen_hash(&input_msg, 3); //fixme: take variable length bitsize?
+    let h = pedersen_hash(&input_msg, 3);
     output_msg.copy_from_slice(&h);
 }
