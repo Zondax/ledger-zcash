@@ -404,6 +404,7 @@ name = "rslib"
 version = "0.1.0"
 dependencies = [
  "aes",
+ "arrayvec",
  "binary-ff1",
  "blake2b_simd",
  "blake2s_simd",

@@ -1,10 +1,13 @@
 use nom::{
     branch::permutation,
     bytes::complete::take,
-    number::complete::{be_u32, le_u32, le_u64, le_u8},
+    number::complete::{be_u32, le_u16, le_u32, le_u64, le_u8},
 };
 
-use crate::parser::parser_common::{u8_with_limits, OutputScriptType, ParserError};
+use crate::parser::parser_common::{
+    u8_with_limits, var_int_as_usize, OutputScriptType, ParserError,
+};
+use crate::zxformat;
 use bs58::encode;
 
 const P2SH_LEN: usize = 23;
@@ -28,76 +31,66 @@ const MAX_DECIMAL_BUFF_LEN: usize = 70;
 // P2SH, P2WPKH, P2WSH
 const MAX_ADDRESS_BUFFER_LEN: usize = 40;
 
-extern "C" {
-    fn fp_uint64_to_str(out: *mut i8, out_len: u16, value: u64, decimals: u8) -> u16;
-}
-
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 // A transaction output
-pub struct TxOutput<'a> {
-    value: u64, // Bytes are disposed in little-endian
-    script: Script<'a>,
-}
+pub struct TxOutput<'a>(pub &'a [u8]);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct Script<'a> {
-    data: &'a [u8],
-    script_type: OutputScriptType,
+pub enum Script<'a> {
+    P2pkh(&'a [u8]),
+    P2sh(&'a [u8]),
+    P2wpkh(&'a [u8]),
+    P2wsh(&'a [u8]),
+    Unspendable,
 }
 
 #[derive(Copy, Clone)]
-pub struct Address {
-    addr: [u8; MAX_ADDRESS_BUFFER_LEN],
-    pub len: usize,
-}
+struct Address;
 
 impl Address {
-    fn new_from_p2pkh(bytes: &[u8]) -> Result<Self, ParserError> {
-        let mut addr = [0u8; MAX_ADDRESS_BUFFER_LEN];
-        let len = bs58::encode(bytes)
-            .with_check_version(0)
-            .into(addr.as_mut())
-            .map_err(|_e| ParserError::parser_invalid_address)?;
-        Ok(Address { addr, len })
+    fn new_from_p2pkh(
+        bytes: &[u8],
+    ) -> Result<arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]>, ParserError> {
+        let mut addr = arrayvec::ArrayVec::from([0u8; MAX_ADDRESS_BUFFER_LEN]);
+        let len = Self::encode(bytes, addr.as_mut(), 0)?;
+        unsafe { addr.set_len(len) }
+        Ok(addr)
     }
 
-    fn new_from_p2sh(bytes: &[u8]) -> Result<Self, ParserError> {
-        let mut addr = [0u8; MAX_ADDRESS_BUFFER_LEN];
-        let len = bs58::encode(bytes)
-            .with_check_version(5)
-            .into(addr.as_mut())
-            .map_err(|_e| ParserError::parser_invalid_address)?;
-        Ok(Address { addr, len })
+    fn new_from_p2sh(
+        bytes: &[u8],
+    ) -> Result<arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]>, ParserError> {
+        let mut addr = arrayvec::ArrayVec::from([0u8; MAX_ADDRESS_BUFFER_LEN]);
+        let len = Self::encode(bytes, addr.as_mut(), 5)?;
+        unsafe { addr.set_len(len) }
+        Ok(addr)
     }
 
-    pub fn destination(&self) -> &[u8] {
-        &self.addr[..self.len]
+    fn encode(data: &[u8], output: &mut [u8], version: u8) -> Result<usize, ParserError> {
+        bs58::encode(data)
+            .with_check_version(version)
+            .into(output)
+            .map_err(|_e| ParserError::parser_invalid_address)
     }
-}
 
-impl Default for Address {
-    fn default() -> Self {
-        let value = b"unspentable";
-        let len = value.len();
-        let mut addr = [0u8; MAX_ADDRESS_BUFFER_LEN];
-        addr.copy_from_slice(value);
-        Address { addr, len }
+    pub fn unspendable() -> arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]> {
+        let mut addr: arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]> = arrayvec::ArrayVec::new();
+        b"unspentable".iter().for_each(|c| addr.push(*c));
+        addr
     }
 }
 
 impl<'a> Script<'a> {
     pub fn new(data: &'a [u8]) -> Result<Self, ParserError> {
-        let script_type = match data {
-            [0xa9, 0x14, .., 0x87] if data.len() == P2SH_LEN => OutputScriptType::p2sh,
-            [0x76, 0xa9, 0x14, .., 0x88, 0xac] if data.len() == P2PKH_LEN => {
-                OutputScriptType::p2pkh
-            }
-            [0x64] => OutputScriptType::unspentable,
+        let script = match data {
+            [0xa9, 0x14, .., 0x87] if data.len() == P2SH_LEN => Self::P2sh(data),
+            [0x76, 0xa9, 0x14, .., 0x88, 0xac] if data.len() == P2PKH_LEN => Self::P2pkh(data),
+            [0x64] => Self::Unspendable,
             _ => return Err(ParserError::parser_invalid_output_script),
         };
-        Ok(Self { data, script_type })
+        Ok(script)
     }
     pub fn from_bytes(bytes: &'a [u8]) -> nom::IResult<&[u8], Self, ParserError> {
         let script_len = u8_with_limits(MAX_SCRIPT_PUB_KEY_LEN as _, bytes)?;
@@ -107,95 +100,98 @@ impl<'a> Script<'a> {
         Ok((script.0, s))
     }
 
-    pub fn script_type(&self) -> OutputScriptType {
-        self.script_type
+    pub fn read_as_bytes(bytes: &'a [u8]) -> nom::IResult<&[u8], &[u8], ParserError> {
+        if bytes.is_empty() {
+            return Err(nom::Err::Error(ParserError::parser_invalid_output_script));
+        }
+        let script_len = var_int_as_usize(bytes)
+            .map_err(|_| nom::Err::Error(ParserError::parser_invalid_output_script))?;
+        take(script_len + 1)(bytes)
     }
 
     pub fn is_p2sh(&self) -> bool {
-        self.script_type == OutputScriptType::p2sh
+        match self {
+            Self::P2sh(..) => true,
+            _ => false,
+        }
     }
 
     pub fn is_p2pkh(&self) -> bool {
-        self.script_type == OutputScriptType::p2pkh
+        match self {
+            Self::P2pkh(..) => true,
+            _ => false,
+        }
     }
 
     pub fn is_op_return(&self) -> bool {
-        self.script_type == OutputScriptType::unspentable
+        match self {
+            Self::Unspendable => true,
+            _ => false,
+        }
     }
 
-    pub fn destination(&self) -> Result<Address, ParserError> {
-        match self.script_type {
-            OutputScriptType::p2sh => {
-                let hash = &self.data[2..self.data.len() - 1];
+    pub fn destination(
+        &self,
+    ) -> Result<arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]>, ParserError> {
+        match self {
+            Self::P2sh(data) => {
+                let hash = &data[2..data.len() - 1];
                 Address::new_from_p2sh(hash)
             }
-            OutputScriptType::p2pkh => {
-                let hash = &self.data[3..self.data.len() - 2];
+            Self::P2pkh(data) => {
+                let hash = &data[3..data.len() - 2];
                 Address::new_from_p2pkh(hash)
             }
-            _ => Ok(Address::default()),
+            _ => Ok(Address::unspendable()),
         }
     }
 }
 
 impl<'a> TxOutput<'a> {
     /// Creates a new output from a byte array
-    pub fn from_bytes(bytes: &[u8]) -> nom::IResult<&[u8], TxOutput, ParserError> {
-        let res = permutation((le_u64, Script::from_bytes))(bytes)?;
-        let out = TxOutput {
-            value: (res.1).0,
-            script: (res.1).1,
-        };
-        Ok((res.0, out))
+    pub fn from_bytes(bytes: &'a [u8]) -> nom::IResult<&[u8], TxOutput, ParserError> {
+        let (raw, _) = permutation((le_u64, Script::read_as_bytes))(bytes)?;
+        let len = bytes.len() - raw.len();
+        let (left, data) = take(len)(bytes)?;
+        Ok((left, Self(data)))
     }
 
-    pub fn value(&self) -> u64 {
-        self.value
+    pub fn value(&self) -> Result<u64, ParserError> {
+        le_u64::<'a, ParserError>(self.0)
+            .map(|res| res.1)
+            .map_err(|_| ParserError::parser_unexpected_buffer_end)
     }
 
-    pub fn script(&self) -> &Script {
-        &self.script
+    pub fn script(&self) -> Result<Script, ParserError> {
+        Script::from_bytes(&self.0[8..])
+            .map(|res| res.1)
+            .map_err(|_| ParserError::parser_invalid_output_script)
     }
 
-    pub fn address(&self) -> Result<Address, ParserError> {
-        self.script.destination()
+    pub fn address(&self) -> Result<arrayvec::ArrayVec<[u8; MAX_ADDRESS_BUFFER_LEN]>, ParserError> {
+        Script::from_bytes(&self.0[8..])
+            .map(|res| res.1)
+            .map_err(|_| ParserError::parser_invalid_output_script)?
+            .destination()
     }
 
-    //zxformat::pageString(out_value, amount_buffer[..written].as_mut(), page_idx)?
-    //#[cfg(not(test))]
     pub fn value_in_btc(
         &self,
-    ) -> Result<(usize, [u8; crate::zxformat::MAX_NUM_STR_BUFF_LEN]), ParserError> {
-        let mut output = [0u8; crate::zxformat::MAX_NUM_STR_BUFF_LEN];
-        if cfg!(test) {
-            let written =
-                crate::zxformat::fpu64_to_str(output.as_mut(), self.value, MAX_DECIMAL_PLACES as _)
-                    .map_err(|_| ParserError::parser_value_out_of_range)?;
-            Ok((written, output))
-        } else {
-            unsafe {
-                let written = fp_uint64_to_str(
-                    output.as_mut_ptr() as _,
-                    output.len() as _,
-                    self.value as _,
-                    MAX_DECIMAL_PLACES as _,
-                );
-                Ok((written as usize, output))
-            }
+    ) -> Result<arrayvec::ArrayVec<[u8; crate::zxformat::MAX_STR_BUFF_LEN]>, ParserError> {
+        let mut output = arrayvec::ArrayVec::from([0u8; crate::zxformat::MAX_STR_BUFF_LEN]);
+        let value = self.value()?;
+        let written =
+            zxformat::fpu64_to_str_check_test(output.as_mut(), value, MAX_DECIMAL_PLACES as _)?;
+        unsafe {
+            output.set_len(written);
         }
-    }
-
-    fn script_type(&self) -> OutputScriptType {
-        self.script.script_type()
+        Ok(output)
     }
 }
 
 #[cfg(test)]
 mod test {
-    extern crate std;
-    use super::{Address, Script};
-    use std::println;
-    use std::vec::Vec;
+    use super::Script;
 
     #[test]
     fn test_is_pay_to_script_hash() {
@@ -228,9 +224,8 @@ mod test {
         let script = Script::new(&bytes).unwrap();
         assert!(script.is_p2pkh());
         let address = script.destination().unwrap();
-        let addr = address.destination();
         assert_eq!(
-            std::str::from_utf8(&addr[..34]).unwrap(),
+            core::str::from_utf8(&address).unwrap(),
             "18Gi6umH8FTsw8K96F3FuQsjQv64MtojLu"
         );
     }
@@ -242,9 +237,8 @@ mod test {
         let script = Script::new(&bytes).unwrap();
         assert!(script.is_p2sh());
         let address = script.destination().unwrap();
-        let addr = address.destination();
         assert_eq!(
-            std::str::from_utf8(&addr[..34]).unwrap(),
+            core::str::from_utf8(&address).unwrap(),
             "377dkLL56GxGUe7mhsAZDvgJBY2BauJHpi",
         );
     }

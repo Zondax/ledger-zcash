@@ -67,9 +67,13 @@ pub fn c_zemu_log_stack(s: &[u8]) {
 #[cfg(test)]
 pub fn c_zemu_log_stack(_s: &[u8]) {}
 
+#[cfg(not(test))]
 pub fn c_check_app_canary() {
     unsafe { check_app_canary() }
 }
+
+#[cfg(test)]
+pub fn c_check_app_canary() {}
 
 #[cfg(not(test))]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
@@ -312,7 +316,8 @@ impl RngCore for Trng {
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        Ok(self.fill_bytes(dest))
+        self.fill_bytes(dest);
+        Ok(())
     }
 }
 

@@ -2,20 +2,25 @@
 #![no_builtins]
 #![allow(dead_code, unused_imports)]
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
 extern crate chacha20poly1305;
 extern crate core;
 
 mod aead;
 mod bolos;
+mod commitments;
 mod constants;
 mod parser;
 mod pedersen;
-mod tests;
+mod tests_crypto;
 mod zeccrypto;
 mod zip32;
 mod zxformat;
 
-pub use parser::{_getItem, _getNumItems, _parser_init, _read, _validate};
+pub use parser::{_getItem, _getNumItems, _parser_init, _read};
 pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
