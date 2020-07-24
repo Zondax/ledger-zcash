@@ -262,6 +262,6 @@ pub extern "C" fn pedersen_hash_1byte(input: u8, output_ptr: *mut [u8; 32]) {
     let input_msg = [input];
     let output_msg = unsafe { &mut *output_ptr };
 
-    let h = pedersen_hash(&input_msg, 3);
+    let h = pedersen_hash(&input_msg, 3); //fixme: take variable length bitsize?
     output_msg.copy_from_slice(&h);
 }

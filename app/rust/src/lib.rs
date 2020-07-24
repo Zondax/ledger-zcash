@@ -20,7 +20,7 @@ mod zeccrypto;
 mod zip32;
 mod zxformat;
 
-pub use parser::{_getItem, _getNumItems, _parser_init, _read, _validate};
+pub use parser::{_getItem, _getNumItems, _parser_init, _read};
 pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use crate::bolos::{c_check_app_canary, c_zemu_log_stack};

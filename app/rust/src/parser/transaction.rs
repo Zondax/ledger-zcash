@@ -11,29 +11,72 @@ use crate::zxformat;
 
 pub type TxTuple<'a> = (
     u32, // version number
-    arrayvec::ArrayVec<[TxInput<'a>; MAX_TX_INPUTS]>,
+    arrayvec::ArrayVec<[&'a [u8]; MAX_TX_INPUTS]>,
     arrayvec::ArrayVec<[TxOutput<'a>; MAX_TX_OUTPUTS]>,
     u32, // locktime
 );
+
+impl<'a> From<(TxTuple<'a>, &'a [u8])> for Transaction<'a> {
+    fn from(raw: (TxTuple<'a>, &'a [u8])) -> Self {
+        Self {
+            version: (raw.0).0,
+            inputs: (raw.0).1,
+            outputs: (raw.0).2,
+            locktime: (raw.0).3,
+            remainder: raw.1,
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct Transaction<'a> {
     version: u32,
-    inputs: arrayvec::ArrayVec<[TxInput<'a>; MAX_TX_INPUTS]>,
+    inputs: arrayvec::ArrayVec<[&'a [u8]; MAX_TX_INPUTS]>,
     outputs: arrayvec::ArrayVec<[TxOutput<'a>; MAX_TX_OUTPUTS]>,
     pub locktime: u32,
+    remainder: &'a [u8],
 }
 
 impl<'a> Transaction<'a> {
     pub fn from_bytes(bytes: &'a [u8]) -> Result<Self, ParserError> {
         match permutation((le_u32, get_inputs, get_outputs, le_u32))(bytes) {
-            Ok(tx) => Ok(Self::from(tx.1)),
+            Ok(tx) => Ok(Self::from((tx.1, tx.0))),
             Err(_e) => Err(ParserError::parser_unexpected_error),
         }
     }
 
-    pub fn inputs(&self) -> &[TxInput] {
+    pub fn read(&mut self, data: &'a [u8]) -> Result<(), ParserError> {
+        let (raw, version) = le_u32::<'a, ParserError>(data)
+            .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
+        self.version = version;
+        self.remainder = raw;
+        self.read_inputs()?;
+        self.read_outputs()?;
+        let (raw, locktime) = le_u32::<'a, ParserError>(self.remainder)
+            .map_err(|_| ParserError::parser_unexpected_buffer_end)?;
+        self.locktime = locktime;
+        self.remainder = raw;
+        Ok(())
+    }
+
+    fn read_inputs(&mut self) -> Result<(), ParserError> {
+        let (raw, inputs) =
+            get_inputs(self.remainder).map_err(|_| ParserError::parser_unexpected_error)?;
+        self.inputs = inputs;
+        self.remainder = raw;
+        Ok(())
+    }
+
+    fn read_outputs(&mut self) -> Result<(), ParserError> {
+        let (raw, outputs) =
+            get_outputs(self.remainder).map_err(|_| ParserError::parser_unexpected_error)?;
+        self.outputs = outputs;
+        self.remainder = raw;
+        Ok(())
+    }
+
+    pub fn inputs(&self) -> &[&[u8]] {
         self.inputs.as_ref()
     }
 
@@ -80,16 +123,25 @@ impl<'a> Transaction<'a> {
         };
         Ok(page)
     }
-}
 
-impl<'a> From<TxTuple<'a>> for Transaction<'a> {
-    fn from(raw: TxTuple<'a>) -> Self {
-        Self {
-            version: raw.0,
-            inputs: raw.1,
-            outputs: raw.2,
-            locktime: raw.3,
+    #[cfg(test)]
+    pub fn validate(tx: &Self) -> Result<(), ParserError> {
+        let mut key = [0u8; 30];
+        let mut value = [0u8; 30];
+        let mut page_idx = 0;
+        let mut display_idx = 0;
+
+        let num_items = tx.num_items();
+        while display_idx < num_items {
+            let pages = tx.get_item(display_idx as u8, &mut key, &mut value, page_idx)?;
+
+            page_idx += 1;
+            if page_idx >= pages {
+                page_idx = 0;
+                display_idx += 1;
+            }
         }
+        Ok(())
     }
 }
 
@@ -125,70 +177,6 @@ mod test {
         inputs: Vec<Inputs>,
     }
 
-    const MAX_DISPLAY_SIZE: usize = 30;
-
-    fn check_validity(raw_tx: &Transaction, json_tx: &TxJson) {
-        let mut key = [0u8; MAX_DISPLAY_SIZE];
-        let mut value = [0u8; MAX_DISPLAY_SIZE];
-        let mut page_idx = 0;
-        let mut result = std::vec::Vec::new();
-        let num_items = raw_tx.num_items();
-
-        assert_eq!(json_tx.outputs.len() * 2, num_items);
-
-        let mut i = 0;
-        while i < num_items {
-            let json_out = i / 2;
-            let json_inner_idx = i % 2;
-            let json_output = &json_tx.outputs[json_out];
-
-            let pages = raw_tx
-                .get_item(i as u8, key.as_mut(), value.as_mut(), page_idx)
-                .unwrap();
-
-            // with inner_idx = 0, we are looking for the
-            //  value in btc
-            let value_string = if json_inner_idx == 0 {
-                // key: Value
-                let key_str = core::str::from_utf8(key[..5].as_ref()).unwrap();
-                assert_eq!(key_str, "Value");
-                result.extend_from_slice(value.as_ref());
-                let mut json_value_buff = [0u8; 40];
-                let len =
-                    super::zxformat::fpu64_to_str(json_value_buff.as_mut(), json_output.value, 8)
-                        .unwrap();
-                let json_value_str = std::str::from_utf8(json_value_buff[..len].as_ref()).unwrap();
-
-                json_value_str.to_string()
-
-            // if inner_idx = 1 we are looking for an Address
-            } else {
-                // key: To
-                let key_str = std::str::from_utf8(key[..2].as_ref()).unwrap();
-                assert_eq!(key_str, "To");
-                result.extend_from_slice(value[..MAX_DISPLAY_SIZE - 1].as_ref());
-                json_output.addresses[0].clone()
-            };
-
-            if page_idx == pages - 1 {
-                let raw_value_str = core::str::from_utf8(result.as_ref()).unwrap();
-                assert_eq!(
-                    value_string.as_str(),
-                    raw_value_str.get(..value_string.len()).unwrap()
-                );
-                // Continue to the next item and clear our result buffer
-                i += 1;
-                result.clear();
-            }
-
-            page_idx += 1;
-
-            if page_idx >= pages {
-                page_idx = 0;
-            }
-        }
-    }
-
     #[test]
     fn simple_1input_2output() {
         // We have the transaction description in a json file which content
@@ -205,7 +193,8 @@ mod test {
         let json: TxJson = serde_json::from_str(&str).unwrap();
 
         let bytes = hex::decode(&json.raw_tx).unwrap();
-        let transaction = Transaction::from_bytes(&bytes).unwrap();
+        let mut transaction = Transaction::from_bytes(&bytes).unwrap();
+        transaction.read(&bytes).unwrap();
 
         // We know the number of inputs and outputs so:
         assert_eq!(transaction.inputs.len(), 1);
@@ -224,16 +213,12 @@ mod test {
         assert_eq!(&tx_output_values, &json_output_values);
 
         // checks input sequence
-        assert_eq!(json.inputs[0].sequence, transaction.inputs()[0].sequence);
+        let input = TxInput::from_bytes(transaction.inputs()[0]).unwrap().1;
+        assert_eq!(json.inputs[0].sequence, input.sequence);
 
         // checks transaction output index
-        assert_eq!(
-            json.inputs[0].output_index,
-            transaction.inputs()[0].out_point.vout
-        );
+        assert_eq!(json.inputs[0].output_index, input.vout().unwrap());
 
-        // similar to an integration test
-        // where the UI asks for each item
-        check_validity(&transaction, &json);
+        Transaction::validate(&transaction).unwrap();
     }
 }

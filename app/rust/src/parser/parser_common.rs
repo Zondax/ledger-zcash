@@ -128,10 +128,10 @@ pub fn u8_with_limits(limit: u8, bytes: &[u8]) -> nom::IResult<&[u8], u8, Parser
 
 pub fn get_inputs(
     bytes: &[u8],
-) -> nom::IResult<&[u8], ArrayVec<[TxInput; MAX_TX_INPUTS]>, ParserError> {
+) -> nom::IResult<&[u8], ArrayVec<[&[u8]; MAX_TX_INPUTS]>, ParserError> {
     let num_inputs = u8_with_limits(MAX_TX_INPUTS as _, bytes)?;
-    let mut inputs: ArrayVec<[TxInput; MAX_TX_INPUTS]> = ArrayVec::new();
-    let mut iter = iterator(num_inputs.0, TxInput::from_bytes);
+    let mut inputs: ArrayVec<[&[u8]; MAX_TX_INPUTS]> = ArrayVec::new();
+    let mut iter = iterator(num_inputs.0, TxInput::read_as_bytes);
     iter.take(num_inputs.1 as _).for_each(|i| {
         inputs.push(i);
     });
