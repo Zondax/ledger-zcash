@@ -1,11 +1,11 @@
-use crate::bolos::c_zemu_log_stack;
-use crate::pedersen::*;
-use crate::redjubjub::*;
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
+use crate::bolos::c_zemu_log_stack;
+use crate::pedersen::*;
+use crate::redjubjub::*;
 use crate::zeccrypto::prf_ock;
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -521,7 +521,10 @@ mod tests {
     fn test_mixed_pedersen() {
         let v = 312354353;
         let scalar = scalar_to_bytes(v);
-        let mp = mixed_pedersen(&ExtendedPoint::identity(), jubjub::Fr::from_bytes(&scalar).unwrap());
+        let mp = mixed_pedersen(
+            &ExtendedPoint::identity(),
+            jubjub::Fr::from_bytes(&scalar).unwrap(),
+        );
         assert_eq!(
             mp,
             [

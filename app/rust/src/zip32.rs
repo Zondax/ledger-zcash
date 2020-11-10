@@ -1,5 +1,3 @@
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
-
 use aes::{
     block_cipher_trait::{
         generic_array::typenum::{U16, U32, U8},
@@ -9,45 +7,47 @@ use aes::{
     Aes256,
 };
 use binary_ff1::BinaryFF1;
-use core::convert::TryInto;
-use itertools::zip;
-
-use byteorder::{ByteOrder, LittleEndian};
-
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-
-use crate::{bolos, constants};
+use byteorder::{ByteOrder, LittleEndian};
+use core::convert::TryInto;
+use core::mem;
+use itertools::zip;
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use crate::pedersen::extended_to_bytes;
-use core::mem;
+use crate::{bolos, constants};
 
 #[inline(always)]
-
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
     bolos::blake2b_expand_seed(sk, t)
 }
+
 #[inline(never)]
 pub fn sapling_derive_dummy_ask(sk_in: &[u8]) -> [u8; 32] {
     let t = prf_expand(&sk_in, &[0x00]);
     let ask = Fr::from_bytes_wide(&t);
     ask.to_bytes()
 }
+
 #[inline(never)]
 pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> [u8; 32] {
     let t = prf_expand(&sk_in, &[0x01]);
     let nsk = Fr::from_bytes_wide(&t);
     nsk.to_bytes()
 }
+
 #[inline(never)]
 pub fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
     let ak = constants::SPENDING_KEY_BASE.multiply_bits(&ask);
     AffinePoint::from(ak).to_bytes()
 }
+
 #[inline(never)]
 pub fn sapling_nsk_to_nk(nsk: &[u8; 32]) -> [u8; 32] {
     let nk = constants::PROVING_KEY_BASE.multiply_bits(&nsk);
     AffinePoint::from(nk).to_bytes()
 }
+
 #[inline(never)]
 pub fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
     pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk"; //move to constants
@@ -93,6 +93,7 @@ fn diversifier_group_hash_light(tag: &[u8]) -> bool {
 
     false
 }
+
 #[inline(never)]
 pub fn default_diversifier_fromlist(list: &[u8; 110]) -> [u8; 11] {
     let mut result = [0u8; 11];
@@ -137,7 +138,7 @@ impl BlockCipher for AesSDK {
 
 //list of 10 diversifiers
 #[inline(never)]
-pub fn ff1aes_list(sk: &[u8; 32], result: &mut [u8;110]) {
+pub fn ff1aes_list(sk: &[u8; 32], result: &mut [u8; 110]) {
     let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
@@ -160,10 +161,13 @@ pub fn ff1aes_list(sk: &[u8; 32], result: &mut [u8;110]) {
     }
 }
 
-
 //list of 4 diversifiers
 #[inline(never)]
-pub fn ff1aes_list_with_startingindex(sk: &[u8; 32], startindex: &[u8;11], result: &mut [u8;220]) {
+pub fn ff1aes_list_with_startingindex(
+    sk: &[u8; 32],
+    startindex: &[u8; 11],
+    result: &mut [u8; 220],
+) {
     let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
@@ -220,23 +224,27 @@ pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let t = AffinePoint::from(v);
     t.to_bytes()
 }
+
 #[inline(never)]
 pub fn master_spending_key_zip32(seed: &[u8; 32]) -> [u8; 64] {
     pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
     bolos::blake2b64_with_personalization(ZIP32_SAPLING_MASTER_PERSONALIZATION, seed)
 }
+
 #[inline(never)]
 pub fn diversifier_key_zip32(in_key: &[u8; 32]) -> [u8; 32] {
     let mut dk_m = [0u8; 32];
     dk_m.copy_from_slice(&prf_expand(in_key, &[0x10])[..32]);
     dk_m
 }
+
 #[inline(never)]
 pub fn outgoingviewingkey(key: &[u8; 32]) -> [u8; 32] {
     let mut ovk = [0u8; 32];
     ovk.copy_from_slice(&prf_expand(key, &[0x02])[..32]);
     ovk
 }
+
 #[inline(never)]
 pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(key);
@@ -252,6 +260,7 @@ pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
     result[64..96].copy_from_slice(&ovk);
     result
 }
+
 #[inline(never)]
 pub fn expandedspendingkey_zip32(key: &[u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(key);
@@ -263,6 +272,7 @@ pub fn expandedspendingkey_zip32(key: &[u8; 32]) -> [u8; 96] {
     result[64..96].copy_from_slice(&ovk);
     result
 }
+
 #[inline(never)]
 pub fn update_dk_zip32(key: &[u8; 32], dk: &mut [u8; 32]) {
     let mut dkcopy = [0u8; 32];
@@ -519,6 +529,7 @@ pub extern "C" fn zip32_child_ask_nsk(
     ask.copy_from_slice(&k[32..64]);
     nsk.copy_from_slice(&k[64..96]);
 }
+
 #[no_mangle]
 pub extern "C" fn get_diversifier_list(
     sk_ptr: *const [u8; 32],
@@ -526,25 +537,23 @@ pub extern "C" fn get_diversifier_list(
 ) {
     let sk = unsafe { &*sk_ptr };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-     ff1aes_list(sk, diversifier);
+    ff1aes_list(sk, diversifier);
 }
 
 #[no_mangle]
 pub extern "C" fn get_diversifier_list_withstartindex(
     sk_ptr: *const [u8; 32],
-    start_index: *const [u8;11],
+    start_index: *const [u8; 11],
     diversifier_list_ptr: *mut [u8; 220],
 ) {
     let sk = unsafe { &*sk_ptr };
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    ff1aes_list_with_startingindex(sk,start, diversifier);
+    ff1aes_list_with_startingindex(sk, start, diversifier);
 }
 
 #[no_mangle]
-pub extern "C" fn is_valid_diversifier(
-    div_ptr: *const [u8; 11]) -> bool{
-
+pub extern "C" fn is_valid_diversifier(div_ptr: *const [u8; 11]) -> bool {
     let div = unsafe { &*div_ptr };
     diversifier_group_hash_light(div)
 }
@@ -586,6 +595,7 @@ pub extern "C" fn group_hash_from_div(diversifier_ptr: *const [u8; 11], gd_ptr: 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_zip32_master() {
         let seed = [
@@ -654,7 +664,7 @@ mod tests {
 
         assert_eq!(ivk, ivk_test);
 
-        let mut listbytes = [0u8;110];
+        let mut listbytes = [0u8; 110];
         ff1aes_list(&dk, &mut listbytes);
         let default_d = default_diversifier_fromlist(&listbytes);
 
@@ -709,7 +719,7 @@ mod tests {
         .expect("dec");
         assert_eq!(ivk, ivk_ledger);
 
-        let mut list = [0u8;110];
+        let mut list = [0u8; 110];
         ff1aes_list(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
@@ -750,7 +760,7 @@ mod tests {
 
         let ivk = aknk_to_ivk(&ak, &nk);
 
-        let mut list = [0u8;110];
+        let mut list = [0u8; 110];
         ff1aes_list(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
@@ -788,7 +798,7 @@ mod tests {
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
 
         let ivk = aknk_to_ivk(&ak, &nk);
-        let mut list = [0u8;110];
+        let mut list = [0u8; 110];
         ff1aes_list(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
@@ -847,7 +857,7 @@ mod tests {
     #[test]
     fn test_default_diversifier_fromlist() {
         let seed = [0u8; 32];
-        let mut list = [0u8;110];
+        let mut list = [0u8; 110];
         ff1aes_list(&seed, &mut list);
         let default_d = default_diversifier_fromlist(&list);
         assert_eq!(

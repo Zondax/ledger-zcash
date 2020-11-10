@@ -3,7 +3,7 @@
 [target.thumbv6m-none-eabi]
 rustflags = [
     "--emit", "asm",
-	"-C", "relocation-model=ropi",
+    "-C", "relocation-model=ropi",
     "-C", "link-arg=-nostartfiles",
     "-C", "link-arg=-Tlink.ld",
     "-C", "inline-threshold=0"

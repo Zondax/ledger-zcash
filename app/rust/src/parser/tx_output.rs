@@ -1,3 +1,4 @@
+use bs58::encode;
 use nom::{
     branch::permutation,
     bytes::complete::take,
@@ -8,7 +9,6 @@ use crate::parser::parser_common::{
     u8_with_limits, var_int_as_usize, OutputScriptType, ParserError,
 };
 use crate::zxformat;
-use bs58::encode;
 
 const P2SH_LEN: usize = 23;
 const P2PKH_LEN: usize = 25;

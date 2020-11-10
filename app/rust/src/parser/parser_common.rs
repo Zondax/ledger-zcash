@@ -1,4 +1,6 @@
 #![allow(non_camel_case_types, non_upper_case_globals, non_snake_case)]
+
+use arrayvec::ArrayVec;
 use nom::{
     branch::permutation,
     bytes::complete::take,
@@ -6,8 +8,6 @@ use nom::{
     error::ErrorKind,
     number::complete::{le_u16, le_u32, le_u64, le_u8},
 };
-
-use arrayvec::ArrayVec;
 
 use crate::parser::tx_input::{OutPoint, TxInput};
 use crate::parser::tx_output::TxOutput;

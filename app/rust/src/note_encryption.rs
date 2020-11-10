@@ -1,3 +1,7 @@
+use aes::block_cipher_trait::generic_array::{GenericArray, GenericArrayImplEven};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
+
 use crate::aead::*;
 use crate::bolos::{blake2b32_with_personalization, c_zemu_log_stack};
 use crate::commitments::{bytes_to_extended, bytes_to_u64, note_commitment, write_u64_tobytes};
@@ -8,9 +12,6 @@ use crate::constants::{
 use crate::pedersen::extended_to_u_bytes;
 use crate::zeccrypto::*;
 use crate::zip32::{default_pkd, group_hash_from_div, multwithgd, pkd_group_hash};
-use aes::block_cipher_trait::generic_array::{GenericArray, GenericArrayImplEven};
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
-use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
 
 pub fn parse_note_metadata(ivk: &[u8; 32], cmu: &[u8; 32], plaintext: &[u8]) -> bool {
     match plaintext[0] {
@@ -106,7 +107,7 @@ pub fn try_sapling_compact_decryption(
 }
 
 #[no_mangle]
-pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8;32]) {
+pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32]) {
     c_zemu_log_stack(b"inside_blake2bprfock\x00".as_ref());
     let input = unsafe { &*input_ptr }; //ovk, cv, cmu, epk
     pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";

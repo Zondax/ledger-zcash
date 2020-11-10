@@ -6,7 +6,6 @@ use crate::parser::{
     tx_input::{OutPoint, TxInput},
     tx_output::TxOutput,
 };
-
 use crate::zxformat;
 
 pub type TxTuple<'a> = (
@@ -148,14 +147,15 @@ impl<'a> Transaction<'a> {
 #[cfg(test)]
 mod test {
     extern crate std;
+
     use serde::{Deserialize, Serialize};
     use serde_json::{Result, Value};
-
-    use super::*;
     use std::path::PathBuf;
     use std::string::String;
     use std::string::ToString;
     use std::vec::Vec;
+
+    use super::*;
 
     #[derive(Serialize, Deserialize)]
     struct Inputs {
@@ -163,6 +163,7 @@ mod test {
         output_index: u32,
         addresses: Vec<String>,
     }
+
     #[derive(Serialize, Deserialize)]
     struct Outputs {
         script: String,

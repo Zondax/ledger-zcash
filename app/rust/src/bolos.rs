@@ -1,18 +1,5 @@
 //! Rust interfaces to Ledger SDK APIs.
 
-use cstr_core::CStr;
-use rand::{CryptoRng, RngCore};
-
-#[cfg(test)]
-use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
-
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use core::convert::TryInto;
-
-#[cfg(test)]
-#[cfg(target_arch = "x86_64")]
-use getrandom::getrandom;
-
 use aes::{
     block_cipher_trait::{
         generic_array::typenum::{U16, U32, U8},
@@ -21,6 +8,15 @@ use aes::{
     },
     Aes256,
 };
+#[cfg(test)]
+use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
+use core::convert::TryInto;
+use cstr_core::CStr;
+#[cfg(test)]
+#[cfg(target_arch = "x86_64")]
+use getrandom::getrandom;
+use rand::{CryptoRng, RngCore};
 
 extern "C" {
     fn cx_rng(buffer: *mut u8, len: u32);
@@ -152,6 +148,7 @@ pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
 pub fn c_zemu_log_stack(s: &[u8]) {
     unsafe { zemu_log_stack(s.as_ptr()) }
 }
+
 #[cfg(test)]
 pub fn c_zemu_log_stack(_s: &[u8]) {}
 

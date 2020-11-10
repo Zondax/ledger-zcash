@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
+use bs58::decode::Error;
 use core::fmt::{self, Write};
+use nom::error::ParseError;
 
 use crate::parser::ParserError;
-use bs58::decode::Error;
-use nom::error::ParseError;
 
 pub const MAX_STR_BUFF_LEN: usize = 30;
 
@@ -224,6 +224,7 @@ pub fn pageString(out_value: &mut [u8], in_value: &[u8], page_idx: u8) -> Result
 #[cfg(test)]
 mod test {
     extern crate std;
+
     use super::*;
 
     #[test]

@@ -1,11 +1,12 @@
-use neon::prelude::*;
-use zcashtools::*;
-use zcashtools::zcashtools_errors::Error;
+extern crate neon;
+extern crate neon_serde;
+
 use std::path::Path;
 
-extern crate neon_serde;
-extern crate neon;
+use neon::prelude::*;
 
+use zcashtools::zcashtools_errors::Error;
+use zcashtools::*;
 
 // reference
 // https://neon-bindings.com/docs/primitives
@@ -15,13 +16,13 @@ extern crate neon;
 fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     // First get call arguments
     let arg0 = cx.argument::<JsValue>(0)?;
-    let arg0_value :LedgerInitData = neon_serde::from_value(&mut cx, arg0)?;
+    let arg0_value: LedgerInitData = neon_serde::from_value(&mut cx, arg0)?;
     let output = arg0_value.to_ledger_bytes();
     let js_value;
     if output.is_ok() {
         js_value = neon_serde::to_value(&mut cx, &output.unwrap())?;
         Ok(js_value)
-    }else{
+    } else {
         cx.throw_error(output.err().unwrap().to_string())
     }
 }
@@ -30,45 +31,46 @@ pub struct ZcashBuilder {
     zcashbuilder: ZcashBuilderLedger,
 }
 
-impl ZcashBuilder{
-    pub fn get_public_key(&mut self) -> Result<Vec<u8>, Error>{
+impl ZcashBuilder {
+    pub fn get_public_key(&mut self) -> Result<Vec<u8>, Error> {
         self.zcashbuilder.keygen();
         self.zcashbuilder.get_public_key()
     }
 
-    pub fn set_session_key(&mut self,input: &[u8]) -> Result<(), Error>{
+    pub fn set_session_key(&mut self, input: &[u8]) -> Result<(), Error> {
         self.zcashbuilder.set_session_key(input)
     }
 
-    pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo)-> Result<(),Error>{
+    pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
         self.zcashbuilder.add_transparent_input(t)
     }
 
-    pub fn add_transparent_output(&mut self, input: TransparentOutputBuilderInfo) -> Result<(),Error>{
+    pub fn add_transparent_output(
+        &mut self,
+        input: TransparentOutputBuilderInfo,
+    ) -> Result<(), Error> {
         self.zcashbuilder.add_transparent_output(input)
     }
 
-    pub fn add_sapling_spend(&mut self,  input: SpendBuilderInfo)-> Result<(),Error>{
+    pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
         self.zcashbuilder.add_sapling_spend(input)
     }
 
-    pub fn add_sapling_output(&mut self, input: OutputBuilderInfo)-> Result<(),Error>{
+    pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
         self.zcashbuilder.add_sapling_output(input)
     }
 
-    pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<Vec<u8>, Error>{
-        let mut prover = txprover_ledger::LocalTxProverLedger::new(
-            Path::new(spendpath),
-            Path::new(outputpath),
-        );
+    pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<Vec<u8>, Error> {
+        let mut prover =
+            txprover_ledger::LocalTxProverLedger::new(Path::new(spendpath), Path::new(outputpath));
         self.zcashbuilder.build(&mut prover)
     }
 
-    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(),Error>{
+    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
         self.zcashbuilder.add_signatures(input)
     }
 
-    pub fn finalize(&mut self) -> Result<Vec<u8>, Error>{
+    pub fn finalize(&mut self) -> Result<Vec<u8>, Error> {
         self.zcashbuilder.finalize_js()
     }
 }
@@ -254,6 +256,6 @@ declare_types! {
 
 register_module!(mut m, {
     m.export_class::<JsZcashBuilder>("zcashtools")?;
-    m.export_function("get_inittx_data",get_inittx_data)?;
+    m.export_function("get_inittx_data", get_inittx_data)?;
     Ok(())
 });
