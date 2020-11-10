@@ -6,10 +6,10 @@ console.log("- Zcash Tools Scratch Tests          -")
 console.log("--------------------------------------\n\n")
 
 
-function addr_to_script(addr){
-    const begin = Buffer.from("1976a914",'hex');
-    const end = Buffer.from("88ac",'hex');
-    var x = Buffer.concat([begin,addr,end]);
+function addr_to_script(addr) {
+    const begin = Buffer.from("1976a914", 'hex');
+    const end = Buffer.from("88ac", 'hex');
+    var x = Buffer.concat([begin, addr, end]);
     return x;
 }
 

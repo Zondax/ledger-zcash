@@ -1,10 +1,11 @@
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use rand::RngCore;
+
 use crate::bolos::c_zemu_log_stack;
 use crate::bolos::{blake2b_redjubjub, Trng};
 use crate::commitments::bytes_to_extended;
 use crate::constants::*;
 use crate::pedersen::extended_to_bytes;
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
-use rand::RngCore;
 
 #[inline(never)]
 pub fn h_star(a: &[u8], b: &[u8]) -> Fr {

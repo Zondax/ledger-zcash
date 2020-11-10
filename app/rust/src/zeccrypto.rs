@@ -1,27 +1,25 @@
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
 use core::mem;
-
-use crate::constants;
-use crate::{bolos, pedersen::extended_to_bytes, zip32};
-
-use crate::bolos::{c_zemu_log_stack, Trng};
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use group::{Group, GroupEncoding};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr, SubgroupPoint};
 use rand::RngCore;
 
+use crate::bolos::{c_zemu_log_stack, Trng};
+use crate::constants;
+use crate::{bolos, pedersen::extended_to_bytes, zip32};
+
 #[inline(never)]
-pub fn rseed_generate_rcm(rseed: &[u8;32]) -> Fr {
-    let bytes = zip32::prf_expand(rseed,&[0x04]);
+pub fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {
+    let bytes = zip32::prf_expand(rseed, &[0x04]);
     jubjub::Fr::from_bytes_wide(&bytes)
 }
 
 #[inline(never)]
-pub fn rseed_generate_esk(rseed: &[u8;32]) -> Fr {
-    let bytes = zip32::prf_expand(rseed,&[0x05]);
+pub fn rseed_generate_esk(rseed: &[u8; 32]) -> Fr {
+    let bytes = zip32::prf_expand(rseed, &[0x05]);
     jubjub::Fr::from_bytes_wide(&bytes)
 }
-
 
 pub fn generate_esk() -> [u8; 32] {
     let mut buffer = [0u8; 64];
@@ -30,6 +28,7 @@ pub fn generate_esk() -> [u8; 32] {
     let esk = Fr::from_bytes_wide(&buffer);
     esk.to_bytes()
 }
+
 //epk
 pub fn derive_public(esk: &[u8; 32], g_d: &[u8; 32]) -> [u8; 32] {
     let p = AffinePoint::from_bytes(*g_d).unwrap();
@@ -37,6 +36,7 @@ pub fn derive_public(esk: &[u8; 32], g_d: &[u8; 32]) -> [u8; 32] {
     let t = AffinePoint::from(q);
     t.to_bytes()
 }
+
 #[inline(never)]
 pub fn sapling_ka_agree(esk: &[u8; 32], pk_d: &[u8; 32]) -> [u8; 32] {
     let p = AffinePoint::from_bytes(*pk_d).unwrap();
@@ -79,23 +79,17 @@ pub extern "C" fn pubkey_gen(scalar_ptr: *const [u8; 32], output_ptr: *mut [u8; 
 }
 
 #[no_mangle]
-pub extern "C" fn rseed_get_rcm(
-    rseed_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
-) {
-    let rseed = unsafe{&*rseed_ptr};
-    let output = unsafe{&mut *output_ptr};
+pub extern "C" fn rseed_get_rcm(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
+    let rseed = unsafe { &*rseed_ptr };
+    let output = unsafe { &mut *output_ptr };
     let p = rseed_generate_rcm(rseed);
     output.copy_from_slice(&p.to_bytes());
 }
 
 #[no_mangle]
-pub extern "C" fn rseed_get_esk(
-    rseed_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
-) {
-    let rseed = unsafe{&*rseed_ptr};
-    let output = unsafe{&mut *output_ptr};
+pub extern "C" fn rseed_get_esk(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
+    let rseed = unsafe { &*rseed_ptr };
+    let output = unsafe { &mut *output_ptr };
     let p = rseed_generate_esk(rseed);
     output.copy_from_slice(&p.to_bytes());
 }

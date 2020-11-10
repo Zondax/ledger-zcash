@@ -1,12 +1,13 @@
-use crate::constants::{
-    COMPACT_NOTE_SIZE, ENC_CIPHERTEXT_SIZE, ENC_COMPACT_SIZE, NOTE_PLAINTEXT_SIZE,
-    OUT_PLAINTEXT_SIZE,
-};
 use aes::block_cipher_trait::generic_array::GenericArray;
 use chacha20poly1305::aead::heapless::{consts::U128, Vec};
 use chacha20poly1305::aead::{AeadInPlace, NewAead};
 use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
 use typenum::UInt;
+
+use crate::constants::{
+    COMPACT_NOTE_SIZE, ENC_CIPHERTEXT_SIZE, ENC_COMPACT_SIZE, NOTE_PLAINTEXT_SIZE,
+    OUT_PLAINTEXT_SIZE,
+};
 
 const NONCE: [u8; 12] = [0u8; 12]; // FIXME: 128-bits; unique per message
 
@@ -107,8 +108,9 @@ pub fn aead_decryptcompact(
 
 #[cfg(test)]
 mod tests {
-    use crate::aead::{aead_decryptnote, aead_encryptnote};
     use aes::block_cipher_trait::generic_array::GenericArray;
+
+    use crate::aead::{aead_decryptnote, aead_encryptnote};
 
     const KEY_ENC: [u8; 32] = [
         0x6d, 0xf8, 0x5b, 0x17, 0x89, 0xb0, 0xb7, 0x8b, 0x46, 0x10, 0xf2, 0x5d, 0x36, 0x8c, 0xb5,

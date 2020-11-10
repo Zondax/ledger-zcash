@@ -1,9 +1,10 @@
 #[cfg(test)]
 extern crate hex;
 
-use crate::bolos::*;
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
+
+use crate::bolos::*;
 
 const ZCASH_SIGHASH_PERSONALIZATION_PREFIX: &[u8; 12] = b"ZcashSigHash";
 const ZCASH_PREVOUTS_HASH_PERSONALIZATION: &[u8; 16] = b"ZcashPrevoutHash";
@@ -52,8 +53,9 @@ pub extern "C" fn sighash(input_ptr: *const &[u8], output_ptr: *mut [u8; 32]) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::*;
+
+    use super::*;
 
     #[test]
     fn test_shieldedoutputshash() {
@@ -83,7 +85,7 @@ mod tests {
         assert_eq!(
             blake2b32_with_personalization(
                 &[90, 99, 97, 115, 104, 83, 105, 103, 72, 97, 115, 104, 187, 9, 184, 118],
-                &preimage
+                &preimage,
             ),
             sighash
         );

@@ -1,5 +1,6 @@
-use crate::parser::parser_common::{u8_with_limits, var_int_as_usize, ParserError};
 use nom::{branch::permutation, bytes::complete::take, number::complete::le_u32};
+
+use crate::parser::parser_common::{u8_with_limits, var_int_as_usize, ParserError};
 
 /// The max length for the ScriptSig
 pub const MAX_SCRIPT_SIG_LEN: usize = 253;

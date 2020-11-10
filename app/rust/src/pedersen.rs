@@ -1,8 +1,8 @@
-use crate::bolos::c_zemu_log_stack;
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
-
 use core::convert::TryInto;
 use core::mem;
+use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+
+use crate::bolos::c_zemu_log_stack;
 
 #[inline(never)]
 fn handle_chunk(bits: u8, cur: &mut Fr, acc: &mut Fr) {
@@ -292,6 +292,7 @@ pub extern "C" fn pedersen_hash_73bytes(input: *const [u8; 73], output_ptr: *mut
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn test_bitstreamer() {
         let a: [u8; 2] = [254, 0];
