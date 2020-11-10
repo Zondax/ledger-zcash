@@ -116,8 +116,8 @@ where
         true => {
             let s = str.unwrap();
             let mut bytes = [0u8;32];
-            hex::decode_to_slice(&s, &mut bytes).map_err(D::Error::custom);
-            return Ok(Some(OutgoingViewingKey(bytes)))
+            hex::decode_to_slice(&s, &mut bytes).map_err(D::Error::custom)?;
+            Ok(Some(OutgoingViewingKey(bytes)))
         },
         false => Ok(None),
     }
@@ -134,7 +134,7 @@ where
         false => {
             let mut bytes = Vec::with_capacity(str.len() / 2);
             hex::decode_to_slice(&str, &mut bytes).map_err(D::Error::custom)?;
-            return Ok(Memo::from_bytes(&bytes[..]))
+            Ok(Memo::from_bytes(&bytes[..]))
         }
     }
 }
@@ -166,7 +166,7 @@ where
 {
     let str: Vec<String> = Deserialize::deserialize(deserializer)?;
     if str.len() == 0 {
-        return Ok(Vec::new());
+        Ok(Vec::new())
     } else {
         let n = str.len();
         let mut v = Vec::new();
@@ -177,11 +177,11 @@ where
                 ));
             }
             let mut bytes = [0u8; 64];
-            hex::decode_to_slice(&str[i], &mut bytes);
+            hex::decode_to_slice(&str[i], &mut bytes).map_err(D::Error::custom)?;
             let s = secp256k1::Signature::from_compact(&bytes).map_err(D::Error::custom)?;
             v.push(s);
         }
-        return Ok(v);
+        Ok(v)
     }
 }
 
@@ -191,7 +191,7 @@ where
 {
     let str: Vec<String> = Deserialize::deserialize(deserializer)?;
     if str.len() == 0 {
-        return Ok(Vec::new());
+        Ok(Vec::new())
     } else {
         let n = str.len();
         let mut v = Vec::new();
@@ -202,7 +202,7 @@ where
                 ));
             }
             let mut bytes = [0u8; 64];
-            hex::decode_to_slice(&str[i], &mut bytes);
+            hex::decode_to_slice(&str[i], &mut bytes).map_err(D::Error::custom)?;
             let s = Signature::read(&bytes[..]);
             if s.is_ok() {
                 v.push(s.unwrap());
@@ -210,6 +210,6 @@ where
                 return Err(D::Error::custom("error deserializing to spend sig"));
             }
         }
-        return Ok(v);
+        Ok(v)
     }
 }

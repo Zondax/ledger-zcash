@@ -101,7 +101,7 @@ void transaction_reset();
 void set_session_key(uint8_t *key);
 uint8_t *get_session_key();
 //statemachine API
-uint8_t getstate();
+uint8_t get_state();
 void state_reset();
 void set_state(uint8_t state);
 

@@ -32,7 +32,6 @@ use zcash_primitives::{
     transaction::components::{OutPoint, TxIn},
 };
 
-use jubjub;
 use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
 use zcash_primitives::redjubjub::Signature;
 
@@ -234,7 +233,7 @@ impl TransparentInputs {
             mtx.vin[i].script_sig =
                 Script::default() << &sig_bytes[..] << &info.pubkey.serialize()[..];
         }
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -324,7 +323,7 @@ fn spend_old_data_fromtx(data: &Vec<SpendDescriptionInfoLedger>) -> Vec<Nullifie
 fn transparent_script_data_fromtx(
     tx: &TransactionData,
     inputs: &Vec<TransparentInputInfoLedger>,
-) -> Vec<TransparentScriptData> {
+) -> Result<Vec<TransparentScriptData>, Error> {
     let mut data = Vec::new();
     for (i, info) in inputs.iter().enumerate() {
         let mut prevout = [0u8; 36];
@@ -332,7 +331,7 @@ fn transparent_script_data_fromtx(
         prevout[32..36].copy_from_slice(&tx.vin[i].prevout.n().to_le_bytes());
 
         let mut script_pubkey = [0u8; 26];
-        info.coin.script_pubkey.write(&mut script_pubkey[..]);
+        info.coin.script_pubkey.write(&mut script_pubkey[..])?;
 
         let mut value = [0u8; 8];
         value.copy_from_slice(&info.coin.value.to_i64_le_bytes());
@@ -348,7 +347,7 @@ fn transparent_script_data_fromtx(
         };
         data.push(ts);
     }
-    data
+    Ok(data)
 }
 
 fn spenddataledger_fromtx(input: &Vec<SpendDescription>) -> Vec<SpendDescriptionLedger> {
@@ -410,14 +409,13 @@ pub struct SpendDescriptionLedger {
 
 impl SpendDescriptionLedger {
     pub fn from(info: &SpendDescription) -> SpendDescriptionLedger {
-        let description = SpendDescriptionLedger {
+        SpendDescriptionLedger {
             cv: info.cv.to_bytes(),
             anchor: info.anchor.to_bytes(),
             nullifier: info.nullifier.clone(),
             rk: info.rk.0.to_bytes(),
             zkproof: info.zkproof.clone(),
-        };
-        description
+        }
     }
 
     pub fn write<W: Write>(&self, mut writer: W) -> io::Result<()> {
@@ -441,15 +439,14 @@ pub struct OutputDescriptionLedger {
 
 impl OutputDescriptionLedger {
     pub fn from(info: &OutputDescription) -> OutputDescriptionLedger {
-        let description = OutputDescriptionLedger {
+        OutputDescriptionLedger {
             cv: info.cv.to_bytes(),
             cmu: info.cmu.to_bytes(),
             ephemeral_key: info.ephemeral_key.to_bytes(),
             enc_ciphertext: info.enc_ciphertext.clone(),
             out_ciphertext: info.out_ciphertext.clone(),
             zkproof: info.zkproof.clone(),
-        };
-        description
+        }
     }
 
     pub fn write<W: Write>(&self, mut writer: W) -> io::Result<()> {
@@ -753,9 +750,13 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             self.mtx.binding_sig = None;
         }
 
-        let trans_scripts =
+        let r =
             transparent_script_data_fromtx(&self.mtx, &self.transparent_inputs.inputs);
+        if r.is_err(){
+            return Err(r.err().unwrap());
+        }
 
+        let trans_scripts = r.unwrap();
         let hash_input = signature_hash_input_data(&self.mtx, SIGHASH_ALL);
 
         let spend_olddata = spend_old_data_fromtx(&self.spends);
@@ -776,13 +777,11 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         signatures: Vec<secp256k1::Signature>, //get from ledger
         consensus_branch_id: consensus::BranchId,
     ) -> Result<(), Error> {
-        let r = self.transparent_inputs.apply_signatures(
+        self.transparent_inputs.apply_signatures(
             signatures,
             &mut self.mtx,
             consensus_branch_id,
-        );
-
-        r
+        )
     }
 
     pub fn add_signatures_spend(
@@ -905,7 +904,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             Err(_) => return Err(Error::Finalization),
         }
         let mut v = Vec::new();
-        tx.write(&mut v);
+        tx.write(&mut v)?;
         Ok(v)
     }
 }

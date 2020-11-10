@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_imports, unused_mut, unused_must_use, unused_variables)]
+#![allow(dead_code, unused_imports, unused_mut, unused_variables)]
 
 mod neon_bridge;
 mod prover_ledger;
@@ -97,7 +97,7 @@ pub struct LedgerInitData {
 }
 
 impl LedgerInitData {
-    pub fn to_ledger_bytes(&self) -> Vec<u8> {
+    pub fn to_ledger_bytes(&self) -> Result<Vec<u8>,Error> {
         let mut data = Vec::new();
 
         data.push(self.t_in.len() as u8);
@@ -109,12 +109,12 @@ impl LedgerInitData {
             for p in info.path.iter() {
                 data.extend_from_slice(&p.to_le_bytes());
             }
-            info.address.write(&mut data);
+            info.address.write(&mut data)?;
             data.extend_from_slice(&info.value.to_i64_le_bytes());
         }
 
         for info in self.t_out.iter() {
-            info.address.write(&mut data);
+            info.address.write(&mut data)?;
             data.extend_from_slice(&info.value.to_i64_le_bytes());
         }
 
@@ -134,7 +134,7 @@ impl LedgerInitData {
                 data.extend_from_slice(&[0u8;32]);
             }
         }
-        data
+        Ok(data)
     }
 }
 
@@ -147,22 +147,22 @@ pub struct LedgerTxData {
 }
 
 impl LedgerTxData {
-    pub fn to_ledger_bytes(&self) -> Vec<u8> {
+    pub fn to_ledger_bytes(&self) -> Result<Vec<u8>, Error> {
         let mut data = Vec::new();
         for t_data in self.t_script_data.iter() {
-            t_data.write(&mut data);
+            t_data.write(&mut data)?;
         }
         for spend_old_data in self.s_spend_old_data.iter() {
-            spend_old_data.write(&mut data);
+            spend_old_data.write(&mut data)?;
         }
         for spend_new_data in self.s_spend_new_data.iter() {
-            spend_new_data.write(&mut data);
+            spend_new_data.write(&mut data)?;
         }
         for output_data in self.s_output_data.iter() {
-            output_data.write(&mut data);
+            output_data.write(&mut data)?;
         }
         data.extend_from_slice(&self.tx_hash_data.to_bytes());
-        data
+        Ok(data)
     }
 }
 
@@ -382,8 +382,7 @@ impl ZcashBuilderLedger {
         match r.is_ok() {
             true => {
                 let tx_ledger_data = r.unwrap();
-                let bytes = tx_ledger_data.to_ledger_bytes();
-                Ok(bytes)
+                tx_ledger_data.to_ledger_bytes()
             }
             false => Err(r.err().unwrap())
         }
@@ -396,17 +395,14 @@ impl ZcashBuilderLedger {
         if r.is_err() {
             return r;
         }
-        let r = self.builder.add_signatures_spend(input.spend_sigs);
-        return r;
+        self.builder.add_signatures_spend(input.spend_sigs)
     }
 
     pub fn finalize(mut self) -> Result<(Transaction, TransactionMetadata), Error>{
-        let r = self.builder.finalize();
-        return r;
+        self.builder.finalize()
     }
 
     pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error>{
-        let r = self.builder.finalize_js();
-        return r;
+        self.builder.finalize_js()
     }
 }

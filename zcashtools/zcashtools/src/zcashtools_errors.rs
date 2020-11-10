@@ -16,7 +16,8 @@ pub enum Error {
     TranspararentSig,
     Finalization,
     MinShieldedOuputs,
-    BuilderNoKeys
+    BuilderNoKeys,
+    ReadWriteError
 }
 
 impl fmt::Display for Error {
@@ -38,8 +39,17 @@ impl fmt::Display for Error {
             Error::Finalization => write!(f, "Failed to build complete transaction"),
             Error::MinShieldedOuputs => write!(f, "Not enough shielded outputs for transaction"),
             Error::BuilderNoKeys => write!(f, "Builder does not have any keys set"),
+            Error::ReadWriteError => write!(f, "Error writing/reading bytes to/from vector"),
         }
     }
 }
 
 impl error::Error for Error {}
+
+impl From<std::io::Error> for Error{
+    fn from(e: std::io::Error) -> Error {
+        Error::ReadWriteError
+    }
+}
+
+//the trait `std::convert::From<std::io::Error>` is not implemented for `zcashtools_errors::Error

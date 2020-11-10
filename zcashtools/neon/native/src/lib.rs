@@ -17,8 +17,13 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     let arg0 = cx.argument::<JsValue>(0)?;
     let arg0_value :LedgerInitData = neon_serde::from_value(&mut cx, arg0)?;
     let output = arg0_value.to_ledger_bytes();
-    let js_value = neon_serde::to_value(&mut cx, &output)?;
-    Ok(js_value)
+    let js_value;
+    if output.is_ok() {
+        js_value = neon_serde::to_value(&mut cx, &output.unwrap())?;
+        Ok(js_value)
+    }else{
+        cx.throw_error(output.err().unwrap().to_string())
+    }
 }
 
 pub struct ZcashBuilder {

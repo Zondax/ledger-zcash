@@ -14,9 +14,9 @@
 *  limitations under the License.
 ********************************************************************************/
 
-void prevouts_hash(uint8_t *input, uint8_t *output);
+void prevouts_hash(const uint8_t *input, uint8_t *output);
 
-void sequence_hash(uint8_t *input, uint8_t *output);
+void sequence_hash(const uint8_t *input, uint8_t *output);
 void outputs_hash(uint8_t *output);
 
 void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);

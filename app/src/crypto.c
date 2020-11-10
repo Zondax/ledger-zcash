@@ -911,10 +911,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    //uint8_t esk[32];
-    uint8_t *epk = (uint8_t *) (out + 96);
-    uint8_t *compact = (uint8_t *)(out+32);
-
     tmp_enc *tmp = (tmp_enc *)buffer;
     MEMZERO(tmp, sizeof(tmp_enc));
 
@@ -1027,8 +1023,6 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
     uint8_t *start_tindata = (uint8_t *)txdata;
     uint8_t *start_signdata = (uint8_t *)(txdata + start_sighashdata());
-
-    uint8_t sighash[32];
 
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);

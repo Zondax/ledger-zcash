@@ -59,7 +59,7 @@ bool session_key_set(){
 }
 
 uint8_t *get_session_key(){
-    return &N_transactioninfo.session_key;
+    return (uint8_t *)&N_transactioninfo.session_key;
 };
 
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v){
@@ -141,7 +141,7 @@ uint8_t *get_next_transparent_signature(){
     if(transaction_header.t_in_len <= transaction_header.t_sign_extract_index){
         return NULL;
     }
-    uint8_t *result = &N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index];
+    uint8_t *result = (uint8_t *)&N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index];
     transaction_header.t_sign_extract_index++;
     return result;
 }
@@ -161,7 +161,7 @@ uint8_t *get_next_spend_signature(){
     if(transaction_header.spendlist_len <= transaction_header.spends_sign_extract_index){
         return NULL;
     }
-    uint8_t *result = &N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index];
+    uint8_t *result = (uint8_t *)&N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index];
     transaction_header.spends_sign_extract_index++;
     return result;
 }

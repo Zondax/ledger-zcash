@@ -91,7 +91,7 @@ void check_canary() {
 }
 
 void _zemu_log_stack(uint8_t *buffer) {
-    zemu_log_stack(buffer);
+    zemu_log_stack((char *)buffer);
 }
 
 
