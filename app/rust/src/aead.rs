@@ -1,4 +1,7 @@
-use crate::constants::{ENC_CIPHERTEXT_SIZE, NOTE_PLAINTEXT_SIZE};
+use crate::constants::{
+    COMPACT_NOTE_SIZE, ENC_CIPHERTEXT_SIZE, ENC_COMPACT_SIZE, NOTE_PLAINTEXT_SIZE,
+    OUT_PLAINTEXT_SIZE,
+};
 use aes::block_cipher_trait::generic_array::GenericArray;
 use chacha20poly1305::aead::heapless::{consts::U128, Vec};
 use chacha20poly1305::aead::{AeadInPlace, NewAead};
@@ -7,7 +10,7 @@ use typenum::UInt;
 
 const NONCE: [u8; 12] = [0u8; 12]; // FIXME: 128-bits; unique per message
 
-fn aead_encryptnote(
+pub fn aead_encryptnote(
     key: &GenericArray<u8, typenum::U32>,
     plaintext: [u8; NOTE_PLAINTEXT_SIZE],
 ) -> Vec<u8, typenum::U580> {
@@ -26,7 +29,26 @@ fn aead_encryptnote(
     buffer
 }
 
-fn eaed_decryptnote(
+pub fn aead_encrypt_outciphertext(
+    key: &GenericArray<u8, typenum::U32>,
+    plaintext: [u8; OUT_PLAINTEXT_SIZE],
+) -> Vec<u8, typenum::U80> {
+    let key_array = Key::from_slice(&key);
+    let nonce = Nonce::from_slice(&NONCE);
+
+    let mut buffer: Vec<u8, typenum::U80> = Vec::new();
+    buffer
+        .extend_from_slice(&plaintext)
+        .expect("could not extend");
+
+    ChaCha20Poly1305::new(&key_array)
+        .encrypt_in_place(nonce, &[], &mut buffer)
+        .expect("encryption failure!");
+
+    buffer
+}
+
+pub fn aead_decryptnote(
     key: &GenericArray<u8, typenum::U32>,
     ciphertext: [u8; ENC_CIPHERTEXT_SIZE],
 ) -> Vec<u8, typenum::U580> {
@@ -45,9 +67,47 @@ fn eaed_decryptnote(
     buffer
 }
 
+pub fn aead_encryptcompact(
+    key: &GenericArray<u8, typenum::U32>,
+    plaintext: [u8; COMPACT_NOTE_SIZE],
+) -> Vec<u8, typenum::U68> {
+    let key_array = Key::from_slice(&key);
+    let nonce = Nonce::from_slice(&NONCE);
+
+    let mut buffer: Vec<u8, typenum::U68> = Vec::new();
+    buffer
+        .extend_from_slice(&plaintext)
+        .expect("could not extend");
+
+    ChaCha20Poly1305::new(&key_array)
+        .encrypt_in_place(nonce, &[], &mut buffer)
+        .expect("encryption failure!");
+
+    buffer
+}
+
+pub fn aead_decryptcompact(
+    key: &GenericArray<u8, typenum::U32>,
+    ciphertext: [u8; ENC_COMPACT_SIZE],
+) -> Vec<u8, typenum::U68> {
+    let key_array = Key::from_slice(&key);
+    let nonce = Nonce::from_slice(&NONCE);
+
+    let mut buffer: Vec<u8, typenum::U68> = Vec::new();
+    buffer
+        .extend_from_slice(&ciphertext)
+        .expect("could not extend");
+
+    ChaCha20Poly1305::new(&key_array)
+        .decrypt_in_place(nonce, &[], &mut buffer)
+        .expect("decryption failure!");
+
+    buffer
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::aead::{aead_encryptnote, eaed_decryptnote};
+    use crate::aead::{aead_decryptnote, aead_encryptnote};
     use aes::block_cipher_trait::generic_array::GenericArray;
 
     const KEY_ENC: [u8; 32] = [
@@ -150,7 +210,7 @@ mod tests {
     #[test]
     fn test_decrypt() {
         let key = GenericArray::from_slice(&KEY_ENC);
-        let plaintext = eaed_decryptnote(&key, C_ENC);
+        let plaintext = aead_decryptnote(&key, C_ENC);
 
         assert_eq!(plaintext[..], P_ENC[..]);
     }

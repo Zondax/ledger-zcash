@@ -41,10 +41,21 @@ extern "C" {
 // sapling address [11+32]
 #define PK_LEN_SAPLING              43u
 
+// ivk
+#define LEN_IVK                     32u
+
+//ak, nsk
+#define LEN_PGK                     64u
+
 typedef enum {
     addr_secp256k1 = 0,
     addr_sapling   = 1
 } address_kind_e;
+
+typedef enum {
+    key_ivk = 0,
+    key_ovk = 1
+} key_type_e;
 
 #define VIEW_ADDRESS_OFFSET_SECP256K1       PK_LEN_SECP256K1
 #define VIEW_ADDRESS_OFFSET_SAPLING         PK_LEN_SAPLING

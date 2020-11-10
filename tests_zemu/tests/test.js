@@ -23,6 +23,7 @@ import { TX_TESTS } from './unshielded_tx';
 const Resolve = require("path").resolve;
 const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
+var addon = require('../../zcashtools/neon/native');
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
@@ -116,12 +117,12 @@ describe('Basic checks', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const addr = await app.getAddressAndPubKey("m/44'/133'/5'/0/0");
+            const addr = await app.getAddressAndPubKey("m/44'/133'/5'/0/1000");
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
-            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49xhd74ga";
+            const expected_addr_raw = "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667";
+            const expected_addr = "zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -138,7 +139,7 @@ describe('Basic checks', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0'/1");
+            const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0'/1000");
             // Wait until we are not in the main menu
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
@@ -151,8 +152,8 @@ describe('Basic checks', function () {
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
-            const expected_addr_raw = "fa73b4c8ef0b7b49bb3c94bf2e1df1b27fbf73bb9599cf747714d1fa8b3bf2fb8fe600aca010f875b6ea53";
-            const expected_addr = "zs1lfemfj80pda5nweujjlju803kflm7uamjkvu7arhzngl4zem7taclesq4jspp7r4km49xhd74ga";
+            const expected_addr_raw = "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667";
+            const expected_addr = "zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3";
 
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
@@ -187,6 +188,7 @@ describe('Basic checks', function () {
             console.log(signature)
 
             expect(signature.return_code).toEqual(0x9000);
+            console.log(signature.signature_der.toString('hex'));
         } finally {
             await sim.close();
         }

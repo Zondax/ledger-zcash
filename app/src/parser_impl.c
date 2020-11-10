@@ -1,0 +1,75 @@
+/*******************************************************************************
+*  (c) 2019 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
+
+#include <zxmacros.h>
+#include "parser_impl.h"
+#include "parser_txdef.h"
+#include "coin.h"
+#include "crypto.h"
+
+parser_error_t parser_init_context(parser_context_t *ctx,
+                                   const uint8_t *buffer,
+                                   uint16_t bufferSize) {
+    ctx->offset = 0;
+    ctx->buffer = NULL;
+    ctx->bufferLen = 0;
+
+    if (bufferSize == 0 || buffer == NULL) {
+        // Not available, use defaults
+        return parser_init_context_empty;
+    }
+
+    ctx->buffer = buffer;
+    ctx->bufferLen = bufferSize;
+    return parser_ok;
+}
+
+parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
+    CHECK_PARSER_ERR(parser_init_context(ctx, buffer, bufferSize))
+    return parser_ok;
+}
+
+const char *parser_getErrorDescription(parser_error_t err) {
+    switch (err) {
+        // General errors
+        case parser_ok:
+            return "No error";
+        case parser_no_data:
+            return "No more data";
+        case parser_init_context_empty:
+            return "Initialized empty context";
+        case parser_display_idx_out_of_range:
+            return "display_idx_out_of_range";
+        case parser_display_page_out_of_range:
+            return "display_page_out_of_range";
+        case parser_unexpected_buffer_end:
+            return "Unexpected buffer end";
+        case parser_unexpected_value:
+            return "Unexpected value";
+        case parser_value_out_of_range:
+            return "Value out of range";
+        default:
+            return "Unrecognized error code";
+    }
+}
+
+GEN_DEF_READFIX_UNSIGNED(8)
+
+GEN_DEF_READFIX_UNSIGNED(16)
+
+GEN_DEF_READFIX_UNSIGNED(32)
+
+GEN_DEF_READFIX_UNSIGNED(64)

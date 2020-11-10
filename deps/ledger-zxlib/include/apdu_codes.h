@@ -42,6 +42,19 @@
 #define APDU_CODE_UNKNOWN                   0x6F00
 #define APDU_CODE_SIGN_VERIFY_ERROR         0x6F01
 
+#define APDU_CODE_WRONG_ORDER_SAPLING           0x6FA0
+
+#define APDU_CODE_EXTRACT_MORE_SPENDINFO        0x6FA1
+#define APDU_CODE_EXTRACT_MORE_OUTPUTINFO       0x6FA2
+
+#define APDU_CODE_EXTRACTED_ALL_SPENDINFO       0x6FB1
+#define APDU_CODE_EXTRACTED_ALL_OUTPUTINFO      0x6FB2
+
+#define APDU_CODE_CHECK_SPENDS_ERROR            0x6FC1
+#define APDU_CODE_CHECK_OUTPUTS_ERROR           0x6FC2
+
+#define APDU_CODE_NOT_SUPPORTED_SAPLING          0x6FFF
+
 
 __Z_INLINE void set_code(uint8_t *buffer, uint8_t offset, uint16_t value) {
     *(buffer + offset) = (uint8_t) (value >> 8);

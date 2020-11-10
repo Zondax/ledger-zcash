@@ -9,6 +9,10 @@ use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
 
+#[cfg(test)]
+#[cfg(target_arch = "x86_64")]
+use getrandom::getrandom;
+
 use aes::{
     block_cipher_trait::{
         generic_array::typenum::{U16, U32, U8},
@@ -38,6 +42,9 @@ extern "C" {
         out: *mut u8,
     );
 
+    fn c_blake2b32_withpersonal(person: *const u8, input: *const u8, input_len: u32, out: *mut u8);
+    fn c_blake2b64_withpersonal(person: *const u8, input: *const u8, input_len: u32, out: *mut u8);
+
     // FIXME: We should probably consider exposing context + update to minimize so many arguments + stack usage
     fn c_zcash_blake2b_expand_vec_four(
         input_a: *const u8,
@@ -57,9 +64,90 @@ extern "C" {
     fn zemu_log_stack(buffer: *const u8);
     fn check_app_canary();
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
-    fn zcash_blake2b_kdf_sapling(a: *const u8, a_len: u32, out: *mut u8);
-    fn zcash_blake2b_prf_ock(a: *const u8, a_len: u32, out: *mut u8);
+    fn c_zcash_blake2b_redjubjub(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
 }
+
+#[cfg(test)]
+pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32] {
+    let h = Blake2bParams::new()
+        .hash_length(32)
+        .personal(person)
+        .hash(data);
+    let mut hash = [0u8; 32];
+    hash.copy_from_slice(&h.as_bytes());
+    hash
+}
+
+#[cfg(not(test))]
+pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32] {
+    let mut hash = [0; 32];
+    unsafe {
+        c_blake2b32_withpersonal(
+            person.as_ptr(),
+            data.as_ptr(),
+            data.len() as u32,
+            hash.as_mut_ptr(),
+        );
+    }
+    hash
+}
+
+#[cfg(test)]
+pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64] {
+    let h = Blake2bParams::new()
+        .hash_length(64)
+        .personal(person)
+        .hash(data);
+    let mut hash = [0u8; 64];
+    hash.copy_from_slice(&h.as_bytes());
+    hash
+}
+
+#[cfg(not(test))]
+pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64] {
+    let mut hash = [0; 64];
+    unsafe {
+        c_blake2b64_withpersonal(
+            person.as_ptr(),
+            data.as_ptr(),
+            data.len() as u32,
+            hash.as_mut_ptr(),
+        );
+    }
+    hash
+}
+
+#[cfg(test)]
+pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
+    pub const REDJUBJUB_PERSONALIZATION: &[u8; 16] = b"Zcash_RedJubjubH";
+
+    let h = Blake2bParams::new()
+        .hash_length(64)
+        .personal(REDJUBJUB_PERSONALIZATION)
+        .to_state()
+        .update(a)
+        .update(b)
+        .finalize();
+
+    let result: [u8; 64] = *h.as_array();
+    result
+}
+
+#[cfg(not(test))]
+pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
+    let mut hash = [0; 64];
+    unsafe {
+        c_zcash_blake2b_redjubjub(
+            a.as_ptr(),
+            a.len() as u32,
+            b.as_ptr(),
+            b.len() as u32,
+            hash.as_mut_ptr(),
+        );
+    }
+    hash
+}
+
 #[cfg(not(test))]
 pub fn c_zemu_log_stack(s: &[u8]) {
     unsafe { zemu_log_stack(s.as_ptr()) }
@@ -143,15 +231,6 @@ pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
     out
 }
 
-#[cfg(not(test))]
-pub fn blake2b_kdf_sapling(a: &[u8]) -> [u8; 32] {
-    let mut hash = [0; 32];
-    unsafe {
-        zcash_blake2b_kdf_sapling(a.as_ptr(), a.len() as u32, hash.as_mut_ptr());
-    }
-    hash
-}
-
 #[cfg(test)]
 pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
     let cipher: Aes256 = Aes256::new(GenericArray::from_slice(k));
@@ -162,41 +241,6 @@ pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
 
     let out: [u8; 16] = b.as_slice().try_into().expect("err");
     out
-}
-
-#[cfg(test)]
-pub fn blake2b_kdf_sapling(a: &[u8]) -> [u8; 32] {
-    pub const KDF_SAPLING_PERSONALIZATION: &[u8; 16] = b"Zcash_SaplingKDF";
-
-    let h = Blake2bParams::new()
-        .hash_length(32)
-        .personal(KDF_SAPLING_PERSONALIZATION)
-        .hash(a);
-
-    let result: [u8; 32] = h.as_bytes().try_into().expect("wrong length");
-    result
-}
-
-#[cfg(test)]
-pub fn blake2b_prf_ock(a: &[u8]) -> [u8; 32] {
-    pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
-
-    let h = Blake2bParams::new()
-        .hash_length(32)
-        .personal(PRF_OCK_PERSONALIZATION)
-        .hash(a);
-
-    let result: [u8; 32] = h.as_bytes().try_into().expect("wrong length");
-    result
-}
-
-#[cfg(not(test))]
-pub fn blake2b_prf_ock(a: &[u8]) -> [u8; 32] {
-    let mut hash = [0; 32];
-    unsafe {
-        zcash_blake2b_prf_ock(a.as_ptr(), a.len() as u32, hash.as_mut_ptr());
-    }
-    hash
 }
 
 #[cfg(test)]
@@ -250,28 +294,6 @@ pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
 }
 
 #[cfg(test)]
-pub fn blake2b_zip32master(seed: &[u8]) -> [u8; 64] {
-    pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
-    let h = Blake2bParams::new()
-        .hash_length(64)
-        .personal(ZIP32_SAPLING_MASTER_PERSONALIZATION)
-        .hash(seed);
-
-    let mut hash = [0u8; 64];
-    hash.copy_from_slice(&h.as_bytes());
-    hash
-}
-
-#[cfg(not(test))]
-pub fn blake2b_zip32master(seed: &[u8]) -> [u8; 64] {
-    let mut out = [0u8; 64];
-    unsafe {
-        c_zcash_blake2b_zip32master(seed.as_ptr(), seed.len() as u32, out.as_mut_ptr());
-    }
-    out
-}
-
-#[cfg(test)]
 pub fn blake2b_expand_vec_four(
     in_a: &[u8],
     in_b: &[u8],
@@ -309,11 +331,22 @@ impl RngCore for Trng {
         u64::from_le_bytes(out)
     }
 
+    #[cfg(not(target_arch = "x86_64"))]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         unsafe {
             cx_rng(dest.as_mut_ptr(), dest.len() as u32);
         }
     }
+
+    #[cfg(target_arch = "x86_64")]
+    #[cfg(test)]
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        getrandom(dest);
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[cfg(not(test))]
+    fn fill_bytes(&mut self, _dest: &mut [u8]) {}
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
         self.fill_bytes(dest);
@@ -322,3 +355,15 @@ impl RngCore for Trng {
 }
 
 impl CryptoRng for Trng {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_randomness() {
+        let mut buf = [0u8; 64];
+        Trng.fill_bytes(&mut buf);
+        assert_ne!(buf[..], [0u8; 64][..]);
+    }
+}

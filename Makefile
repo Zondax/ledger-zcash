@@ -30,3 +30,9 @@ default:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C app $@
 endif
+
+zcashtools_build:
+	cd zcashtools/neon && yarn install
+
+zcashtools_test: zcashtools_build
+	cd zcashtools/neon && yarn test

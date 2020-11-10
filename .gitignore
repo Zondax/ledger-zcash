@@ -88,3 +88,4 @@ yarn.lock
 !/tests_zemu/yarn.lock
 !/tests_zemu/yarn-error.log
 /app/rust/Cargo.lock
+/zcashtools/target/

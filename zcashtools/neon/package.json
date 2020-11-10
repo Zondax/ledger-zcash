@@ -1,0 +1,15 @@
+{
+  "name": "@zondax/zcashtools",
+  "version": "0.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "author": "Zondax GmbH <info@zondax.ch>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "neon-cli": "^0.4.0"
+  },
+  "scripts": {
+    "install": "node_modules/.bin/neon build",
+    "test": "node -e 'require(\"./\")'"
+  }
+}
