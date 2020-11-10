@@ -12,6 +12,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 // Adapted from the public domain, estream code by D. Bernstein.
+// Adapted by Zondax
 
 #include <stdint.h>
 #include <stdlib.h>
