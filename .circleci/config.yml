@@ -95,6 +95,11 @@ jobs:
             nvm use 14.4.0
             npm install -g yarn
       - run:
+          name: Build/Install zcashtools
+          command: |
+            nvm use 14.4.0
+            make zcashtools_test
+      - run:
           name: Build/Install build js deps
           command: |
             nvm use 14.4.0
