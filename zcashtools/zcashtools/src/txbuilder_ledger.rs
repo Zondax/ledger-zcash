@@ -1,5 +1,5 @@
 //! Structs for building transactions.
-use crate::txprover_ledger::{TxProverLedger};
+use crate::txprover_ledger::TxProverLedger;
 use group::GroupEncoding;
 use rand::{rngs::OsRng, CryptoRng, RngCore};
 use std::io::{self, Write};
@@ -7,19 +7,17 @@ use std::marker::PhantomData;
 use zcash_primitives::primitives::{Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed};
 use zcash_primitives::transaction::Transaction;
 
+use crate::sighashdata_ledger::signature_hash_input_data;
 use crate::LedgerTxData;
-use crate::sighashdata_ledger::{
-    signature_hash_input_data,
-};
 
 use zcash_primitives::{
     consensus,
     keys::OutgoingViewingKey,
     legacy::TransparentAddress,
     merkle_tree::MerklePath,
-    note_encryption::{Memo},
-    redjubjub::{PublicKey},
-    sapling::{Node},
+    note_encryption::Memo,
+    redjubjub::PublicKey,
+    sapling::Node,
     transaction::{
         components::{amount::*, *},
         signature_hash_data, TransactionData, SIGHASH_ALL,
@@ -88,7 +86,7 @@ impl SaplingOutputLedger {
 
         let note = Note {
             g_d,
-            pk_d: to.pk_d().clone(),
+            pk_d: *to.pk_d(),
             value: value.into(),
             rseed,
         };
@@ -108,7 +106,6 @@ impl SaplingOutputLedger {
         ctx: &mut P::SaplingProvingContext,
         rng: &mut R,
     ) -> OutputDescription {
-
         let mut encryptor = SaplingNoteEncryption::new(
             self.ovk,
             self.note.clone(),
@@ -178,7 +175,7 @@ impl TransparentInputs {
             Some(TransparentAddress::PublicKey(hash)) => {
                 use ripemd160::Ripemd160;
                 use sha2::{Digest, Sha256};
-                if &hash[..] != &Ripemd160::digest(&Sha256::digest(&pubkey.serialize()))[..] {
+                if hash[..] != Ripemd160::digest(&Sha256::digest(&pubkey.serialize()))[..] {
                     return Err(Error::InvalidAddressHash);
                 }
             }
@@ -222,7 +219,7 @@ impl TransparentInputs {
             let msg = secp256k1::Message::from_slice(&sighash).expect("32 bytes");
             let sig = signatures[i];
             let pk = info.pubkey;
-            if !self.secp.verify(&msg, &sig, &pk).is_ok() {
+            if self.secp.verify(&msg, &sig, &pk).is_err() {
                 return Err(Error::TranspararentSig);
             }
             // Signature has to have "SIGHASH_ALL" appended to it
@@ -308,9 +305,9 @@ impl<P: consensus::Parameters> Builder<P, OsRng> {
     }
 }
 
-fn spend_old_data_fromtx(data: &Vec<SpendDescriptionInfoLedger>) -> Vec<NullifierInput> {
+fn spend_old_data_fromtx(data: &[SpendDescriptionInfoLedger]) -> Vec<NullifierInput> {
     let mut v = Vec::new();
-    for info in data.iter(){
+    for info in data.iter() {
         let n = NullifierInput {
             rcm_old: info.note.rcm().to_bytes(),
             notepos: info.merkle_path.position.to_le_bytes(),
@@ -322,7 +319,7 @@ fn spend_old_data_fromtx(data: &Vec<SpendDescriptionInfoLedger>) -> Vec<Nullifie
 
 fn transparent_script_data_fromtx(
     tx: &TransactionData,
-    inputs: &Vec<TransparentInputInfoLedger>,
+    inputs: &[TransparentInputInfoLedger],
 ) -> Result<Vec<TransparentScriptData>, Error> {
     let mut data = Vec::new();
     for (i, info) in inputs.iter().enumerate() {
@@ -350,7 +347,7 @@ fn transparent_script_data_fromtx(
     Ok(data)
 }
 
-fn spenddataledger_fromtx(input: &Vec<SpendDescription>) -> Vec<SpendDescriptionLedger> {
+fn spenddataledger_fromtx(input: &[SpendDescription]) -> Vec<SpendDescriptionLedger> {
     let mut data = Vec::new();
     for info in input.iter() {
         let description = SpendDescriptionLedger::from(info);
@@ -359,7 +356,7 @@ fn spenddataledger_fromtx(input: &Vec<SpendDescription>) -> Vec<SpendDescription
     data
 }
 
-fn outputdataledger_fromtx(input: &Vec<OutputDescription>) -> Vec<OutputDescriptionLedger> {
+fn outputdataledger_fromtx(input: &[OutputDescription]) -> Vec<OutputDescriptionLedger> {
     let mut data = Vec::new();
     for info in input.iter() {
         let description = OutputDescriptionLedger::from(info);
@@ -412,9 +409,9 @@ impl SpendDescriptionLedger {
         SpendDescriptionLedger {
             cv: info.cv.to_bytes(),
             anchor: info.anchor.to_bytes(),
-            nullifier: info.nullifier.clone(),
+            nullifier: info.nullifier,
             rk: info.rk.0.to_bytes(),
-            zkproof: info.zkproof.clone(),
+            zkproof: info.zkproof,
         }
     }
 
@@ -443,9 +440,9 @@ impl OutputDescriptionLedger {
             cv: info.cv.to_bytes(),
             cmu: info.cmu.to_bytes(),
             ephemeral_key: info.ephemeral_key.to_bytes(),
-            enc_ciphertext: info.enc_ciphertext.clone(),
-            out_ciphertext: info.out_ciphertext.clone(),
-            zkproof: info.zkproof.clone(),
+            enc_ciphertext: info.enc_ciphertext,
+            out_ciphertext: info.out_ciphertext,
+            zkproof: info.zkproof,
         }
     }
 
@@ -560,14 +557,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         rcv: jubjub::Fr,
         rseed: Rseed,
     ) -> Result<(), Error> {
-        let output = SaplingOutputLedger::new::<R, P>(
-            ovk,
-            to,
-            value,
-            memo,
-            rcv,
-            rseed,
-        )?;
+        let output = SaplingOutputLedger::new::<R, P>(ovk, to, value, memo, rcv, rseed)?;
 
         self.mtx.value_balance -= value;
 
@@ -676,7 +666,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         let mut ctx = prover.new_sapling_proving_context();
 
         // Pad Sapling outputs
-        if !spends.is_empty() && outputs.len() < MIN_SHIELDED_OUTPUTS{
+        if !spends.is_empty() && outputs.len() < MIN_SHIELDED_OUTPUTS {
             return Err(Error::MinShieldedOuputs);
         }
 
@@ -687,7 +677,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         if !spends.is_empty() {
             let anchor = self.anchor.expect("anchor was set if spends were added");
 
-            for (_,spend) in spends.iter() {
+            for (_, spend) in spends.iter() {
                 let proof_generation_key = spend.proofkey.clone();
 
                 let mut nullifier = [0u8; 32];
@@ -713,7 +703,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
                     cv,
                     anchor,
                     nullifier,
-                    rk: PublicKey(rk.0.clone()),
+                    rk: PublicKey(rk.0),
                     zkproof,
                     spend_auth_sig: None,
                 });
@@ -723,7 +713,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         }
 
         // Create Sapling OutputDescriptions
-        for (_,output) in outputs.into_iter() {
+        for (_, output) in outputs.into_iter() {
             let output_desc = output.build(prover, &mut ctx, &mut self.rng);
             self.mtx.shielded_outputs.push(output_desc);
         }
@@ -750,9 +740,8 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             self.mtx.binding_sig = None;
         }
 
-        let r =
-            transparent_script_data_fromtx(&self.mtx, &self.transparent_inputs.inputs);
-        if r.is_err(){
+        let r = transparent_script_data_fromtx(&self.mtx, &self.transparent_inputs.inputs);
+        if r.is_err() {
             return Err(r.err().unwrap());
         }
 
@@ -777,18 +766,15 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         signatures: Vec<secp256k1::Signature>, //get from ledger
         consensus_branch_id: consensus::BranchId,
     ) -> Result<(), Error> {
-        self.transparent_inputs.apply_signatures(
-            signatures,
-            &mut self.mtx,
-            consensus_branch_id,
-        )
+        self.transparent_inputs
+            .apply_signatures(signatures, &mut self.mtx, consensus_branch_id)
     }
 
     pub fn add_signatures_spend(
         &mut self,
         sign: Vec<Signature>, //get from ledger
     ) -> Result<(), Error> {
-        if self.spends.len() == 0 {
+        if self.spends.is_empty() {
             return Ok(());
         }
         if sign.len() != self.spends.len() {
@@ -797,11 +783,11 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
 
         let p_g = SPENDING_KEY_GENERATOR;
         let mut all_signatures_valid: bool = true;
-        for i in 0..self.spends.len() {
+        for (i, sig) in sign.iter().enumerate() {
             let rk = PublicKey(self.spends[i].proofkey.ak.into())
                 .randomize(self.spends[i].alpha, SPENDING_KEY_GENERATOR);
-            all_signatures_valid &= rk.verify(&self.sighash, &sign[i], p_g);
-            self.mtx.shielded_spends[i].spend_auth_sig = Some(sign[i]);
+            all_signatures_valid &= rk.verify(&self.sighash, sig, p_g);
+            self.mtx.shielded_spends[i].spend_auth_sig = Some(*sig);
         }
         /*
         let mut spends: Vec<_> = self.spends.clone().into_iter().enumerate().collect();
@@ -819,7 +805,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         }
     }
 
-    pub fn finalize(mut self) -> Result<(Transaction, TransactionMetadata), Error>{
+    pub fn finalize(mut self) -> Result<(Transaction, TransactionMetadata), Error> {
         let r = self.mtx.freeze();
         let tx;
         match r {
@@ -829,7 +815,7 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         let mut tx_meta = TransactionMetadata::new();
         tx_meta.spend_indices = (0..self.spends.len()).collect();
         tx_meta.output_indices = (0..self.outputs.len()).collect();
-        Ok((tx, tx_meta.clone()))
+        Ok((tx, tx_meta))
     }
 
     /*
@@ -848,14 +834,14 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
     pub joinsplit_sig: Option<[u8; 64]>,
     pub binding_sig: Option<Signature>,
      */
-    pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error>{
+    pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error> {
         let mut txdata_copy = TransactionData::new();
         txdata_copy.overwintered = self.mtx.overwintered;
         txdata_copy.version = self.mtx.version;
         txdata_copy.version_group_id = self.mtx.version_group_id;
         txdata_copy.vin = vec![];
-        for info in self.mtx.vin.iter(){
-            let tin = TxIn{
+        for info in self.mtx.vin.iter() {
+            let tin = TxIn {
                 prevout: info.prevout.clone(),
                 script_sig: info.script_sig.clone(),
                 sequence: info.sequence,
@@ -863,18 +849,18 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             txdata_copy.vin.push(tin);
         }
         txdata_copy.vout = vec![];
-        for info in self.mtx.vout.clone(){
+        for info in self.mtx.vout.clone() {
             txdata_copy.vout.push(info);
         }
         txdata_copy.lock_time = self.mtx.lock_time;
         txdata_copy.expiry_height = self.mtx.expiry_height;
         txdata_copy.value_balance = self.mtx.value_balance;
         txdata_copy.shielded_spends = vec![];
-        for info in self.mtx.shielded_spends.iter(){
-            let spend = SpendDescription{
-                cv : info.cv,
+        for info in self.mtx.shielded_spends.iter() {
+            let spend = SpendDescription {
+                cv: info.cv,
                 anchor: info.anchor,
-                nullifier:info.nullifier,
+                nullifier: info.nullifier,
                 rk: PublicKey(info.rk.0),
                 zkproof: info.zkproof,
                 spend_auth_sig: info.spend_auth_sig,
@@ -882,14 +868,14 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             txdata_copy.shielded_spends.push(spend);
         }
 
-        for info in self.mtx.shielded_outputs.iter(){
-            let output = OutputDescription{
+        for info in self.mtx.shielded_outputs.iter() {
+            let output = OutputDescription {
                 cv: info.cv,
                 cmu: info.cmu,
                 ephemeral_key: info.ephemeral_key,
                 enc_ciphertext: info.enc_ciphertext,
                 out_ciphertext: info.out_ciphertext,
-                zkproof: info.zkproof
+                zkproof: info.zkproof,
             };
             txdata_copy.shielded_outputs.push(output);
         }

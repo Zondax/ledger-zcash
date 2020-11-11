@@ -17,7 +17,7 @@ pub enum Error {
     Finalization,
     MinShieldedOuputs,
     BuilderNoKeys,
-    ReadWriteError
+    ReadWriteError,
 }
 
 impl fmt::Display for Error {
@@ -46,10 +46,8 @@ impl fmt::Display for Error {
 
 impl error::Error for Error {}
 
-impl From<std::io::Error> for Error{
+impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Error {
         Error::ReadWriteError
     }
 }
-
-//the trait `std::convert::From<std::io::Error>` is not implemented for `zcashtools_errors::Error

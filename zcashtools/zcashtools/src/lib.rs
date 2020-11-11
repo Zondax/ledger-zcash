@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_imports, unused_mut, unused_variables)]
+#![allow(dead_code, unused_imports, unused_mut, unused_variables, clippy::too_many_arguments)]
 
 mod neon_bridge;
 mod prover_ledger;
@@ -7,8 +7,8 @@ pub mod txbuilder_ledger;
 pub mod txprover_ledger;
 pub mod zcashtools_errors;
 
-use blake2b_simd::{Params as Blake2bParams};
-use jubjub::{AffinePoint};
+use blake2b_simd::Params as Blake2bParams;
+use jubjub::AffinePoint;
 use zcash_primitives::consensus;
 use zcash_primitives::consensus::*;
 use zcash_primitives::keys::*;
@@ -21,7 +21,7 @@ use zcash_primitives::redjubjub::*;
 use zcash_primitives::sapling::*;
 use zcash_primitives::transaction::components::*;
 use zcash_primitives::transaction::components::{Amount, OutPoint};
-use zcash_primitives::transaction::{Transaction};
+use zcash_primitives::transaction::Transaction;
 
 extern crate hex;
 
@@ -40,48 +40,34 @@ extern crate serde;
 extern crate serde_derive;
 use crate::neon_bridge::*;
 
-#[derive(Debug,Deserialize)]
-pub struct TinData{
-    path: [u32;5],
+#[derive(Debug, Deserialize)]
+pub struct TinData {
+    path: [u32; 5],
     #[serde(deserialize_with = "script_deserialize")]
     address: Script,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     value: Amount,
 }
 #[derive(Debug, Deserialize)]
 pub struct ToutData {
-    #[serde(
-        deserialize_with = "script_deserialize"
-    )]
+    #[serde(deserialize_with = "script_deserialize")]
     address: Script,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     value: Amount,
 }
 #[derive(Debug, Deserialize)]
 pub struct ShieldedSpendData {
     path: u32,
-    #[serde(
-        deserialize_with = "s_address_deserialize"
-    )]
+    #[serde(deserialize_with = "s_address_deserialize")]
     address: PaymentAddress,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     value: Amount,
 }
 #[derive(Debug, Deserialize)]
 pub struct ShieldedOutputData {
-    #[serde(
-        deserialize_with = "s_address_deserialize"
-    )]
+    #[serde(deserialize_with = "s_address_deserialize")]
     address: PaymentAddress,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     value: Amount,
     memotype: u8,
     #[serde(deserialize_with = "ovk_deserialize")]
@@ -97,7 +83,7 @@ pub struct LedgerInitData {
 }
 
 impl LedgerInitData {
-    pub fn to_ledger_bytes(&self) -> Result<Vec<u8>,Error> {
+    pub fn to_ledger_bytes(&self) -> Result<Vec<u8>, Error> {
         let mut data = Vec::new();
 
         data.push(self.t_in.len() as u8);
@@ -128,10 +114,10 @@ impl LedgerInitData {
             data.extend_from_slice(&info.address.to_bytes());
             data.extend_from_slice(&info.value.to_i64_le_bytes());
             data.push(info.memotype);
-            if info.ovk.is_some(){
+            if info.ovk.is_some() {
                 data.extend_from_slice(&info.ovk.unwrap().0);
-            }else{
-                data.extend_from_slice(&[0u8;32]);
+            } else {
+                data.extend_from_slice(&[0u8; 32]);
             }
         }
         Ok(data)
@@ -180,33 +166,21 @@ pub struct ZcashBuilderLedger {
 
 #[derive(Debug, Deserialize)]
 pub struct TransparentInputBuilderInfo {
-    #[serde(
-        deserialize_with = "outpoint_deserialize"
-    )]
+    #[serde(deserialize_with = "outpoint_deserialize")]
     pub outp: OutPoint,
-    #[serde(
-        deserialize_with = "t_pk_deserialize"
-    )]
+    #[serde(deserialize_with = "t_pk_deserialize")]
     pub pk: secp256k1::PublicKey,
-    #[serde(
-        deserialize_with = "script_deserialize"
-    )]
+    #[serde(deserialize_with = "script_deserialize")]
     pub address: Script,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     pub value: Amount,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TransparentOutputBuilderInfo {
-    #[serde(
-        deserialize_with = "script_deserialize"
-    )]
+    #[serde(deserialize_with = "script_deserialize")]
     pub address: Script, //26
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     pub value: Amount, //8
 }
 
@@ -230,7 +204,7 @@ pub struct SpendBuilderInfo {
     pub rseed: Rseed,
 }
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct OutputBuilderInfo {
     #[serde(deserialize_with = "fr_deserialize")]
     pub rcv: jubjub::Fr,
@@ -238,17 +212,11 @@ pub struct OutputBuilderInfo {
     pub rseed: Rseed,
     #[serde(deserialize_with = "ovk_deserialize")]
     pub ovk: Option<OutgoingViewingKey>,
-    #[serde(
-        deserialize_with = "s_address_deserialize"
-    )]
+    #[serde(deserialize_with = "s_address_deserialize")]
     pub address: PaymentAddress,
-    #[serde(
-        deserialize_with = "amount_deserialize"
-    )]
+    #[serde(deserialize_with = "amount_deserialize")]
     pub value: Amount,
-    #[serde(
-        deserialize_with = "memo_deserialize"
-    )]
+    #[serde(deserialize_with = "memo_deserialize")]
     pub memo: Option<Memo>,
 }
 
@@ -261,7 +229,7 @@ pub struct TransactionSignatures {
 }
 
 impl ZcashBuilderLedger {
-    pub fn new(fee:u64) -> ZcashBuilderLedger {
+    pub fn new(fee: u64) -> ZcashBuilderLedger {
         ZcashBuilderLedger {
             secret_key: None,
             public_key: None,
@@ -294,7 +262,7 @@ impl ZcashBuilderLedger {
         self.public_key = Some(p.to_bytes());
     }
 
-    pub fn set_session_key(&mut self, input: &[u8]) -> Result<(), Error>{
+    pub fn set_session_key(&mut self, input: &[u8]) -> Result<(), Error> {
         if self.secret_key == None || self.public_key == None {
             return Err(Error::BuilderNoKeys);
         }
@@ -317,7 +285,10 @@ impl ZcashBuilderLedger {
         Ok(())
     }
 
-    pub fn add_transparent_input(&mut self, info: TransparentInputBuilderInfo) -> Result<(), Error> {
+    pub fn add_transparent_input(
+        &mut self,
+        info: TransparentInputBuilderInfo,
+    ) -> Result<(), Error> {
         let coin = TxOut {
             value: info.value,
             script_pubkey: info.address,
@@ -329,7 +300,10 @@ impl ZcashBuilderLedger {
         r
     }
 
-    pub fn add_transparent_output(&mut self, info: TransparentOutputBuilderInfo) -> Result<(), Error> {
+    pub fn add_transparent_output(
+        &mut self,
+        info: TransparentOutputBuilderInfo,
+    ) -> Result<(), Error> {
         let r = self
             .builder
             .add_transparent_output(info.address, info.value);
@@ -384,7 +358,7 @@ impl ZcashBuilderLedger {
                 let tx_ledger_data = r.unwrap();
                 tx_ledger_data.to_ledger_bytes()
             }
-            false => Err(r.err().unwrap())
+            false => Err(r.err().unwrap()),
         }
     }
 
@@ -398,11 +372,11 @@ impl ZcashBuilderLedger {
         self.builder.add_signatures_spend(input.spend_sigs)
     }
 
-    pub fn finalize(mut self) -> Result<(Transaction, TransactionMetadata), Error>{
+    pub fn finalize(mut self) -> Result<(Transaction, TransactionMetadata), Error> {
         self.builder.finalize()
     }
 
-    pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error>{
+    pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error> {
         self.builder.finalize_js()
     }
 }

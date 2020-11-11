@@ -6,10 +6,10 @@ use group::GroupEncoding;
 use serde::{de::Error, Deserialize, Deserializer, Serializer};
 use std::str::*;
 use zcash_primitives::keys::OutgoingViewingKey;
+use zcash_primitives::merkle_tree::IncrementalWitness;
 use zcash_primitives::note_encryption::Memo;
 use zcash_primitives::primitives::*;
 use zcash_primitives::redjubjub::Signature;
-use zcash_primitives::merkle_tree::IncrementalWitness;
 use zcash_primitives::sapling::Node;
 
 pub fn outpoint_deserialize<'de, D>(deserializer: D) -> Result<OutPoint, D::Error>
@@ -60,10 +60,10 @@ where
     let mut bytes = [0u8; 32];
     hex::decode_to_slice(&str, &mut bytes).map_err(D::Error::custom)?;
     let f = Fr::from_bytes(&bytes);
-    match f.is_some().into()
-    {
-        true => Ok(f.unwrap()),
-        false => Err(D::Error::custom("error deserializing to fr")),
+    if f.is_some().into() {
+        Ok(f.unwrap())
+    } else {
+        Err(D::Error::custom("error deserializing to fr"))
     }
 }
 
@@ -82,12 +82,12 @@ where
 
     let ak = SubgroupPoint::from_bytes(&akb);
     let nsk = jubjub::Fr::from_bytes(&nskb);
-    match ak.is_some().into() && nsk.is_some().into() {
-        true => Ok(ProofGenerationKey {
+    if ak.is_some().into() && nsk.is_some().into() {
+        Ok(ProofGenerationKey {
             ak: ak.unwrap(),
             nsk: nsk.unwrap(),
-        }),
-        false =>
+        })
+    } else {
         Err(D::Error::custom("error deserializing to pgk"))
     }
 }
@@ -101,9 +101,10 @@ where
     hex::decode_to_slice(&str, &mut bytes).map_err(D::Error::custom)?;
 
     let p = PaymentAddress::from_bytes(&bytes);
-    match p.is_some().into() {
-        true => Ok(p.unwrap()),
-        false => Err(D::Error::custom("error deserializing to shielded address")),
+    if let Some(addr) = p {
+        Ok(addr)
+    } else {
+        Err(D::Error::custom("error deserializing to shielded address"))
     }
 }
 
@@ -112,14 +113,12 @@ where
     D: Deserializer<'de>,
 {
     let str: Option<String> = Option::deserialize(deserializer)?;
-    match str.is_some().into(){
-        true => {
-            let s = str.unwrap();
-            let mut bytes = [0u8;32];
-            hex::decode_to_slice(&s, &mut bytes).map_err(D::Error::custom)?;
-            Ok(Some(OutgoingViewingKey(bytes)))
-        },
-        false => Ok(None),
+    if let Some(s) = str {
+        let mut bytes = [0u8; 32];
+        hex::decode_to_slice(&s, &mut bytes).map_err(D::Error::custom)?;
+        Ok(Some(OutgoingViewingKey(bytes)))
+    } else {
+        Ok(None)
     }
 }
 
@@ -129,32 +128,33 @@ where
 {
     let str = String::deserialize(deserializer)?;
 
-    match str.len() == 4 || str.len() % 2 != 0 {
-        true => Ok(None),
-        false => {
-            let mut bytes = Vec::with_capacity(str.len() / 2);
-            hex::decode_to_slice(&str, &mut bytes).map_err(D::Error::custom)?;
-            Ok(Memo::from_bytes(&bytes[..]))
-        }
+    if str.len() == 4 || str.len() % 2 != 0 {
+        Ok(None)
+    } else {
+        let mut bytes = Vec::with_capacity(str.len() / 2);
+        hex::decode_to_slice(&str, &mut bytes).map_err(D::Error::custom)?;
+        Ok(Memo::from_bytes(&bytes[..]))
     }
 }
 
 pub fn witness_deserialize<'de, D>(deserializer: D) -> Result<IncrementalWitness<Node>, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let str = String::deserialize(deserializer)?;
     let v = hex::decode(str).map_err(D::Error::custom)?;
-    let witness= IncrementalWitness::read(&v[..]).map_err(D::Error::custom).unwrap();
+    let witness = IncrementalWitness::read(&v[..])
+        .map_err(D::Error::custom)
+        .unwrap();
     Ok(witness)
 }
 
 pub fn rseed_deserialize<'de, D>(deserializer: D) -> Result<Rseed, D::Error>
-    where
-        D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let str = String::deserialize(deserializer)?;
-    let mut bytes = [0u8;32];
+    let mut bytes = [0u8; 32];
     hex::decode_to_slice(str, &mut bytes).map_err(D::Error::custom)?;
     let rseed = Rseed::AfterZip212(bytes);
     Ok(rseed)
@@ -165,19 +165,19 @@ where
     D: Deserializer<'de>,
 {
     let str: Vec<String> = Deserialize::deserialize(deserializer)?;
-    if str.len() == 0 {
+    if str.is_empty() {
         Ok(Vec::new())
     } else {
         let n = str.len();
         let mut v = Vec::new();
-        for i in 0..n {
-            if str[i].len() != 128 {
+        for item in str.iter() {
+            if item.len() != 128 {
                 return Err(D::Error::custom(
                     "not enough bytes deserializing to transparent sig",
                 ));
             }
             let mut bytes = [0u8; 64];
-            hex::decode_to_slice(&str[i], &mut bytes).map_err(D::Error::custom)?;
+            hex::decode_to_slice(item, &mut bytes).map_err(D::Error::custom)?;
             let s = secp256k1::Signature::from_compact(&bytes).map_err(D::Error::custom)?;
             v.push(s);
         }
@@ -190,25 +190,24 @@ where
     D: Deserializer<'de>,
 {
     let str: Vec<String> = Deserialize::deserialize(deserializer)?;
-    if str.len() == 0 {
+    if str.is_empty() {
         Ok(Vec::new())
     } else {
         let n = str.len();
         let mut v = Vec::new();
-        for i in 0..n {
-            if str[i].len() != 128 {
+        for item in str.iter().take(n) {
+            if item.len() != 128 {
                 return Err(D::Error::custom(
                     "not enough bytes deserializing to transparent sig",
                 ));
             }
             let mut bytes = [0u8; 64];
-            hex::decode_to_slice(&str[i], &mut bytes).map_err(D::Error::custom)?;
+            hex::decode_to_slice(item, &mut bytes).map_err(D::Error::custom)?;
             let s = Signature::read(&bytes[..]);
-            if s.is_ok() {
-                v.push(s.unwrap());
-            } else {
+            if s.is_err() {
                 return Err(D::Error::custom("error deserializing to spend sig"));
             }
+            v.push(s.unwrap());
         }
         Ok(v)
     }

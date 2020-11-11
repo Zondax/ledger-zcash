@@ -59,6 +59,7 @@ pub struct SaplingProvingContextLedger {
 
 impl SaplingProvingContextLedger {
     /// Construct a new context to be used with a single transaction.
+
     pub fn new() -> Self {
         SaplingProvingContextLedger {
             bsk: jubjub::Fr::zero(),
@@ -123,7 +124,7 @@ impl SaplingProvingContextLedger {
         let note = Note {
             value,
             g_d: diversifier.g_d().expect("was a valid diversifier before"),
-            pk_d: payment_address.pk_d().clone(),
+            pk_d: *payment_address.pk_d(),
             rseed,
         };
 
@@ -234,7 +235,7 @@ impl SaplingProvingContextLedger {
         // We now have a full witness for the output proof.
         let instance = Output {
             value_commitment: Some(value_commitment.clone()),
-            payment_address: Some(payment_address.clone()),
+            payment_address: Some(payment_address),
             commitment_randomness: Some(rcm),
             esk: Some(esk),
         };
@@ -291,5 +292,11 @@ impl SaplingProvingContextLedger {
             &mut rng,
             VALUE_COMMITMENT_RANDOMNESS_GENERATOR,
         ))
+    }
+}
+
+impl Default for SaplingProvingContextLedger{
+    fn default() -> Self{
+        Self::new()
     }
 }

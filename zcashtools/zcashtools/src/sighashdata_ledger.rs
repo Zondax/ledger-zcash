@@ -149,7 +149,6 @@ fn outputs_hash(tx: &TransactionData) -> Blake2bHash {
         .hash(&data)
 }
 
-
 fn joinsplits_hash(tx: &TransactionData) -> Blake2bHash {
     let mut data = Vec::with_capacity(
         tx.joinsplits.len()
