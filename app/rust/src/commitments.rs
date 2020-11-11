@@ -357,20 +357,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_converts() {
-        let x = [
-            235, 109, 97, 170, 31, 220, 146, 164, 234, 62, 224, 25, 97, 198, 213, 133, 245, 175,
-            153, 173, 181, 60, 117, 9, 6, 202, 225, 214, 26, 40, 114, 137,
-        ];
-        let a = AffinePoint::from_bytes(x).unwrap();
-        let b = ExtendedPoint::from(a);
-        let c = b + b;
-        let v = extended_to_bytes(&c);
-        let d = bytes_to_extended(v);
-        assert_eq!(c, d);
-    }
-
-    #[test]
     fn test_ncm_c() {
         let v = 100000;
         let gd = [0u8; 32];

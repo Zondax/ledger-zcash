@@ -148,9 +148,7 @@ pub fn encrypt_outgoing_plaintext(
     let mut input = [0u8; OUT_PLAINTEXT_SIZE];
     input[0..32].copy_from_slice(pk_d);
     input[32..64].copy_from_slice(esk);
-    let output = aead_encrypt_outciphertext(k, input);
-
-    output
+    aead_encrypt_outciphertext(k, input)
 }
 
 #[no_mangle]
@@ -272,8 +270,7 @@ pub fn encrypt_note_plaintext(
 
     input[COMPACT_NOTE_SIZE..NOTE_PLAINTEXT_SIZE].copy_from_slice(memo);
 
-    let output = aead_encryptnote(&k, input);
-    output
+    aead_encryptnote(&k, input)
 }
 
 #[cfg(test)]

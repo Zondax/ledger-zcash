@@ -258,15 +258,13 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
 #[inline(never)]
 pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    let result = extended_to_u_bytes(&result_point);
-    result
+    extended_to_u_bytes(&result_point)
 }
 
 #[inline(never)]
 pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    let result = extended_to_bytes(&result_point);
-    result
+    extended_to_bytes(&result_point)
 }
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
