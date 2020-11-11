@@ -152,7 +152,6 @@ Returns a sapling incoming viewing key
 
 ---
 
-
 ### INS_GET_OVK_SAPLING
 
 Returns a sapling outgoing viewing key
@@ -177,6 +176,163 @@ Returns a sapling outgoing viewing key
 | Field          | Type      | Content           | Note                     |
 | -------------- | --------- | ----------------- | ------------------------ |
 | OVK_RAW       | byte (32) | Raw OVK          |                          |                |                  |
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
+### INS_INIT_TX_SAPLING
+
+Initiates a transaction for sapling.
+The init_message should have the following format:
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (1) | t_in_len: number of transparent inputs | 0x00 - 0x05|
+| byte (1) | t_out_len: number of transparent outputs | 0x00 - 0x05|
+| byte (1) | s_in_len: number of shielded spends | 0x00 - 0x05|
+| byte (1) | s_out_len: number of shielded outputs | 0x00 - 0x05|
+| byte (variable) | transparent input data = [t_in] | t_in_len * 54 bytes|
+| byte (variable) | transparent output data = [t_out] | t_out_len * 34 bytes|
+| byte (variable) | shielded spend data = [s_spend] | s_in_len * 55 bytes |
+| byte (variable) | shielded output data = [s_out] | s_out_len * 84 bytes|
+
+where 
+
+t_in : 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (20) | Derivation path data | 5 times 4 bytes |
+| byte (26) | Script of transparent input |  |
+| byte (8) | transparent input value | u64 |
+
+t_out : 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (26) | Script of transparent output |  |
+| byte (8) | transparent output value | u64 |
+
+s_spend: 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (4) | ZIP32-path (hardened only) | u32  |
+| byte (43) | Shielded spend address |  |
+| byte (8) | Shielded spend value | u64 |
+
+s_output: 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (43) | Shielded output address |  |
+| byte (8) | Shielded output value | u64 |
+| byte (1) | Shielded output memo type | 0xf6 for default memo |
+| byte (32) | Shielded output OVK | 32 zero-bytes for non-OVK |
+
+
+#### Command
+
+| Field | Type     | Content                | Expected  |
+| ----- | -------- | ---------------------- | --------- |
+| CLA   | byte (1) | Application Identifier | 0xE0      |
+| INS   | byte (1) | Instruction ID         | 0xa0      |
+| P1    | byte (1) | Payload desc           | 0 = init  |
+|       |          |                        | 1 = add   |
+|       |          |                        | 2 = last  |
+| P2    | byte (1) | ----                   | not used  |
+| L     | byte (1) | Bytes in payload       | (depends) |
+
+The first packet/chunk includes only the derivation path
+
+All other packets/chunks contain data chunks that are described below
+
+_First Packet_
+
+| Field   | Type     | Content              | Expected   |
+| ------- | -------- | -------------------- | ---------- |
+| Path[0] | byte (4) | Derivation Path Data | ignored |
+| Path[1] | byte (4) | Derivation Path Data | ignored |
+| Path[2] | byte (4) | Derivation Path Data | ignored          |
+| Path[3] | byte (4) | Derivation Path Data | ignored          |
+| Path[4] | byte (4) | Derivation Path Data | ignored          |
+
+_Other Chunks/Packets_
+
+| Field | Type     | Content | Expected |
+| ----- | -------- | ------- | -------- |
+| Data  | bytes... | Message |          |
+
+Data is defined as:
+
+| Field   | Type    | Content      | Expected |
+| ------- | ------- | ------------ | -------- |
+| Message | bytes.. | init_message bytes as defined above |          |
+
+#### Response
+
+| Field       | Type            | Content     | Note                     |
+| ----------- | --------------- | ----------- | ------------------------ |
+| hash | byte (32)       | Hash of init_message   |                          |
+| SW1-SW2     | byte (2)        | Return code | see list of return codes |
+
+---
+
+### INS_GET_SPENDINFO
+
+Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xa1       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | ignored|
+| Path[1] | byte (4) | Derivation Path Data      |ignored |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ignored         |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| PGK_RAW       | byte (64) | Raw PGK          |  32 byte representations for ak, nsk  |               
+| rcv_RAW       | byte (32) | Raw rcv          |                          |               
+| alpha_RAW       | byte (32) | Raw alpha          |                          |              
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
+### INS_GET_OUTPUTINFO
+
+Returns randomness (rcv and rseed (after ZIP202)) for a sapling output
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xa2       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | ignored|
+| Path[1] | byte (4) | Derivation Path Data      |ignored |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ignored         |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| rcv_RAW       | byte (32) | Raw rcv          |                          |               
+| rseed_RAW       | byte (32) | Raw rseed          |                          |              
 | SW1-SW2        | byte (2)  | Return code       | see list of return codes |
 
 ---
