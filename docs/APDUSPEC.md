@@ -280,7 +280,7 @@ Data is defined as:
 
 ### INS_GET_SPENDINFO
 
-Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend
+Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend (if needed for the transaction)
 
 #### Command
 
@@ -310,7 +310,7 @@ Returns a proof generating key (PGK) and randomness (rcv and alpha) for a saplin
 
 ### INS_GET_OUTPUTINFO
 
-Returns randomness (rcv and rseed (after ZIP202)) for a sapling output
+Returns randomness (rcv and rseed (after ZIP202)) for a sapling output (if needed for the transaction)
 
 #### Command
 
@@ -334,6 +334,104 @@ Returns randomness (rcv and rseed (after ZIP202)) for a sapling output
 | rcv_RAW       | byte (32) | Raw rcv          |                          |               
 | rseed_RAW       | byte (32) | Raw rseed          |                          |              
 | SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
+### INS_CHECKANDSIGN_TX_SAPLING
+
+Checks the transaction data and signs if it is correct with the corresponding keys.
+The transaction_blob should have the following format:
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (variable) | transparent data to check | t_in_len * 74 bytes|
+| byte (variable) | previous spend data to check | s_in_len* 40 bytes|
+| byte (variable) | new spend data to check | s_in_len * 320 bytes |
+| byte (variable) | shielded output data to check | s_out_len * 948 bytes|
+
+where 
+
+transparent data to check : 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (36) | Prevout point |  |
+| byte (4) | Sequence number |  |
+
+previous spend data to check : 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (32) | Rseed of the spent note |  |
+| byte (8) | Note position of spent note | u64 |
+
+new spend data to check:
+NOTE: the values below should have used randomness from INS_GET_SPENDINFO if applicable
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (32) | spend cv | should have used rcv from ledger |
+| byte (32) | Anchor |  |
+| byte (32) | Nullifier | should have used old note Rseed and note position |
+| byte (32) | Rk | should have used alpha from ledger |
+| byte (192) | zkproof |  |
+
+
+shielded output data to check: 
+
+|  Type     | Content                | Expected  |
+| -------- | ---------------------- | --------- |
+| byte (32) | output cv | should have used rcv from ledger |
+| byte (32) | note commitment | should have used rseed from ledger |
+| byte (32) | ephemeral key | should have used rseed from ledger |
+| byte (580) |enc_ciphertext | ledger checks correct memo-type too |
+| byte (80) |out_ciphertext |  |
+| byte (192) | zkproof |  |
+
+#### Command
+
+| Field | Type     | Content                | Expected  |
+| ----- | -------- | ---------------------- | --------- |
+| CLA   | byte (1) | Application Identifier | 0xE0      |
+| INS   | byte (1) | Instruction ID         | 0xa3      |
+| P1    | byte (1) | Payload desc           | 0 = init  |
+|       |          |                        | 1 = add   |
+|       |          |                        | 2 = last  |
+| P2    | byte (1) | ----                   | not used  |
+| L     | byte (1) | Bytes in payload       | (depends) |
+
+The first packet/chunk includes only the derivation path
+
+All other packets/chunks contain data chunks that are described below
+
+_First Packet_
+
+| Field   | Type     | Content              | Expected   |
+| ------- | -------- | -------------------- | ---------- |
+| Path[0] | byte (4) | Derivation Path Data | ignored |
+| Path[1] | byte (4) | Derivation Path Data | ignored |
+| Path[2] | byte (4) | Derivation Path Data | ignored          |
+| Path[3] | byte (4) | Derivation Path Data | ignored          |
+| Path[4] | byte (4) | Derivation Path Data | ignored          |
+
+_Other Chunks/Packets_
+
+| Field | Type     | Content | Expected |
+| ----- | -------- | ------- | -------- |
+| Data  | bytes... | Message |          |
+
+Data is defined as:
+
+| Field   | Type    | Content      | Expected |
+| ------- | ------- | ------------ | -------- |
+| Message | bytes.. | transaction_blob bytes as defined above |          |
+
+#### Response
+
+| Field       | Type            | Content     | Note                     |
+| ----------- | --------------- | ----------- | ------------------------ |
+| hash | byte (32)       | Hash of transaction_blob   |                          |
+| SW1-SW2     | byte (2)        | Return code | see list of return codes |
 
 ---
 
