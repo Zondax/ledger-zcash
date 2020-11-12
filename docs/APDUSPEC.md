@@ -124,6 +124,66 @@ Returns or shows a shielded address (z-address)
 
 ---
 
+### INS_GET_ADDR_SAPLING_DIV
+
+Returns a shielded address using a specific diversifier
+##TODO: make this correct
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0x11       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path          |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| ADDR_RAW       | byte (43) | Raw address      |                          |
+| ADDR_BECH32   | byte (variable)  | Bech32 encoding of address   |                          |                  |
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
+### INS_GET_DIV_LIST
+
+On input of a 11-byte starting index, get all valid diversifiers in the 20 indexes after (including starting index).
+If a diversifier was not valid, zero-bytes are returned (so always 220 bytes are returned).
+##TODO: make this correct
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0x11       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path          |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| DIV_LIST_RAW      | byte (220) | List of raw diversifiers     | 11-bytes each                         |
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
 ### INS_GET_IVK_SAPLING
 
 Returns a sapling incoming viewing key
