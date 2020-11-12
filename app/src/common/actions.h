@@ -54,18 +54,15 @@ __Z_INLINE void app_sign() {
     }
 }
 
-__Z_INLINE uint8_t
-
-init_tx() {
+__Z_INLINE zxerr_t init_tx() {
     //Todo: show content on screen
     tx_reset_state();
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    const uint8_t replyLen = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message,
-                                                      messageLength);
+    zxerr_t err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
 
-    return replyLen;
+    return err;
 
 }
 
@@ -82,37 +79,29 @@ key_exchange() {
 
 }
 
-__Z_INLINE uint8_t
-
-get_diversifier_list_with_startindex() {
+__Z_INLINE zxerr_t get_diversifier_list_with_startindex() {
     tx_reset_state();
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    const uint8_t replyLen = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message,
-                                                                messageLength);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
 
-    return replyLen;
+    return err;
 
 }
 
-__Z_INLINE uint8_t
-
-get_addr_with_diversifier() {
+__Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
     tx_reset_state();
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    const uint8_t replyLen = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3,
-                                                                         message, messageLength);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, replyLen);
 
-    return replyLen;
+    return err;
 
 }
 
-__Z_INLINE uint8_t
-
-check_and_sign_tx() {
+__Z_INLINE zxerr_t check_and_sign_tx() {
     // Take "ownership" of the memory used by the transaction parser
     tx_reset_state();
 
@@ -120,23 +109,23 @@ check_and_sign_tx() {
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
     zxerr_t err;
     err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
     //todo: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
     err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -146,33 +135,32 @@ check_and_sign_tx() {
     }
     */
     err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
-    //todo: check encryptions
 
     set_state(STATE_VERIFIED_ALL_TXDATA);
 
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
 
     err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
+    if (err != zxerr_ok){
+        return err;
     }
-    return 32;
+    return zxerr_ok;
 
 }
 

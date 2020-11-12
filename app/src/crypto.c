@@ -308,10 +308,9 @@ uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t
     return 32;
 }
 
-uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
+zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_extracttxdata_sapling");
     MEMZERO(buffer, bufferLen);
-    //return 10;
     uint8_t t_in_len = *txdata;
     uint8_t t_out_len = *(txdata+1);
     uint8_t spend_len = *(txdata+2);
@@ -320,15 +319,15 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     transaction_reset();
 
     if((spend_len > 0 && output_len < 2) || (spend_len == 0 && output_len == 1)){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(txdatalen < 4 || txdatalen - 4 != t_in_len * T_IN_INPUT_LEN + t_out_len * T_OUT_INPUT_LEN + spend_len * SPEND_INPUT_LEN + output_len * OUTPUT_INPUT_LEN){
-        return 0;
+        return zxerr_unknown;
     }
 
     if (t_in_len == 0 && t_out_len == 0 && spend_len == 0 && output_len == 0){
-        return 0;
+        return zxerr_unknown;
     }
 
     uint8_t *start = (uint8_t *)txdata;
@@ -347,11 +346,11 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok){
-            return 0;
+            return zxerr_unknown;
         }
         zxerr_t err = t_inlist_append_item(path, script, v);
         if (err != zxerr_ok){
-            return 0;
+            return zxerr_unknown;
         }
         start += T_IN_INPUT_LEN;
     }
@@ -364,11 +363,11 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok){
-            return 0;
+            return zxerr_unknown;
         }
         zxerr_t err = t_outlist_append_item(addr, v);
         if (err != zxerr_ok){
-            return 0;
+            return zxerr_unknown;
         }
         start += T_OUT_INPUT_LEN;
     }
@@ -380,7 +379,7 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         uint32_t p = 0;
         pars_err = _readUInt32(&pars_ctx, &p);
         if (pars_err != parser_ok){
-            return 0;
+            return zxerr_unknown;
         }
 
         pars_ctx.offset = 0;
@@ -389,7 +388,7 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok){
-            return 0;
+            return zxerr_unknown;
         }
 
         uint8_t *div = start + INDEX_INPUT_INPUTDIV;
@@ -401,7 +400,7 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
         zxerr_t err = spendlist_append_item(p,v,div, pkd, rnd1,rnd2);
         if (err != zxerr_ok){
-            return 0;
+            return zxerr_unknown;
         }
         start += SPEND_INPUT_LEN;
     }
@@ -415,7 +414,7 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok){
-            return 0;
+            return zxerr_unknown;
         }
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
@@ -426,14 +425,14 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         cx_rng(rnd2, 32);
         zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
         if (err != zxerr_ok){
-            return 0;
+            return zxerr_unknown;
         }
         start += OUTPUT_INPUT_LEN;
     }
 
     uint64_t value_flash = get_valuebalance();
     if (value_flash != 10000 && value_flash != 1000){
-        return 0;
+        return zxerr_unknown;
     }
 
     if (spend_len > 0){
@@ -448,20 +447,20 @@ uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
     cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 256);
 
-    return 32; //some code for all_good
+    return zxerr_ok; //some code for all_good
 }
 
-uint16_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen){
     if(bufferLen < sizeof(tmp_buf_s)){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(!spendlist_more_extract()){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(get_state() != STATE_PROCESSED_INPUTS){
-        return 0;
+        return zxerr_unknown;
     }
 
     //todo: warning that proofkey is extracted
@@ -470,7 +469,7 @@ uint16_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen
 
     const spend_item_t *next = spendlist_extract_next();
     if (next == NULL){
-        return 0;
+        return zxerr_unknown;
     }
 
     tmp_sampling_s tmp;
@@ -504,20 +503,20 @@ uint16_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen
         set_state(STATE_PROCESSED_SPEND_EXTRACTIONS);
     }
 
-    return SPEND_EXTRACT_LEN;
+    return zxerr_ok;
 }
 
-uint16_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     if(bufferLen < sizeof(tmp_buf_s)){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(!outputlist_more_extract()){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(get_state() != STATE_PROCESSED_SPEND_EXTRACTIONS){
-        return 0;
+        return zxerr_unknown;
     }
 
     uint8_t *out = (uint8_t *) buffer;
@@ -525,7 +524,7 @@ uint16_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
 
     const output_item_t *next = outputlist_extract_next();
     if (next == NULL){
-        return 0;
+        return zxerr_unknown;
     }
     MEMCPY(out, next->rcmvalue, 32);
     MEMCPY(out+32, next->rseed,32);
@@ -533,7 +532,7 @@ uint16_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
     }
-    return OUTPUT_EXTRACT_LEN;
+    return zxerr_ok;
 }
 
 typedef struct {
@@ -1181,17 +1180,17 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     return zxerr_ok;
 }
 
-uint16_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen){
     if(bufferLen < sizeof(tmp_buf_s)){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(!transparent_signatures_more_extract()){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(get_state() != STATE_VERIFIED_ALL_TXDATA){
-        return 0;
+        return zxerr_unknown;
     }
 
     uint8_t *out = (uint8_t *) buffer;
@@ -1200,20 +1199,20 @@ uint16_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLe
     const uint8_t *next_sig = get_next_transparent_signature();
     MEMCPY(out, next_sig, 64);
 
-    return 64;
+    return zxerr_ok;
 }
 
-uint16_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
     if(bufferLen < sizeof(tmp_buf_s)){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(!spend_signatures_more_extract()){
-        return 0;
+        return zxerr_unknown;
     }
 
     if(get_state() != STATE_VERIFIED_ALL_TXDATA){
-        return 0;
+        return zxerr_unknown;
     }
 
     uint8_t *out = (uint8_t *) buffer;
@@ -1222,7 +1221,7 @@ uint16_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
     const uint8_t *next_sig = get_next_spend_signature();
     MEMCPY(out, next_sig, 64);
 
-    return 64;
+    return zxerr_ok;
 }
 
 uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
@@ -1306,14 +1305,14 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     return 32;
 }
 
-uint16_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
-        return 0;
+        return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
 
     if (inputdataLen < 11){
-        return 0;
+        return zxerr_unknown;
     }
 
     zemu_log_stack("crypto_get_diversifiers_sapling");
@@ -1355,17 +1354,17 @@ uint16_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen,
     }
     END_TRY;
 
-    return 220;
+    return zxerr_ok;
 }
 
-uint16_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen) {
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
-        return 0;
+        return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
 
     if (inputdataLen < 11){
-        return 0;
+        return zxerr_unknown;
     }
 
     zemu_log_stack("crypto_fillAddress_sapling");
@@ -1380,7 +1379,7 @@ uint16_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t b
 
     MEMCPY(out->diversifier, inputdata, 11);
     if (!is_valid_diversifier(out->diversifier)){
-        return 0;
+        return zxerr_unknown;
     }
 
     BEGIN_TRY
@@ -1424,7 +1423,8 @@ uint16_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t b
                           1);
     CHECK_APP_CANARY();
 
-    return sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
+    *replyLen = sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
+    return zxerr_ok;
 }
 
 
