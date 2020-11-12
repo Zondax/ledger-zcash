@@ -47,10 +47,10 @@
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
-    uint8_t replylen = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    zxerr_t err = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
 
-    if (replylen > 0) {
-        *tx = replylen;
+    if (err == zxerr_unknown) {
+        *tx = 64;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -60,9 +60,9 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
 
 __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
                                             volatile uint32_t *tx, uint32_t rx) {
-    uint8_t replylen = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-    if (replylen > 0) {
-        *tx = replylen;
+    zxerr_t err = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (err == zxerr_unknown){
+        *tx = 64;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -74,9 +74,9 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
 
 __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
                              volatile uint32_t *tx, uint32_t rx) {
-    uint8_t replylen = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-    if (replylen > 0) {
-        *tx = replylen;
+    zxerr_t err = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (err == zxerr_ok) {
+        *tx = 128;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -87,9 +87,9 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
 
 __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
-    uint8_t replylen = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-    if (replylen > 0) {
-        *tx = replylen;
+    zxerr_t err = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (err == zxerr_ok) {
+        *tx = 64;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -102,10 +102,10 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    uint8_t len = init_tx();
+    zxerr_t err = init_tx();
     //todo: show things in screen and confirm
-    if (len > 0) {
-        *tx = len;
+    if (err == zxerr_ok) {
+        *tx = 32;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -167,9 +167,9 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    uint8_t replylen = check_and_sign_tx();
-    if (replylen > 0) {
-        *tx = replylen;
+    zxerr_t err = check_and_sign_tx();
+    if (err == zxerr_ok) {
+        *tx = 32;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -201,10 +201,11 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
         THROW(APDU_CODE_OK);
     }
     //extractHDPath(rx, OFFSET_DATA);
-    uint8_t len = get_addr_with_diversifier();
+    uint16_t replyLen;
+    zxerr_t err = get_addr_with_diversifier(&replyLen);
     //todo: show things in screen and confirm
-    if (len > 0) {
-        *tx = len;
+    if (err == zxerr_ok) {
+        *tx = replyLen;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;
@@ -218,9 +219,9 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
         THROW(APDU_CODE_OK);
     }
     //extractHDPath(rx, OFFSET_DATA);
-    uint8_t len = get_diversifier_list_with_startindex();
-    if (len > 0) {
-        *tx = len;
+    zxerr_t err = get_diversifier_list_with_startindex();
+    if (err == zxerr_ok) {
+        *tx = 220;
         THROW(APDU_CODE_OK);
     }else{
         *tx = 0;

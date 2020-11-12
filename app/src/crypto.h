@@ -46,8 +46,8 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
 uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen);
 
 uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen);
-uint16_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen);
-uint16_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen);
+zxerr_t  crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen, uint16_t *replyLen);
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen);
 
 uint16_t crypto_sign(uint8_t *signature,
                      uint16_t signatureMaxlen,
@@ -65,15 +65,15 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
 zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *outputdata, const uint16_t outputdatalen);
 
 uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t *txdata, const uint16_t txdatalen);
-uint16_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
+zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 
-uint16_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen);
 
-uint16_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *signdata, uint16_t signdatalen);
 
-uint16_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
@@ -83,7 +83,7 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
 
 void address_to_script(uint8_t *address, uint8_t *output);
 zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
-uint16_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen);
 #ifdef __cplusplus
 }
 #endif
