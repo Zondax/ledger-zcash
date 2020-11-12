@@ -51,7 +51,6 @@ struct SpendDescriptionInfoLedger {
     alpha: jubjub::Fr, //get both from ledger and generate self
     merkle_path: MerklePath<Node>,
     proofkey: ProofGenerationKey, //get from ledger
-    ovk: Option<OutgoingViewingKey>,
     rcv: jubjub::Fr,
 }
 
@@ -514,7 +513,6 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
         merkle_path: MerklePath<Node>,
         alpha: jubjub::Fr,               //get from ledger
         proofkey: ProofGenerationKey,    //get from ledger
-        ovk: Option<OutgoingViewingKey>, //get from ledger
         rcv: jubjub::Fr,                 //get from ledger
     ) -> Result<(), Error> {
         // Consistency check: all anchors must equal the first one
@@ -540,7 +538,6 @@ impl<P: consensus::Parameters, R: RngCore + CryptoRng> Builder<P, R> {
             alpha,
             merkle_path,
             proofkey,
-            ovk,
             rcv,
         });
 
