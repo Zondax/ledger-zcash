@@ -280,7 +280,9 @@ Data is defined as:
 
 ### INS_GET_SPENDINFO
 
-Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend (if needed for the transaction)
+Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend.
+This command requires you already called the INS_INITTX_SAPLING.
+This command requires that it is needed to extract spendinfo.
 
 #### Command
 
@@ -310,7 +312,11 @@ Returns a proof generating key (PGK) and randomness (rcv and alpha) for a saplin
 
 ### INS_GET_OUTPUTINFO
 
-Returns randomness (rcv and rseed (after ZIP202)) for a sapling output (if needed for the transaction)
+Returns randomness (rcv and rseed (after ZIP202)) for a sapling output.
+This command requires you already called the INS_INITTX_SAPLING.
+This command requires you already called the correct number of INS_GET_SPENDINFO.
+This command requires that it is needed to extract outputinfo.
+
 
 #### Command
 
@@ -340,6 +346,10 @@ Returns randomness (rcv and rseed (after ZIP202)) for a sapling output (if neede
 ### INS_CHECKANDSIGN_TX_SAPLING
 
 Checks the transaction data and signs if it is correct with the corresponding keys.
+This command requires you already called the INS_INITTX_SAPLING.
+This command requires you already called the correct number of INS_GET_SPENDINFO.
+This command requires you already called the correct number of INS_GET_OUTPUTINFO.
+
 The transaction_blob should have the following format:
 
 |  Type     | Content                | Expected  |
@@ -352,10 +362,14 @@ The transaction_blob should have the following format:
 where 
 
 transparent data to check : 
+(Some of the below data is already sent in the inittx command, but sending it again
+is easier for checking purposes)
 
 |  Type     | Content                | Expected  |
 | -------- | ---------------------- | --------- |
 | byte (36) | Prevout point |  |
+| byte (26) | Script |  |
+| byte (8) | Value | u64 |
 | byte (4) | Sequence number |  |
 
 previous spend data to check : 
@@ -434,6 +448,65 @@ Data is defined as:
 | SW1-SW2     | byte (2)        | Return code | see list of return codes |
 
 ---
+
+### INS_GET_TRANSPARENT_SIGNATURE
+
+Returns a SECP256K1 signature for a sapling transparent input.
+This command requires that you already called INS_CHECKANDSIGN_SAPLING.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xa5       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | ignored|
+| Path[1] | byte (4) | Derivation Path Data      |ignored |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ignored         |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| SECP256K1      | byte (64) | R/S signature         |                          |               
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
+### INS_GET_SPEND_SIGNATURE
+
+Returns a spend signature for a sapling shielded spend input.
+This command requires that you already called INS_CHECKANDSIGN_SAPLING.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xa4       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | ignored|
+| Path[1] | byte (4) | Derivation Path Data      |ignored |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored          |
+| Path[4] | byte (4) | Derivation Path Data      | ignored         |
+
+#### Response
+
+| Field          | Type      | Content           | Note                     |
+| -------------- | --------- | ----------------- | ------------------------ |
+| RedJubjub signature | byte (64) | R/S signature         |                          |               
+| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+
+---
+
 
 ### INS_SIGN_SECP256K1
 
