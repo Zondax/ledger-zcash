@@ -17,26 +17,26 @@
 #include "index_sapling.h"
 #include "nvdata.h"
 
-uint16_t length_t_in_data(){
-    return t_inlist_len()*T_IN_TX_LEN;
+uint16_t length_t_in_data() {
+    return t_inlist_len() * T_IN_TX_LEN;
 };
 
-uint16_t length_spend_old_data(){
+uint16_t length_spend_old_data() {
     return spendlist_len() * SPEND_OLD_TX_LEN;
 }
 
-uint16_t length_spenddata(){
-    return spendlist_len()*(SPEND_TX_LEN + SPEND_OLD_TX_LEN);
+uint16_t length_spenddata() {
+    return spendlist_len() * (SPEND_TX_LEN + SPEND_OLD_TX_LEN);
 };
 
-uint16_t length_outputdata(){
-    return outputlist_len()*OUTPUT_TX_LEN;
+uint16_t length_outputdata() {
+    return outputlist_len() * OUTPUT_TX_LEN;
 };
 
-uint16_t length_spend_new_data(){
-    return spendlist_len()*SPEND_TX_LEN;
+uint16_t length_spend_new_data() {
+    return spendlist_len() * SPEND_TX_LEN;
 };
 
-uint16_t start_sighashdata(){
+uint16_t start_sighashdata() {
     return length_t_in_data() + length_spenddata() + length_outputdata();
 };

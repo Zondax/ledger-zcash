@@ -80,8 +80,11 @@ extern "C" {
 }
 
 GEN_DEC_READFIX_UNSIGNED(8);
+
 GEN_DEC_READFIX_UNSIGNED(16);
+
 GEN_DEC_READFIX_UNSIGNED(32);
+
 GEN_DEC_READFIX_UNSIGNED(64);
 
 parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);

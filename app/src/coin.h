@@ -49,7 +49,7 @@ extern "C" {
 
 typedef enum {
     addr_secp256k1 = 0,
-    addr_sapling   = 1
+    addr_sapling = 1
 } address_kind_e;
 
 typedef enum {

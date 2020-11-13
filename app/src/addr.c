@@ -38,14 +38,16 @@ zxerr_t addr_getItem(int8_t displayIdx,
     zemu_log_stack("addr_getItem");
     switch (displayIdx) {
         case 0:
-            switch(address_state.kind) {
+            switch (address_state.kind) {
                 case addr_secp256k1:
                     snprintf(outKey, outKeyLen, "Unshielded");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx, pageCount);
+                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx,
+                               pageCount);
                     return zxerr_ok;
                 case addr_sapling:
                     snprintf(outKey, outKeyLen, "Shielded");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx, pageCount);
+                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
+                               pageCount);
                     return zxerr_ok;
                 default:
                     return zxerr_no_data;

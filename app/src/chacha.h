@@ -15,6 +15,7 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
 // CRYPTO_hchacha20 computes the HChaCha20 function, which should only be used
 // as part of XChaCha20.
 void CRYPTO_hchacha20(uint8_t out[32], const uint8_t key[32],
@@ -22,8 +23,8 @@ void CRYPTO_hchacha20(uint8_t out[32], const uint8_t key[32],
 
 
 void chacha(uint8_t *out, const uint8_t *in, size_t in_len,
-                      const uint8_t *key, const uint8_t *nonce,
-                      uint32_t counter);
+            const uint8_t *key, const uint8_t *nonce,
+            uint32_t counter);
 
 #if defined(__cplusplus)
 }  // extern C
