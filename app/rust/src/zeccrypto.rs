@@ -5,9 +5,9 @@ use group::{Group, GroupEncoding};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr, SubgroupPoint};
 use rand::RngCore;
 
+use crate::{bolos, pedersen::extended_to_bytes, zip32};
 use crate::bolos::{c_zemu_log_stack, Trng};
 use crate::constants;
-use crate::{bolos, pedersen::extended_to_bytes, zip32};
 
 #[inline(never)]
 pub fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {

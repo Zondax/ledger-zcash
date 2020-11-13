@@ -1,8 +1,8 @@
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 use rand::RngCore;
 
-use crate::bolos::c_zemu_log_stack;
 use crate::bolos::{blake2b_redjubjub, Trng};
+use crate::bolos::c_zemu_log_stack;
 use crate::commitments::bytes_to_extended;
 use crate::constants::*;
 use crate::pedersen::extended_to_bytes;

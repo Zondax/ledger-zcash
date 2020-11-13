@@ -15,7 +15,7 @@ pub const SPENDING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
         0x57a1_019e_6de9_b675,
     ]),
 )
-.to_niels();
+    .to_niels();
 
 pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -31,7 +31,7 @@ pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
         0x54b6_d107_18df_2a7a,
     ]),
 )
-.to_niels();
+    .to_niels();
 
 pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -47,7 +47,7 @@ pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
         0x0000_0000_0000_0000,
     ]),
 )
-.to_niels();
+    .to_niels();
 
 pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
 //52

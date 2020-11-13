@@ -1,10 +1,10 @@
 use aes::{
-    block_cipher_trait::{
-        generic_array::typenum::{U16, U32, U8},
-        generic_array::GenericArray,
-        BlockCipher,
-    },
     Aes256,
+    block_cipher_trait::{
+        BlockCipher,
+        generic_array::GenericArray,
+        generic_array::typenum::{U16, U32, U8},
+    },
 };
 use binary_ff1::BinaryFF1;
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
@@ -14,8 +14,8 @@ use core::mem;
 use itertools::zip;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
-use crate::pedersen::extended_to_bytes;
 use crate::{bolos, constants};
+use crate::pedersen::extended_to_bytes;
 
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
@@ -332,7 +332,7 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
 
     let mut expkey: [u8; 96];
     expkey = expandedspendingkey_zip32(&key); //96
-                                              //master divkey
+    //master divkey
     let mut divkey = [0u8; 32];
     divkey.copy_from_slice(&diversifier_key_zip32(&key)); //32
     for &p in path {
@@ -346,7 +346,7 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
             //make index LE
             //zip32 child derivation
             tmp = bolos::blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
-        //64
+            //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
             let fvk = full_viewingkey(&key);
@@ -390,7 +390,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
 
     let mut expkey: [u8; 96];
     expkey = expandedspendingkey_zip32(&key); //96
-                                              //master divkey
+    //master divkey
     let mut divkey = [0u8; 32];
     divkey.copy_from_slice(&diversifier_key_zip32(&key)); //32
     for &p in path {
@@ -404,7 +404,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
             //make index LE
             //zip32 child derivation
             tmp = bolos::blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
-        //64
+            //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
             let fvk = full_viewingkey(&key);
@@ -716,7 +716,7 @@ mod tests {
             "6dfadf175921e6fbfa093c8f7c704a0bdb07328474f56c833dfcfa5301082d03",
             &mut ivk_ledger,
         )
-        .expect("dec");
+            .expect("dec");
         assert_eq!(ivk, ivk_ledger);
 
         let mut list = [0u8; 110];

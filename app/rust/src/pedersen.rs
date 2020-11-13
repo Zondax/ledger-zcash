@@ -39,7 +39,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x289e_87a2_d352_1b57,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0xb981_9dc8_2d90_607e,
@@ -54,7 +54,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x015d_8c7f_5b43_fe33,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x76d6_f7c2_b67f_c475,
@@ -69,7 +69,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x362e_1500_d24e_ee9e,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x4c76_7804_c1c4_a2cc,
@@ -84,7 +84,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x2f7e_e40c_4b56_cad8,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x4680_9430_657f_82d1,
@@ -99,7 +99,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x494b_c521_03ab_9d0a,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0xcb3c_0232_58d3_2079,
@@ -114,7 +114,7 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
             0x64ec_4689_e8bf_b6e5,
         ]),
     )
-    .to_niels(),
+        .to_niels(),
 ];
 
 #[inline(never)]

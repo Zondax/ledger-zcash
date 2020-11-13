@@ -15,15 +15,13 @@ extern crate hex;
 #[macro_use]
 extern crate std;
 
+use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use core::convert::TryInto;
 use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
-
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
-
 pub use parser::{_getItem, _getNumItems, _parser_init, _read};
 pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
