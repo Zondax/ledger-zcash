@@ -134,7 +134,7 @@ Returns a shielded address using a specific diversifier
 | Field   | Type     | Content                   | Expected   |
 | ------- | -------- | ------------------------- | ---------- |
 | CLA     | byte (1) | Application Identifier    | 0x85       |
-| INS     | byte (1) | Instruction ID            | 0x11       |
+| INS     | byte (1) | Instruction ID            | 0x10      |
 | P1      | byte (1) | Request User confirmation | No = 0     |
 | P2      | byte (1) | Parameter 2               | ignored    |
 | L       | byte (1) | Bytes in payload          | (depends)  |
@@ -165,7 +165,7 @@ If a diversifier was not valid, zero-bytes are returned (so always 220 bytes are
 | Field   | Type     | Content                   | Expected   |
 | ------- | -------- | ------------------------- | ---------- |
 | CLA     | byte (1) | Application Identifier    | 0x85       |
-| INS     | byte (1) | Instruction ID            | 0x11       |
+| INS     | byte (1) | Instruction ID            | 0x09       |
 | P1      | byte (1) | Request User confirmation | No = 0     |
 | P2      | byte (1) | Parameter 2               | ignored    |
 | L       | byte (1) | Bytes in payload          | (depends)  |
