@@ -75,6 +75,7 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *signdata, uint16_t signdatalen);
 
+
 zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);

@@ -1120,6 +1120,13 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
     return zxerr_ok;
 }
 
+zxerr_t crypto_test(uint8_t *buffer, uint16_t bufferLen, const uint8_t *signdata, uint16_t signdatalen){
+    uint8_t sighash[32];
+    uint8_t *start_signdata = (uint8_t *)(signdata + start_sighashdata());
+    signature_hash(start_signdata,LENGTH_HASH_DATA,sighash);
+    return zxerr_ok;
+}
+
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signspends_sapling");
     if(spendlist_len() == 0){
