@@ -1,4 +1,10 @@
-#![allow(dead_code, unused_imports, unused_mut, unused_variables, clippy::too_many_arguments)]
+#![allow(
+    dead_code,
+    unused_imports,
+    unused_mut,
+    unused_variables,
+    clippy::too_many_arguments
+)]
 
 mod neon_bridge;
 mod prover_ledger;
@@ -375,5 +381,19 @@ impl ZcashBuilderLedger {
 
     pub fn finalize_js(&mut self) -> Result<Vec<u8>, Error> {
         self.builder.finalize_js()
+    }
+}
+
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn test_blake() {
+        let ZCASH_OUTPUTS_HASH_PERSONALIZATION: &[u8; 16] = b"ZcashOutputsHash";
+        let h = Blake2bParams::new()
+            .hash_length(32)
+            .personal(ZCASH_OUTPUTS_HASH_PERSONALIZATION)
+            .hash(&[]);
+        assert_eq!(h.as_bytes(), &[0u8; 32]);
     }
 }

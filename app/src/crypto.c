@@ -566,6 +566,7 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
 
     uint8_t hash[32];
     prevouts_hash(txdata,hash);
+
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_PREVOUTSHASH, 32) != 0){
         return zxerr_unknown;
     }
@@ -1007,6 +1008,9 @@ typedef struct {
 
 zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signchecktransparent_sapling");
+    if(t_inlist_len() == 0){
+        return zxerr_ok;
+    }
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
@@ -1118,6 +1122,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signspends_sapling");
+    if(spendlist_len() == 0){
+        return zxerr_ok;
+    }
+
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
@@ -1154,10 +1162,10 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
             for(uint8_t i = 0; i < spendlist_len(); i++){
                 crypto_fillSaplingSeed(tmp.step1.zip32_seed);
                 const spend_item_t *item = spendlist_retrieve_item(i);
-                if (item == NULL){
+                /*if (item == NULL){
                     return 0;
                 }
-
+                */
                 zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
