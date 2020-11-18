@@ -1,12 +1,12 @@
 //! Rust interfaces to Ledger SDK APIs.
 
 use aes::{
-    Aes256,
     block_cipher_trait::{
-        BlockCipher,
-        generic_array::GenericArray,
         generic_array::typenum::{U16, U32, U8},
+        generic_array::GenericArray,
+        BlockCipher,
     },
+    Aes256,
 };
 #[cfg(test)]
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};

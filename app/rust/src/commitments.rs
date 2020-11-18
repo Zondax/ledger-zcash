@@ -21,7 +21,7 @@ pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unc
         0x114b_7501_ad10_4c57,
     ]),
 )
-    .to_niels();
+.to_niels();
 
 pub const VALUE_COMMITMENT_VALUE_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -37,7 +37,7 @@ pub const VALUE_COMMITMENT_VALUE_BASE: AffineNielsPoint = AffinePoint::from_raw_
         0x466a_7e3a_82f6_7ab1,
     ]),
 )
-    .to_niels();
+.to_niels();
 
 pub const VALUE_COMMITMENT_RANDOM_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -53,7 +53,7 @@ pub const VALUE_COMMITMENT_RANDOM_BASE: AffineNielsPoint = AffinePoint::from_raw
         0x6d81_d3a9_cb45_dedb,
     ]),
 )
-    .to_niels();
+.to_niels();
 
 pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -69,7 +69,7 @@ pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked
         0x6136_9d54_40bf_84a5,
     ]),
 )
-    .to_niels();
+.to_niels();
 
 #[inline(never)]
 pub fn revert(source: &[u8; 32], dest: &mut [u8]) {

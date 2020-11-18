@@ -1,7 +1,7 @@
 use aes::block_cipher_trait::generic_array::GenericArray;
-use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
-use chacha20poly1305::aead::{AeadInPlace, NewAead};
 use chacha20poly1305::aead::heapless::{consts::U128, Vec};
+use chacha20poly1305::aead::{AeadInPlace, NewAead};
+use chacha20poly1305::{ChaCha20Poly1305, Key, Nonce};
 use typenum::UInt;
 
 use crate::constants::{

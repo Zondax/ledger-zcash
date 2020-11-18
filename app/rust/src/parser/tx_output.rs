@@ -6,7 +6,7 @@ use nom::{
 };
 
 use crate::parser::parser_common::{
-    OutputScriptType, ParserError, u8_with_limits, var_int_as_usize,
+    u8_with_limits, var_int_as_usize, OutputScriptType, ParserError,
 };
 use crate::zxformat;
 
