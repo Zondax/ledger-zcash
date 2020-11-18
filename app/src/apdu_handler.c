@@ -46,39 +46,38 @@
  */
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+                                            volatile uint32_t *tx, uint32_t rx) {
     uint8_t replylen = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
 
     if (replylen > 0) {
         *tx = replylen;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
-                                            volatile uint32_t *tx, uint32_t rx) {
+                                                  volatile uint32_t *tx, uint32_t rx) {
     uint8_t replylen = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (replylen > 0) {
         *tx = replylen;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 
-
 __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
-                             volatile uint32_t *tx, uint32_t rx) {
+                                       volatile uint32_t *tx, uint32_t rx) {
     uint8_t replylen = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (replylen > 0) {
         *tx = replylen;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -86,19 +85,19 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+                                        volatile uint32_t *tx, uint32_t rx) {
     uint8_t replylen = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (replylen > 0) {
         *tx = replylen;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleInitTX(volatile uint32_t *flags,
-                        volatile uint32_t *tx, uint32_t rx) {
+                             volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -107,14 +106,14 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (len > 0) {
         *tx = len;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
-                             volatile uint32_t *tx, uint32_t rx) {
+                                  volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -122,14 +121,14 @@ __Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
     if (len > 0) {
         *tx = len;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+                                volatile uint32_t *tx, uint32_t rx) {
     extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
@@ -163,7 +162,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
-                                          volatile uint32_t *tx, uint32_t rx) {
+                                   volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -171,7 +170,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     if (replylen > 0) {
         *tx = replylen;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -196,7 +195,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
-                                  volatile uint32_t *tx, uint32_t rx) {
+                                        volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -206,14 +205,14 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     if (len > 0) {
         *tx = len;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
-                                        volatile uint32_t *tx, uint32_t rx) {
+                                         volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -222,7 +221,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
     if (len > 0) {
         *tx = len;
         THROW(APDU_CODE_OK);
-    }else{
+    } else {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -398,8 +397,10 @@ void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     uint16_t sw = 0;
 
-    BEGIN_TRY {
-        TRY {
+    BEGIN_TRY
+    {
+        TRY
+        {
             if (G_io_apdu_buffer[OFFSET_CLA] != CLA) {
                 THROW(APDU_CODE_CLA_NOT_SUPPORTED);
             }
@@ -425,42 +426,42 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_OVK: {
-                    handleGetKeyOVK(flags,tx,rx);
+                    handleGetKeyOVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_INIT_TX: {
-                    handleInitTX(flags,tx,rx);
+                    handleInitTX(flags, tx, rx);
                     break;
                 }
 
                 case INS_KEY_EXCHANGE: {
-                    handleKeyExchange(flags,tx,rx);
+                    handleKeyExchange(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPEND: {
-                    handleExtractSpendData(flags,tx,rx);
+                    handleExtractSpendData(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_OUTPUT: {
-                    handleExtractOutputData(flags,tx,rx);
+                    handleExtractOutputData(flags, tx, rx);
                     break;
                 }
 
                 case INS_CHECKANDSIGN: {
-                    handleCheckandSign(flags,tx,rx);
+                    handleCheckandSign(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPENDSIG: {
-                    handleExtractSpendSignature(flags,tx,rx);
+                    handleExtractSpendSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_TRANSSIG: {
-                    handleExtractTransparentSignature(flags,tx,rx);
+                    handleExtractTransparentSignature(flags, tx, rx);
                     break;
                 }
 
@@ -489,23 +490,25 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
 #if defined(APP_TESTING)
-                case INS_TEST: {
-                    handleTest(flags, tx, rx);
-                    /*
-                    G_io_apdu_buffer[0] = 0xCA;
-                    G_io_apdu_buffer[1] = 0xFE;
-                    *tx = 3;
-                    */
-                    THROW(APDU_CODE_OK);
-                    break;
-                }
+                    case INS_TEST: {
+                        handleTest(flags, tx, rx);
+                        /*
+                        G_io_apdu_buffer[0] = 0xCA;
+                        G_io_apdu_buffer[1] = 0xFE;
+                        *tx = 3;
+                        */
+                        THROW(APDU_CODE_OK);
+                        break;
+                    }
 #endif
                 default:
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }
         }
-        CATCH(EXCEPTION_IO_RESET) { THROW(EXCEPTION_IO_RESET); }
-        CATCH_OTHER(e) {
+        CATCH(EXCEPTION_IO_RESET)
+        { THROW(EXCEPTION_IO_RESET); }
+        CATCH_OTHER(e)
+        {
             switch (e & 0xF000) {
                 case 0x6000:
                 case APDU_CODE_OK:
@@ -519,7 +522,8 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
             G_io_apdu_buffer[*tx + 1] = sw;
             *tx += 2;
         }
-        FINALLY {}
+        FINALLY
+        {}
     }
     END_TRY;
 }

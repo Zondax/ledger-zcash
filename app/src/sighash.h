@@ -17,10 +17,15 @@
 void prevouts_hash(const uint8_t *input, uint8_t *output);
 
 void sequence_hash(const uint8_t *input, uint8_t *output);
+
 void outputs_hash(uint8_t *output);
 
 void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+
 void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+
 void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+
 void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+
 void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);

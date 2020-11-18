@@ -26,6 +26,7 @@ extern "C" {
 #include "crypto.h"
 
 extern parser_tx_t parser_state;
+
 const char *parser_getErrorDescription(parser_error_t err);
 
 //// parses a tx buffer

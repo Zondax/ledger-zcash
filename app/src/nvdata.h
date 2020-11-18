@@ -97,12 +97,18 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 void transaction_reset();
+
 void set_session_key(uint8_t *key);
+
 uint8_t *get_session_key();
+
 //statemachine API
 uint8_t get_state();
+
 void state_reset();
+
 void set_state(uint8_t state);
 
 #define STATE_INITIAL                           0
@@ -113,46 +119,71 @@ void set_state(uint8_t state);
 
 //metadata flash api
 uint64_t get_valuebalance();
+
 bool spendlist_first_sign();
+
 bool spendlist_more_sign();
+
 spend_item_t *spendlist_sign_next();
 
 bool transparent_signatures_more_extract();
+
 void transparent_signatures_append(uint8_t *signature);
+
 uint8_t *get_next_transparent_signature();
 
 bool spend_signatures_more_extract();
+
 void spend_signatures_append(uint8_t *signature);
+
 uint8_t *get_next_spend_signature();
 
 //transparent TxIN API
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v);
+
 t_input_item_t *t_inlist_retrieve_item(uint8_t i);
+
 uint8_t t_inlist_len();
 
 
 //transparent TXOUT API
 zxerr_t t_outlist_append_item(uint8_t *addr, uint64_t v);
+
 t_output_item_t *t_outlist_retrieve_item(uint8_t i);
+
 uint8_t t_outlist_len();
 
 //spendlist flashstorage API
 bool spendlist_is_active();
-zxerr_t spendlist_append_item(uint32_t p, uint64_t v,uint8_t *div,uint8_t *pkd, uint8_t *rcm, uint8_t *alpha);
+
+zxerr_t spendlist_append_item(uint32_t p, uint64_t v, uint8_t *div, uint8_t *pkd, uint8_t *rcm, uint8_t *alpha);
+
 uint8_t spendlist_len();
+
 void spendlist_reset();
+
 spend_item_t *spendlist_retrieve_item(uint8_t i);
+
 spend_item_t *spendlist_extract_next();
+
 bool spendlist_more_extract();
 
 //outputlist flashstorage API
 bool outputlist_is_active();
-zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv, uint8_t *rseed);
+
+zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv,
+                               uint8_t *rseed);
+
 uint8_t outputlist_len();
+
 void outputlist_reset();
+
 output_item_t *outputlist_retrieve_item(uint8_t i);
+
 output_item_t *outputlist_extract_next();
+
 bool outputlist_more_extract();
+
 #ifdef __cplusplus
 }
 #endif

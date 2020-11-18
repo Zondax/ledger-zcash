@@ -75,8 +75,13 @@
 #define INDEX_HASH_VALUEBALANCE 208
 
 uint16_t length_t_in_data();
+
 uint16_t length_spend_old_data();
+
 uint16_t length_spend_new_data();
+
 uint16_t length_spenddata();
+
 uint16_t length_outputdata();
+
 uint16_t start_sighashdata();

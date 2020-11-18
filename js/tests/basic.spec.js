@@ -1,9 +1,6 @@
 /* eslint-disable no-console */
-import blake2 from "blake2";
-import secp256k1 from "secp256k1/elliptic";
-import { expect, test } from "./jest";
-import { getCID, getDigest } from "./utils";
-import { serializePathv1 } from "../src/helperV1";
+import {expect, test} from "./jest";
+import {serializePathv1} from "../src/helperV1";
 
 test("serializePathv1", async () => {
   const path = "m/44'/461'/0/0/5";

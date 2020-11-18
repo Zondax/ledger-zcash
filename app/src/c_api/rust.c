@@ -14,21 +14,21 @@
 #define CTX_EXPAND_SEED_LEN 16
 #define CTX_EXPAND_SEED_HASH_LEN 64
 
-void c_blake2b32_withpersonal(const uint8_t *person, const uint8_t *a, uint32_t a_len, uint8_t *out){
+void c_blake2b32_withpersonal(const uint8_t *person, const uint8_t *a, uint32_t a_len, uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) person, 16);
     cx_hash(&ctx.header, CX_LAST, a, a_len, out, 256);
 };
 
-void c_blake2b64_withpersonal(const uint8_t *person, const uint8_t *a, uint32_t a_len, uint8_t *out){
+void c_blake2b64_withpersonal(const uint8_t *person, const uint8_t *a, uint32_t a_len, uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 512, NULL, 0, (uint8_t *) person, 16);
     cx_hash(&ctx.header, CX_LAST, a, a_len, out, 512);
 };
 
 void c_zcash_blake2b_redjubjub(const uint8_t *a, uint32_t a_len,
-                                 const uint8_t *b, uint32_t b_len,
-                                 uint8_t *out) {
+                               const uint8_t *b, uint32_t b_len,
+                               uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_REDJUBJUB_HASH_LEN, NULL, 0, (uint8_t *) CTX_REDJUBJUB, CTX_REDJUBJUB_LEN);
     cx_hash(&ctx.header, 0, a, a_len, NULL, 0);
@@ -36,8 +36,8 @@ void c_zcash_blake2b_redjubjub(const uint8_t *a, uint32_t a_len,
 }
 
 void c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
-                               const uint8_t *b, uint32_t b_len,
-                               uint8_t *out) {
+                                 const uint8_t *b, uint32_t b_len,
+                                 uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *) CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
     cx_hash(&ctx.header, 0, a, a_len, NULL, 0);
@@ -45,9 +45,9 @@ void c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
 }
 
 void c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len,
-                                 const uint8_t *b, uint32_t b_len,
-                                 const uint8_t *c, uint32_t c_len,
-                                 uint8_t *out) {
+                                    const uint8_t *b, uint32_t b_len,
+                                    const uint8_t *c, uint32_t c_len,
+                                    uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *) CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
     cx_hash(&ctx.header, 0, a, a_len, NULL, 0);
@@ -56,11 +56,11 @@ void c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len,
 }
 
 void c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len,
-                                    const uint8_t *b, uint32_t b_len,
-                                    const uint8_t *c, uint32_t c_len,
+                                     const uint8_t *b, uint32_t b_len,
+                                     const uint8_t *c, uint32_t c_len,
                                      const uint8_t *d, uint32_t d_len,
                                      const uint8_t *e, uint32_t e_len,
-                                    uint8_t *out) {
+                                     uint8_t *out) {
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *) CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
     cx_hash(&ctx.header, 0, a, a_len, NULL, 0);
@@ -91,7 +91,7 @@ void check_canary() {
 }
 
 void _zemu_log_stack(uint8_t *buffer) {
-    zemu_log_stack((char *)buffer);
+    zemu_log_stack((char *) buffer);
 }
 
 
