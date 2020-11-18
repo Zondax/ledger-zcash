@@ -15,7 +15,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import {serializePathv1, signSendChunkv1,checkspendsSendChunkv1,saplingSendChunkv1} from "./helperV1";
+import {checkspendsSendChunkv1, saplingSendChunkv1, serializePathv1, signSendChunkv1} from "./helperV1";
 import {
   APP_KEY,
   CHUNK_SIZE,
@@ -29,11 +29,9 @@ import {
   processErrorResponse,
   SAPLING_ADDR_LEN,
   SAPLING_IVK_LEN,
-  SAPLING_PGK_LEN,
   SAPLING_OVK_LEN,
+  SAPLING_PGK_LEN,
   SAPLING_RND_LEN,
-  SAPLING_SPENDDATA_LEN,
-  SAPLING_OUTPUTDATA_LEN,
 } from "./common";
 
 function processGetUnshieldedAddrResponse(response) {
@@ -91,7 +89,7 @@ function processRNDResponse(response) {
   const errorCodeData = partialResponse.slice(-2);
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-  const rndraw = Buffer.from(partialResponse.slice(0, 1*SAPLING_RND_LEN)); //fixme
+  const rndraw = Buffer.from(partialResponse.slice(0, 1 * SAPLING_RND_LEN)); //fixme
 
   return {
     rnd_raw: rndraw,
@@ -130,7 +128,7 @@ function processSpendResponse(response) {
   return {
     key_raw: keyraw.toString('hex'),
     rcv_raw: rcv.toString('hex'),
-    alpha_raw:alpha.toString('hex'),
+    alpha_raw: alpha.toString('hex'),
     return_code: returnCode,
     error_message: errorCodeToString(returnCode),
   };
@@ -382,42 +380,42 @@ export default class ZCashApp {
   async getivk(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processIVKResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processIVKResponse, processErrorResponse);
   }
 
   async getovk(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processOVKResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processOVKResponse, processErrorResponse);
   }
 
   async getproofkey(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_PGK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processPGKResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.GET_PGK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processPGKResponse, processErrorResponse);
   }
 
   async getrandomness(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_RND_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processRNDResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.GET_RND_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processRNDResponse, processErrorResponse);
   }
 
   async extractspendsig() {
-    return this.transport.send(CLA, INS.EXTRACTSPENDSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSIGResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACTSPENDSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSIGResponse, processErrorResponse);
   }
 
   async extracttranssig() {
-    return this.transport.send(CLA, INS.EXTRACTTRANSSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processTRANSIGResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACTTRANSSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processTRANSIGResponse, processErrorResponse);
   }
 
   async extractoutputdata() {
-    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processOutputResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processOutputResponse, processErrorResponse);
   }
 
   async extractspenddata() {
     console.log('in extract spend');
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSpendResponse,processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSpendResponse, processErrorResponse);
   }
 
 
@@ -478,17 +476,17 @@ export default class ZCashApp {
     return ZCashApp.prepareChunks(serializePathv1(path), message);
   }
 
-  async saplingSendChunk(version,chunkIdx, chunkNum, chunk) {
+  async saplingSendChunk(version, chunkIdx, chunkNum, chunk) {
     return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk);
   }
 
-  async checkspendsSendChunk(version,chunkIdx, chunkNum, chunk) {
+  async checkspendsSendChunk(version, chunkIdx, chunkNum, chunk) {
     return checkspendsSendChunkv1(this, version, chunkIdx, chunkNum, chunk);
   }
 
   async checkandsign(message) {
     return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.CHECKANDSIGN,1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
+      return this.saplingSendChunk(INS.CHECKANDSIGN, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -497,7 +495,7 @@ export default class ZCashApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.CHECKANDSIGN,1 + i, chunks.length, chunks[i]);
+          result = await this.saplingSendChunk(INS.CHECKANDSIGN, 1 + i, chunks.length, chunks[i]);
           if (result.return_code !== ERROR_CODE.NoError) {
             break;
           }
@@ -515,7 +513,7 @@ export default class ZCashApp {
 
   async keyexchange(message) {
     return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.KEY_EXCHANGE,1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
+      return this.saplingSendChunk(INS.KEY_EXCHANGE, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -524,7 +522,7 @@ export default class ZCashApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.KEY_EXCHANGE,1 + i, chunks.length, chunks[i]);
+          result = await this.saplingSendChunk(INS.KEY_EXCHANGE, 1 + i, chunks.length, chunks[i]);
           if (result.return_code !== ERROR_CODE.NoError) {
             break;
           }
@@ -542,7 +540,7 @@ export default class ZCashApp {
 
   async inittx(message) {
     return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.INIT_TX,1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
+      return this.saplingSendChunk(INS.INIT_TX, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -551,7 +549,7 @@ export default class ZCashApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.INIT_TX,1 + i, chunks.length, chunks[i]);
+          result = await this.saplingSendChunk(INS.INIT_TX, 1 + i, chunks.length, chunks[i]);
           if (result.return_code !== ERROR_CODE.NoError) {
             break;
           }
@@ -569,7 +567,7 @@ export default class ZCashApp {
 
   async getsaplingaddresswithdiv(path, message) {
     return this.checkspendsGetChunks(path, message).then((chunks) => {
-      return this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV,1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
+      return this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -579,7 +577,7 @@ export default class ZCashApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV,1 + i, chunks.length, chunks[i]);
+          result = await this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV, 1 + i, chunks.length, chunks[i]);
           if (result.return_code !== ERROR_CODE.NoError) {
             break;
           }
@@ -598,7 +596,7 @@ export default class ZCashApp {
 
   async getdiversifierlistwithstartindex(path, message) {
     return this.checkspendsGetChunks(path, message).then((chunks) => {
-      return this.saplingSendChunk(INS.GET_DIV_LIST,1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
+      return this.saplingSendChunk(INS.GET_DIV_LIST, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
         let result = {
           return_code: response.return_code,
           error_message: response.error_message,
@@ -607,7 +605,7 @@ export default class ZCashApp {
 
         for (let i = 1; i < chunks.length; i += 1) {
           // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.GET_DIV_LIST,1 + i, chunks.length, chunks[i]);
+          result = await this.saplingSendChunk(INS.GET_DIV_LIST, 1 + i, chunks.length, chunks[i]);
           if (result.return_code !== ERROR_CODE.NoError) {
             break;
           }

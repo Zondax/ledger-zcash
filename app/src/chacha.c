@@ -28,8 +28,8 @@
   (((uint32_t)((p)[0])) | ((uint32_t)((p)[1]) << 8) | \
    ((uint32_t)((p)[2]) << 16) | ((uint32_t)((p)[3]) << 24))
 // sigma contains the ChaCha constants, which happen to be an ASCII string.
-static const uint8_t sigma[16] = { 'e', 'x', 'p', 'a', 'n', 'd', ' ', '3',
-                                   '2', '-', 'b', 'y', 't', 'e', ' ', 'k' };
+static const uint8_t sigma[16] = {'e', 'x', 'p', 'a', 'n', 'd', ' ', '3',
+                                  '2', '-', 'b', 'y', 't', 'e', ' ', 'k'};
 #define ROTATE(v, n) (((v) << (n)) | ((v) >> (32 - (n))))
 // QUARTERROUND updates a, b, c, d with a ChaCha "quarter" round.
 #define QUARTERROUND(a, b, c, d)                \
@@ -65,6 +65,7 @@ void CRYPTO_hchacha20(uint8_t out[32], const uint8_t key[32],
     (p)[2] = (v >> 16) & 0xff; \
     (p)[3] = (v >> 24) & 0xff; \
   }
+
 // chacha_core performs 20 rounds of ChaCha on the input words in
 // |input| and writes the 64 output bytes to |output|.
 void chacha_core(uint8_t *output, const uint32_t *input) {
@@ -90,8 +91,8 @@ void chacha_core(uint8_t *output, const uint32_t *input) {
 }
 
 void chacha(uint8_t *out, const uint8_t *in, size_t in_len,
-                      const uint8_t *key, const uint8_t *nonce,
-                      uint32_t counter) {
+            const uint8_t *key, const uint8_t *nonce,
+            uint32_t counter) {
     uint32_t input[16];
     uint8_t buf[64];
     size_t todo, i;

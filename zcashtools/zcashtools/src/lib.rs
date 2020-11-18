@@ -192,8 +192,6 @@ pub struct SpendBuilderInfo {
     pub rcv: jubjub::Fr,
     #[serde(deserialize_with = "fr_deserialize")]
     pub alpha: jubjub::Fr,
-    #[serde(deserialize_with = "ovk_deserialize")]
-    pub ovk: Option<OutgoingViewingKey>,
     #[serde(deserialize_with = "s_address_deserialize")]
     pub address: PaymentAddress,
     #[serde(deserialize_with = "amount_deserialize")]
@@ -326,7 +324,6 @@ impl ZcashBuilderLedger {
             info.witness.path().unwrap(),
             info.alpha,
             info.proofkey,
-            info.ovk,
             info.rcv,
         );
         if r.is_ok() {
