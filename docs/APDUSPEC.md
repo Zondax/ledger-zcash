@@ -1,11 +1,6 @@
 # Zcash App
 
-> > We will soon move this document to Vuepress
-
-We provide two APIs:
-
 - Zondax API: New API that provides support for shielded and unshielded transactions
-- Ledger Live Legacy API: Provides backwards compatible support for Ledger Live
 
 ## General Structure
 
