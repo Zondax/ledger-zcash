@@ -46,7 +46,7 @@ void prevouts_hash(uint8_t *input, uint8_t *output){
     for (uint8_t i = 0; i < n; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 36, NULL, 0);
     }
-    cx_hash(&ctx.header, CX_LAST, data, 36, output, 256);
+    cx_hash(&ctx.header, CX_LAST, data, 36, output, 32);
 }
 
 void sequence_hash(uint8_t *input, uint8_t *output){
@@ -64,7 +64,7 @@ void sequence_hash(uint8_t *input, uint8_t *output){
     for (uint8_t i = 0; i < n; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 4, NULL, 0);
     }
-    cx_hash(&ctx.header, CX_LAST, data, 4, output, 256);
+    cx_hash(&ctx.header, CX_LAST, data, 4, output, 32);
 }
 
 void outputs_hash(uint8_t *output){
@@ -89,7 +89,7 @@ void outputs_hash(uint8_t *output){
     t_output_item_t *item = t_outlist_retrieve_item(i);
     MEMCPY(data,(uint8_t *)&(item->value),8);
     MEMCPY(data + 8,item->address,26);
-    cx_hash(&ctx.header, CX_LAST, data, sizeof(data), output, 256);
+    cx_hash(&ctx.header, CX_LAST, data, sizeof(data), output, 32);
 
 }
 
@@ -105,8 +105,8 @@ void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output){
         return;
     }
     cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION, 16);
-    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 256);
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *)CTX_ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION, 16);
+    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 32);
 }
 
 void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output){
@@ -115,16 +115,16 @@ void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output){
         return;
     }
     cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION, 16);
-    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 256);
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *)CTX_ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION, 16);
+    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 32);
 }
 
 void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
     const uint8_t CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION[] = {90, 99, 97, 115, 104, 83, 105, 103, 72, 97,
                                                                          115, 104, 187, 9, 184, 118};
     cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION, 16);
-    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 256);
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *)CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION, 16);
+    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, 32);
 }
 
 void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
@@ -133,6 +133,6 @@ void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, u
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION, 16);
     cx_hash(&ctx.header, 0, input, inputlen, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, script, scriptlen, output, 256);
+    cx_hash(&ctx.header, CX_LAST, script, scriptlen, output, 32);
 }
 

@@ -445,7 +445,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 256);
+    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 32);
 
     return zxerr_ok; //some code for all_good
 }
@@ -1121,9 +1121,12 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 }
 
 zxerr_t crypto_test(uint8_t *buffer, uint16_t bufferLen, const uint8_t *signdata, uint16_t signdatalen){
-    uint8_t sighash[32];
-    uint8_t *start_signdata = (uint8_t *)(signdata + start_sighashdata());
-    signature_hash(start_signdata,LENGTH_HASH_DATA,sighash);
+    uint8_t hash[32];
+    cx_blake2b_t ctx;
+    cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
+    cx_hash(&ctx.header, CX_LAST, signdata, signdatalen, hash, 32);
+    MEMCPY(buffer, hash, 32);
+
     return zxerr_ok;
 }
 
