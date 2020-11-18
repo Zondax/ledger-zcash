@@ -43,7 +43,7 @@ void prevouts_hash(uint8_t *input, uint8_t *output){
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *)ZCASH_PREVOUTS_HASH_PERSONALIZATION, 16);
     uint8_t *data = input + INDEX_TIN_PREVOUT;
-    for (uint8_t i = 0; i < n; i++, data += T_IN_TX_LEN) {
+    for (uint8_t i = 0; i < n-1; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 36, NULL, 0);
     }
     cx_hash(&ctx.header, CX_LAST, data, 36, output, 32);
@@ -61,7 +61,7 @@ void sequence_hash(uint8_t *input, uint8_t *output){
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *)ZCASH_SEQUENCE_HASH_PERSONALIZATION, 16);
     uint8_t *data = input + INDEX_TIN_SEQ;
-    for (uint8_t i = 0; i < n; i++, data += T_IN_TX_LEN) {
+    for (uint8_t i = 0; i < n-1; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 4, NULL, 0);
     }
     cx_hash(&ctx.header, CX_LAST, data, 4, output, 32);
