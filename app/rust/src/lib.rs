@@ -24,7 +24,6 @@ use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
 
-pub use parser::{_getItem, _getNumItems, _parser_init, _read};
 pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
@@ -33,8 +32,8 @@ mod aead;
 mod bolos;
 mod commitments;
 mod constants;
+mod errors;
 mod note_encryption;
-mod parser;
 mod pedersen;
 mod redjubjub;
 mod sighash;

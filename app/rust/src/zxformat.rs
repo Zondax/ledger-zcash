@@ -1,10 +1,9 @@
 #![allow(non_snake_case)]
 
+use crate::errors::ParserError;
 use bs58::decode::Error;
 use core::fmt::{self, Write};
 use nom::error::ParseError;
-
-use crate::parser::ParserError;
 
 pub const MAX_STR_BUFF_LEN: usize = 30;
 

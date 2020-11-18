@@ -86,8 +86,7 @@ pub fn encrypt_compact_plaintext(
     input[12..20].copy_from_slice(&vbytes);
     input[20..COMPACT_NOTE_SIZE].copy_from_slice(rcm);
 
-    let output = aead_encryptcompact(&k, input);
-    output
+    aead_encryptcompact(&k, input)
 }
 
 #[inline(never)]
