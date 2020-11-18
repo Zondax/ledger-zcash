@@ -1,11 +1,6 @@
 # Zcash App
 
->> We will soon move this document to Vuepress
-
-We provide two APIs:
-
 - Zondax API: New API that provides support for shielded and unshielded transactions
-- Ledger Live Legacy API: Provides backwards compatible support for Ledger Live
 
 ## General Structure
 
@@ -110,20 +105,454 @@ Returns or shows a shielded address (z-address)
 | L       | byte (1) | Bytes in payload          | (depends)  |
 | Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
 | Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ?          |
-| Path[3] | byte (4) | Derivation Path Data      | ?          |
-| Path[4] | byte (4) | Derivation Path Data      | ?          |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored    |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
 
 #### Response
 
-| Field          | Type      | Content           | Note                     |
-| -------------- | --------- | ----------------- | ------------------------ |
-| PK             | byte (65) | Public Key        |                          |
-| ADDR_RAW_LEN   | byte (1)  | ADDR_RAW Length   |                          |
-| ADDR_RAW       | byte (??) | Address as Bytes  |                          |
-| ADDR_HUMAN_LEN | byte (1)  | ADDR_HUMAN Len    |                          |
-| ADDR_HUMAN     | byte (??) | Address as String |                          |
-| SW1-SW2        | byte (2)  | Return code       | see list of return codes |
+| Field       | Type            | Content                    | Note                     |
+| ----------- | --------------- | -------------------------- | ------------------------ |
+| ADDR_RAW    | byte (43)       | Raw address                |                          |
+| ADDR_BECH32 | byte (variable) | Bech32 encoding of address |                          |
+| SW1-SW2     | byte (2)        | Return code                | see list of return codes |
+
+---
+
+### INS_GET_ADDR_SAPLING_DIV
+
+Returns a shielded address using a specific diversifier
+
+## TODO: make this correct
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0x10       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored    |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+
+#### Response
+
+| Field       | Type            | Content                    | Note                     |
+| ----------- | --------------- | -------------------------- | ------------------------ |
+| ADDR_RAW    | byte (43)       | Raw address                |                          |
+| ADDR_BECH32 | byte (variable) | Bech32 encoding of address |                          |
+| SW1-SW2     | byte (2)        | Return code                | see list of return codes |
+
+---
+
+### INS_GET_DIV_LIST
+
+On input of a 11-byte starting index, get all valid diversifiers in the 20 indexes after (including starting index). If
+a diversifier was not valid, zero-bytes are returned (so always 220 bytes are returned).
+
+## TODO: make this correct
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0x09       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored    |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+
+#### Response
+
+| Field        | Type       | Content                  | Note                     |
+| ------------ | ---------- | ------------------------ | ------------------------ |
+| DIV_LIST_RAW | byte (220) | List of raw diversifiers | 11-bytes each            |
+| SW1-SW2      | byte (2)   | Return code              | see list of return codes |
+
+---
+
+### INS_GET_IVK_SAPLING
+
+Returns a sapling incoming viewing key
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xf0       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored    |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+
+#### Response
+
+| Field   | Type      | Content     | Note                     |
+| ------- | --------- | ----------- | ------------------------ |
+| IVK_RAW | byte (32) | Raw IVK     |                          |
+| SW1-SW2 | byte (2)  | Return code | see list of return codes |
+
+---
+
+### INS_GET_OVK_SAPLING
+
+Returns a sapling outgoing viewing key
+
+#### Command
+
+| Field   | Type     | Content                   | Expected   |
+| ------- | -------- | ------------------------- | ---------- |
+| CLA     | byte (1) | Application Identifier    | 0x85       |
+| INS     | byte (1) | Instruction ID            | 0xf4       |
+| P1      | byte (1) | Request User confirmation | No = 0     |
+| P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
+| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
+| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
+| Path[2] | byte (4) | Derivation Path Data      | ignored    |
+| Path[3] | byte (4) | Derivation Path Data      | ignored    |
+| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+
+#### Response
+
+| Field   | Type      | Content     | Note                     |
+| ------- | --------- | ----------- | ------------------------ |
+| OVK_RAW | byte (32) | Raw OVK     |                          |
+| SW1-SW2 | byte (2)  | Return code | see list of return codes |
+
+---
+
+### INS_INIT_TX_SAPLING
+
+Initiates a transaction for sapling. The init_message should have the following format:
+
+| Type            | Content                                  | Expected              |
+| --------------- | ---------------------------------------- | --------------------- |
+| byte (1)        | t_in_len: number of transparent inputs   | 0x00 - 0x05           |
+| byte (1)        | t_out_len: number of transparent outputs | 0x00 - 0x05           |
+| byte (1)        | s_in_len: number of shielded spends      | 0x00 - 0x05           |
+| byte (1)        | s_out_len: number of shielded outputs    | 0x00 - 0x05           |
+| byte (variable) | transparent input data = [t_in]          | t_in_len \* 54 bytes  |
+| byte (variable) | transparent output data = [t_out]        | t_out_len \* 34 bytes |
+| byte (variable) | shielded spend data = [s_spend]          | s_in_len \* 55 bytes  |
+| byte (variable) | shielded output data = [s_out]           | s_out_len \* 84 bytes |
+
+where
+
+t_in :
+
+| Type      | Content                     | Expected        |
+| --------- | --------------------------- | --------------- |
+| byte (20) | Derivation path data        | 5 times 4 bytes |
+| byte (26) | Script of transparent input |                 |
+| byte (8)  | transparent input value     | u64             |
+
+t_out :
+
+| Type      | Content                      | Expected |
+| --------- | ---------------------------- | -------- |
+| byte (26) | Script of transparent output |          |
+| byte (8)  | transparent output value     | u64      |
+
+s_spend:
+
+| Type      | Content                    | Expected |
+| --------- | -------------------------- | -------- |
+| byte (4)  | ZIP32-path (hardened only) | u32      |
+| byte (43) | Shielded spend address     |          |
+| byte (8)  | Shielded spend value       | u64      |
+
+s_output:
+
+| Type      | Content                   | Expected                  |
+| --------- | ------------------------- | ------------------------- |
+| byte (43) | Shielded output address   |                           |
+| byte (8)  | Shielded output value     | u64                       |
+| byte (1)  | Shielded output memo type | 0xf6 for default memo     |
+| byte (32) | Shielded output OVK       | 32 zero-bytes for non-OVK |
+
+#### Command
+
+| Field | Type     | Content                | Expected  |
+| ----- | -------- | ---------------------- | --------- |
+| CLA   | byte (1) | Application Identifier | 0xE0      |
+| INS   | byte (1) | Instruction ID         | 0xa0      |
+| P1    | byte (1) | Payload desc           | 0 = init  |
+|       |          |                        | 1 = add   |
+|       |          |                        | 2 = last  |
+| P2    | byte (1) | ----                   | not used  |
+| L     | byte (1) | Bytes in payload       | (depends) |
+
+The first packet/chunk includes only the derivation path
+
+All other packets/chunks contain data chunks that are described below
+
+_First Packet_
+
+| Field   | Type     | Content              | Expected |
+| ------- | -------- | -------------------- | -------- |
+| Path[0] | byte (4) | Derivation Path Data | ignored  |
+| Path[1] | byte (4) | Derivation Path Data | ignored  |
+| Path[2] | byte (4) | Derivation Path Data | ignored  |
+| Path[3] | byte (4) | Derivation Path Data | ignored  |
+| Path[4] | byte (4) | Derivation Path Data | ignored  |
+
+_Other Chunks/Packets_
+
+| Field | Type     | Content | Expected |
+| ----- | -------- | ------- | -------- |
+| Data  | bytes... | Message |          |
+
+Data is defined as:
+
+| Field   | Type    | Content                             | Expected |
+| ------- | ------- | ----------------------------------- | -------- |
+| Message | bytes.. | init_message bytes as defined above |          |
+
+#### Response
+
+| Field   | Type      | Content              | Note                     |
+| ------- | --------- | -------------------- | ------------------------ |
+| hash    | byte (32) | Hash of init_message |                          |
+| SW1-SW2 | byte (2)  | Return code          | see list of return codes |
+
+---
+
+### INS_GET_SPENDINFO
+
+Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend. This command requires you
+already called the INS_INITTX_SAPLING. This command requires that it is needed to extract spendinfo.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected  |
+| ------- | -------- | ------------------------- | --------- |
+| CLA     | byte (1) | Application Identifier    | 0x85      |
+| INS     | byte (1) | Instruction ID            | 0xa1      |
+| P1      | byte (1) | Request User confirmation | No = 0    |
+| P2      | byte (1) | Parameter 2               | ignored   |
+| L       | byte (1) | Bytes in payload          | (depends) |
+| Path[0] | byte (4) | Derivation Path Data      | ignored   |
+| Path[1] | byte (4) | Derivation Path Data      | ignored   |
+| Path[2] | byte (4) | Derivation Path Data      | ignored   |
+| Path[3] | byte (4) | Derivation Path Data      | ignored   |
+| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+
+#### Response
+
+| Field     | Type      | Content     | Note                                |
+| --------- | --------- | ----------- | ----------------------------------- |
+| PGK_RAW   | byte (64) | Raw PGK     | 32 byte representations for ak, nsk |
+| rcv_RAW   | byte (32) | Raw rcv     |                                     |
+| alpha_RAW | byte (32) | Raw alpha   |                                     |
+| SW1-SW2   | byte (2)  | Return code | see list of return codes            |
+
+---
+
+### INS_GET_OUTPUTINFO
+
+Returns randomness (rcv and rseed (after ZIP202)) for a sapling output. This command requires you already called the
+INS_INITTX_SAPLING. This command requires you already called the correct number of INS_GET_SPENDINFO. This command
+requires that it is needed to extract outputinfo.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected  |
+| ------- | -------- | ------------------------- | --------- |
+| CLA     | byte (1) | Application Identifier    | 0x85      |
+| INS     | byte (1) | Instruction ID            | 0xa2      |
+| P1      | byte (1) | Request User confirmation | No = 0    |
+| P2      | byte (1) | Parameter 2               | ignored   |
+| L       | byte (1) | Bytes in payload          | (depends) |
+| Path[0] | byte (4) | Derivation Path Data      | ignored   |
+| Path[1] | byte (4) | Derivation Path Data      | ignored   |
+| Path[2] | byte (4) | Derivation Path Data      | ignored   |
+| Path[3] | byte (4) | Derivation Path Data      | ignored   |
+| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+
+#### Response
+
+| Field     | Type      | Content     | Note                     |
+| --------- | --------- | ----------- | ------------------------ |
+| rcv_RAW   | byte (32) | Raw rcv     |                          |
+| rseed_RAW | byte (32) | Raw rseed   |                          |
+| SW1-SW2   | byte (2)  | Return code | see list of return codes |
+
+---
+
+### INS_CHECKANDSIGN_TX_SAPLING
+
+Checks the transaction data and signs if it is correct with the corresponding keys. This command requires you already
+called the INS_INITTX_SAPLING. This command requires you already called the correct number of INS_GET_SPENDINFO. This
+command requires you already called the correct number of INS_GET_OUTPUTINFO.
+
+The transaction_blob should have the following format:
+
+| Type            | Content                       | Expected               |
+| --------------- | ----------------------------- | ---------------------- |
+| byte (variable) | transparent data to check     | t_in_len \* 74 bytes   |
+| byte (variable) | previous spend data to check  | s_in_len\* 40 bytes    |
+| byte (variable) | new spend data to check       | s_in_len \* 320 bytes  |
+| byte (variable) | shielded output data to check | s_out_len \* 948 bytes |
+
+where
+
+transparent data to check :
+(Some of the below data is already sent in the inittx command, but sending it again is easier for checking purposes)
+
+| Type      | Content         | Expected |
+| --------- | --------------- | -------- |
+| byte (36) | Prevout point   |          |
+| byte (26) | Script          |          |
+| byte (8)  | Value           | u64      |
+| byte (4)  | Sequence number |          |
+
+previous spend data to check :
+
+| Type      | Content                     | Expected |
+| --------- | --------------------------- | -------- |
+| byte (32) | Rseed of the spent note     |          |
+| byte (8)  | Note position of spent note | u64      |
+
+new spend data to check:
+NOTE: the values below should have used randomness from INS_GET_SPENDINFO if applicable
+
+| Type       | Content   | Expected                                          |
+| ---------- | --------- | ------------------------------------------------- |
+| byte (32)  | spend cv  | should have used rcv from ledger                  |
+| byte (32)  | Anchor    |                                                   |
+| byte (32)  | Nullifier | should have used old note Rseed and note position |
+| byte (32)  | Rk        | should have used alpha from ledger                |
+| byte (192) | zkproof   |                                                   |
+
+shielded output data to check:
+
+| Type       | Content         | Expected                            |
+| ---------- | --------------- | ----------------------------------- |
+| byte (32)  | output cv       | should have used rcv from ledger    |
+| byte (32)  | note commitment | should have used rseed from ledger  |
+| byte (32)  | ephemeral key   | should have used rseed from ledger  |
+| byte (580) | enc_ciphertext  | ledger checks correct memo-type too |
+| byte (80)  | out_ciphertext  |                                     |
+| byte (192) | zkproof         |                                     |
+
+#### Command
+
+| Field | Type     | Content                | Expected  |
+| ----- | -------- | ---------------------- | --------- |
+| CLA   | byte (1) | Application Identifier | 0xE0      |
+| INS   | byte (1) | Instruction ID         | 0xa3      |
+| P1    | byte (1) | Payload desc           | 0 = init  |
+|       |          |                        | 1 = add   |
+|       |          |                        | 2 = last  |
+| P2    | byte (1) | ----                   | not used  |
+| L     | byte (1) | Bytes in payload       | (depends) |
+
+The first packet/chunk includes only the derivation path
+
+All other packets/chunks contain data chunks that are described below
+
+_First Packet_
+
+| Field   | Type     | Content              | Expected |
+| ------- | -------- | -------------------- | -------- |
+| Path[0] | byte (4) | Derivation Path Data | ignored  |
+| Path[1] | byte (4) | Derivation Path Data | ignored  |
+| Path[2] | byte (4) | Derivation Path Data | ignored  |
+| Path[3] | byte (4) | Derivation Path Data | ignored  |
+| Path[4] | byte (4) | Derivation Path Data | ignored  |
+
+_Other Chunks/Packets_
+
+| Field | Type     | Content | Expected |
+| ----- | -------- | ------- | -------- |
+| Data  | bytes... | Message |          |
+
+Data is defined as:
+
+| Field   | Type    | Content                                 | Expected |
+| ------- | ------- | --------------------------------------- | -------- |
+| Message | bytes.. | transaction_blob bytes as defined above |          |
+
+#### Response
+
+| Field   | Type      | Content                  | Note                     |
+| ------- | --------- | ------------------------ | ------------------------ |
+| hash    | byte (32) | Hash of transaction_blob |                          |
+| SW1-SW2 | byte (2)  | Return code              | see list of return codes |
+
+---
+
+### INS_GET_TRANSPARENT_SIGNATURE
+
+Returns a SECP256K1 signature for a sapling transparent input. This command requires that you already called
+INS_CHECKANDSIGN_SAPLING.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected  |
+| ------- | -------- | ------------------------- | --------- |
+| CLA     | byte (1) | Application Identifier    | 0x85      |
+| INS     | byte (1) | Instruction ID            | 0xa5      |
+| P1      | byte (1) | Request User confirmation | No = 0    |
+| P2      | byte (1) | Parameter 2               | ignored   |
+| L       | byte (1) | Bytes in payload          | (depends) |
+| Path[0] | byte (4) | Derivation Path Data      | ignored   |
+| Path[1] | byte (4) | Derivation Path Data      | ignored   |
+| Path[2] | byte (4) | Derivation Path Data      | ignored   |
+| Path[3] | byte (4) | Derivation Path Data      | ignored   |
+| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+
+#### Response
+
+| Field     | Type      | Content       | Note                     |
+| --------- | --------- | ------------- | ------------------------ |
+| SECP256K1 | byte (64) | R/S signature |                          |
+| SW1-SW2   | byte (2)  | Return code   | see list of return codes |
+
+---
+
+### INS_GET_SPEND_SIGNATURE
+
+Returns a spend signature for a sapling shielded spend input. This command requires that you already called
+INS_CHECKANDSIGN_SAPLING.
+
+#### Command
+
+| Field   | Type     | Content                   | Expected  |
+| ------- | -------- | ------------------------- | --------- |
+| CLA     | byte (1) | Application Identifier    | 0x85      |
+| INS     | byte (1) | Instruction ID            | 0xa4      |
+| P1      | byte (1) | Request User confirmation | No = 0    |
+| P2      | byte (1) | Parameter 2               | ignored   |
+| L       | byte (1) | Bytes in payload          | (depends) |
+| Path[0] | byte (4) | Derivation Path Data      | ignored   |
+| Path[1] | byte (4) | Derivation Path Data      | ignored   |
+| Path[2] | byte (4) | Derivation Path Data      | ignored   |
+| Path[3] | byte (4) | Derivation Path Data      | ignored   |
+| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+
+#### Response
+
+| Field               | Type      | Content       | Note                     |
+| ------------------- | --------- | ------------- | ------------------------ |
+| RedJubjub signature | byte (64) | R/S signature |                          |
+| SW1-SW2             | byte (2)  | Return code   | see list of return codes |
 
 ---
 
@@ -223,129 +652,3 @@ Data is defined as:
 | ------- | -------- | ----------- | ------------------------ |
 | ??      | byte (?) | Signature   |                          |
 | SW1-SW2 | byte (2) | Return code | see list of return codes |
-
----
-
-## Legacy API
-
-> The legacy API should only be used by legacy applications that integrated with the older BTC-based Ledger app that only supported unshielded addresses
-
-[Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus)
-
-### Get Wallet Public Key
-
-> Check if necessary for Ledger Live backwards compatibility
-
-#### Command
-
-| Field | Type     | Content                | Expected                                                                                 |
-| ----- | -------- | ---------------------- | ---------------------------------------------------------------------------------------- |
-| CLA   | byte (1) | Application Identifier | 0xE0                                                                                     |
-| INS   | byte (1) | Instruction ID         | 0x40                                                                                     |
-| P1    | byte (1) | Parameter 1            | 0 = do not display address<br/> 1 = display address <br/> 2 = display validation token   |
-| P2    | byte (1) | Parameter 2            | 0 = legacy address <br/> 1 = P2SH-P2WPKH address <br/> 2 = Bech32 encoded P2WPKH address |
-| L     | byte (1) | Bytes in payload       | 0                                                                                        |
-
-_Payload_
-
-| Field     | Type     | Content               | Expected                                                |
-| --------- | -------- | --------------------- | ------------------------------------------------------- |
-| PATH_LEN  | byte (1) | Number of derivations | [1..10]                                                 |
-| PATH[0]   | byte (4) | Derivation Path Data  | 0x8000002c                                              |
-| ...       | ...      |                       |                                                         |
-| PATH[N]   | byte (4) | Derivation Path Data  |                                                         |
-| VAL_TOKEN | byte (4) | Derivation Path Data  | Optional <br/>hexadecimal validation token (big endian) |
-
-#### Response
-
-| Field       | Type      | Content                 | Note                     |
-| ----------- | --------- | ----------------------- | ------------------------ |
-| PUBKEY_LEN  | byte (1)  | Public key length       |                          |
-| PUBKEY      | var       | Uncompressed Public key |                          |
-| ADDRESS_LEN | byte (1)  | Version Minor           |                          |
-| ADDRESS     | byte (1)  | Version Patch           |                          |
-| LOCKED      | byte (1)  | Device is locked        |                          |
-| CHAIN_CODE  | byte (32) | BIP32 chain code        |                          |
-| SW1-SW2     | byte (2)  | Return code             | see list of return codes |
-
-### Get Trusted Input
-
-> Check if necessary for Ledger Live backwards compatibility
-
-Extracts Trusted Input (encrypted transaction hash, output index, output amount) from a bitcoin transaction.
-Scripts can be sent over several APDUs. (64 bits varints are rejected)
-
-| Field | Type     | Content                | Expected                                       |
-| ----- | -------- | ---------------------- | ---------------------------------------------- |
-| CLA   | byte (1) | Application Identifier | 0xE0                                           |
-| INS   | byte (1) | Instruction ID         | 0x42                                           |
-| P1    | byte (1) | Parameter 1            | 0 = first tx block<br/> 0x80 = other tx blocks |
-| P2    | byte (1) | Parameter 2            |                                                |
-| L     | byte (1) | Bytes in payload       | 0                                              |
-
-_Payload_(first block)
-
-| Field       | Type     | Content                 | Expected |
-| ----------- | -------- | ----------------------- | -------- |
-| INPUT_INDEX | byte (4) | Input index - Bigendian |          |
-| TX_CHUNK    | var      | transaction chunk       |          |
-
-_Payload_(other blocks)
-
-| Field    | Type | Content           | Expected |
-| -------- | ---- | ----------------- | -------- |
-| TX_CHUNK | var  | transaction chunk |          |
-
-#### Response
-
-| Field         | Type      | Content           | Note |
-| ------------- | --------- | ----------------- | ---- |
-| TRUSTED_INPUT | byte (56) | Public key length |      |
-
-### Untrusted Hash Transaction Input Start
-
-> Check if necessary for Ledger Live backwards compatibility
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP
-
-### Untrusted Hash Sign
-
-> Check if necessary for Ledger Live backwards compatibility
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP
-
-### Untrusted Hash Transaction Input Finalize Full
-
-> Check if necessary for Ledger Live backwards compatibility
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP
-
-### Get Random
-
-> This should be always available
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP
-
-### Get Firmware Version
-
-> This should be always available
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP
-
-### Get Coin Version
-
-> This should be always available
-
-Based on [Reference Legacy API](https://github.com/LedgerHQ/ledger-app-btc/blob/master/doc/btc.asc#wallet-usage-apdus).
-
-TO BE COMPLETED ONCE IT IS IMPLEMENTED IN THIS APP

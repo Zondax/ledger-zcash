@@ -1,6 +1,11 @@
 #![no_std]
 #![no_builtins]
-#![allow(dead_code, unused_imports,clippy::many_single_char_names,clippy::needless_range_loop)]
+#![allow(
+    dead_code,
+    unused_imports,
+    clippy::many_single_char_names,
+    clippy::needless_range_loop
+)]
 
 extern crate chacha20poly1305;
 extern crate core;
