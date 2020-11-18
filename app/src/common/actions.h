@@ -161,20 +161,6 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     return zxerr_ok;
 
 }
-__Z_INLINE uint8_t do_crash_test() {
-    // Take "ownership" of the memory used by the transaction parser
-    tx_reset_state();
-
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err;
-    err = crypto_test(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        return 0;
-    }else{
-        return 32;
-    }
-}
 
 __Z_INLINE void app_reject() {
     tx_reset_state();

@@ -176,21 +176,6 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     }
 }
 
-__Z_INLINE void handleCrashTest(volatile uint32_t *flags,
-                                   volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    uint8_t replylen = do_crash_test();
-    if (replylen > 0) {
-        *tx = replylen;
-        THROW(APDU_CODE_OK);
-    }else{
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-}
-
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
     extractHDPath(rx, OFFSET_DATA);
@@ -483,11 +468,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_SIGN_SECP256K1: {
                     handleSignSecp256K1(flags, tx, rx);
-                    break;
-                }
-
-                case INS_CRASH_TEST: {
-                    handleCrashTest(flags, tx, rx);
                     break;
                 }
 

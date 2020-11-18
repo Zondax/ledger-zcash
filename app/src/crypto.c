@@ -1120,16 +1120,6 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
     return zxerr_ok;
 }
 
-zxerr_t crypto_test(uint8_t *buffer, uint16_t bufferLen, const uint8_t *signdata, uint16_t signdatalen){
-    uint8_t hash[32];
-    cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, signdata, signdatalen, hash, 32);
-    MEMCPY(buffer, hash, 32);
-
-    return zxerr_ok;
-}
-
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signspends_sapling");
     if(spendlist_len() == 0){
