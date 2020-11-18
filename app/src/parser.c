@@ -96,8 +96,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         return parser_no_data;
     }
 
-    CHECK_PARSER_ERR(_getItem(ctx, displayIdx, outKey, outKeyLen, outVal,
-                              outValLen, pageIdx, pageCount, &parser_state));
+    // TODO
+//    CHECK_PARSER_ERR(_getItem(ctx, displayIdx, outKey, outKeyLen, outVal,
+//                              outValLen, pageIdx, pageCount, &parser_state));
     return parser_ok;
 }
 
