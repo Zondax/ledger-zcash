@@ -338,7 +338,7 @@ impl RngCore for Trng {
     #[cfg(target_arch = "x86_64")]
     #[cfg(test)]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        getrandom(dest);
+        getrandom(dest).unwrap()
     }
 
     #[cfg(target_arch = "x86_64")]

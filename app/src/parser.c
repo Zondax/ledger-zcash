@@ -39,7 +39,9 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
                             size_t dataLen) {
     parser_state.state = NULL;
     parser_state.len = 0;
-    CHECK_PARSER_ERR(_parser_init(ctx, data, dataLen, &parser_state.len))
+
+    // TODO
+    // CHECK_PARSER_ERR(_parser_init(ctx, data, dataLen, &parser_state.len))
 
     if (parser_state.len == 0) {
         return parser_context_unexpected_size;
@@ -50,7 +52,7 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
         return parser_init_context_empty;
     }
 
-    parser_error_t err = _read(ctx, &parser_state);
+    parser_error_t err = parser_ok; // TODO;
     return err;
 }
 
@@ -72,7 +74,7 @@ parser_error_t parser_validate(const parser_context_t *ctx) {
 
 parser_error_t parser_getNumItems(const parser_context_t *ctx,
                                   uint8_t *num_items) {
-    *num_items = _getNumItems(ctx, &parser_state);
+    *num_items = 0;
     return parser_ok;
 }
 
