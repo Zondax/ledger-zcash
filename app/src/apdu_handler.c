@@ -49,7 +49,7 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
     zxerr_t err = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
 
-    if (err == zxerr_unknown) {
+    if (err == zxerr_ok) {
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
@@ -61,7 +61,7 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
 __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
                                             volatile uint32_t *tx, uint32_t rx) {
     zxerr_t err = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-    if (err == zxerr_unknown){
+    if (err == zxerr_ok){
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
