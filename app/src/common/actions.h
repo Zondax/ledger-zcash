@@ -194,34 +194,25 @@ return key_state.
 len;
 }
 
-__Z_INLINE uint8_t
-app_fill_address(address_kind_e
-kind) {
+__Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
 // Put data directly in the apdu buffer
-MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE
-);
-zemu_log_stack("app_fill_address");
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+    zemu_log_stack("app_fill_address");
+    address_state.kind = kind;
 
-address_state.
-kind = kind;
+    switch (kind) {
+        case addr_secp256k1:
+            address_state.len = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+        case addr_sapling:
+            address_state.len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+        default:
+            address_state.len = 0;
+            break;
+    }
 
-switch (kind) {
-case addr_secp256k1:
-address_state.
-len = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-case addr_sapling:
-address_state.
-len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-default:
-address_state.
-len = 0;
-break;
-}
-
-return address_state.
-len;
+    return address_state.len;
 }
 
 __Z_INLINE void app_reply_address() {

@@ -27,6 +27,7 @@
 #include "view.h"
 #include "zxmacros.h"
 #include "chacha.h"
+#include "addr.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
@@ -167,12 +168,11 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         app_fill_address(addr_secp256k1);
-        // FIXME:
-//        view_address_show();
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-
     *tx = app_fill_address(addr_secp256k1);
     THROW(APDU_CODE_OK);
 }
@@ -241,8 +241,8 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         app_fill_address(addr_sapling);
-        // FIXME:
-        //view_address_show(addr_sapling);
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
