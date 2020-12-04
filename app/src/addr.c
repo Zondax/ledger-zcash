@@ -49,6 +49,12 @@ zxerr_t addr_getItem(int8_t displayIdx,
                     pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
                                pageCount);
                     return zxerr_ok;
+                case addr_sapling_div:
+                    snprintf(outKey, outKeyLen, "Shielded with div");
+                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
+                               pageCount);
+                    return zxerr_ok;
+
                 default:
                     return zxerr_no_data;
             }

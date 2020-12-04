@@ -183,10 +183,22 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    //extractHDPath(rx, OFFSET_DATA);
+    extractHDPath(rx, OFFSET_DATA);
     uint16_t replyLen;
+
+    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    zemu_log_stack("handleGetAddrSapling");
+    address_state.kind = addr_sapling_div;
+
+    if (requireConfirmation) {
+        get_addr_with_diversifier(&replyLen);
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
+        *flags |= IO_ASYNCH_REPLY;
+        return;
+    }
     zxerr_t err = get_addr_with_diversifier(&replyLen);
-    //todo: show things in screen and confirm
     if (err == zxerr_ok) {
         *tx = replyLen;
         THROW(APDU_CODE_OK);
@@ -201,7 +213,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    //extractHDPath(rx, OFFSET_DATA);
+    extractHDPath(rx, OFFSET_DATA);
     zxerr_t err = get_diversifier_list_with_startindex();
     if (err == zxerr_ok) {
         *tx = 220;
