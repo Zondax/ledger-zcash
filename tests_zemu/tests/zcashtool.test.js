@@ -33,7 +33,7 @@ const sim_options = {
     logging: true,
     start_delay: 3000,
     custom: `-s "${APP_SEED}"`
-//    ,X11: true
+   ,X11: true
 };
 
 jest.setTimeout(600000)
@@ -66,7 +66,10 @@ describe('Zcashtool tests', function () {
             const ovkreq = app.getovk("m/44'/133'/5'/0/1000");
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
-
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+            
             const ovk = await ovkreq;
             console.log(ovk)
             expect(ovk.return_code).toEqual(0x9000);

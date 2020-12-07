@@ -23,7 +23,7 @@
 #include "actions.h"
 
 zxerr_t key_getNumItems(uint8_t *num_items) {
-    zemu_log_stack("addr_getNumItems");
+    zemu_log_stack("key_getNumItems");
     *num_items = 1;
     if (app_mode_expert()) {
         *num_items = 2;
@@ -35,18 +35,23 @@ zxerr_t key_getItem(int8_t displayIdx,
                      char *outKey, uint16_t outKeyLen,
                      char *outVal, uint16_t outValLen,
                      uint8_t pageIdx, uint8_t *pageCount) {
-    zemu_log_stack("addr_getItem");
+    snprintf(outKey, outKeyLen, "?");
+    snprintf(outVal, outValLen, "?");
+
+    zemu_log_stack("key_getItem");
     switch (displayIdx) {
         case 0:
+            zemu_log_stack("case 0");
             switch (key_state.kind) {
                 case key_ovk:
-                    snprintf(outKey, outKeyLen, "Send OVK to host?");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + 0), pageIdx,
-                               pageCount);
+                    snprintf(outKey, outKeyLen, "Send OVK?");
+                    char tmpBuffer[100];
+                    MEMZERO(tmpBuffer, sizeof(tmpBuffer));
+                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                     return zxerr_ok;
-
                 default:
-                    return zxerr_no_data;
+                    return zxerr_unknown;
             }
         case 1: {
             if (!app_mode_expert()) {
