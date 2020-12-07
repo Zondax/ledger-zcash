@@ -5,8 +5,8 @@ use std::path::Path;
 
 use neon::prelude::*;
 
-use zcashtools::zcashtools_errors::Error;
-use zcashtools::*;
+use zcash_hsmbuilder::errors::Error;
+use zcash_hsmbuilder::*;
 
 // reference
 // https://neon-bindings.com/docs/primitives
@@ -16,8 +16,8 @@ use zcashtools::*;
 fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     // First get call arguments
     let arg0 = cx.argument::<JsValue>(0)?;
-    let arg0_value: LedgerInitData = neon_serde::from_value(&mut cx, arg0)?;
-    let output = arg0_value.to_ledger_bytes();
+    let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0)?;
+    let output = arg0_value.to_hsm_bytes();
     let js_value;
     if output.is_ok() {
         js_value = neon_serde::to_value(&mut cx, &output.unwrap())?;
@@ -27,11 +27,11 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     }
 }
 
-pub struct ZcashBuilder {
-    zcashbuilder: ZcashBuilderLedger,
+pub struct ZcashBuilderBridge {
+    zcashbuilder: ZcashBuilder,
 }
 
-impl ZcashBuilder {
+impl ZcashBuilderBridge {
     pub fn get_public_key(&mut self) -> Result<Vec<u8>, Error> {
         self.zcashbuilder.keygen();
         self.zcashbuilder.get_public_key()
@@ -61,8 +61,7 @@ impl ZcashBuilder {
     }
 
     pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<Vec<u8>, Error> {
-        let mut prover =
-            txprover_ledger::LocalTxProverLedger::new(Path::new(spendpath), Path::new(outputpath));
+        let mut prover = txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
         self.zcashbuilder.build(&mut prover)
     }
 
@@ -76,11 +75,11 @@ impl ZcashBuilder {
 }
 
 declare_types! {
-    pub class JsZcashBuilder for ZcashBuilder {
+    pub class JsZcashBuilder for ZcashBuilderBridge {
         init(mut cx) {
             let f = cx.argument::<JsNumber>(0)?.value();
-            let b = ZcashBuilderLedger::new(f as u64);
-            Ok(ZcashBuilder {
+            let b = ZcashBuilder::new(f as u64);
+            Ok(ZcashBuilderBridge {
                 zcashbuilder: b,
             })
         }
