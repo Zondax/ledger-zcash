@@ -28,6 +28,7 @@
 #include "coin.h"
 #include "zxmacros.h"
 #include "zbuffer.h"
+#include "nvdata.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -188,4 +189,5 @@ void app_init() {
 #endif // HAVE_BLE
 
     zb_init();
+    transaction_reset();
 }
