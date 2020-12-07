@@ -116,16 +116,14 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
-    if (requireConfirmation) {
-        app_retrieve_key(key_ivk);
-        // FIXME:
-//        view_address_show();
-        *flags |= IO_ASYNCH_REPLY;
-        return;
+    if (!requireConfirmation) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    *tx = app_retrieve_key(key_ivk);
-    THROW(APDU_CODE_OK);
+    app_retrieve_key(key_ivk);
+    view_review_init(key_getItem, key_getNumItems, app_reply_key);
+    view_review_show();
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,

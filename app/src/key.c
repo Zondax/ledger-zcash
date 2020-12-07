@@ -40,19 +40,25 @@ zxerr_t key_getItem(int8_t displayIdx,
 
     zemu_log_stack("key_getItem");
     switch (displayIdx) {
-        case 0:
+        case 0: {
             zemu_log_stack("case 0");
+            char tmpBuffer[100];
+            MEMZERO(tmpBuffer, sizeof(tmpBuffer));
             switch (key_state.kind) {
                 case key_ovk:
                     snprintf(outKey, outKeyLen, "Send OVK?");
-                    char tmpBuffer[100];
-                    MEMZERO(tmpBuffer, sizeof(tmpBuffer));
+                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                    return zxerr_ok;
+                case key_ivk:
+                    snprintf(outKey, outKeyLen, "Send IVK?");
                     array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
                     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                     return zxerr_ok;
                 default:
                     return zxerr_unknown;
             }
+        }
         case 1: {
             if (!app_mode_expert()) {
                 return zxerr_no_data;

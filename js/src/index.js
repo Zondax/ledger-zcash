@@ -380,7 +380,7 @@ export default class ZCashApp {
   async getivk(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processIVKResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(processIVKResponse, processErrorResponse);
   }
 
   async getovk(path) {
