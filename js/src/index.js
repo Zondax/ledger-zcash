@@ -386,7 +386,7 @@ export default class ZCashApp {
   async getovk(path) {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processOVKResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(processOVKResponse, processErrorResponse);
   }
 
   async getproofkey(path) {

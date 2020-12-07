@@ -215,6 +215,13 @@ __Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
     return address_state.len;
 }
 
+
+__Z_INLINE void app_reply_key() {
+    set_code(G_io_apdu_buffer, key_state.len, APDU_CODE_OK);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, key_state.len + 2);
+}
+
+
 __Z_INLINE void app_reply_address() {
     set_code(G_io_apdu_buffer, address_state.len, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, address_state.len + 2);

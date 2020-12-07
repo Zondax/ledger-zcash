@@ -63,7 +63,11 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ovk = await app.getovk("m/44'/133'/5'/0/1000");
+            const ovkreq = app.getovk("m/44'/133'/5'/0/1000");
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            const ovk = await ovkreq;
             console.log(ovk)
             expect(ovk.return_code).toEqual(0x9000);
 

@@ -28,6 +28,7 @@
 #include "zxmacros.h"
 #include "chacha.h"
 #include "addr.h"
+#include "key.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
@@ -135,8 +136,8 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         app_retrieve_key(key_ovk);
-        // FIXME:
-//        view_address_show();
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
