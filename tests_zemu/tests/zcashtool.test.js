@@ -25,8 +25,8 @@ const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
 var addon = require('../../zcashtools/neon/native');
 
-const SPEND_PATH = Resolve("../zcashtools/zcashtools/src/sapling-spend.params");
-const OUTPUT_PATH = Resolve("../zcashtools/zcashtools/src/sapling-output.params");
+const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
+const OUTPUT_PATH = Resolve("../zcashtools/params/sapling-output.params");
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
