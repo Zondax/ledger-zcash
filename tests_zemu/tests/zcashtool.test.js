@@ -69,7 +69,7 @@ describe('Zcashtool tests', function () {
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
-            
+
             const ovk = await ovkreq;
             console.log(ovk)
             expect(ovk.return_code).toEqual(0x9000);
