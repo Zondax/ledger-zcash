@@ -23,6 +23,9 @@
 #include "parser_txdef.h"
 #include "rslib.h"
 #include "zbuffer.h"
+#include "nvdata.h"
+#include "zxformat.h"
+#include "bech32.h"
 
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
@@ -34,6 +37,11 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 #endif
 
 parser_tx_t parser_state;
+
+typedef struct {
+    uint8_t type;
+    uint8_t index;
+} parser_sapling_t;
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
                             size_t dataLen) {
@@ -72,9 +80,68 @@ parser_error_t parser_validate(const parser_context_t *ctx) {
     return parser_ok;
 }
 
+parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
+                                                uint16_t outValLen, uint8_t pageIdx,
+                                                uint8_t *pageCount){
+    char tmpBuffer[100];
+    fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 0);
+    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+    return parser_ok;
+}
+
+parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char *outVal,
+                                                uint16_t outValLen, uint8_t pageIdx,
+                                                uint8_t *pageCount){
+
+    uint8_t address[43];
+    MEMCPY(address, div, 11);
+    MEMCPY(address + 11, pkd, 32);
+    char tmpBuffer[100];
+    bech32EncodeFromBytes(tmpBuffer, sizeof(tmpBuffer),
+                          BECH32_HRP,
+                          address,
+                          sizeof(address),
+                          1);
+    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+    return parser_ok;
+}
+
+parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling_t *prs){
+    uint16_t index = displayIdx;
+
+    if (index < t_inlist_len() * 2 && t_inlist_len() > 0){
+        prs->type = 0;
+        prs->index= index;
+        return parser_ok;
+    }
+    index -= t_inlist_len() * 2;
+    if (index < t_outlist_len() * 2 && t_outlist_len() > 0){
+        prs->type = 1;
+        prs->index= index;
+        return parser_ok;
+    }
+    index -= t_outlist_len() * 2;
+    if (index < spendlist_len() * 2 && spendlist_len() > 0){
+        prs->type = 2;
+        prs->index= index;
+        return parser_ok;
+    }
+    index -= spendlist_len() * 2;
+    if (index < outputlist_len() * 3 && outputlist_len() > 0){
+        prs->type = 3;
+        prs->index= index;
+        return parser_ok;
+    }
+    prs->type = 4;
+    if(displayIdx != 10){
+        return parser_display_page_out_of_range;
+    }
+    return parser_ok;
+}
+
 parser_error_t parser_getNumItems(const parser_context_t *ctx,
                                   uint8_t *num_items) {
-    *num_items = 0;
+    *num_items = spendlist_len() *2 + outputlist_len() * 3 + 1;
     return parser_ok;
 }
 
@@ -96,9 +163,65 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         return parser_no_data;
     }
 
-    // TODO
-//    CHECK_PARSER_ERR(_getItem(ctx, displayIdx, outKey, outKeyLen, outVal,
-//                              outValLen, pageIdx, pageCount, &parser_state));
+    *pageCount = 1;
+
+    parser_sapling_t prs;
+    MEMZERO(&prs, sizeof(parser_sapling_t));
+    CHECK_PARSER_ERR(parser_sapling_getTypes(displayIdx, &prs));
+    //fixme: make separate functions
+    //fixme: take decimals as ZECs?
+
+    switch(prs.type) {
+        case 2: {
+            uint8_t itemnum = prs.index / 2;
+            spend_item_t *item = spendlist_retrieve_item(itemnum);
+            uint8_t itemtype = prs.index % 2;
+            switch (itemtype) {
+                case 0: {
+                    snprintf(outKey, outKeyLen, "S-in address");
+                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
+                }
+                case 1: {
+                    snprintf(outKey, outKeyLen, "S-in ZECs");
+                    return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
+                }
+            }
+        }
+
+        case 3: {
+            uint8_t itemnum = prs.index / 3;
+            output_item_t *item = outputlist_retrieve_item(itemnum);
+            uint8_t itemtype = prs.index % 3;
+            switch (itemtype) {
+                case 0: {
+                    snprintf(outKey, outKeyLen, "S-out address");
+                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
+                }
+                case 1: {
+                    snprintf(outKey, outKeyLen, "S-out ZECs");
+                    return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
+                }
+                case 2: {
+                    snprintf(outKey, outKeyLen, "Memotype");
+                    if(item->memotype == 0xf6) {
+                        snprintf(outVal, outValLen, "Default");
+                    }else{
+                        snprintf(outVal, outValLen, "Non-default");
+                    }
+                    return parser_ok;
+                }
+            }
+        }
+
+        case 4: {
+            snprintf(outKey, outKeyLen, "Txfee");
+            return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
+        }
+
+        default: {
+            return parser_no_data;
+        }
+    }
     return parser_ok;
 }
 

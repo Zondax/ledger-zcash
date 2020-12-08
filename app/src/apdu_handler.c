@@ -84,15 +84,15 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    zxerr_t err = init_tx();
-    //todo: show things in screen and confirm
-    if (err == zxerr_ok) {
-        *tx = 32;
-        THROW(APDU_CODE_OK);
-    } else {
+    zxerr_t err =init_tx();
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
+
+    view_review_init(tx_getItem, tx_getNumItems, app_reply_hash);
+    view_review_show();
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
@@ -146,12 +146,12 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_OK);
     }
     zxerr_t err = check_and_sign_tx();
-    if (err == zxerr_ok) {
-        *tx = 32;
-        THROW(APDU_CODE_OK);
-    } else {
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
+    }else{
+        *tx = 32;
+        THROW(APDU_CODE_OK);
     }
 }
 

@@ -196,8 +196,8 @@ describe('Zcashtool tests', function () {
             }
 
             const s_spend2 = {
-                path: 1000,
-                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                path: 0,
+                address: "0d288ac263825d12d6a207ad32cdd9fc59212dd02dc673810a9665a1ec739384630ad6aef074565bd5eae7",
                 value: 50000,
             }
 
@@ -238,7 +238,12 @@ describe('Zcashtool tests', function () {
                 - the shielded outputs
              */
 
-            const req = await app.inittx(ledgerblob_initdata);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            const req = await reqinit;
+
             console.log(req);
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
