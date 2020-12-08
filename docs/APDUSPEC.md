@@ -92,7 +92,7 @@ The general structure of commands and responses is as follows:
 
 ### INS_GET_ADDR_SAPLING
 
-Returns or shows a shielded address (z-address)
+Returns or shows a shielded address with default diversifier (z-address)
 
 #### Command
 
@@ -103,11 +103,8 @@ Returns or shows a shielded address (z-address)
 | P1      | byte (1) | Request User confirmation | No = 0     |
 | P2      | byte (1) | Parameter 2               | ignored    |
 | L       | byte (1) | Bytes in payload          | (depends)  |
-| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ignored    |
-| Path[3] | byte (4) | Derivation Path Data      | ignored    |
-| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+
 
 #### Response
 
@@ -123,8 +120,6 @@ Returns or shows a shielded address (z-address)
 
 Returns a shielded address using a specific diversifier
 
-## TODO: make this correct
-
 #### Command
 
 | Field   | Type     | Content                   | Expected   |
@@ -134,11 +129,8 @@ Returns a shielded address using a specific diversifier
 | P1      | byte (1) | Request User confirmation | No = 0     |
 | P2      | byte (1) | Parameter 2               | ignored    |
 | L       | byte (1) | Bytes in payload          | (depends)  |
-| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ignored    |
-| Path[3] | byte (4) | Derivation Path Data      | ignored    |
-| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+| DIV | byte (11) | Diversifier     | 11-bytes  |
 
 #### Response
 
@@ -155,7 +147,6 @@ Returns a shielded address using a specific diversifier
 On input of a 11-byte starting index, get all valid diversifiers in the 20 indexes after (including starting index). If
 a diversifier was not valid, zero-bytes are returned (so always 220 bytes are returned).
 
-## TODO: make this correct
 
 #### Command
 
@@ -163,14 +154,11 @@ a diversifier was not valid, zero-bytes are returned (so always 220 bytes are re
 | ------- | -------- | ------------------------- | ---------- |
 | CLA     | byte (1) | Application Identifier    | 0x85       |
 | INS     | byte (1) | Instruction ID            | 0x09       |
-| P1      | byte (1) | Request User confirmation | No = 0     |
+| P1      | byte (1) | Request User confirmation | ignored (no)    |
 | P2      | byte (1) | Parameter 2               | ignored    |
 | L       | byte (1) | Bytes in payload          | (depends)  |
-| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ignored    |
-| Path[3] | byte (4) | Derivation Path Data      | ignored    |
-| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+| DIV | byte (11) | Starting index search     | 11-bytes  |
 
 #### Response
 
@@ -183,7 +171,7 @@ a diversifier was not valid, zero-bytes are returned (so always 220 bytes are re
 
 ### INS_GET_IVK_SAPLING
 
-Returns a sapling incoming viewing key
+Returns a sapling incoming viewing key. Forced user confirmation (So P1 needs to be 0x01).
 
 #### Command
 
@@ -191,14 +179,10 @@ Returns a sapling incoming viewing key
 | ------- | -------- | ------------------------- | ---------- |
 | CLA     | byte (1) | Application Identifier    | 0x85       |
 | INS     | byte (1) | Instruction ID            | 0xf0       |
-| P1      | byte (1) | Request User confirmation | No = 0     |
+| P1      | byte (1) | Request User confirmation | 1  |
 | P2      | byte (1) | Parameter 2               | ignored    |
-| L       | byte (1) | Bytes in payload          | (depends)  |
-| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ignored    |
-| Path[3] | byte (4) | Derivation Path Data      | ignored    |
-| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+
 
 #### Response
 
@@ -211,22 +195,18 @@ Returns a sapling incoming viewing key
 
 ### INS_GET_OVK_SAPLING
 
-Returns a sapling outgoing viewing key
+Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to be 0x01).
 
 #### Command
 
 | Field   | Type     | Content                   | Expected   |
 | ------- | -------- | ------------------------- | ---------- |
 | CLA     | byte (1) | Application Identifier    | 0x85       |
-| INS     | byte (1) | Instruction ID            | 0xf4       |
-| P1      | byte (1) | Request User confirmation | No = 0     |
+| INS     | byte (1) | Instruction ID            | 0xf1     |
+| P1      | byte (1) | Request User confirmation | 1 |
 | P2      | byte (1) | Parameter 2               | ignored    |
-| L       | byte (1) | Bytes in payload          | (depends)  |
-| Path[0] | byte (4) | Derivation Path Data      | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data      | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data      | ignored    |
-| Path[3] | byte (4) | Derivation Path Data      | ignored    |
-| Path[4] | byte (4) | Derivation Path Data      | ZIP32-path |
+| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+
 
 #### Response
 

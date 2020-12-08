@@ -117,7 +117,7 @@ describe('Basic checks', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const addr = await app.getAddressAndPubKey("m/44'/133'/5'/0/1000");
+            const addr = await app.getAddressAndPubKey(1000);
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
@@ -139,7 +139,7 @@ describe('Basic checks', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0'/1000");
+            const addrRequest = app.showAddressAndPubKey(1000);
             // Wait until we are not in the main menu
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 

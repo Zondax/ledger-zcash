@@ -45,7 +45,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ivkreq = app.getivk("m/44'/133'/5'/0/1000");
+            const ivkreq = app.getivk(1000);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             await sim.clickRight();
@@ -71,7 +71,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ovkreq = app.getovk("m/44'/133'/5'/0/1000");
+            const ovkreq = app.getovk(1000);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             await sim.clickRight();
@@ -97,9 +97,10 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
+            const path = 1000;
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
-            const addr = await app.getsaplingaddresswithdiv("m/44'/133'/5'/0/1000",div);
+            const addr = await app.getaddrdiv(path,div);
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
@@ -115,6 +116,37 @@ describe('Zcashtool tests', function () {
         }
     });
 
+    test('show shielded address with div', async function () {
+        const sim = new Zemu(APP_PATH);
+        try {
+            await sim.start(sim_options);
+            const app = new ZCashApp(sim.getTransport());
+
+            const path = 1000;
+            const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
+
+            const addrreq = app.showaddrdiv(path,div);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const addr = await addrreq;
+
+            console.log(addr)
+            expect(addr.return_code).toEqual(0x9000);
+
+            const expected_addr_raw = "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667";
+
+            const addr_raw = addr.address_raw.toString('hex');
+            expect(addr_raw).toEqual(expected_addr_raw);
+
+        } finally {
+            await sim.close();
+        }
+    });
+
     test('get div list with startindex', async function () {
         const sim = new Zemu(APP_PATH);
         try {
@@ -123,7 +155,7 @@ describe('Zcashtool tests', function () {
 
             const startindex = Buffer.from([0,0,0,0,0,0,0,0,0,0,0]);
 
-            const divlist = await app.getdiversifierlistwithstartindex("m/44'/133'/5'/0/1000",startindex);
+            const divlist = await app.getdivlist(1000, startindex);
             console.log(divlist)
             expect(divlist.return_code).toEqual(0x9000);
 
@@ -132,32 +164,6 @@ describe('Zcashtool tests', function () {
             const first_div_raw = divlist.divlist[0];
             expect(first_div).toEqual(first_div_raw);
 
-
-        } finally {
-            await sim.close();
-        }
-    });
-
-    test('test encryption keys', async function () {
-        const sim = new Zemu(APP_PATH);
-        try {
-            await sim.start(sim_options);
-            const app = new ZCashApp(sim.getTransport());
-
-            const {zcashtools} = addon;
-            console.log(SPEND_PATH)
-
-            var builder = new zcashtools(1000);
-
-            const pk = Buffer.from(builder.get_public_key());
-            console.log(pk);
-
-            const req = await app.keyexchange(pk);
-            console.log(req);
-            expect(req.return_code).toEqual(0x9000);
-
-            var pkclient = Buffer.from(req.pubkey);
-            console.log(builder.set_session_key(pkclient));
 
         } finally {
             await sim.close();

@@ -112,7 +112,6 @@ __Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
@@ -128,7 +127,6 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
@@ -177,13 +175,9 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
                                         volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    extractHDPath(rx, OFFSET_DATA);
-    uint16_t replyLen;
-
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    uint16_t replyLen;
 
     zemu_log_stack("handleGetAddrSapling");
     address_state.kind = addr_sapling_div;
@@ -207,13 +201,12 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
                                          volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    extractHDPath(rx, OFFSET_DATA);
-    zxerr_t err = get_diversifier_list_with_startindex();
+
+    uint16_t replylen;
+
+    zxerr_t err = get_diversifier_list_with_startindex(&replylen);
     if (err == zxerr_ok) {
-        *tx = 220;
+        *tx = replylen;
         THROW(APDU_CODE_OK);
     } else {
         *tx = 0;
@@ -243,7 +236,6 @@ __Z_INLINE void handleSignSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
                                      volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     zemu_log_stack("handleGetAddrSapling");
