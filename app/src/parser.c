@@ -89,6 +89,18 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
     return parser_ok;
 }
 
+//fixme: take base58 encoding
+parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
+                                                uint16_t outValLen, uint8_t pageIdx,
+                                                uint8_t *pageCount){
+
+
+    char tmpBuffer[100];
+    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), addr, 26);
+    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+    return parser_ok;
+}
+
 parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
@@ -133,15 +145,12 @@ parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling
         return parser_ok;
     }
     prs->type = 4;
-    if(displayIdx != 10){
-        return parser_display_page_out_of_range;
-    }
     return parser_ok;
 }
 
 parser_error_t parser_getNumItems(const parser_context_t *ctx,
                                   uint8_t *num_items) {
-    *num_items = spendlist_len() *2 + outputlist_len() * 3 + 1;
+    *num_items = t_inlist_len()*2 + t_outlist_len()*2+ spendlist_len() *2 + outputlist_len() * 3 + 1;
     return parser_ok;
 }
 
@@ -172,6 +181,37 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
     //fixme: take decimals as ZECs?
 
     switch(prs.type) {
+        case 0 :{
+            uint8_t itemnum = prs.index / 2;
+            t_input_item_t *item = t_inlist_retrieve_item(itemnum);
+            uint8_t itemtype = prs.index % 2;
+            switch (itemtype) {
+                case 0: {
+                    snprintf(outKey, outKeyLen, "T-in address");
+                    return parser_sapling_display_address_t(item->script, outVal, outValLen, pageIdx, pageCount);
+                }
+                case 1: {
+                    snprintf(outKey, outKeyLen, "T-in ZECs");
+                    return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
+                }
+            }
+        }
+
+        case 1 :{
+            uint8_t itemnum = prs.index / 2;
+            t_output_item_t *item = t_outlist_retrieve_item(itemnum);
+            uint8_t itemtype = prs.index % 2;
+            switch (itemtype) {
+                case 0: {
+                    snprintf(outKey, outKeyLen, "T-out address");
+                    return parser_sapling_display_address_t(item->address, outVal, outValLen, pageIdx, pageCount);
+                }
+                case 1: {
+                    snprintf(outKey, outKeyLen, "T-out ZECs");
+                    return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
+                }
+            }
+        }
         case 2: {
             uint8_t itemnum = prs.index / 2;
             spend_item_t *item = spendlist_retrieve_item(itemnum);

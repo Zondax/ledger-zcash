@@ -518,7 +518,13 @@ describe('Zcashtool tests', function () {
                 - the shielded outputs
              */
 
-            const req = await app.inittx(ledgerblob_initdata);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            const req = await reqinit;
+
+            //const req = await app.inittx(ledgerblob_initdata);
             console.log(req);
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
