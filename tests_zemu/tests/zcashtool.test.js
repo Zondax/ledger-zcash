@@ -97,7 +97,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const path = Buffer.alloc(4);
+            const path = 1000;
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
             const addr = await app.getaddrdiv(path,div);
@@ -110,6 +110,37 @@ describe('Zcashtool tests', function () {
             const addr_raw = addr.address_raw.toString('hex');
             expect(addr_raw).toEqual(expected_addr_raw);
             expect(addr.address).toEqual(expected_addr);
+
+        } finally {
+            await sim.close();
+        }
+    });
+
+    test('show shielded address with div', async function () {
+        const sim = new Zemu(APP_PATH);
+        try {
+            await sim.start(sim_options);
+            const app = new ZCashApp(sim.getTransport());
+
+            const path = 1000;
+            const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
+
+            const addrreq = app.showaddrdiv(path,div);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const addr = await addrreq;
+
+            console.log(addr)
+            expect(addr.return_code).toEqual(0x9000);
+
+            const expected_addr_raw = "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667";
+
+            const addr_raw = addr.address_raw.toString('hex');
+            expect(addr_raw).toEqual(expected_addr_raw);
 
         } finally {
             await sim.close();

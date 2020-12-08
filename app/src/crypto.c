@@ -26,6 +26,7 @@
 #include "parser_impl.h"
 #include "parser_common.h"
 #include "chacha.h"
+#include "common/app_main.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -1365,10 +1366,25 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
     return zxerr_ok;
 }
 
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint8_t *diversifier, uint16_t *replyLen) {
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
+    uint8_t div[11];
+    MEMCPY(div, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_fillAddress_sapling");
@@ -1378,10 +1394,10 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
-    //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = 1000 | 0x80000000;
 
-    MEMCPY(out->diversifier, diversifier, 11);
+    tmp.step1.pos = p | 0x80000000;
+
+    MEMCPY(out->diversifier, div, 11);
     if (!is_valid_diversifier(out->diversifier)){
         return zxerr_unknown;
     }

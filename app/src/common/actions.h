@@ -92,9 +92,7 @@ __Z_INLINE zxerr_t get_diversifier_list_with_startindex() {
 }
 
 __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
-    uint8_t div[11];
-    MEMCPY(div, (uint8_t *)(G_io_apdu_buffer + OFFSET_DATA + 4), 11);
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, div, replyLen);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replyLen);
 
     return err;
 

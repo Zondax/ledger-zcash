@@ -419,7 +419,15 @@ export default class ZCashApp {
   }
 
   async getaddrdiv(path, div) {
-    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([path,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
+  }
+
+  async showaddrdiv(path, div) {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
   }
 
 
