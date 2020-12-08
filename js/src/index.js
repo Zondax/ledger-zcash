@@ -363,15 +363,17 @@ export default class ZCashApp {
   }
 
   async getAddressAndPubKey(path, unshielded = false) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
 
     if (!unshielded) {
+      const buf = Buffer.alloc(4);
+      buf.writeUInt32LE(path, 0);
       return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
+        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, buf, [0x9000])
         .then(processGetShieldedAddrResponse, processErrorResponse);
     }
 
+    const serializedPath = serializePathv1(path);
+    console.log(serializedPath);
     return this.transport
       .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
       .then(processGetUnshieldedAddrResponse, processErrorResponse);
@@ -432,16 +434,18 @@ export default class ZCashApp {
 
 
   async showAddressAndPubKey(path, unshielded = false) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
 
-    console.log(unshielded)
     if (!unshielded) {
+      const buf = Buffer.alloc(4);
+      buf.writeUInt32LE(path, 0);
       return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
+        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
         .then(processGetShieldedAddrResponse, processErrorResponse);
     }
 
+    const serializedPath = serializePathv1(path);
+    console.log(serializedPath);
+    console.log(unshielded)
     return this.transport
       .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
       .then(processGetUnshieldedAddrResponse, processErrorResponse);

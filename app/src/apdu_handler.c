@@ -239,7 +239,6 @@ __Z_INLINE void handleSignSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
                                      volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     zemu_log_stack("handleGetAddrSapling");

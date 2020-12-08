@@ -188,7 +188,6 @@ __Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
 
 __Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
 // Put data directly in the apdu buffer
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     zemu_log_stack("app_fill_address");
     address_state.kind = kind;
 
