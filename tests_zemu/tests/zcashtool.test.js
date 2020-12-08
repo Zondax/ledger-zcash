@@ -170,32 +170,6 @@ describe('Zcashtool tests', function () {
         }
     });
 
-    test('test encryption keys', async function () {
-        const sim = new Zemu(APP_PATH);
-        try {
-            await sim.start(sim_options);
-            const app = new ZCashApp(sim.getTransport());
-
-            const {zcashtools} = addon;
-            console.log(SPEND_PATH)
-
-            var builder = new zcashtools(1000);
-
-            const pk = Buffer.from(builder.get_public_key());
-            console.log(pk);
-
-            const req = await app.keyexchange(pk);
-            console.log(req);
-            expect(req.return_code).toEqual(0x9000);
-
-            var pkclient = Buffer.from(req.pubkey);
-            console.log(builder.set_session_key(pkclient));
-
-        } finally {
-            await sim.close();
-        }
-    });
-
    test('make a transaction with 2 spend 2 outputs', async function () {
         const sim = new Zemu(APP_PATH);
         try {

@@ -235,9 +235,9 @@ export default class ZCashApp {
 
     this.transport = transport;
     transport.decorateAppAPIMethods(
-      this,
-      ["getVersion", "appInfo", "deviceInfo", "getAddressAndPubKey", "sign"],
-      scrambleKey,
+        this,
+        ["getVersion", "appInfo", "deviceInfo", "getAddressAndPubKey", "sign"],
+        scrambleKey,
     );
   }
 
@@ -284,11 +284,11 @@ export default class ZCashApp {
 
   async getVersion() {
     return getVersion(this.transport)
-      .then((response) => {
-        this.versionResponse = response;
-        return response;
-      })
-      .catch((err) => processErrorResponse(err));
+        .then((response) => {
+          this.versionResponse = response;
+          return response;
+        })
+        .catch((err) => processErrorResponse(err));
   }
 
   async appInfo() {
@@ -343,50 +343,50 @@ export default class ZCashApp {
 
   async deviceInfo() {
     return this.transport
-      .send(0xe0, 0x01, 0, 0, Buffer.from([]), [ERROR_CODE.NoError, 0x6e00])
-      .then((response) => {
-        const errorCodeData = response.slice(-2);
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+        .send(0xe0, 0x01, 0, 0, Buffer.from([]), [ERROR_CODE.NoError, 0x6e00])
+        .then((response) => {
+          const errorCodeData = response.slice(-2);
+          const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-        if (returnCode === 0x6e00) {
+          if (returnCode === 0x6e00) {
+            return {
+              return_code: returnCode,
+              error_message: "This command is only available in the Dashboard",
+            };
+          }
+
+          const targetId = response.slice(0, 4).toString("hex");
+
+          let pos = 4;
+          const secureElementVersionLen = response[pos];
+          pos += 1;
+          const seVersion = response.slice(pos, pos + secureElementVersionLen).toString();
+          pos += secureElementVersionLen;
+
+          const flagsLen = response[pos];
+          pos += 1;
+          const flag = response.slice(pos, pos + flagsLen).toString("hex");
+          pos += flagsLen;
+
+          const mcuVersionLen = response[pos];
+          pos += 1;
+          // Patch issue in mcu version
+          let tmp = response.slice(pos, pos + mcuVersionLen);
+          if (tmp[mcuVersionLen - 1] === 0) {
+            tmp = response.slice(pos, pos + mcuVersionLen - 1);
+          }
+          const mcuVersion = tmp.toString();
+
           return {
             return_code: returnCode,
-            error_message: "This command is only available in the Dashboard",
+            error_message: errorCodeToString(returnCode),
+            // //
+            targetId,
+            seVersion,
+            flag,
+            mcuVersion,
           };
-        }
-
-        const targetId = response.slice(0, 4).toString("hex");
-
-        let pos = 4;
-        const secureElementVersionLen = response[pos];
-        pos += 1;
-        const seVersion = response.slice(pos, pos + secureElementVersionLen).toString();
-        pos += secureElementVersionLen;
-
-        const flagsLen = response[pos];
-        pos += 1;
-        const flag = response.slice(pos, pos + flagsLen).toString("hex");
-        pos += flagsLen;
-
-        const mcuVersionLen = response[pos];
-        pos += 1;
-        // Patch issue in mcu version
-        let tmp = response.slice(pos, pos + mcuVersionLen);
-        if (tmp[mcuVersionLen - 1] === 0) {
-          tmp = response.slice(pos, pos + mcuVersionLen - 1);
-        }
-        const mcuVersion = tmp.toString();
-
-        return {
-          return_code: returnCode,
-          error_message: errorCodeToString(returnCode),
-          // //
-          targetId,
-          seVersion,
-          flag,
-          mcuVersion,
-        };
-      }, processErrorResponse);
+        }, processErrorResponse);
   }
 
   async getAddressAndPubKey(path, unshielded = false) {
@@ -395,15 +395,16 @@ export default class ZCashApp {
       const buf = Buffer.alloc(4);
       buf.writeUInt32LE(path, 0);
       return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, buf, [0x9000])
-        .then(processGetShieldedAddrResponse, processErrorResponse);
-    }
+          .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, buf, [0x9000])
+          .then(processGetShieldedAddrResponse, processErrorResponse);
+    } else {
 
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
-      .then(processGetUnshieldedAddrResponse, processErrorResponse);
+      const serializedPath = serializePathv1(path);
+      console.log(serializedPath);
+      return this.transport
+          .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
+          .then(processGetUnshieldedAddrResponse, processErrorResponse);
+    }
   }
 
   async getivk(path) {
@@ -416,18 +417,6 @@ export default class ZCashApp {
     const serializedPath = serializePathv1(path);
     console.log(serializedPath);
     return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(processOVKResponse, processErrorResponse);
-  }
-
-  async getproofkey(path) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_PGK_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processPGKResponse, processErrorResponse);
-  }
-
-  async getrandomness(path) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_RND_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000]).then(processRNDResponse, processErrorResponse);
   }
 
   async extractspendsig() {
@@ -450,38 +439,38 @@ export default class ZCashApp {
   async getdivlist(path, index) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
-    return this.transport.send(CLA, INS.GET_DIV_LIST, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf,index]), [0x9000]).then(processDivListResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.GET_DIV_LIST, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, index]), [0x9000]).then(processDivListResponse, processErrorResponse);
   }
 
   async getaddrdiv(path, div) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
-    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
   }
 
   async showaddrdiv(path, div) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
-    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
   }
 
 
   async showAddressAndPubKey(path, unshielded = false) {
-
     if (!unshielded) {
       const buf = Buffer.alloc(4);
       buf.writeUInt32LE(path, 0);
       return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
-        .then(processGetShieldedAddrResponse, processErrorResponse);
-    }
+          .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
+          .then(processGetShieldedAddrResponse, processErrorResponse);
+    } else {
 
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    console.log(unshielded)
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
-      .then(processGetUnshieldedAddrResponse, processErrorResponse);
+      const serializedPath = serializePathv1(path);
+      console.log(serializedPath);
+      console.log(unshielded)
+      return this.transport
+          .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
+          .then(processGetUnshieldedAddrResponse, processErrorResponse);
+    }
   }
 
   async signSendChunk(chunkIdx, chunkNum, chunk) {
@@ -560,33 +549,6 @@ export default class ZCashApp {
     }, processErrorResponse);
   }
 
-  async keyexchange(message) {
-    return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.KEY_EXCHANGE, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
-        let result = {
-          return_code: response.return_code,
-          error_message: response.error_message,
-          pubkey: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.KEY_EXCHANGE, 1 + i, chunks.length, chunks[i]);
-          if (result.return_code !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
-
-        return {
-          return_code: result.return_code,
-          error_message: result.error_message,
-          // ///
-          pubkey: result.pubkey,
-        };
-      }, processErrorResponse);
-    }, processErrorResponse);
-  }
-
   async inittx(message) {
     return this.saplingGetChunks(message).then((chunks) => {
       return this.saplingSendChunk(INS.INIT_TX, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
@@ -609,62 +571,6 @@ export default class ZCashApp {
           error_message: result.error_message,
           // ///
           txdata: result.txdata,
-        };
-      }, processErrorResponse);
-    }, processErrorResponse);
-  }
-
-  async getsaplingaddresswithdiv(path, message) {
-    return this.checkspendsGetChunks(path, message).then((chunks) => {
-      return this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
-        let result = {
-          return_code: response.return_code,
-          error_message: response.error_message,
-          address: null,
-          address_raw: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.GET_ADDR_SAPLING_DIV, 1 + i, chunks.length, chunks[i]);
-          if (result.return_code !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
-
-        return {
-          return_code: result.return_code,
-          error_message: result.error_message,
-          // ///
-          address: result.address.toString(),
-          address_raw: result.address_raw,
-        };
-      }, processErrorResponse);
-    }, processErrorResponse);
-  }
-
-  async getdiversifierlistwithstartindex(path, message) {
-    return this.checkspendsGetChunks(path, message).then((chunks) => {
-      return this.saplingSendChunk(INS.GET_DIV_LIST, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
-        let result = {
-          return_code: response.return_code,
-          error_message: response.error_message,
-          divlist: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.GET_DIV_LIST, 1 + i, chunks.length, chunks[i]);
-          if (result.return_code !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
-
-        return {
-          return_code: result.return_code,
-          error_message: result.error_message,
-          // ///
-          divlist: result.divlist,
         };
       }, processErrorResponse);
     }, processErrorResponse);
