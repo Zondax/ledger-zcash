@@ -53,6 +53,33 @@ function processGetUnshieldedAddrResponse(response) {
   };
 }
 
+function processDivListResponse(response) {
+  let partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+  let divlist = [];
+  let data = partialResponse.slice(0, 220);
+  if (response.length > 2) {
+    var i;
+    var div;
+    for (i = 0; i < 20; i++) {
+      div = data.slice(i * 11, (i + 1) * 11).toString('hex');
+      if (div != "0000000000000000000000") {
+        divlist.push(div);
+      }
+    }
+  }
+
+  return {
+    divlist: divlist,
+    return_code: returnCode,
+    error_message: errorCodeToString(returnCode),
+  };
+}
+
+
 function processIVKResponse(response) {
   let partialResponse = response;
 
@@ -418,6 +445,12 @@ export default class ZCashApp {
   async extractspenddata() {
     console.log('in extract spend');
     return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSpendResponse, processErrorResponse);
+  }
+
+  async getdivlist(path, index) {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport.send(CLA, INS.GET_DIV_LIST, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf,index]), [0x9000]).then(processDivListResponse, processErrorResponse);
   }
 
   async getaddrdiv(path, div) {

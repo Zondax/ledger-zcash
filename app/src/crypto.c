@@ -1314,24 +1314,32 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     return 32;
 }
 
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint16_t *replylen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
-    MEMZERO(buffer, bufferLen);
 
-    if (inputdataLen < 11){
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
         return zxerr_unknown;
     }
+
+    uint8_t startindex[11];
+    MEMCPY(startindex, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
 
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
-    uint8_t startindex[11];
-    MEMCPY(startindex, inputdata, 11);
+    tmp.step1.pos = p | 0x80000000;
+
     BEGIN_TRY
     {
         TRY
@@ -1362,7 +1370,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
         }
     }
     END_TRY;
-
+    *replylen = 220;
     return zxerr_ok;
 }
 

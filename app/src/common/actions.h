@@ -67,9 +67,7 @@ __Z_INLINE zxerr_t init_tx() {
 
 }
 
-__Z_INLINE uint8_t
-
-key_exchange() {
+__Z_INLINE uint8_t key_exchange() {
     tx_reset_state();
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
@@ -80,12 +78,9 @@ key_exchange() {
 
 }
 
-__Z_INLINE zxerr_t get_diversifier_list_with_startindex() {
-    tx_reset_state();
+__Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint16_t *replylen) {
 
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replylen);
 
     return err;
 

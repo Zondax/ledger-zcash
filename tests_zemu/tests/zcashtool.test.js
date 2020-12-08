@@ -155,7 +155,7 @@ describe('Zcashtool tests', function () {
 
             const startindex = Buffer.from([0,0,0,0,0,0,0,0,0,0,0]);
 
-            const divlist = await app.getdiversifierlistwithstartindex("m/44'/133'/5'/0/1000",startindex);
+            const divlist = await app.getdivlist(1000, startindex);
             console.log(divlist)
             expect(divlist.return_code).toEqual(0x9000);
 
