@@ -25,8 +25,8 @@ const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
 var addon = require('../../zcashtools/neon/native');
 
-const SPEND_PATH = Resolve("../zcashtools/zcashtools/src/sapling-spend.params");
-const OUTPUT_PATH = Resolve("../zcashtools/zcashtools/src/sapling-output.params");
+const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
+const OUTPUT_PATH = Resolve("../zcashtools/params/sapling-output.params");
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
@@ -204,14 +204,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -479,14 +479,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
             }
 
@@ -888,14 +888,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
@@ -955,7 +955,7 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
 
             }
@@ -963,7 +963,7 @@ describe('Zcashtool tests', function () {
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
@@ -1063,14 +1063,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -1335,14 +1335,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -1575,14 +1575,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
