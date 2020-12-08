@@ -177,13 +177,9 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
                                         volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    extractHDPath(rx, OFFSET_DATA);
-    uint16_t replyLen;
-
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    uint16_t replyLen;
 
     zemu_log_stack("handleGetAddrSapling");
     address_state.kind = addr_sapling_div;

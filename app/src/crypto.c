@@ -1365,15 +1365,11 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
     return zxerr_ok;
 }
 
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen, uint16_t *replyLen) {
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint8_t *diversifier, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
-
-    if (inputdataLen < 11){
-        return zxerr_unknown;
-    }
 
     zemu_log_stack("crypto_fillAddress_sapling");
 
@@ -1383,9 +1379,9 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = 1000 | 0x80000000;
 
-    MEMCPY(out->diversifier, inputdata, 11);
+    MEMCPY(out->diversifier, diversifier, 11);
     if (!is_valid_diversifier(out->diversifier)){
         return zxerr_unknown;
     }

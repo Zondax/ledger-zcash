@@ -21,6 +21,7 @@
 #include "apdu_codes.h"
 #include <os_io_seproxyhal.h>
 #include "coin.h"
+#include "app_main.h"
 #include "../nvdata.h"
 
 typedef struct {
@@ -91,11 +92,9 @@ __Z_INLINE zxerr_t get_diversifier_list_with_startindex() {
 }
 
 __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
-    tx_reset_state();
-
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, replyLen);
+    uint8_t div[11];
+    MEMCPY(div, (uint8_t *)(G_io_apdu_buffer + OFFSET_DATA + 4), 11);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, div, replyLen);
 
     return err;
 

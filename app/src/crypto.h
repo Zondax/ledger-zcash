@@ -46,7 +46,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
 uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen);
 
 uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen);
-zxerr_t  crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen, uint16_t *replyLen);
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint8_t *diversifier, uint16_t *replyLen);
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen);
 
 uint16_t crypto_sign(uint8_t *signature,

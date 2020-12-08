@@ -418,6 +418,10 @@ export default class ZCashApp {
     return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSpendResponse, processErrorResponse);
   }
 
+  async getaddrdiv(path, div) {
+    return this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([path,div]), [0x9000]).then(processGetShieldedAddrResponse, processErrorResponse);
+  }
+
 
   async showAddressAndPubKey(path, unshielded = false) {
     const serializedPath = serializePathv1(path);

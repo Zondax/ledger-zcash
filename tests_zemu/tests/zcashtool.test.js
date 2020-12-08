@@ -97,9 +97,10 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
+            const path = Buffer.alloc(4);
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
-            const addr = await app.getsaplingaddresswithdiv("m/44'/133'/5'/0/1000",div);
+            const addr = await app.getaddrdiv(path,div);
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
