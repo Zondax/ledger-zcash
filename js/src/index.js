@@ -408,15 +408,15 @@ export default class ZCashApp {
   }
 
   async getivk(path) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(processIVKResponse, processErrorResponse);
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(processIVKResponse, processErrorResponse);
   }
 
   async getovk(path) {
-    const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(processOVKResponse, processErrorResponse);
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(processOVKResponse, processErrorResponse);
   }
 
   async extractspendsig() {

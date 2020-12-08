@@ -163,7 +163,6 @@ __Z_INLINE void app_reject() {
 
 __Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
     // Put data directly in the apdu buffer
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     zemu_log_stack("app_retrieve_key");
 
     key_state.

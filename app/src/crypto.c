@@ -1237,6 +1237,18 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ivk_sapling");
@@ -1248,7 +1260,7 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = p | 0x80000000;
     BEGIN_TRY
     {
         TRY
@@ -1281,6 +1293,18 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ovk_sapling");
@@ -1291,7 +1315,7 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = p | 0x80000000;
 
     BEGIN_TRY
     {

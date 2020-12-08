@@ -45,7 +45,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ivkreq = app.getivk("m/44'/133'/5'/0/1000");
+            const ivkreq = app.getivk(1000);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             await sim.clickRight();
@@ -71,7 +71,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ovkreq = app.getovk("m/44'/133'/5'/0/1000");
+            const ovkreq = app.getovk(1000);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             await sim.clickRight();
