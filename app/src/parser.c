@@ -38,8 +38,16 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 
 parser_tx_t parser_state;
 
+typedef enum {
+    type_tin = 0,
+    type_tout = 1,
+    type_sspend = 2,
+    type_sout = 3,
+    type_txfee = 4,
+} sapling_parser_type_e;
+
 typedef struct {
-    uint8_t type;
+    sapling_parser_type_e type;
     uint8_t index;
 } parser_sapling_t;
 
@@ -121,36 +129,36 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
 parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling_t *prs){
     uint16_t index = displayIdx;
 
-    if (index < t_inlist_len() * 2 && t_inlist_len() > 0){
-        prs->type = 0;
+    if (index < t_inlist_len() * NUM_ITEMS_TIN && t_inlist_len() > 0){
+        prs->type = type_tin;
         prs->index= index;
         return parser_ok;
     }
-    index -= t_inlist_len() * 2;
-    if (index < t_outlist_len() * 2 && t_outlist_len() > 0){
-        prs->type = 1;
+    index -= t_inlist_len() * NUM_ITEMS_TIN;
+    if (index < t_outlist_len() * NUM_ITEMS_TOUT && t_outlist_len() > 0){
+        prs->type = type_tout;
         prs->index= index;
         return parser_ok;
     }
-    index -= t_outlist_len() * 2;
-    if (index < spendlist_len() * 2 && spendlist_len() > 0){
-        prs->type = 2;
+    index -= t_outlist_len() * NUM_ITEMS_TOUT;
+    if (index < spendlist_len() * NUM_ITEMS_SSPEND && spendlist_len() > 0){
+        prs->type = type_sspend;
         prs->index= index;
         return parser_ok;
     }
-    index -= spendlist_len() * 2;
-    if (index < outputlist_len() * 3 && outputlist_len() > 0){
-        prs->type = 3;
+    index -= spendlist_len() * NUM_ITEMS_SSPEND;
+    if (index < outputlist_len() * NUM_ITEMS_SOUT && outputlist_len() > 0){
+        prs->type = type_sout;
         prs->index= index;
         return parser_ok;
     }
-    prs->type = 4;
+    prs->type = type_txfee;
     return parser_ok;
 }
 
 parser_error_t parser_getNumItems(const parser_context_t *ctx,
                                   uint8_t *num_items) {
-    *num_items = t_inlist_len()*2 + t_outlist_len()*2+ spendlist_len() *2 + outputlist_len() * 3 + 1;
+    *num_items = t_inlist_len()*NUM_ITEMS_TIN + t_outlist_len()*NUM_ITEMS_TOUT+ spendlist_len() * NUM_ITEMS_SSPEND + outputlist_len() * NUM_ITEMS_SOUT + NUM_ITEMS_CONST;
     return parser_ok;
 }
 
@@ -181,10 +189,10 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
     //fixme: take decimals as ZECs?
 
     switch(prs.type) {
-        case 0 :{
-            uint8_t itemnum = prs.index / 2;
+        case type_tin :{
+            uint8_t itemnum = prs.index / NUM_ITEMS_TIN;
             t_input_item_t *item = t_inlist_retrieve_item(itemnum);
-            uint8_t itemtype = prs.index % 2;
+            uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "T-in address");
@@ -197,10 +205,10 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             }
         }
 
-        case 1 :{
-            uint8_t itemnum = prs.index / 2;
+        case type_tout :{
+            uint8_t itemnum = prs.index / NUM_ITEMS_TOUT;
             t_output_item_t *item = t_outlist_retrieve_item(itemnum);
-            uint8_t itemtype = prs.index % 2;
+            uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "T-out address");
@@ -212,10 +220,10 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                 }
             }
         }
-        case 2: {
-            uint8_t itemnum = prs.index / 2;
+        case type_sspend: {
+            uint8_t itemnum = prs.index / NUM_ITEMS_SSPEND;
             spend_item_t *item = spendlist_retrieve_item(itemnum);
-            uint8_t itemtype = prs.index % 2;
+            uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "S-in address");
@@ -228,10 +236,10 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             }
         }
 
-        case 3: {
-            uint8_t itemnum = prs.index / 3;
+        case type_sout: {
+            uint8_t itemnum = prs.index / NUM_ITEMS_SOUT;
             output_item_t *item = outputlist_retrieve_item(itemnum);
-            uint8_t itemtype = prs.index % 3;
+            uint8_t itemtype = prs.index % NUM_ITEMS_SOUT;
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "S-out address");
@@ -242,7 +250,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
-                    snprintf(outKey, outKeyLen, "Memotype");
+                    snprintf(outKey, outKeyLen, "S-out Memotype");
                     if(item->memotype == 0xf6) {
                         snprintf(outVal, outValLen, "Default");
                     }else{
@@ -253,7 +261,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             }
         }
 
-        case 4: {
+        case type_txfee: {
             snprintf(outKey, outKeyLen, "Txfee");
             return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
         }
