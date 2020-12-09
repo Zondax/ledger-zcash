@@ -26,6 +26,7 @@
 #include "nvdata.h"
 #include "zxformat.h"
 #include "bech32.h"
+#include "base58.h"
 
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
@@ -97,15 +98,24 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
     return parser_ok;
 }
 
-//fixme: take base58 encoding
 parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
 
 
-    char tmpBuffer[100];
-    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), addr, 26);
-    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+    uint8_t address[VERSION_SIZE + CX_RIPEMD160_SIZE + CX_SHA256_SIZE];
+    address[0] = VERSION_P2PKH >> 8;
+    address[1] = VERSION_P2PKH & 0xFF;
+    MEMCPY(address+VERSION_SIZE, addr + 4, CX_RIPEMD160_SIZE);
+
+    cx_hash_sha256(address, VERSION_SIZE + CX_RIPEMD160_SIZE, address + VERSION_SIZE + CX_RIPEMD160_SIZE , CX_SHA256_SIZE);
+    cx_hash_sha256(address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE,address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE);
+
+    uint8_t tmpBuffer[50];
+    size_t outLen = sizeof(tmpBuffer);
+    encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
+
+    pageString(outVal, outValLen, (char *)tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
 
@@ -185,8 +195,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
     parser_sapling_t prs;
     MEMZERO(&prs, sizeof(parser_sapling_t));
     CHECK_PARSER_ERR(parser_sapling_getTypes(displayIdx, &prs));
-    //fixme: make separate functions
-    //fixme: take decimals as ZECs?
+
+    //fixme: what decimals to take for ZECs?
 
     switch(prs.type) {
         case type_tin :{

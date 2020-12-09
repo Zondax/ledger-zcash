@@ -43,9 +43,6 @@ typedef struct {
     uint8_t address[50];
 } __attribute__((packed)) answer_t;
 
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
-
 void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
     cx_ripemd160_t rip160;
     cx_ripemd160_init(&rip160);
