@@ -179,13 +179,13 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 55000 ZEC to Bob.
             For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
             The inputs to the initialization is therefor two spend notes and two output notes.
-            She takes a transaction fee of 10000.
+            She takes a transaction fee of 1000.
             All this info is gathered from the UI and put in the correct jsons.
              */
 
@@ -210,7 +210,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000,
+                value: 100000-1000-55000,
                 memo_type: 0xf6,
                 ovk: null,
             }
@@ -457,7 +457,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -496,7 +496,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000 - 10000,
+                value: 100000-1000-55000 - 10000,
                 memo_type: 0xf6,
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
             }
@@ -744,7 +744,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
@@ -768,7 +768,7 @@ describe('Zcashtool tests', function () {
 
             const tout2 = {
                 address: "1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac",
-                value: 100000 - 10000 - 10000,
+                value: 100000 - 1000 - 10000,
             }
 
 
@@ -899,7 +899,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, we try to extract signatures without having done the checks and signing.
@@ -926,7 +926,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000,
+                value: 100000-1000-55000,
                 memo_type: 0xF6,
                 ovk: null,
             }
@@ -975,7 +975,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, we try to extract signatures without having done the checks and signing.
@@ -1003,7 +1003,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000,
+                value: 100000-1000-55000,
                 memo_type: 0xF6,
                 ovk: null,
             }
@@ -1080,7 +1080,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1119,7 +1119,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000 - 10000,
+                value: 100000-1000-55000 - 10000,
                 memo_type: 0xf6,
                 ovk: null,
             }
@@ -1360,7 +1360,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1399,7 +1399,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000 - 10000,
+                value: 100000-1000-55000 - 10000,
                 memo_type: 0xf6,
                 ovk: null,
             }
@@ -1609,7 +1609,7 @@ describe('Zcashtool tests', function () {
             const {zcashtools} = addon;
             console.log(SPEND_PATH)
 
-            var builder = new zcashtools(10000);
+            var builder = new zcashtools(1000);
 
             /*
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1648,7 +1648,7 @@ describe('Zcashtool tests', function () {
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
-                value: 100000-10000-55000 - 10000,
+                value: 100000-1000-55000 - 10000,
                 memo_type: 0xf6,
                 ovk: null,
             }
@@ -1841,11 +1841,93 @@ describe('Zcashtool tests', function () {
             console.log(req6);
             expect(req6.return_code).not.toEqual(0x9000);
 
+        } finally {
+            await sim.close();
+        }
+    });
 
+    test('try txfee of 10000', async function () {
+        const sim = new Zemu(APP_PATH);
+        try {
+            await sim.start(sim_options);
+            const app = new ZCashApp(sim.getTransport());
+
+            /*
+            In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+            For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+            She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+            The inputs to the initialization is therefor:
+            - one transparent input and one transparent output
+            - one shielded spend notes and two shielded output notes.
+            She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+            All this info is gathered from the UI and put in the correct jsons.
+             */
+
+            const tin1 = {
+                path: [(44 + 0x80000000), (133 + 0x80000000), (5 + 0x80000000), 0 ,0],
+                address: "1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac",
+                value: 60000,
+            }
+
+            const tout1 = {
+                address: "1976a914000000000000000000000000000000000000000088ac",
+                value: 10000,
+            }
+
+            const s_spend1 = {
+                path: 1000,
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                value: 40000,
+            }
+
+            const s_out1 = {
+                address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
+                value: 55000,
+                memo_type: 0xf6,
+                ovk: null,
+            }
+
+            const s_out2 = {
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                value: 100000-10000-55000 - 10000,
+                memo_type: 0xf6,
+                ovk: null,
+            }
+
+            const tx_input_data = {
+                t_in : [tin1],
+                t_out : [tout1],
+                s_spend: [s_spend1],
+                s_output: [s_out1, s_out2],
+            }
+
+            /*
+            The inputs to the get_inittx_data function are the inputs to the transaction.
+            The output is a blob that can be send to the ledger device.
+            */
+
+            const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
+            console.log(ledgerblob_initdata);
+
+            /*
+            The output of the get_inittx_data can be send to the ledger.
+            The ledger will check this data and show the inputs on screen for verification.
+            If confirmed, the ledger also computes the randomness needed for :
+                - The shielded spends
+                - the shielded outputs
+             */
+
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            const req = await reqinit;
+
+            console.log(req);
+            expect(req.returnCode).not.toEqual(0x9000);
 
         } finally {
             await sim.close();
         }
     });
+
 
 });

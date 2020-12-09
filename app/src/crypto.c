@@ -432,7 +432,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
     }
 
     uint64_t value_flash = get_valuebalance();
-    if (value_flash != 10000 && value_flash != 1000){
+    if (value_flash != 1000){
         return zxerr_unknown;
     }
 
