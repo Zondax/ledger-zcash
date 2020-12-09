@@ -28,7 +28,7 @@ extern "C" {
 #define NUM_ITEMS_TIN 2         //address, value
 #define NUM_ITEMS_TOUT 2        //address, value
 #define NUM_ITEMS_SSPEND 2         //address, value
-#define NUM_ITEMS_SOUT 3        //address, value, memotype
+#define NUM_ITEMS_SOUT 4        //address, value, memotype, OVK?
 #define NUM_ITEMS_CONST 1       //txfee
 
 

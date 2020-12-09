@@ -28,6 +28,13 @@ var addon = require('../../zcashtools/neon/native');
 const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
 const OUTPUT_PATH = Resolve("../zcashtools/params/sapling-output.params");
 
+const clicksTIN = 3;
+const clicksTOUT = 3;
+const clicksSSPEND = 4;
+const clicksSOUT = 6;
+const clicksOVKset = 1;
+const clicksConst = 2
+
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
     logging: true,
@@ -241,9 +248,8 @@ describe('Zcashtool tests', function () {
             const reqinit = app.inittx(ledgerblob_initdata);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
-
             //we have to click several times...
-            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -377,7 +383,7 @@ describe('Zcashtool tests', function () {
             var outj2 = {
                 rcv: req5.rcv_raw,
                 rseed: req5.rseed_raw,
-                ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
+                ovk: null,
                 address: s_out2.address,
                 value: s_out2.value,
                 memo: "0000"
@@ -529,7 +535,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 1 * clicksTIN + 1 * clicksTOUT + 1*clicksSSPEND + 2 * clicksSOUT + clicksOVKset + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -788,7 +794,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 2 * 3 + 2 * 3 + 2; i += 1) {
+            for (let i = 1; i < 2 * clicksTIN + 2 * clicksTOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -946,7 +952,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 2 * clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -1023,7 +1029,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 2 * clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -1152,7 +1158,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 1 * clicksTIN + 1 * clicksTOUT + 1*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -1279,7 +1285,7 @@ describe('Zcashtool tests', function () {
             var outj2 = {
                 rcv: req5.rcv_raw,
                 rseed: req5.rseed_raw,
-                ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
+                ovk: null,
                 address: s_out2.address,
                 value: s_out2.value,
                 memo: "0000"
@@ -1433,7 +1439,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 1 * clicksTIN + 1 * clicksTOUT + 1*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -1681,7 +1687,7 @@ describe('Zcashtool tests', function () {
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
             //we have to click several times...
-            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+            for (let i = 1; i < 1 * clicksTIN + 1 * clicksTOUT + 1*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();

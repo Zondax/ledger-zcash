@@ -258,6 +258,21 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                     }
                     return parser_ok;
                 }
+
+                case 3: {
+                    snprintf(outKey, outKeyLen, "S-out OVK");
+                    uint8_t dummy[32];
+                    MEMZERO(dummy, sizeof(dummy));
+                    if(MEMCMP(dummy, item->ovk, 32) != 0) {
+                        char tmpBuffer[100];
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return parser_ok;
+                    }else{
+                        snprintf(outVal, outValLen, "None");
+                    }
+                    return parser_ok;
+                }
             }
         }
 

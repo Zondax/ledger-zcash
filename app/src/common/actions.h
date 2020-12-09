@@ -140,7 +140,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
-    //todo: check encryptions
+
     set_state(STATE_VERIFIED_ALL_TXDATA);
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
