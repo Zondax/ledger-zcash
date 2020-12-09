@@ -22,8 +22,8 @@
 #include "crypto.h"
 #include "actions.h"
 
-zxerr_t addr_getNumItems(uint8_t *num_items) {
-    zemu_log_stack("addr_getNumItems");
+zxerr_t key_getNumItems(uint8_t *num_items) {
+    zemu_log_stack("key_getNumItems");
     *num_items = 1;
     if (app_mode_expert()) {
         *num_items = 2;
@@ -31,33 +31,34 @@ zxerr_t addr_getNumItems(uint8_t *num_items) {
     return zxerr_ok;
 }
 
-zxerr_t addr_getItem(int8_t displayIdx,
+zxerr_t key_getItem(int8_t displayIdx,
                      char *outKey, uint16_t outKeyLen,
                      char *outVal, uint16_t outValLen,
                      uint8_t pageIdx, uint8_t *pageCount) {
-    zemu_log_stack("addr_getItem");
-    switch (displayIdx) {
-        case 0:
-            switch (address_state.kind) {
-                case addr_secp256k1:
-                    snprintf(outKey, outKeyLen, "Unshielded");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx,
-                               pageCount);
-                    return zxerr_ok;
-                case addr_sapling:
-                    snprintf(outKey, outKeyLen, "Shielded");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
-                               pageCount);
-                    return zxerr_ok;
-                case addr_sapling_div:
-                    snprintf(outKey, outKeyLen, "Shielded with div");
-                    pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
-                               pageCount);
-                    return zxerr_ok;
+    snprintf(outKey, outKeyLen, "?");
+    snprintf(outVal, outValLen, "?");
 
+    zemu_log_stack("key_getItem");
+    switch (displayIdx) {
+        case 0: {
+            zemu_log_stack("case 0");
+            char tmpBuffer[100];
+            MEMZERO(tmpBuffer, sizeof(tmpBuffer));
+            switch (key_state.kind) {
+                case key_ovk:
+                    snprintf(outKey, outKeyLen, "Send OVK?");
+                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                    return zxerr_ok;
+                case key_ivk:
+                    snprintf(outKey, outKeyLen, "Send IVK?");
+                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                    return zxerr_ok;
                 default:
-                    return zxerr_no_data;
+                    return zxerr_unknown;
             }
+        }
         case 1: {
             if (!app_mode_expert()) {
                 return zxerr_no_data;

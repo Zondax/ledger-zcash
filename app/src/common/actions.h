@@ -21,6 +21,7 @@
 #include "apdu_codes.h"
 #include <os_io_seproxyhal.h>
 #include "coin.h"
+#include "app_main.h"
 #include "../nvdata.h"
 
 typedef struct {
@@ -66,9 +67,7 @@ __Z_INLINE zxerr_t init_tx() {
 
 }
 
-__Z_INLINE uint8_t
-
-key_exchange() {
+__Z_INLINE uint8_t key_exchange() {
     tx_reset_state();
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
@@ -79,23 +78,16 @@ key_exchange() {
 
 }
 
-__Z_INLINE zxerr_t get_diversifier_list_with_startindex() {
-    tx_reset_state();
+__Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint16_t *replylen) {
 
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replylen);
 
     return err;
 
 }
 
 __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
-    tx_reset_state();
-
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, replyLen);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replyLen);
 
     return err;
 
@@ -148,14 +140,12 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
-
+    //todo: check encryptions
     set_state(STATE_VERIFIED_ALL_TXDATA);
-
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
     }
-
     err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
@@ -171,60 +161,51 @@ __Z_INLINE void app_reject() {
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
-__Z_INLINE uint8_t
-app_retrieve_key(key_type_e
-kind) {
+__Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
+    // Put data directly in the apdu buffer
+    zemu_log_stack("app_retrieve_key");
+
+    key_state.
+    kind = kind;
+
+    switch (kind){
+        case key_ivk :
+            key_state.len = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+        case key_ovk :
+            key_state.len = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+    }
+
+    return key_state.len;
+}
+
+__Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
 // Put data directly in the apdu buffer
-MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE
-);
-zemu_log_stack("app_retrieve_key");
+    zemu_log_stack("app_fill_address");
+    address_state.kind = kind;
 
-key_state.
-kind = kind;
+    switch (kind) {
+        case addr_secp256k1:
+            address_state.len = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+        case addr_sapling:
+            address_state.len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            break;
+        default:
+            address_state.len = 0;
+            break;
+    }
 
-switch (kind){
-case key_ivk :
-key_state.
-len = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-case key_ovk :
-key_state.
-len = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-}
-return key_state.
-len;
+    return address_state.len;
 }
 
-__Z_INLINE uint8_t
-app_fill_address(address_kind_e
-kind) {
-// Put data directly in the apdu buffer
-MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE
-);
-zemu_log_stack("app_fill_address");
 
-address_state.
-kind = kind;
-
-switch (kind) {
-case addr_secp256k1:
-address_state.
-len = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-case addr_sapling:
-address_state.
-len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-break;
-default:
-address_state.
-len = 0;
-break;
+__Z_INLINE void app_reply_key() {
+    set_code(G_io_apdu_buffer, key_state.len, APDU_CODE_OK);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, key_state.len + 2);
 }
 
-return address_state.
-len;
-}
 
 __Z_INLINE void app_reply_address() {
     set_code(G_io_apdu_buffer, address_state.len, APDU_CODE_OK);

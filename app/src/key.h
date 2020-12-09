@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 Zondax GmbH
+*   (c) 2020 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,8 +13,22 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+
 #pragma once
 
-#define ZXLIB_MAJOR     5
-#define ZXLIB_MINOR     2
-#define ZXLIB_PATCH     0
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/// Return the number of items in the address view
+zxerr_t key_getNumItems(uint8_t *num_items);
+
+/// Gets an specific item from the address view (including paging)
+zxerr_t key_getItem(int8_t displayIdx,
+                     char *outKey, uint16_t outKeyLen,
+                     char *outValue, uint16_t outValueLen,
+                     uint8_t pageIdx, uint8_t *pageCount);
+
+#ifdef __cplusplus
+}
+#endif

@@ -27,23 +27,8 @@
 #include "view.h"
 #include "zxmacros.h"
 #include "chacha.h"
-
-/*
- * #define APDU_CODE_WRONG_ORDER_SAPLING           0x6FA0
-#define APDU_CODE_DATA_INVALID              0x6984
-
-#define APDU_CODE_EXTRACT_MORE_SPENDINFO        0x6FA1
-#define APDU_CODE_EXTRACT_MORE_OUTPUTINFO       0x6FA2
-
-#define APDU_CODE_EXTRACTED_ALL_SPENDINFO       0x6FB1
-#define APDU_CODE_EXTRACTED_ALL_OUTPUTINFO      0x6FB2
-
-#define APDU_CODE_CHECK_SPENDS_ERROR            0x6FC1
-#define APDU_CODE_CHECK_OUTPUTS_ERROR           0x6FC2
-
-#define APDU_CODE_EXTRACT_MORE_SPENDINFO        0x6FD1
-#define APDU_CODE_EXTRACT_MORE_OUTPUTINFO       0x6FD2
- */
+#include "addr.h"
+#include "key.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
@@ -53,7 +38,6 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
-        *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
@@ -69,7 +53,6 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
-
 
 __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
                              volatile uint32_t *tx, uint32_t rx) {
@@ -129,36 +112,32 @@ __Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
-    if (requireConfirmation) {
-        app_retrieve_key(key_ivk);
-        view_address_show();
-        *flags |= IO_ASYNCH_REPLY;
-        return;
+    if (!requireConfirmation) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    *tx = app_retrieve_key(key_ivk);
-    THROW(APDU_CODE_OK);
+    app_retrieve_key(key_ivk);
+    view_review_init(key_getItem, key_getNumItems, app_reply_key);
+    view_review_show();
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
-    if (requireConfirmation) {
-        app_retrieve_key(key_ovk);
-        view_address_show();
-        *flags |= IO_ASYNCH_REPLY;
-        return;
+    if (!requireConfirmation) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    *tx = app_retrieve_key(key_ovk);
-    THROW(APDU_CODE_OK);
+    app_retrieve_key(key_ovk);
+    view_review_init(key_getItem, key_getNumItems, app_reply_key);
+    view_review_show();
+    *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
@@ -184,11 +163,11 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         app_fill_address(addr_secp256k1);
-        view_address_show();
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-
     *tx = app_fill_address(addr_secp256k1);
     THROW(APDU_CODE_OK);
 }
@@ -196,13 +175,21 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
                                         volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    //extractHDPath(rx, OFFSET_DATA);
+    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
     uint16_t replyLen;
+
+    zemu_log_stack("handleGetAddrSapling");
+    address_state.kind = addr_sapling_div;
+
+    if (requireConfirmation) {
+        get_addr_with_diversifier(&replyLen);
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
+        *flags |= IO_ASYNCH_REPLY;
+        return;
+    }
     zxerr_t err = get_addr_with_diversifier(&replyLen);
-    //todo: show things in screen and confirm
     if (err == zxerr_ok) {
         *tx = replyLen;
         THROW(APDU_CODE_OK);
@@ -214,13 +201,12 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
                                          volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    //extractHDPath(rx, OFFSET_DATA);
-    zxerr_t err = get_diversifier_list_with_startindex();
+
+    uint16_t replylen;
+
+    zxerr_t err = get_diversifier_list_with_startindex(&replylen);
     if (err == zxerr_ok) {
-        *tx = 220;
+        *tx = replylen;
         THROW(APDU_CODE_OK);
     } else {
         *tx = 0;
@@ -243,20 +229,21 @@ __Z_INLINE void handleSignSecp256K1(volatile uint32_t *flags,
         THROW(APDU_CODE_DATA_INVALID);
     }
 
-    view_sign_show();
+    // FIXME:
+    //view_sign_show();
     *flags |= IO_ASYNCH_REPLY;
 }
 
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
                                      volatile uint32_t *tx, uint32_t rx) {
-    extractHDPath(rx, OFFSET_DATA);
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     zemu_log_stack("handleGetAddrSapling");
 
     if (requireConfirmation) {
         app_fill_address(addr_sapling);
-        view_address_show(addr_sapling);
+        view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
+        view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }

@@ -25,15 +25,15 @@ const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
 var addon = require('../../zcashtools/neon/native');
 
-const SPEND_PATH = Resolve("../zcashtools/zcashtools/src/sapling-spend.params");
-const OUTPUT_PATH = Resolve("../zcashtools/zcashtools/src/sapling-output.params");
+const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
+const OUTPUT_PATH = Resolve("../zcashtools/params/sapling-output.params");
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
     logging: true,
     start_delay: 3000,
     custom: `-s "${APP_SEED}"`
-//    ,X11: true
+   ,X11: true
 };
 
 jest.setTimeout(600000)
@@ -45,7 +45,15 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ivk = await app.getivk("m/44'/133'/5'/0/1000");
+            const ivkreq = app.getivk(1000);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const ivk = await ivkreq;
+
             console.log(ivk)
             expect(ivk.return_code).toEqual(0x9000);
 
@@ -63,7 +71,14 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const ovk = await app.getovk("m/44'/133'/5'/0/1000");
+            const ovkreq = app.getovk(1000);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const ovk = await ovkreq;
             console.log(ovk)
             expect(ovk.return_code).toEqual(0x9000);
 
@@ -82,9 +97,10 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
+            const path = 1000;
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
-            const addr = await app.getsaplingaddresswithdiv("m/44'/133'/5'/0/1000",div);
+            const addr = await app.getaddrdiv(path,div);
             console.log(addr)
             expect(addr.return_code).toEqual(0x9000);
 
@@ -100,6 +116,37 @@ describe('Zcashtool tests', function () {
         }
     });
 
+    test('show shielded address with div', async function () {
+        const sim = new Zemu(APP_PATH);
+        try {
+            await sim.start(sim_options);
+            const app = new ZCashApp(sim.getTransport());
+
+            const path = 1000;
+            const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
+
+            const addrreq = app.showaddrdiv(path,div);
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickRight();
+            await sim.clickBoth();
+
+            const addr = await addrreq;
+
+            console.log(addr)
+            expect(addr.return_code).toEqual(0x9000);
+
+            const expected_addr_raw = "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667";
+
+            const addr_raw = addr.address_raw.toString('hex');
+            expect(addr_raw).toEqual(expected_addr_raw);
+
+        } finally {
+            await sim.close();
+        }
+    });
+
     test('get div list with startindex', async function () {
         const sim = new Zemu(APP_PATH);
         try {
@@ -108,7 +155,7 @@ describe('Zcashtool tests', function () {
 
             const startindex = Buffer.from([0,0,0,0,0,0,0,0,0,0,0]);
 
-            const divlist = await app.getdiversifierlistwithstartindex("m/44'/133'/5'/0/1000",startindex);
+            const divlist = await app.getdivlist(1000, startindex);
             console.log(divlist)
             expect(divlist.return_code).toEqual(0x9000);
 
@@ -117,32 +164,6 @@ describe('Zcashtool tests', function () {
             const first_div_raw = divlist.divlist[0];
             expect(first_div).toEqual(first_div_raw);
 
-
-        } finally {
-            await sim.close();
-        }
-    });
-
-    test('test encryption keys', async function () {
-        const sim = new Zemu(APP_PATH);
-        try {
-            await sim.start(sim_options);
-            const app = new ZCashApp(sim.getTransport());
-
-            const {zcashtools} = addon;
-            console.log(SPEND_PATH)
-
-            var builder = new zcashtools(1000);
-
-            const pk = Buffer.from(builder.get_public_key());
-            console.log(pk);
-
-            const req = await app.keyexchange(pk);
-            console.log(req);
-            expect(req.return_code).toEqual(0x9000);
-
-            var pkclient = Buffer.from(req.pubkey);
-            console.log(builder.set_session_key(pkclient));
 
         } finally {
             await sim.close();
@@ -183,14 +204,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -458,14 +479,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
             }
 
@@ -867,14 +888,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
@@ -934,7 +955,7 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
 
             }
@@ -942,7 +963,7 @@ describe('Zcashtool tests', function () {
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000,
-                memotype: 0xF6,
+                memo_type: 0xF6,
                 ovk: null,
             }
 
@@ -1042,14 +1063,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -1314,14 +1335,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
@@ -1554,14 +1575,14 @@ describe('Zcashtool tests', function () {
             const s_out1 = {
                 address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
                 value: 55000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-10000-55000 - 10000,
-                memotype: 0xf6,
+                memo_type: 0xf6,
                 ovk: null,
             }
 

@@ -26,6 +26,7 @@
 #include "parser_impl.h"
 #include "parser_common.h"
 #include "chacha.h"
+#include "common/app_main.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -445,7 +446,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 256);
+    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 32);
 
     return zxerr_ok; //some code for all_good
 }
@@ -566,6 +567,7 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
 
     uint8_t hash[32];
     prevouts_hash(txdata,hash);
+
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_PREVOUTSHASH, 32) != 0){
         return zxerr_unknown;
     }
@@ -1007,6 +1009,9 @@ typedef struct {
 
 zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signchecktransparent_sapling");
+    if(t_inlist_len() == 0){
+        return zxerr_ok;
+    }
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
@@ -1118,6 +1123,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
 zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_signspends_sapling");
+    if(spendlist_len() == 0){
+        return zxerr_ok;
+    }
+
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
@@ -1154,10 +1163,10 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
             for(uint8_t i = 0; i < spendlist_len(); i++){
                 crypto_fillSaplingSeed(tmp.step1.zip32_seed);
                 const spend_item_t *item = spendlist_retrieve_item(i);
-                if (item == NULL){
+                /*if (item == NULL){
                     return 0;
                 }
-
+                */
                 zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
@@ -1228,6 +1237,18 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ivk_sapling");
@@ -1239,7 +1260,7 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = p | 0x80000000;
     BEGIN_TRY
     {
         TRY
@@ -1272,6 +1293,18 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ovk_sapling");
@@ -1282,7 +1315,7 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = p | 0x80000000;
 
     BEGIN_TRY
     {
@@ -1305,24 +1338,32 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     return 32;
 }
 
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint16_t *replylen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
-    MEMZERO(buffer, bufferLen);
 
-    if (inputdataLen < 11){
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
         return zxerr_unknown;
     }
+
+    uint8_t startindex[11];
+    MEMCPY(startindex, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
 
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
-    uint8_t startindex[11];
-    MEMCPY(startindex, inputdata, 11);
+    tmp.step1.pos = p | 0x80000000;
+
     BEGIN_TRY
     {
         TRY
@@ -1353,19 +1394,30 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
         }
     }
     END_TRY;
-
+    *replylen = 220;
     return zxerr_ok;
 }
 
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *inputdata, const uint16_t inputdataLen, uint16_t *replyLen) {
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
-    MEMZERO(buffer, bufferLen);
 
-    if (inputdataLen < 11){
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
         return zxerr_unknown;
     }
+
+    uint8_t div[11];
+    MEMCPY(div, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
+
+    MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_fillAddress_sapling");
 
@@ -1374,10 +1426,10 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
-    //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
 
-    MEMCPY(out->diversifier, inputdata, 11);
+    tmp.step1.pos = p | 0x80000000;
+
+    MEMCPY(out->diversifier, div, 11);
     if (!is_valid_diversifier(out->diversifier)){
         return zxerr_unknown;
     }
@@ -1432,6 +1484,18 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return 0;
     }
+
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = buffer + OFFSET_DATA;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return zxerr_unknown;
+    }
+
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_fillAddress_sapling");
@@ -1442,7 +1506,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = hdPath[HDPATH_LEN_DEFAULT-1] | 0x80000000;
+    tmp.step1.pos = p | 0x80000000;
     BEGIN_TRY
     {
         TRY
