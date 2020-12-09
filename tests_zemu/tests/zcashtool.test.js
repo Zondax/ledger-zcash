@@ -196,8 +196,8 @@ describe('Zcashtool tests', function () {
             }
 
             const s_spend2 = {
-                path: 0,
-                address: "0d288ac263825d12d6a207ad32cdd9fc59212dd02dc673810a9665a1ec739384630ad6aef074565bd5eae7",
+                path: 1000,
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 50000,
             }
 
@@ -241,6 +241,12 @@ describe('Zcashtool tests', function () {
             const reqinit = app.inittx(ledgerblob_initdata);
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
 
             const req = await reqinit;
 
@@ -522,6 +528,12 @@ describe('Zcashtool tests', function () {
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
 
+            //we have to click several times...
+            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+
             const req = await reqinit;
 
             //const req = await app.inittx(ledgerblob_initdata);
@@ -771,8 +783,17 @@ describe('Zcashtool tests', function () {
             console.log(ledgerblob_initdata);
 
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 2 * 3 + 2 * 3 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
@@ -920,8 +941,17 @@ describe('Zcashtool tests', function () {
             const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
             console.log(ledgerblob_initdata);
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
@@ -988,8 +1018,17 @@ describe('Zcashtool tests', function () {
             const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
             console.log(ledgerblob_initdata);
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 2 * 4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
@@ -1108,8 +1147,16 @@ describe('Zcashtool tests', function () {
                 - the shielded outputs
              */
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
@@ -1380,8 +1427,17 @@ describe('Zcashtool tests', function () {
                 - the shielded outputs
              */
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
@@ -1620,8 +1676,16 @@ describe('Zcashtool tests', function () {
                 - the shielded outputs
              */
 
-            const req = await app.inittx(ledgerblob_initdata);
-            console.log(req);
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+
+            //we have to click several times...
+            for (let i = 1; i < 1 * 3 + 1 * 3 + 1*4 + 2 * 5 + 2; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+            const req = await reqinit;
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
