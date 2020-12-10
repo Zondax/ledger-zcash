@@ -23,6 +23,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "../nvdata.h"
+#include "view.h"
 
 typedef struct {
     address_kind_e kind;
@@ -61,8 +62,12 @@ __Z_INLINE zxerr_t init_tx() {
 
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
-    zxerr_t err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-
+    zxerr_t err;
+    err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    if (err != zxerr_ok){
+        return err;
+    }
+    err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     return err;
 
 }
@@ -88,7 +93,7 @@ __Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint16_t *replylen) {
 
 __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
     zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replyLen);
-
+    address_state.len = *replyLen;
     return err;
 
 }
@@ -96,7 +101,6 @@ __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
 __Z_INLINE zxerr_t check_and_sign_tx() {
     // Take "ownership" of the memory used by the transaction parser
     tx_reset_state();
-
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
     zxerr_t err;
@@ -140,8 +144,9 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
-    //todo: check encryptions
+
     set_state(STATE_VERIFIED_ALL_TXDATA);
+
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
@@ -150,13 +155,19 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
-    return zxerr_ok;
 
+    err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    if(err != zxerr_ok){
+        return err;
+    }
+
+    return zxerr_ok;
 }
 
 __Z_INLINE void app_reject() {
     tx_reset_state();
-
+    transaction_reset();
+    view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
@@ -213,6 +224,18 @@ __Z_INLINE void app_reply_address() {
 }
 
 __Z_INLINE void app_reply_error() {
+    view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_DATA_INVALID);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
+}
+
+__Z_INLINE void app_reply_hash() {
+    if(get_state() == STATE_PROCESSED_INPUTS) {
+        view_message_show("Zcash", "Step [1/5]");
+    }else{
+        view_message_show("Zcash", "Step [2/5]");
+    }
+    UX_WAIT_DISPLAYED();
+    set_code(G_io_apdu_buffer, 32, APDU_CODE_OK);
+    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 32 + 2);
 }

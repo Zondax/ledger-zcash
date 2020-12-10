@@ -25,6 +25,13 @@ extern "C" {
 #include "hexutils.h"
 #include "crypto.h"
 
+#define NUM_ITEMS_TIN 2         //address, value
+#define NUM_ITEMS_TOUT 2        //address, value
+#define NUM_ITEMS_SSPEND 2         //address, value
+#define NUM_ITEMS_SOUT 4        //address, value, memotype, OVK?
+#define NUM_ITEMS_CONST 1       //txfee
+
+
 extern parser_tx_t parser_state;
 
 const char *parser_getErrorDescription(parser_error_t err);

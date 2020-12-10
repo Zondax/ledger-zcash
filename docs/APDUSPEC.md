@@ -308,7 +308,7 @@ Data is defined as:
 
 | Field   | Type      | Content              | Note                     |
 | ------- | --------- | -------------------- | ------------------------ |
-| hash    | byte (32) | Hash of init_message |                          |
+| hash    | byte (32) | Hash of init_message | SHA256-hash              |
 | SW1-SW2 | byte (2)  | Return code          | see list of return codes |
 
 ---
@@ -473,7 +473,7 @@ Data is defined as:
 
 | Field   | Type      | Content                  | Note                     |
 | ------- | --------- | ------------------------ | ------------------------ |
-| hash    | byte (32) | Hash of transaction_blob |                          |
+| hash    | byte (32) | Hash of transaction_blob | SHA256                   |
 | SW1-SW2 | byte (2)  | Return code              | see list of return codes |
 
 ---

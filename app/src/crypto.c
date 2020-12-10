@@ -27,6 +27,7 @@
 #include "parser_common.h"
 #include "chacha.h"
 #include "common/app_main.h"
+#include "view.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -42,9 +43,6 @@ typedef struct {
     uint8_t publicKey[PK_LEN_SECP256K1];
     uint8_t address[50];
 } __attribute__((packed)) answer_t;
-
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
 
 void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
     cx_ripemd160_t rip160;
@@ -432,7 +430,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
     }
 
     uint64_t value_flash = get_valuebalance();
-    if (value_flash != 10000 && value_flash != 1000){
+    if (value_flash != 1000){
         return zxerr_unknown;
     }
 
@@ -443,10 +441,6 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
     }else{
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS); //We can have transparent inputs/outputs only
     }
-
-    cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 32);
 
     return zxerr_ok; //some code for all_good
 }
@@ -532,6 +526,8 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
+        view_message_show("Zcash", "Step [2/5]");
+        UX_WAIT_DISPLAYED();
     }
     return zxerr_ok;
 }
@@ -564,6 +560,9 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
     if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
         return zxerr_unknown;
     }
+
+    view_message_show("Zcash", "Step [3/5]");
+    UX_WAIT_DISPLAYED();
 
     uint8_t hash[32];
     prevouts_hash(txdata,hash);
@@ -1042,6 +1041,9 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
     signature_tr *const signature = (signature_tr *) buffer;
     int signatureLength;
 
+    view_message_show("Zcash", "Step [4/5]");
+    UX_WAIT_DISPLAYED();
+
     BEGIN_TRY
     {
         TRY
@@ -1185,6 +1187,9 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     }
     END_TRY;
 
+    view_message_show("Zcash", "Step [5/5]");
+    UX_WAIT_DISPLAYED();
+
     CHECK_APP_CANARY();
     return zxerr_ok;
 }
@@ -1205,10 +1210,8 @@ zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    const uint8_t *next_sig = get_next_transparent_signature();
-    MEMCPY(out, next_sig, 64);
-
-    return zxerr_ok;
+    zxerr_t err = get_next_transparent_signature(out);
+    return err;
 }
 
 zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
@@ -1227,9 +1230,15 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    const uint8_t *next_sig = get_next_spend_signature();
-    MEMCPY(out, next_sig, 64);
+    zxerr_t err = get_next_spend_signature(out);
+    return err;
+}
 
+zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen){
+    if(bufferLen < CX_SHA256_SIZE){
+        return zxerr_unknown;
+    }
+    cx_hash_sha256(txdata, txdataLen, buffer, CX_SHA256_SIZE);      // SHA256
     return zxerr_ok;
 }
 
