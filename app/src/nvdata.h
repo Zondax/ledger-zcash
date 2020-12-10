@@ -130,14 +130,13 @@ bool transparent_signatures_more_extract();
 
 void transparent_signatures_append(uint8_t *signature);
 
-uint8_t *get_next_transparent_signature();
+zxerr_t get_next_transparent_signature(uint8_t *result);
 
 bool spend_signatures_more_extract();
 
 void spend_signatures_append(uint8_t *signature);
 
-uint8_t *get_next_spend_signature();
-
+zxerr_t get_next_spend_signature(uint8_t *result);
 //transparent TxIN API
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v);
 
@@ -183,6 +182,8 @@ output_item_t *outputlist_retrieve_item(uint8_t i);
 output_item_t *outputlist_extract_next();
 
 bool outputlist_more_extract();
+
+void zeroize_flashstorage();
 
 #ifdef __cplusplus
 }

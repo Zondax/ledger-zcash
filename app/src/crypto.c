@@ -1210,10 +1210,8 @@ zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    const uint8_t *next_sig = get_next_transparent_signature();
-    MEMCPY(out, next_sig, 64);
-
-    return zxerr_ok;
+    zxerr_t err = get_next_transparent_signature(out);
+    return err;
 }
 
 zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
@@ -1232,10 +1230,8 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    const uint8_t *next_sig = get_next_spend_signature();
-    MEMCPY(out, next_sig, 64);
-
-    return zxerr_ok;
+    zxerr_t err = get_next_spend_signature(out);
+    return err;
 }
 
 zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen){
