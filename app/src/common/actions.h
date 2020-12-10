@@ -218,6 +218,12 @@ __Z_INLINE void app_reply_error() {
 }
 
 __Z_INLINE void app_reply_hash() {
+    if(get_state() == STATE_PROCESSED_INPUTS) {
+        view_message_show("Zcash", "Step [1/5]");
+    }else{
+        view_message_show("Zcash", "Step [2/5]");
+    }
+    UX_WAIT_DISPLAYED();
     set_code(G_io_apdu_buffer, 32, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 32 + 2);
 }
