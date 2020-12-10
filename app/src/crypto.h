@@ -60,6 +60,8 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen);
 
 uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen);
 
+zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen);
+
 zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *spenddata, uint16_t spenddatalen);
 
 zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *outputdata,

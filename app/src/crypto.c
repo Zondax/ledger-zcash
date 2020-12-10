@@ -442,10 +442,6 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS); //We can have transparent inputs/outputs only
     }
 
-    cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, NULL, 0);
-    cx_hash(&ctx.header, CX_LAST, txdata, txdatalen, buffer, 32);
-
     return zxerr_ok; //some code for all_good
 }
 
@@ -1239,6 +1235,14 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
     const uint8_t *next_sig = get_next_spend_signature();
     MEMCPY(out, next_sig, 64);
 
+    return zxerr_ok;
+}
+
+zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen){
+    if(bufferLen < CX_SHA256_SIZE){
+        return zxerr_unknown;
+    }
+    cx_hash_sha256(txdata, txdataLen, buffer, CX_SHA256_SIZE);      // SHA256
     return zxerr_ok;
 }
 
