@@ -45,7 +45,7 @@ include $(BOLOS_SDK)/Makefile.defines
 # Main app configuration
 APPNAME = "Zcash"
 APPVERSION_M=2
-APPVERSION_N=3
+APPVERSION_N=4
 APPVERSION_P=0
 
 APPPATH = "44'/133'"
