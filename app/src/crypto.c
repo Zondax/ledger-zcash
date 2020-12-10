@@ -27,6 +27,7 @@
 #include "parser_common.h"
 #include "chacha.h"
 #include "common/app_main.h"
+#include "view.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -529,6 +530,8 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
+        view_message_show("Zcash", "Step [2/5]");
+        UX_WAIT_DISPLAYED();
     }
     return zxerr_ok;
 }
