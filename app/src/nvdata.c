@@ -19,6 +19,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "nvdata.h"
+#include "view.h"
 
 t_inlist_t NV_CONST
 N_t_inlist_impl __attribute__ ((aligned(64)));
@@ -143,6 +144,10 @@ uint8_t *get_next_transparent_signature() {
     }
     uint8_t * result = (uint8_t * ) & N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index];
     transaction_header.t_sign_extract_index++;
+    if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
+        transaction_reset();
+        view_idle_show(0, NULL);
+    }
     return result;
 }
 
@@ -163,6 +168,10 @@ uint8_t *get_next_spend_signature() {
     }
     uint8_t * result = (uint8_t * ) & N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index];
     transaction_header.spends_sign_extract_index++;
+    if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
+        transaction_reset();
+        view_idle_show(0, NULL);
+    }
     return result;
 }
 
