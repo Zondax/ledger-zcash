@@ -97,7 +97,6 @@ __Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
 __Z_INLINE zxerr_t check_and_sign_tx() {
     // Take "ownership" of the memory used by the transaction parser
     tx_reset_state();
-
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
     zxerr_t err;
@@ -141,7 +140,9 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
+
     set_state(STATE_VERIFIED_ALL_TXDATA);
+
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
@@ -151,12 +152,12 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
         return err;
     }
     return zxerr_ok;
-
 }
 
 __Z_INLINE void app_reject() {
     tx_reset_state();
     transaction_reset();
+    view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
@@ -213,6 +214,7 @@ __Z_INLINE void app_reply_address() {
 }
 
 __Z_INLINE void app_reply_error() {
+    view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_DATA_INVALID);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }

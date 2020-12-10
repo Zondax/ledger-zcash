@@ -565,6 +565,9 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
         return zxerr_unknown;
     }
 
+    view_message_show("Zcash", "Step [3/5]");
+    UX_WAIT_DISPLAYED();
+
     uint8_t hash[32];
     prevouts_hash(txdata,hash);
 
@@ -1042,6 +1045,9 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
     signature_tr *const signature = (signature_tr *) buffer;
     int signatureLength;
 
+    view_message_show("Zcash", "Step [4/5]");
+    UX_WAIT_DISPLAYED();
+
     BEGIN_TRY
     {
         TRY
@@ -1184,6 +1190,9 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         }
     }
     END_TRY;
+
+    view_message_show("Zcash", "Step [5/5]");
+    UX_WAIT_DISPLAYED();
 
     CHECK_APP_CANARY();
     return zxerr_ok;
