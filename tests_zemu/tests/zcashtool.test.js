@@ -1935,5 +1935,105 @@ describe('Zcashtool tests', function () {
         }
     });
 
+    test('extract data after tx reject', async function () {
+        const sim = new Zemu(APP_PATH);
+        try {
+            await sim.start(sim_options);
+            const app = new ZCashApp(sim.getTransport());
+
+            const {zcashtools} = addon;
+            console.log(SPEND_PATH)
+
+            var builder = new zcashtools(1000);
+
+            /*
+            In this test, Alice wants to send 55000 ZEC to Bob.
+            For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
+            The inputs to the initialization is therefor two spend notes and two output notes.
+            She takes a transaction fee of 1000.
+            All this info is gathered from the UI and put in the correct jsons.
+             */
+
+            const s_spend1 = {
+                path: 1000,
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                value: 50000,
+            }
+
+            const s_spend2 = {
+                path: 1000,
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                value: 50000,
+            }
+
+            const s_out1 = {
+                address: "15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc",
+                value: 55000,
+                memo_type: 0xf6,
+                ovk: null,
+            }
+
+            const s_out2 = {
+                address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+                value: 100000-1000-55000,
+                memo_type: 0xf6,
+                ovk: null,
+            }
+
+            const tx_input_data = {
+                t_in : [],
+                t_out : [],
+                s_spend: [s_spend1,s_spend2],
+                s_output: [s_out1, s_out2],
+            }
+
+            /*
+            The inputs to the get_inittx_data function are the inputs to the transaction.
+            The output is a blob that can be send to the ledger device.
+            */
+
+            const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
+            console.log(ledgerblob_initdata);
+
+            /*
+            The output of the get_inittx_data can be send to the ledger.
+            The ledger will check this data and show the inputs on screen for verification.
+            If confirmed, the ledger also computes the randomness needed for :
+                - The shielded spends
+                - the shielded outputs
+             */
+
+            const reqinit = app.inittx(ledgerblob_initdata);
+
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            //we have to click several times...
+            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst + 1; i += 1) {
+                await sim.clickRight();
+            }
+            await sim.clickBoth();
+
+            const req = await reqinit;
+
+            console.log(req);
+            expect(req.return_code).not.toEqual(0x9000);
+
+            /*
+            Try to extract data after a rejection of a transaction
+             */
+
+            const req0 = await app.extractspenddata();
+            console.log(req0);
+            expect(req0.return_code).not.toEqual(0x9000);
+
+            const req1 = await app.extractoutputdata();
+            console.log(req1);
+            expect(req1.return_code).not.toEqual(0x9000);
+
+
+        } finally {
+            await sim.close();
+        }
+    });
+
 
 });

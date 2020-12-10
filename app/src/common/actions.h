@@ -23,6 +23,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "../nvdata.h"
+#include "view.h"
 
 typedef struct {
     address_kind_e kind;
@@ -100,6 +101,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
     zxerr_t err;
+    view_message_show("Zcash", "Checking Transaction Data");
     err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
@@ -140,8 +142,9 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     if (err != zxerr_ok){
         return err;
     }
-
+    view_message_show("Zcash", "Transaction Data Verified");
     set_state(STATE_VERIFIED_ALL_TXDATA);
+    view_message_show("Zcash", "Signing Transaction");
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
         return err;
@@ -156,7 +159,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
 
 __Z_INLINE void app_reject() {
     tx_reset_state();
-
+    transaction_reset();
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
