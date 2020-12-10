@@ -148,6 +148,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     zxerr_t err = check_and_sign_tx();
     if (err != zxerr_ok) {
         *tx = 0;
+        view_idle_show(0, NULL);
         THROW(APDU_CODE_DATA_INVALID);
     }else{
         *tx = 32;
