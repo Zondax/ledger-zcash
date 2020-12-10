@@ -24,6 +24,7 @@ const Resolve = require("path").resolve;
 const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
 var addon = require('../../zcashtools/neon/native');
+const crypto = require('crypto');
 
 const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
 const OUTPUT_PATH = Resolve("../zcashtools/params/sapling-output.params");
@@ -261,6 +262,14 @@ describe('Zcashtool tests', function () {
             expect(req.txdata.byteLength).toEqual(32);
 
             /*
+            Check the hash of the return
+             */
+            let hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_initdata));
+            let h = hash.digest('hex');
+            expect(req.txdata.toString('hex')).toEqual(h);
+
+            /*
             Now we start building the transaction using the builder.
             /*
 
@@ -413,6 +422,16 @@ describe('Zcashtool tests', function () {
             expect(req6.return_code).toEqual(0x9000);
 
             /*
+            Check the hash of the return
+            */
+
+            hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_txdata));
+            h = hash.digest('hex');
+            expect(req6.signdata.toString('hex')).toEqual(h);
+
+
+            /*
             The builder needs these signatures to add it to the transaction blob.
             We need to do this one by one.
             So we first gather all signatures we need.
@@ -546,6 +565,14 @@ describe('Zcashtool tests', function () {
             console.log(req);
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
+
+            /*
+            Check the hash of the return
+            */
+            let hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_initdata));
+            let h = hash.digest('hex');
+            expect(req.txdata.toString('hex')).toEqual(h);
 
             /*
             Now we start building the transaction using the builder.
@@ -696,6 +723,15 @@ describe('Zcashtool tests', function () {
             expect(req6.return_code).toEqual(0x9000);
 
             /*
+            Check the hash of the return
+            */
+
+            hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_txdata));
+            h = hash.digest('hex');
+            expect(req6.signdata.toString('hex')).toEqual(h);
+
+            /*
             The builder needs the spend signatures to add it to the transaction blob.
             We need to do this one by one.
             So we first gather all signatures we need.
@@ -803,6 +839,11 @@ describe('Zcashtool tests', function () {
             expect(req.return_code).toEqual(0x9000);
             expect(req.txdata.byteLength).toEqual(32);
 
+            let hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_initdata));
+            let h = hash.digest('hex');
+            expect(req.txdata.toString('hex')).toEqual(h);
+
             /*
             Now we start building the transaction using the builder.
             */
@@ -844,6 +885,11 @@ describe('Zcashtool tests', function () {
             const req6 = await app.checkandsign(ledgerblob_txdata);
             console.log(req6);
             expect(req6.return_code).toEqual(0x9000);
+
+            hash = crypto.createHash('sha256');
+            hash.update(Buffer.from(ledgerblob_txdata));
+            h = hash.digest('hex');
+            expect(req6.signdata.toString('hex')).toEqual(h);
 
 
             const req9 = await app.extracttranssig();
