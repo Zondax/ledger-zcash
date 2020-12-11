@@ -27,6 +27,11 @@
 #define OFFSET_DATA                     5  //< Data offset
 
 #define APDU_MIN_LENGTH                 5
+#define DATA_LENGTH_GET_IVK             4   //ZIP32-path
+#define DATA_LENGTH_GET_OVK             4   //ZIP32-path
+#define DATA_LENGTH_GET_ADDR_SAPLING    4   //ZIP32-path
+#define DATA_LENGTH_GET_DIV_LIST        15   //ZIP32-path + 11-byte index
+#define DATA_LENGTH_GET_ADDR_DIV        15   //ZIP32-path + 11-byte div
 
 #define OFFSET_PAYLOAD_TYPE             OFFSET_P1
 
