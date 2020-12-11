@@ -1,4 +1,5 @@
-use jubjub::{AffineNielsPoint, AffinePoint, Fq};
+use group::Group;
+use jubjub::{AffineNielsPoint, AffinePoint, Fq, SubgroupPoint};
 
 pub const SPENDING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -32,8 +33,27 @@ pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
 )
 .to_niels();
 
+pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0xe4b3_d35d_f1a7_adfe,
+        0xcaf5_5d1b_29bf_81af,
+        0x8b0f_03dd_d60a_8187,
+        0x62ed_cbb8_bf37_87c8,
+    ]),
+    Fq::from_raw([
+        0x0000_0000_0000_000b,
+        0x0000_0000_0000_0000,
+        0x0000_0000_0000_0000,
+        0x0000_0000_0000_0000,
+    ]),
+)
+.to_niels();
+
 pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
+//52
 pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
 pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
+pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
+//68
 pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
 pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;

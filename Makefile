@@ -14,12 +14,12 @@
 #*  limitations under the License.
 #********************************************************************************
 
-# We use BOLOS_SDK to determine the develoment environment that is being used
+# We use BOLOS_SDK to determine the development environment that is being used
 # BOLOS_SDK IS  DEFINED	 	We use the plain Makefile for Ledger
 # BOLOS_SDK NOT DEFINED		We use a containerized build approach
 
-TESTS_ZEMU_JS_PACKAGE = "@zondax/ledger-zcash"
-TESTS_ZEMU_JS_DIR = $(CURDIR)/js
+TESTS_JS_PACKAGE = "@zondax/ledger-zcash"
+TESTS_JS_DIR = $(CURDIR)/js
 
 ifeq ($(BOLOS_SDK),)
 	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
@@ -30,3 +30,11 @@ default:
 	$(info "Calling app Makefile for target $@")
 	COIN=$(COIN) $(MAKE) -C app $@
 endif
+
+zcashtools_build:
+	cd zcashtools/neon && yarn install
+
+zcashtools_test: zcashtools_build
+	cd zcashtools/neon && yarn test
+
+zemu_install: zcashtools_build

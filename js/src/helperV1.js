@@ -1,4 +1,4 @@
-import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from "./common";
+import {CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse, SAPLING_ADDR_LEN} from "./common";
 
 const HARDENED = 0x80000000;
 
@@ -78,4 +78,61 @@ export async function signSendChunkv1(app, chunkIdx, chunkNum, chunk) {
         error_message: errorMessage,
       };
     }, processErrorResponse);
+}
+
+export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk) {
+  let payloadType = PAYLOAD_TYPE.ADD;
+  if (chunkIdx === 1) {
+    payloadType = PAYLOAD_TYPE.INIT;
+  }
+  if (chunkIdx === chunkNum) {
+    payloadType = PAYLOAD_TYPE.LAST;
+  }
+  if (version === INS.INIT_TX) {
+    return app.transport
+      .send(CLA, INS.INIT_TX, payloadType, 0, chunk, [0x9000, 0x6984, 0x6a80])
+      .then((response) => {
+        const errorCodeData = response.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+        let errorMessage = errorCodeToString(returnCode);
+
+        if (returnCode === 0x6a80 || returnCode === 0x6984 || returnCode === 0x6f10) {
+          errorMessage = `${errorMessage} : ${response.slice(0, response.length - 2).toString("ascii")}`;
+        }
+
+        let txdata = null;
+        if (response.length > 2) {
+          txdata = response.slice(0, 32); //fixme?
+        }
+
+        return {
+          txdata: txdata,
+          return_code: returnCode,
+          error_message: errorMessage,
+        };
+      }, processErrorResponse);
+  } else if (version === INS.CHECKANDSIGN) {
+    return app.transport
+      .send(CLA, INS.CHECKANDSIGN, payloadType, 0, chunk, [0x9000, 0x6984, 0x6a80])
+      .then((response) => {
+        const errorCodeData = response.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+        let errorMessage = errorCodeToString(returnCode);
+
+        if (returnCode === 0x6a80 || returnCode === 0x6984 || returnCode === 0x6f10) {
+          errorMessage = `${errorMessage} : ${response.slice(0, response.length - 2).toString("ascii")}`;
+        }
+
+        let signdata = null;
+        if (response.length > 2) {
+          signdata = response.slice(0, 32); //fixme?
+        }
+
+        return {
+          signdata: signdata,
+          return_code: returnCode,
+          error_message: errorMessage,
+        };
+      }, processErrorResponse);
+  }
 }

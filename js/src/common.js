@@ -7,9 +7,20 @@ export const INS = {
 
   GET_ADDR_SECP256K1: 0x01,
   SIGN_SECP256K1: 0x02,
-
+  GET_DIV_LIST: 0x09,
+  GET_ADDR_SAPLING_DIV: 0x10,
   GET_ADDR_SAPLING: 0x11,
   SIGN_SAPLING: 0x12,
+  GET_IVK_SAPLING: 0xf0,
+  GET_OVK_SAPLING: 0xf1,
+
+  INIT_TX: 0xa0,
+  KEY_EXCHANGE: 0xaa,
+  EXTRACT_SPEND_DATA: 0xa1,
+  EXTRACT_OUTPUT_DATA: 0xa2,
+  CHECKANDSIGN: 0xa3,
+  EXTRACTSPENDSIG: 0xa4,
+  EXTRACTTRANSSIG: 0xa5,
 };
 
 export const PAYLOAD_TYPE = {
@@ -29,6 +40,13 @@ export const ERROR_CODE = {
 
 export const PKLEN = 33;
 export const SAPLING_ADDR_LEN = 43;
+export const SAPLING_IVK_LEN = 32;
+export const SAPLING_OVK_LEN = 32;
+export const SAPLING_PGK_LEN = 64;
+export const SAPLING_SPENDDATA_LEN = 128;
+export const SAPLING_OUTPUTDATA_LEN = 96;
+export const SAPLING_RND_LEN = 192;//fixme
+export const SAPLING_SIGN_LEN = 64;
 
 const ERROR_DESCRIPTION = {
   1: "U2F: Unknown",
@@ -53,6 +71,15 @@ const ERROR_DESCRIPTION = {
   0x6e00: "App does not seem to be open",
   0x6f00: "Unknown error",
   0x6f01: "Sign/verify error",
+  0x6f10: "check spends error",
+  0x6fa0: "wrong order of ledger instructions sapling",
+  0x6fa1: "more spendinfo to be extracted",
+  0x6fa2: "more outputinfo to be extracted",
+  0x6fb1: "already extracted all spendinfo",
+  0x6fb2: "already extracted all outputinfo",
+  0x6fc1: "check spends error: data not correct",
+  0x6fc2: "check output error: data not correct",
+  0x6fff: "this operation is not supported",
 };
 
 export function errorCodeToString(statusCode) {

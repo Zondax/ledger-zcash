@@ -33,8 +33,22 @@
 #define INS_GET_VERSION                 0x00
 #define INS_GET_ADDR_SECP256K1          0x01
 #define INS_SIGN_SECP256K1              0x02
+#define INS_GET_DIV_LIST                0x09
+#define INS_GET_ADDR_SAPLING_DIV        0x10
 #define INS_GET_ADDR_SAPLING            0x11
 #define INS_SIGN_SAPLING                0x12
+
+#define INS_INIT_TX                     0xa0
+#define INS_KEY_EXCHANGE                0xaa
+#define INS_EXTRACT_SPEND               0xa1
+#define INS_EXTRACT_OUTPUT              0xa2
+#define INS_CHECKANDSIGN                0xa3
+#define INS_EXTRACT_SPENDSIG            0xa4
+#define INS_EXTRACT_TRANSSIG            0xa5
+
+#define INS_GET_IVK                     0xf0
+#define INS_GET_OVK                     0xf1
+#define INS_CRASH_TEST                   0xff
 
 #if defined(APP_TESTING)
 #define INS_TEST                        0xFF
