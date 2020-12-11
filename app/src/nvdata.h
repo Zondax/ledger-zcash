@@ -19,20 +19,39 @@
 #include <stdbool.h>
 #include "zxerror.h"
 #include "coin.h"
+
 //fixme: maybe increase some of these
-#define T_IN_LIST_SIZE                 5
-#define T_OUT_LIST_SIZE                 5
-#define SPEND_LIST_SIZE                 5
-#define OUTPUT_LIST_SIZE                 5
+#define T_IN_LIST_SIZE          5
+#define T_OUT_LIST_SIZE         5
+#define SPEND_LIST_SIZE         5
+#define OUTPUT_LIST_SIZE        5
+
+#define PKD_SIZE                32
+#define RCM_SIZE                32
+#define ALPHA_SIZE              32
+#define DIV_SIZE                11
+
+#define SESSION_KEY_SIZE        32
+
+#define OUTPUT_OVK_SIZE         32
+#define OUTPUT_RSEED_SIZE       32
+#define OUTPUT_ADDRESS_SIZE     26
+#define RCM_V_SIZE              32
+
+#define INPUT_SCRIPT_SIZE       26
+#define PATH_SIZE               5
+
+#define ADDRESS_SIZE            26
+#define SIGNATURE_SIZE          64
 
 typedef struct {
-    uint32_t path[5];
-    uint8_t script[26];
+    uint32_t path[PATH_SIZE];
+    uint8_t script[INPUT_SCRIPT_SIZE];
     uint64_t value;
 } t_input_item_t;
 
 typedef struct {
-    uint8_t address[26];
+    uint8_t address[OUTPUT_ADDRESS_SIZE];
     uint64_t value;
 } t_output_item_t;
 
@@ -48,10 +67,10 @@ typedef struct {
 typedef struct {
     uint32_t path;
     uint64_t value;
-    uint8_t div[11];
-    uint8_t pkd[32];
-    uint8_t rcm[32];
-    uint8_t alpha[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
+    uint8_t rcm[RCM_SIZE];
+    uint8_t alpha[ALPHA_SIZE];
 } spend_item_t;
 
 typedef struct {
@@ -75,13 +94,13 @@ typedef struct {
 } spendlist_t;
 
 typedef struct {
-    uint8_t div[11];
-    uint8_t pkd[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
     uint64_t value;
     uint8_t memotype;
-    uint8_t rcmvalue[32];
-    uint8_t rseed[32];
-    uint8_t ovk[32];
+    uint8_t rcmvalue[RCM_V_SIZE];
+    uint8_t rseed[OUTPUT_RSEED_SIZE];
+    uint8_t ovk[OUTPUT_OVK_SIZE];
 } output_item_t;
 
 typedef struct {
@@ -89,7 +108,7 @@ typedef struct {
 } outputlist_t;
 
 typedef struct {
-    uint8_t session_key[32];
+    uint8_t session_key[SESSION_KEY_SIZE];
     uint8_t transparent_signatures[T_IN_LIST_SIZE][64];
     uint8_t spend_signatures[SPEND_LIST_SIZE][64];
 } transaction_info_t;

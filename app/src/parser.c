@@ -28,6 +28,8 @@
 #include "bech32.h"
 #include "base58.h"
 
+#define DEFAULT_MEMOTYPE        0xf6
+
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
 void __assert_fail(const char *assertion, const char *file, unsigned int line,
@@ -40,11 +42,11 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 parser_tx_t parser_state;
 
 typedef enum {
-    type_tin = 0,
-    type_tout = 1,
+    type_tin    = 0,
+    type_tout   = 1,
     type_sspend = 2,
-    type_sout = 3,
-    type_txfee = 4,
+    type_sout   = 3,
+    type_txfee  = 4,
 } sapling_parser_type_e;
 
 typedef struct {
@@ -123,9 +125,9 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
 
-    uint8_t address[43];
-    MEMCPY(address, div, 11);
-    MEMCPY(address + 11, pkd, 32);
+    uint8_t address[DIV_SIZE + PKD_SIZE];
+    MEMCPY(address, div, DIV_SIZE);
+    MEMCPY(address + DIV_SIZE, pkd, PKD_SIZE);
     char tmpBuffer[100];
     bech32EncodeFromBytes(tmpBuffer, sizeof(tmpBuffer),
                           BECH32_HRP,
@@ -261,7 +263,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                 }
                 case 2: {
                     snprintf(outKey, outKeyLen, "Memo Type");
-                    if(item->memotype == 0xf6) {
+                    if(item->memotype == DEFAULT_MEMOTYPE) {
                         snprintf(outVal, outValLen, "Default");
                     }else{
                         snprintf(outVal, outValLen, "Custom");
@@ -271,11 +273,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
 
                 case 3: {
                     snprintf(outKey, outKeyLen, "S-out OVK");
-                    uint8_t dummy[32];
+                    uint8_t dummy[OUTPUT_OVK_SIZE];
                     MEMZERO(dummy, sizeof(dummy));
-                    if(MEMCMP(dummy, item->ovk, 32) != 0) {
+                    if(MEMCMP(dummy, item->ovk, OUTPUT_OVK_SIZE) != 0) {
                         char tmpBuffer[100];
-                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, 32);
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OUTPUT_OVK_SIZE);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return parser_ok;
                     }else{
