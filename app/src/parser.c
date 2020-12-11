@@ -205,11 +205,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "T-in address");
+                    snprintf(outKey, outKeyLen, "T-in addr");
                     return parser_sapling_display_address_t(item->script, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "T-in ZECs");
+                    snprintf(outKey, outKeyLen, "T-in (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -221,11 +221,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "T-out address");
+                    snprintf(outKey, outKeyLen, "T-out addr");
                     return parser_sapling_display_address_t(item->address, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "T-out ZECs");
+                    snprintf(outKey, outKeyLen, "T-out (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -236,11 +236,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "S-in address");
+                    snprintf(outKey, outKeyLen, "S-in addr");
                     return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "S-in ZECs");
+                    snprintf(outKey, outKeyLen, "S-in (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -252,19 +252,19 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_SOUT;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "S-out address");
+                    snprintf(outKey, outKeyLen, "S-out addr");
                     return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "S-out ZECs");
+                    snprintf(outKey, outKeyLen, "S-out (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
-                    snprintf(outKey, outKeyLen, "S-out Memotype");
+                    snprintf(outKey, outKeyLen, "Memo Type");
                     if(item->memotype == 0xf6) {
                         snprintf(outVal, outValLen, "Default");
                     }else{
-                        snprintf(outVal, outValLen, "Non-default");
+                        snprintf(outVal, outValLen, "Custom");
                     }
                     return parser_ok;
                 }
@@ -287,7 +287,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
 
         case type_txfee: {
-            snprintf(outKey, outKeyLen, "Txfee");
+            snprintf(outKey, outKeyLen, "Fee");
             return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
         }
 
