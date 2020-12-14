@@ -57,9 +57,7 @@ __Z_INLINE void app_sign() {
 }
 
 __Z_INLINE zxerr_t init_tx() {
-    //Todo: show content on screen
     tx_reset_state();
-
     const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
     const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
     zxerr_t err;
@@ -80,18 +78,6 @@ __Z_INLINE uint8_t key_exchange() {
     const uint8_t replyLen = crypto_key_exchange(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
 
     return replyLen;
-
-}
-
-__Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint32_t path, uint8_t *startindex, uint16_t *replylen) {
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, path, startindex, replylen);
-    return err;
-}
-
-__Z_INLINE zxerr_t get_addr_with_diversifier(uint32_t path, uint8_t *div, uint16_t *replyLen) {
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, path, div, replyLen);
-    address_state.len = *replyLen;
-    return err;
 
 }
 
@@ -169,34 +155,10 @@ __Z_INLINE void app_reject() {
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
-__Z_INLINE zxerr_t app_fill_address(address_kind_e kind, uint32_t zip32path, uint16_t *replyLen) {
-// Put data directly in the apdu buffer
-    zemu_log_stack("app_fill_address");
-    address_state.kind = kind;
-    zxerr_t err;
-    switch (kind) {
-        case addr_secp256k1:
-            err = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, replyLen);
-            address_state.len = *replyLen;
-            break;
-        case addr_sapling:
-            address_state.len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, replyLen);
-            address_state.len = *replyLen;
-            break;
-        default:
-            address_state.len = 0;
-            return zxerr_unknown;
-    }
-
-    return zxerr_ok;
-}
-
-
 __Z_INLINE void app_reply_key() {
     set_code(G_io_apdu_buffer, key_state.len, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, key_state.len + 2);
 }
-
 
 __Z_INLINE void app_reply_address() {
     set_code(G_io_apdu_buffer, address_state.len, APDU_CODE_OK);

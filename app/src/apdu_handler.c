@@ -216,11 +216,14 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
     uint16_t replyLen = 0;
 
-    zxerr_t err = app_fill_address(addr_secp256k1, 0, &replyLen);
+    zxerr_t err = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
     if(err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
+
+    address_state.kind = addr_secp256k1;
+    address_state.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
@@ -244,7 +247,6 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     uint16_t replyLen;
 
     zemu_log_stack("handleGetAddrSapling_withdiv");
-    address_state.kind = addr_sapling_div;
 
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
@@ -260,6 +262,8 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
+    address_state.kind = addr_sapling_div;
+    address_state.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
@@ -289,7 +293,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, parser_addr.path, parser_addr.div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;
@@ -343,11 +347,13 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
         THROW(APDU_CODE_DATA_INVALID);
     }
     uint16_t replyLen = 0;
-    zxerr_t err = app_fill_address(addr_sapling, zip32path, &replyLen);
+    zxerr_t err = crypto_fillAddress_sapling(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
     if(err != zxerr_ok){
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
+    address_state.kind = addr_sapling;
+    address_state.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
