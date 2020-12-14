@@ -19,30 +19,7 @@
 #include <stdbool.h>
 #include "zxerror.h"
 #include "coin.h"
-
-//fixme: maybe increase some of these
-#define T_IN_LIST_SIZE          5
-#define T_OUT_LIST_SIZE         5
-#define SPEND_LIST_SIZE         5
-#define OUTPUT_LIST_SIZE        5
-
-#define PKD_SIZE                32
-#define RCM_SIZE                32
-#define ALPHA_SIZE              32
-#define DIV_SIZE                11
-
-#define SESSION_KEY_SIZE        32
-
-#define OVK_SIZE                32
-#define RSEED_SIZE              32
-#define OUTPUT_ADDRESS_SIZE     26
-#define RCM_V_SIZE              32
-
-#define SCRIPT_SIZE             26
-#define PATH_SIZE               5
-
-#define ADDRESS_SIZE            26
-#define SIGNATURE_SIZE          64
+#include "constants.h"
 
 typedef struct {
     uint32_t path[PATH_SIZE];

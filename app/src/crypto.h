@@ -26,47 +26,12 @@ extern "C" {
 #include <stdbool.h>
 #include <sigutils.h>
 
-#define CHECKSUM_LENGTH             4
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
 extern address_kind_e addressKind;
 
-#define PRIV_KEY_SIZE           32
-#define PUB_KEY_SIZE            32
-#define DER_MAX_SIZE            73
-#define AK_SIZE                 32
-#define NSK_SIZE                32
-#define ASK_SIZE                32
-#define DK_SIZE                 32
-#define NK_SIZE                 32
-#define SK_SIZE                 32
-#define IVK_SIZE                32
-#define ZIP32_SEED_SIZE         32
-#define RND1_SIZE               32
-#define RND2_SIZE               32
 
-#define PKD_SIZE                32
-#define ESK_SIZE                32
-#define EPK_SIZE                32
-#define NOTE_COMMITMENT_SIZE    32
-#define VALUE_COMMITMENT_SIZE   32
-#define HASH_SIZE               32
-#define SIG_HASH_SIZE           32
-#define SESSION_KEY_SIZE        32
-#define GD_SIZE                 32
-#define SHARED_KEY_SIZE         32
-#define OUT_KEY_SIZE            32
-#define ENC_CIPHER_SIZE         64
-#define MESSAGE_DIGEST_SIZE     32
-
-
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
-#define VERSION_P2SH            0x1CBD
-#define VERSION_P2PKH           0x1CB8
-#define BECH32_HRP              "zs"
-#define BECH32_HRP_TEST         "ztestsapling"
 
 bool isTestnet();
 

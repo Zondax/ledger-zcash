@@ -15,6 +15,7 @@
 ********************************************************************************/
 
 #include "crypto.h"
+#include "constants.h"
 #include "coin.h"
 #include "zxmacros.h"
 #include "base58.h"
@@ -229,9 +230,9 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
             0x8000002c,
             0x80000085,
-            0x80000000,
-            0x80000000,
-            0x80000000,
+            MASK_HARDENED,
+            MASK_HARDENED,
+            MASK_HARDENED,
     };
 
     os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519,
@@ -248,12 +249,12 @@ typedef struct {
             uint8_t pkd[PKD_SIZE];
         };
         struct {
-            uint8_t address_raw[43];
+            uint8_t address_raw[ADDR_LEN_SAPLING];
             char address_bech32[100];
         };
         struct {
-            uint8_t dummy[43];
-            uint8_t diversifierlist[110];
+            uint8_t dummy[ADDR_LEN_SAPLING];
+            uint8_t diversifierlist[DIV_DEFAULT_LIST_LEN * DIV_SIZE];
         };
 
         struct {
@@ -491,8 +492,8 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
     ask_to_ak(tmp.step2.ask,out);
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     CHECK_APP_CANARY();
-    MEMCPY(out+64, next->rcm, RCM_SIZE);
-    MEMCPY(out+96, next->alpha,ALPHA_SIZE);
+    MEMCPY(out+AK_SIZE+NSK_SIZE, next->rcm, RCM_SIZE);
+    MEMCPY(out+AK_SIZE+NSK_SIZE+RCM_SIZE, next->alpha,ALPHA_SIZE);
 
     if(!spendlist_more_extract()){
         set_state(STATE_PROCESSED_SPEND_EXTRACTIONS);
@@ -540,7 +541,7 @@ typedef struct {
         } step2;
 
         struct {
-            uint8_t inputhash[73];
+            uint8_t inputhash[PEDERSEN_INPUT_SIZE];
         } step3;
 
         struct{
@@ -717,14 +718,14 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
                 sk_to_pk(tmp.step2.ask, tmp.step2.ask);
 
-                if(MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,32) != 0){
+                if(MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,PUB_KEY_SIZE) != 0){
                     //maybe spendlist_reset();
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     return zxerr_unknown;
                 }
 
                 compute_value_commitment(item->value,item->rcm,tmp.step2.ask);
-                if (MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,32) != 0){
+                if (MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
                     //maybe spendlist_reset();
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     return zxerr_unknown;
@@ -750,7 +751,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 }
 
                 compute_nullifier(out, notepos, tmp.step2.nsk, out);
-                if (MEMCMP(out, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN,32) != 0){
+                if (MEMCMP(out, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
                     //maybe spendlist_reset();
                     MEMZERO(out, bufferLen);
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
@@ -778,7 +779,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     if (spendlist_len() > 0){
         shielded_spend_hash(start_spenddata, length_spend_new_data(), out);
     }
-    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDSPENDHASH, 32) != 0){
+    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDSPENDHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
 
@@ -830,7 +831,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
                 compute_note_commitment(ncm.step4.notecommitment,rcm);
                 compute_value_commitment(item->value, item->rcmvalue, ncm.step4.valuecommitment);
 
-                if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,32) != 0 || MEMCMP(ncm.step4.notecommitment, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,32) != 0){
+                if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0 || MEMCMP(ncm.step4.notecommitment, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&ncm, sizeof(tmp_notecommit));
                     return zxerr_unknown;
                 }
@@ -850,7 +851,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
     if (outputlist_len() > 0){
         shielded_output_hash(start_outputdata, length_outputdata(), out);
     }
-    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDOUTPUTHASH, 32) != 0){
+    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDOUTPUTHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
 
@@ -860,15 +861,15 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
 typedef struct {
     union {
         // STEP 1
-        struct {
-            uint8_t dummy[96];
+        struct { // MAX SIZE --> 160
+            uint8_t dummy[MAX_SIZE - EPK_SIZE - ESK_SIZE];
             uint8_t epk[EPK_SIZE]; //computed from receiver diversifier
             uint8_t esk[ESK_SIZE];
         } step1;
 
         struct{
-            uint8_t dummy[11];
-            uint8_t compactout[53];
+            uint8_t dummy[MAX_SIZE - COMPACT_OUT_SIZE - SHARED_KEY_SIZE - EPK_SIZE - ESK_SIZE];
+            uint8_t compactout[COMPACT_OUT_SIZE];
             uint8_t sharedkey[SHARED_KEY_SIZE];
             uint8_t epk[EPK_SIZE];
             uint8_t esk[ESK_SIZE];
@@ -883,20 +884,20 @@ typedef struct {
         }step3;
 
         struct{
-            uint8_t prfinput[128];
+            uint8_t prfinput[MAX_SIZE - ESK_SIZE];
             uint8_t esk[ESK_SIZE];
         }step4;
 
         struct{
             uint8_t outkey[OUT_KEY_SIZE];
-            uint8_t dummy[64];
+            uint8_t dummy[MAX_SIZE - OUT_KEY_SIZE - PKD_SIZE - ESK_SIZE];
             uint8_t pkd[PKD_SIZE];
             uint8_t esk[ESK_SIZE];
         }step5;
 
         struct{
             uint8_t outkey[OUT_KEY_SIZE];
-            uint8_t dummy[64];
+            uint8_t dummy[MAX_SIZE - OUT_KEY_SIZE - ENC_CIPHER_SIZE];
             uint8_t encciph[ENC_CIPHER_SIZE];
         }step6;
     };
@@ -936,20 +937,20 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         ka_to_key(tmp->step1.esk, (uint8_t *) item->pkd, tmp->step1.epk, tmp->step2.sharedkey);
         prepare_enccompact_input((uint8_t *) item->div, item->value, (uint8_t *) item->rseed, item->memotype, tmp->step2.compactout);
 
-        uint8_t nonce[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
+        uint8_t nonce[CHACHA_NONCE_SIZE] = {0,0,0,0,0,0,0,0,0,0,0,0};
         uint32_t counter = 1;
-        chacha(tmp->step2.compactout, tmp->step2.compactout, 53, tmp->step2.sharedkey, nonce,counter);
+        chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, nonce,counter);
 
-        if (MEMCMP(tmp->step2.compactout, start_outputdata + INDEX_OUTPUT_ENC + i * OUTPUT_TX_LEN, 53) != 0){
+        if (MEMCMP(tmp->step2.compactout, start_outputdata + INDEX_OUTPUT_ENC + i * OUTPUT_TX_LEN, COMPACT_OUT_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
         MEMCPY(tmp->step3.ovk, item->ovk, OVK_SIZE);
-        MEMZERO(out + 160, 32);
-        if(MEMCMP(tmp->step3.ovk, out + 160, OVK_SIZE) != 0){
-            MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,32);
-            MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,32);
+        MEMZERO(out + MAX_SIZE, OVK_SIZE);
+        if(MEMCMP(tmp->step3.ovk, out + MAX_SIZE, OVK_SIZE) != 0){
+            MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE);
+            MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
 
             blake2b_prf(tmp->step4.prfinput, tmp->step5.outkey);
             MEMCPY(tmp->step5.pkd, item->pkd, PKD_SIZE);
@@ -979,9 +980,9 @@ void address_to_script(uint8_t *address, uint8_t *output){
     script[2] = 0xa9;
     script[3] = 0x14;
 
-    uint8_t tmp[32];
+    uint8_t tmp[HASH_SIZE];
     cx_hash_sha256(address, PK_LEN_SECP256K1, tmp, CX_SHA256_SIZE);
-    ripemd160(tmp, CX_SHA256_SIZE, script+4);
+    ripemd160(tmp, CX_SHA256_SIZE, script + SCRIPT_CONSTS_SIZE);
     script[24] = 0x88;
     script[25] = 0xac;
     MEMCPY(output,script,SCRIPT_SIZE);
@@ -991,8 +992,8 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t r[32];
-            uint8_t s[32];
+            uint8_t r[SIG_R_SIZE];
+            uint8_t s[SIG_S_SIZE];
             uint8_t v;
             // DER signature max size should be 73
             // https://bitcoin.stackexchange.com/questions/77191/what-is-the-maximum-size-of-a-der-encoded-ecdsa-signature#77192
@@ -1000,8 +1001,8 @@ typedef struct {
         } step1;
 
         struct {
-            uint8_t rs[64];
-            uint8_t dummy[74];
+            uint8_t rs[SIG_R_SIZE + SIG_S_SIZE];
+            uint8_t dummy[DER_MAX_SIZE + 1];
         } step2;
     };
 } __attribute__((packed)) signature_tr;
@@ -1062,10 +1063,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
 
                 for (int i = 0; i < PUB_KEY_SIZE; i++) {
-                    pubKey[i] = cx_publicKey.W[64 - i];
+                    pubKey[i] = cx_publicKey.W[SIG_S_SIZE + SIG_R_SIZE - i];
                  }
-                cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
-                if ((cx_publicKey.W[32] & 1) != 0) {
+                cx_publicKey.W[0] = cx_publicKey.W[SIG_S_SIZE + SIG_R_SIZE] & 1 ? 0x03 : 0x02; // "Compress" public key in place
+                if ((cx_publicKey.W[SIG_R_SIZE] & 1) != 0) {
                     pubKey[31] |= 0x80;
                 }
                 MEMCPY(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
@@ -1094,7 +1095,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 if(value != item->value){
                     return zxerr_unknown;
                 }
-                signature_script_hash(start_signdata, 220, start_tindata + i * T_IN_TX_LEN, T_IN_TX_LEN, message_digest);
+                signature_script_hash(start_signdata, LENGTH_HASH_DATA, start_tindata + i * T_IN_TX_LEN, T_IN_TX_LEN, message_digest);
                 signatureLength = cx_ecdsa_sign(&cx_privateKey,
                                             CX_RND_RFC6979 | CX_LAST,
                                             CX_SHA256,
@@ -1144,7 +1145,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     uint8_t *start_signdata = (uint8_t *)(txdata + start_sighashdata());
 
-    uint8_t sighash[SIG_HASH_SIZE];
+    uint8_t sighash[HASH_SIZE];
 
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
@@ -1269,7 +1270,7 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = p | 0x80000000;
+    tmp.step1.pos = p | MASK_HARDENED;
     BEGIN_TRY
     {
         TRY
@@ -1324,7 +1325,7 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
-    tmp.step1.pos = p | 0x80000000;
+    tmp.step1.pos = p | MASK_HARDENED;
 
     BEGIN_TRY
     {
@@ -1371,7 +1372,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = p | 0x80000000;
+    tmp.step1.pos = p | MASK_HARDENED;
 
     BEGIN_TRY
     {
@@ -1388,8 +1389,8 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
 
             get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
             for(int i = 0; i < 20; i++){
-                if (!is_valid_diversifier(buffer+i*11)){
-                    MEMZERO(buffer+i*11,11);
+                if (!is_valid_diversifier(buffer+i*DIV_SIZE)){
+                    MEMZERO(buffer+i*DIV_SIZE,DIV_SIZE);
                 }
             }
 
@@ -1403,7 +1404,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
         }
     }
     END_TRY;
-    *replylen = 220;
+    *replylen = DIV_LIST_LENGTH * DIV_SIZE;
     return zxerr_ok;
 }
 
@@ -1436,7 +1437,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
 
-    tmp.step1.pos = p | 0x80000000;
+    tmp.step1.pos = p | MASK_HARDENED;
 
     MEMCPY(out->diversifier, div, DIV_SIZE);
     if (!is_valid_diversifier(out->diversifier)){
@@ -1515,7 +1516,7 @@ uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen) {
     tmp_sampling_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-    tmp.step1.pos = p | 0x80000000;
+    tmp.step1.pos = p | MASK_HARDENED;
     BEGIN_TRY
     {
         TRY

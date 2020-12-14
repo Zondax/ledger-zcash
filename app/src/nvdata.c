@@ -19,6 +19,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "nvdata.h"
+#include "constants.h"
 #include "view.h"
 
 t_inlist_t NV_CONST

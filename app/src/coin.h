@@ -39,7 +39,7 @@ extern "C" {
 #define PK_LEN_SECP256K1            33u
 
 // sapling address [11+32]
-#define PK_LEN_SAPLING              43u
+#define ADDR_LEN_SAPLING            43u
 
 // ivk
 #define LEN_IVK                     32u
@@ -59,7 +59,7 @@ typedef enum {
 } key_type_e;
 
 #define VIEW_ADDRESS_OFFSET_SECP256K1       PK_LEN_SECP256K1
-#define VIEW_ADDRESS_OFFSET_SAPLING         PK_LEN_SAPLING
+#define VIEW_ADDRESS_OFFSET_SAPLING         ADDR_LEN_SAPLING
 
 #define MENU_MAIN_APP_LINE1     "Zcash"
 #define MENU_MAIN_APP_LINE2     "DO NOT USE!"
