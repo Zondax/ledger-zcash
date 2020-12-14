@@ -1031,7 +1031,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 // Error while converting so return length 0
                 return zxerr_unknown;
                 }
-                transparent_signatures_append(signature->step2.rs);
+                zxerr_t zxerr = transparent_signatures_append(signature->step2.rs);
+                if(zxerr != zxerr_ok){
+                    return zxerr;
+                }
             }
 
         }
@@ -1096,7 +1099,10 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
                 sign_redjubjub((uint8_t *)tmp.step2.ask, (uint8_t *)sighash, (uint8_t *)out);
-                spend_signatures_append(out);
+                zxerr_t zxerr = spend_signatures_append(out);
+                if(zxerr != zxerr_ok){
+                    return zxerr;
+                }
                 MEMZERO(&tmp, sizeof(tmp_sampling_s));
             }
 

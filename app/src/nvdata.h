@@ -112,13 +112,13 @@ bool spendlist_more_sign();
 
 bool transparent_signatures_more_extract();
 
-void transparent_signatures_append(uint8_t *signature);
+zxerr_t transparent_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_transparent_signature(uint8_t *result);
 
 bool spend_signatures_more_extract();
 
-void spend_signatures_append(uint8_t *signature);
+zxerr_t spend_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_spend_signature(uint8_t *result);
 //transparent TxIN API

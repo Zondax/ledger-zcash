@@ -117,11 +117,15 @@ bool transparent_signatures_more_extract() {
 }
 
 
-void transparent_signatures_append(uint8_t *signature) {
+zxerr_t transparent_signatures_append(uint8_t *signature) {
+    if (transaction_header.t_sign_index >= transaction_header.t_in_len){
+        return zxerr_unknown;
+    }
     MEMCPY_NV(
             &N_transactioninfo.transparent_signatures[transaction_header.t_sign_index],
             signature, SIGNATURE_SIZE);
     transaction_header.t_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_transparent_signature(uint8_t *result) {
@@ -142,11 +146,16 @@ bool spend_signatures_more_extract() {
     return transaction_header.spends_sign_index > 0;
 }
 
-void spend_signatures_append(uint8_t *signature) {
+zxerr_t spend_signatures_append(uint8_t *signature) {
+    if (transaction_header.spends_sign_index >= transaction_header.spendlist_len){
+        return zxerr_unknown;
+    }
+
     MEMCPY_NV(
             &N_transactioninfo.spend_signatures[transaction_header.spends_sign_index],
             signature, SIGNATURE_SIZE);
     transaction_header.spends_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
