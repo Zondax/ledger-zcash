@@ -57,8 +57,8 @@ typedef struct {
     uint8_t t_out_len;
     uint8_t spendlist_len;
     uint8_t outputlist_len;
-    uint8_t spendlist_extract_index;
-    uint8_t outputlist_extract_index;
+    uint8_t spenddata_extract_index;
+    uint8_t outputdata_extract_index;
     uint8_t spends_sign_index;
     uint8_t spends_sign_extract_index;
     uint8_t t_sign_index;

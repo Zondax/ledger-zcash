@@ -168,11 +168,11 @@ void transaction_reset() {
     transaction_header.t_sign_extract_index = 0;
     transaction_header.total_value = 0;
     transaction_header.state = 0;
-    transaction_header.spendlist_extract_index = 0;
+    transaction_header.spenddata_extract_index = 0;
     transaction_header.spendlist_len = 0;
     transaction_header.spends_sign_index = 0;
     transaction_header.outputlist_len = 0;
-    transaction_header.outputlist_extract_index = 0;
+    transaction_header.outputdata_extract_index = 0;
     transaction_header.spends_sign_extract_index = 0;
     zeroize_flashstorage();
 }
@@ -214,17 +214,17 @@ spend_item_t *spendlist_retrieve_item(uint8_t i) {
 }
 
 spend_item_t *spendlist_extract_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spendlist_extract_index) {
+    if (transaction_header.spendlist_len <= transaction_header.spenddata_extract_index) {
         return NULL;
     } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spendlist_extract_index];
-        transaction_header.spendlist_extract_index += 1;
+        spend_item_t *result = &N_spendlist.items[transaction_header.spenddata_extract_index];
+        transaction_header.spenddata_extract_index += 1;
         return result;
     }
 }
 
 bool spendlist_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spendlist_extract_index;
+    return transaction_header.spendlist_len > transaction_header.spenddata_extract_index;
 }
 
 uint8_t spendlist_len() {
@@ -286,17 +286,17 @@ output_item_t *outputlist_retrieve_item(uint8_t i) {
 }
 
 output_item_t *outputlist_extract_next() {
-    if (transaction_header.outputlist_len <= transaction_header.outputlist_extract_index) {
+    if (transaction_header.outputlist_len <= transaction_header.outputdata_extract_index) {
         return NULL;
     } else {
-        output_item_t *result = &N_outputlist.items[transaction_header.outputlist_extract_index];
-        transaction_header.outputlist_extract_index += 1;
+        output_item_t *result = &N_outputlist.items[transaction_header.outputdata_extract_index];
+        transaction_header.outputdata_extract_index += 1;
         return result;
     }
 }
 
 bool outputlist_more_extract() {
-    return transaction_header.outputlist_len > transaction_header.outputlist_extract_index;
+    return transaction_header.outputlist_len > transaction_header.outputdata_extract_index;
 }
 
 uint8_t outputlist_len() {
