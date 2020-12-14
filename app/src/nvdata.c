@@ -49,21 +49,6 @@ transaction_header_t transaction_header;
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-void set_session_key(uint8_t *key) {
-    MEMCPY_NV(
-            &N_transactioninfo.session_key,
-            key, 32);
-    transaction_header.session_key_set = 1;
-};
-
-bool session_key_set() {
-    return transaction_header.session_key_set == 1;
-}
-
-uint8_t *get_session_key() {
-    return (uint8_t * ) & N_transactioninfo.session_key;
-};
-
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
     if (transaction_header.t_in_len >= T_IN_LIST_SIZE) {
         return zxerr_unknown;

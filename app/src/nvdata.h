@@ -53,7 +53,6 @@ typedef struct {
 typedef struct {
     uint64_t total_value;
     uint8_t state;
-    uint8_t session_key_set;
     uint8_t t_in_len;
     uint8_t t_out_len;
     uint8_t spendlist_len;
@@ -85,7 +84,6 @@ typedef struct {
 } outputlist_t;
 
 typedef struct {
-    uint8_t session_key[SESSION_KEY_SIZE];
     uint8_t transparent_signatures[T_IN_LIST_SIZE][64];
     uint8_t spend_signatures[SPEND_LIST_SIZE][64];
 } transaction_info_t;
@@ -95,10 +93,6 @@ extern "C" {
 #endif
 
 void transaction_reset();
-
-void set_session_key(uint8_t *key);
-
-uint8_t *get_session_key();
 
 //statemachine API
 uint8_t get_state();
