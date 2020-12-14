@@ -245,7 +245,7 @@ typedef struct {
     union {
         struct {
             uint8_t diversifier[DIV_SIZE];
-            uint8_t pkd[PKD_SIZEf];
+            uint8_t pkd[PKD_SIZE];
         };
         struct {
             uint8_t address_raw[43];
