@@ -230,18 +230,6 @@ typedef struct {
     };
 } tmp_sampling_s;
 
-uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t *txdata, const uint16_t txdatalen) {
-    uint8_t pubkey[PUB_KEY_SIZE];
-    MEMCPY(pubkey, txdata, PUB_KEY_SIZE);
-    uint8_t rnd1[RND_SIZE];
-    uint8_t sessionkey[SESSION_KEY_SIZE];
-    random_fr(rnd1);
-    sessionkey_agree(rnd1,pubkey,sessionkey);
-    set_session_key(sessionkey);
-    pubkey_gen(rnd1,buffer);
-    return PUB_KEY_SIZE;
-}
-
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     zemu_log_stack("crypto_extracttxdata_sapling");
     MEMZERO(buffer, bufferLen);

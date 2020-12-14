@@ -109,21 +109,6 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     *flags |= IO_ASYNCH_REPLY;
 }
 
-__Z_INLINE void handleKeyExchange(volatile uint32_t *flags,
-                                  volatile uint32_t *tx, uint32_t rx) {
-    if (!process_chunk(tx, rx)) {
-        THROW(APDU_CODE_OK);
-    }
-    uint8_t len = key_exchange();
-    if (len > 0) {
-        *tx = len;
-        THROW(APDU_CODE_OK);
-    } else {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-}
-
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     if(rx != APDU_MIN_LENGTH + DATA_LENGTH_GET_IVK){
@@ -510,11 +495,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_INIT_TX: {
                     handleInitTX(flags, tx, rx);
-                    break;
-                }
-
-                case INS_KEY_EXCHANGE: {
-                    handleKeyExchange(flags, tx, rx);
                     break;
                 }
 
