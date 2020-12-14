@@ -1245,23 +1245,11 @@ zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uin
     return zxerr_ok;
 }
 
-uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
+zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
-        return 0;
-    }
-
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = buffer + OFFSET_DATA;
-    pars_ctx.bufferLen = 4;
-    uint32_t p = 0;
-    pars_err = _readUInt32(&pars_ctx, &p);
-    if (pars_err != parser_ok){
+        *replyLen = 0;
         return zxerr_unknown;
     }
-
-    p |= 0x80000000;
 
     MEMZERO(buffer, bufferLen);
 
@@ -1299,26 +1287,15 @@ uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     }
     END_TRY;
     CHECK_APP_CANARY();
-    return 32;
+    *replyLen = 32;
+    return zxerr_ok;
 }
 
-uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
+zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen){
     if (bufferLen < sizeof(tmp_buf_s)) {
-        return 0;
-    }
-
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = buffer + OFFSET_DATA;
-    pars_ctx.bufferLen = 4;
-    uint32_t p = 0;
-    pars_err = _readUInt32(&pars_ctx, &p);
-    if (pars_err != parser_ok){
+        *replyLen = 0;
         return zxerr_unknown;
     }
-
-    p |= 0x80000000;
 
     MEMZERO(buffer, bufferLen);
 
@@ -1348,7 +1325,8 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     }
     END_TRY;
     CHECK_APP_CANARY();
-    return 32;
+    *replyLen = 32;
+    return zxerr_ok;
 }
 
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen) {

@@ -50,9 +50,9 @@ uint16_t crypto_sign(uint8_t *signature,
                      const uint8_t *message,
                      uint16_t messageLen);
 
-uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
+zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
 
-uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen);
 

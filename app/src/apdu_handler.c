@@ -136,7 +136,22 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    app_retrieve_key(key_ivk);
+    uint32_t zip32path = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK,
+                                                &zip32path);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (prserr != parser_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.kind = key_ivk;
+    uint16_t replyLen = 0;
+
+    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    if(err != zxerr_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show();
     *flags |= IO_ASYNCH_REPLY;
@@ -155,7 +170,24 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    app_retrieve_key(key_ovk);
+    uint32_t zip32path = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK,
+                                                &zip32path);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (prserr != parser_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.kind = key_ovk;
+    uint16_t replyLen = 0;
+
+    zxerr_t err = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    if(err != zxerr_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.len = replyLen;
+
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show();
     *flags |= IO_ASYNCH_REPLY;

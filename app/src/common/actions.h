@@ -169,24 +169,6 @@ __Z_INLINE void app_reject() {
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
-__Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
-    // Put data directly in the apdu buffer
-    zemu_log_stack("app_retrieve_key");
-
-    key_state.kind = kind;
-
-    switch (kind){
-        case key_ivk :
-            key_state.len = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-            break;
-        case key_ovk :
-            key_state.len = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-            break;
-    }
-
-    return key_state.len;
-}
-
 __Z_INLINE zxerr_t app_fill_address(address_kind_e kind, uint32_t zip32path, uint16_t *replyLen) {
 // Put data directly in the apdu buffer
     zemu_log_stack("app_fill_address");
