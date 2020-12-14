@@ -84,11 +84,8 @@ __Z_INLINE uint8_t key_exchange() {
 }
 
 __Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint32_t path, uint8_t *startindex, uint16_t *replylen) {
-
     zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, path, startindex, replylen);
-
     return err;
-
 }
 
 __Z_INLINE zxerr_t get_addr_with_diversifier(uint32_t path, uint8_t *div, uint16_t *replyLen) {
@@ -176,8 +173,7 @@ __Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
     // Put data directly in the apdu buffer
     zemu_log_stack("app_retrieve_key");
 
-    key_state.
-    kind = kind;
+    key_state.kind = kind;
 
     switch (kind){
         case key_ivk :
@@ -191,24 +187,26 @@ __Z_INLINE uint8_t app_retrieve_key(key_type_e kind) {
     return key_state.len;
 }
 
-__Z_INLINE uint8_t app_fill_address(address_kind_e kind) {
+__Z_INLINE zxerr_t app_fill_address(address_kind_e kind, uint32_t zip32path, uint16_t *replyLen) {
 // Put data directly in the apdu buffer
     zemu_log_stack("app_fill_address");
     address_state.kind = kind;
-
+    zxerr_t err;
     switch (kind) {
         case addr_secp256k1:
-            address_state.len = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            err = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, replyLen);
+            address_state.len = *replyLen;
             break;
         case addr_sapling:
-            address_state.len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+            address_state.len = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, replyLen);
+            address_state.len = *replyLen;
             break;
         default:
             address_state.len = 0;
-            break;
+            return zxerr_unknown;
     }
 
-    return address_state.len;
+    return zxerr_ok;
 }
 
 

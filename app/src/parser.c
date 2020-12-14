@@ -56,7 +56,7 @@ typedef struct {
     uint8_t index;
 } parser_sapling_t;
 
-parser_error_t parser_sapling_addr_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs){
+parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs){
     parser_context_t pars_ctx;
     parser_error_t pars_err;
     pars_ctx.offset = 0;
@@ -67,8 +67,22 @@ parser_error_t parser_sapling_addr_with_div(const uint8_t *data, size_t dataLen,
     if (pars_err != parser_ok){
         return pars_err;
     }
-    prs->path = p;
+    prs->path = p | 0x80000000;
     MEMCPY(prs->div, data + 4, 11);
+    return parser_ok;
+}
+
+parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t *p){
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = data;
+    pars_ctx.bufferLen = 4;
+    pars_err = _readUInt32(&pars_ctx, p);
+    if (pars_err != parser_ok){
+        return pars_err;
+    }
+    *p |= 0x80000000;
     return parser_ok;
 }
 

@@ -182,15 +182,21 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
     extractHDPath(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+    uint16_t replyLen = 0;
+
+    zxerr_t err = app_fill_address(addr_secp256k1, 0, &replyLen);
+    if(err != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
 
     if (requireConfirmation) {
-        app_fill_address(addr_secp256k1);
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
         view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-    *tx = app_fill_address(addr_secp256k1);
+    *tx = replyLen;
     THROW(APDU_CODE_OK);
 }
 
@@ -211,13 +217,13 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
-    parser_error_t prserr = parser_sapling_addr_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
+    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if(prserr != parser_ok){
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = get_addr_with_diversifier(parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path, parser_addr.div, &replyLen);
     if(err != zxerr_ok){
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -229,13 +235,8 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-    if (err == zxerr_ok) {
-        *tx = replyLen;
-        THROW(APDU_CODE_OK);
-    } else {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
 }
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
@@ -250,13 +251,13 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
-    parser_error_t prserr = parser_sapling_addr_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST, &parser_addr);
+    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST, &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if(prserr != parser_ok){
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = get_diversifier_list_with_startindex(parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path, parser_addr.div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;
@@ -301,15 +302,29 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     zemu_log_stack("handleGetAddrSapling");
 
+    uint32_t zip32path = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING,
+                                                    &zip32path);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    if (prserr != parser_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    uint16_t replyLen = 0;
+    zxerr_t err = app_fill_address(addr_sapling, zip32path, &replyLen);
+    if(err != zxerr_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
     if (requireConfirmation) {
-        app_fill_address(addr_sapling);
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
         view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
 
-    *tx = app_fill_address(addr_sapling);
+    *tx = replyLen;
     THROW(APDU_CODE_OK);
 }
 
