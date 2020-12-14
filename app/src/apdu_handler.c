@@ -29,6 +29,7 @@
 #include "chacha.h"
 #include "addr.h"
 #include "key.h"
+#include "parser.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
@@ -204,17 +205,30 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     uint16_t replyLen;
 
-    zemu_log_stack("handleGetAddrSapling");
+    zemu_log_stack("handleGetAddrSapling_withdiv");
     address_state.kind = addr_sapling_div;
 
+    parser_addr_div_t parser_addr;
+    MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
+
+    parser_error_t prserr = parser_sapling_addr_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+    if(prserr != parser_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    zxerr_t err = get_addr_with_diversifier(parser_addr.path, parser_addr.div, &replyLen);
+    if(err != zxerr_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
     if (requireConfirmation) {
-        get_addr_with_diversifier(&replyLen);
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
         view_review_show();
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
-    zxerr_t err = get_addr_with_diversifier(&replyLen);
     if (err == zxerr_ok) {
         *tx = replyLen;
         THROW(APDU_CODE_OK);
@@ -229,10 +243,23 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
     if(rx != APDU_MIN_LENGTH + DATA_LENGTH_GET_DIV_LIST){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-    uint16_t replylen;
-    zxerr_t err = get_diversifier_list_with_startindex(&replylen);
+    uint16_t replyLen;
+
+    zemu_log_stack("handleGetAddrSapling_divlist");
+
+    parser_addr_div_t parser_addr;
+    MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
+
+    parser_error_t prserr = parser_sapling_addr_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST, &parser_addr);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+    if(prserr != parser_ok){
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    zxerr_t err = get_diversifier_list_with_startindex(parser_addr.path, parser_addr.div, &replyLen);
+
     if (err == zxerr_ok) {
-        *tx = replylen;
+        *tx = replyLen;
         THROW(APDU_CODE_OK);
     } else {
         *tx = 0;

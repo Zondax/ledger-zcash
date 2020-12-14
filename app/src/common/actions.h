@@ -83,16 +83,16 @@ __Z_INLINE uint8_t key_exchange() {
 
 }
 
-__Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint16_t *replylen) {
+__Z_INLINE zxerr_t get_diversifier_list_with_startindex(uint32_t path, uint8_t *startindex, uint16_t *replylen) {
 
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replylen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, path, startindex, replylen);
 
     return err;
 
 }
 
-__Z_INLINE zxerr_t get_addr_with_diversifier(uint16_t *replyLen) {
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, replyLen);
+__Z_INLINE zxerr_t get_addr_with_diversifier(uint32_t path, uint8_t *div, uint16_t *replyLen) {
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, path, div, replyLen);
     address_state.len = *replyLen;
     return err;
 

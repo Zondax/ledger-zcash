@@ -15,6 +15,8 @@
  ********************************************************************************/
 
 #include "parser.h"
+#include "parser_impl.h"
+#include "parser_common.h"
 
 #include <stdio.h>
 #include <zxmacros.h>
@@ -53,6 +55,22 @@ typedef struct {
     sapling_parser_type_e type;
     uint8_t index;
 } parser_sapling_t;
+
+parser_error_t parser_sapling_addr_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs){
+    parser_context_t pars_ctx;
+    parser_error_t pars_err;
+    pars_ctx.offset = 0;
+    pars_ctx.buffer = data;
+    pars_ctx.bufferLen = 4;
+    uint32_t p = 0;
+    pars_err = _readUInt32(&pars_ctx, &p);
+    if (pars_err != parser_ok){
+        return pars_err;
+    }
+    prs->path = p;
+    MEMCPY(prs->div, data + 4, 11);
+    return parser_ok;
+}
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
                             size_t dataLen) {

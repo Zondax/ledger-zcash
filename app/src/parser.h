@@ -31,8 +31,14 @@ extern "C" {
 #define NUM_ITEMS_SOUT      4       //address, value, memotype, OVK?
 #define NUM_ITEMS_CONST     1       //txfee
 
-
 extern parser_tx_t parser_state;
+
+typedef struct {
+    uint32_t path;
+    uint8_t div[11];
+} parser_addr_div_t;
+
+parser_error_t parser_sapling_addr_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs);
 
 const char *parser_getErrorDescription(parser_error_t err);
 

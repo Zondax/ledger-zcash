@@ -1348,24 +1348,10 @@ uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen) {
     return 32;
 }
 
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint16_t *replylen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
-
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = buffer + OFFSET_DATA;
-    pars_ctx.bufferLen = 4;
-    uint32_t p = 0;
-    pars_err = _readUInt32(&pars_ctx, &p);
-    if (pars_err != parser_ok){
-        return zxerr_unknown;
-    }
-
-    uint8_t startindex[11];
-    MEMCPY(startindex, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
 
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
@@ -1408,24 +1394,10 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
     return zxerr_ok;
 }
 
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen) {
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
         return zxerr_unknown;
     }
-
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = buffer + OFFSET_DATA;
-    pars_ctx.bufferLen = 4;
-    uint32_t p = 0;
-    pars_err = _readUInt32(&pars_ctx, &p);
-    if (pars_err != parser_ok){
-        return zxerr_unknown;
-    }
-
-    uint8_t div[DIV_SIZE];
-    MEMCPY(div, (uint8_t *)(buffer + OFFSET_DATA + 4), DIV_SIZE);
 
     MEMZERO(buffer, bufferLen);
 
