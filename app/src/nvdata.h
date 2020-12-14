@@ -60,9 +60,7 @@ typedef struct {
     uint8_t spenddata_extract_index;
     uint8_t outputdata_extract_index;
     uint8_t spends_sign_index;
-    uint8_t spends_sign_extract_index;
     uint8_t t_sign_index;
-    uint8_t t_sign_extract_index;
 } transaction_header_t;
 
 typedef struct {
@@ -110,11 +108,7 @@ void set_state(uint8_t state);
 //metadata flash api
 uint64_t get_valuebalance();
 
-bool spendlist_first_sign();
-
 bool spendlist_more_sign();
-
-spend_item_t *spendlist_sign_next();
 
 bool transparent_signatures_more_extract();
 

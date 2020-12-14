@@ -113,7 +113,7 @@ uint8_t t_outlist_len() {
 }
 
 bool transparent_signatures_more_extract() {
-    return transaction_header.t_sign_index > transaction_header.t_sign_extract_index;
+    return transaction_header.t_sign_index > 0;
 }
 
 
@@ -125,7 +125,8 @@ void transparent_signatures_append(uint8_t *signature) {
 }
 
 zxerr_t get_next_transparent_signature(uint8_t *result) {
-    if (transaction_header.t_in_len <= transaction_header.t_sign_extract_index) {
+    uint8_t index = transaction_header.t_in_len - transaction_header.t_sign_index;
+    if (transaction_header.t_in_len <= index || index < 0) {
         return zxerr_unknown;
     }
     MEMCPY(result, &N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index], SIGNATURE_SIZE);
@@ -138,7 +139,7 @@ zxerr_t get_next_transparent_signature(uint8_t *result) {
 }
 
 bool spend_signatures_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_extract_index;
+    return transaction_header.spends_sign_index > 0;
 }
 
 void spend_signatures_append(uint8_t *signature) {
@@ -149,7 +150,8 @@ void spend_signatures_append(uint8_t *signature) {
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_extract_index) {
+    uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
+    if (transaction_header.spendlist_len <= index || index < 0) {
         return zxerr_unknown;
     }
     MEMCPY(result, & N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index], SIGNATURE_SIZE);
@@ -165,7 +167,6 @@ void transaction_reset() {
     transaction_header.t_in_len = 0;
     transaction_header.t_out_len = 0;
     transaction_header.t_sign_index = 0;
-    transaction_header.t_sign_extract_index = 0;
     transaction_header.total_value = 0;
     transaction_header.state = 0;
     transaction_header.spenddata_extract_index = 0;
@@ -173,7 +174,6 @@ void transaction_reset() {
     transaction_header.spends_sign_index = 0;
     transaction_header.outputlist_len = 0;
     transaction_header.outputdata_extract_index = 0;
-    transaction_header.spends_sign_extract_index = 0;
     zeroize_flashstorage();
 }
 
@@ -229,24 +229,6 @@ bool spendlist_more_extract() {
 
 uint8_t spendlist_len() {
     return transaction_header.spendlist_len;
-}
-
-bool spendlist_first_sign() {
-    return transaction_header.spends_sign_index == 0;
-}
-
-bool spendlist_more_sign() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_index;
-}
-
-spend_item_t *spendlist_sign_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_index) {
-        return NULL;
-    } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spends_sign_index];
-        transaction_header.spends_sign_index += 1;
-        return result;
-    }
 }
 
 bool outputlist_is_active() {
