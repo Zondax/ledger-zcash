@@ -300,29 +300,6 @@ pub extern "C" fn compute_value_commitment(
 }
 
 #[no_mangle]
-pub extern "C" fn compute_valueBalance_commitment(value: u64, output_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"start_valuebalancecmt\x00".as_ref());
-
-    let output_msg = unsafe { &mut *output_ptr };
-
-    let mut scalar = [0u8; 32];
-    let mut num = value;
-    for i in 0..8 {
-        scalar[i] = (num & 255) as u8;
-        num >>= 8;
-    }
-    let x = VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar);
-    let vcm = extended_to_bytes(&x);
-    output_msg.copy_from_slice(&vcm);
-}
-
-#[inline(never)]
-pub fn sub_from_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
-    c_zemu_log_stack(b"addtopoint_begin\x00".as_ref());
-    *point -= p;
-}
-
-#[no_mangle]
 pub extern "C" fn prepare_input_notecmt(
     value: u64,
     g_d_ptr: *const [u8; 32],
