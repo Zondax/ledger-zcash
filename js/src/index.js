@@ -475,35 +475,6 @@ export default class ZCashApp {
     return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
   }
 
-  async sign(path, message, unshielded = false) {
-    return this.signGetChunks(path, message).then((chunks) => {
-      return this.signSendChunk(1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
-        let result = {
-          return_code: response.return_code,
-          error_message: response.error_message,
-          signature_compact: null,
-          signature_der: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i]);
-          if (result.return_code !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
-
-        return {
-          return_code: result.return_code,
-          error_message: result.error_message,
-          // ///
-          signature_compact: result.signature_compact,
-          signature_der: result.signature_der,
-        };
-      }, processErrorResponse);
-    }, processErrorResponse);
-  }
-
   async saplingGetChunks(message) {
     return ZCashApp.saplingprepareChunks(message);
   }
