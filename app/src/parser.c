@@ -273,11 +273,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
 
                 case 3: {
                     snprintf(outKey, outKeyLen, "S-out OVK");
-                    uint8_t dummy[OUTPUT_OVK_SIZE];
+                    uint8_t dummy[OVK_SIZE];
                     MEMZERO(dummy, sizeof(dummy));
-                    if(MEMCMP(dummy, item->ovk, OUTPUT_OVK_SIZE) != 0) {
+                    if(MEMCMP(dummy, item->ovk, OVK_SIZE) != 0) {
                         char tmpBuffer[100];
-                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OUTPUT_OVK_SIZE);
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OVK_SIZE);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return parser_ok;
                     }else{

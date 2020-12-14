@@ -116,7 +116,7 @@ uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len) {
 void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[32];
+    uint8_t privateKeyData[PRIV_KEY_SIZE];
 
     if (pubKeyLen < PK_LEN_SECP256K1) {
         return;
@@ -130,23 +130,23 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
 
-            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &cx_privateKey);
+            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
             cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
             cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
         }
         FINALLY {
             MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
-            MEMZERO(privateKeyData, 32);
+            MEMZERO(privateKeyData, PRIV_KEY_SIZE);
         }
     }
     END_TRY;
 
     // Format pubkey
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < PUB_KEY_SIZE; i++) {
         pubKey[i] = cx_publicKey.W[64 - i];
     }
     cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
-    if ((cx_publicKey.W[32] & 1) != 0) {
+    if ((cx_publicKey.W[PUB_KEY_SIZE] & 1) != 0) {
         pubKey[31] |= 0x80;
     }
 
@@ -160,7 +160,7 @@ typedef struct {
 
     // DER signature max size should be 73
     // https://bitcoin.stackexchange.com/questions/77191/what-is-the-maximum-size-of-a-der-encoded-ecdsa-signature#77192
-    uint8_t der_signature[73];
+    uint8_t der_signature[DER_MAX_SIZE];
 
 } __attribute__((packed)) signature_t;
 
@@ -175,7 +175,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
 
     /// Now sign
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[32];
+    uint8_t privateKeyData[PRIV_KEY_SIZE];
     int signatureLength;
     unsigned int info = 0;
 
@@ -191,7 +191,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
 
-            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &cx_privateKey);
+            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
 
             // Sign
             signatureLength = cx_ecdsa_sign(&cx_privateKey,
@@ -206,7 +206,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
         }
         FINALLY {
             MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
-            MEMZERO(privateKeyData, 32);
+            MEMZERO(privateKeyData, PRIV_KEY_SIZE);
         }
     }
     END_TRY;
@@ -223,7 +223,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
 
 void crypto_fillSaplingSeed(uint8_t *sk) {
     // Get seed from Ed25519
-    MEMZERO(sk, 32);
+    MEMZERO(sk, SK_SIZE);
     //fixme: make sure this path is not used somewhere else for signing
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
@@ -244,8 +244,8 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
 typedef struct {
     union {
         struct {
-            uint8_t diversifier[11];
-            uint8_t pkd[32];
+            uint8_t diversifier[DIV_SIZE];
+            uint8_t pkd[PKD_SIZEf];
         };
         struct {
             uint8_t address_raw[43];
@@ -257,14 +257,14 @@ typedef struct {
         };
 
         struct {
-            uint8_t ivk[32];
+            uint8_t ivk[IVK_SIZE];
         };
 
         struct {
-            uint8_t ak[32];
-            uint8_t nsk[32];
-            uint8_t rcm[32];
-            uint8_t alpha[32];
+            uint8_t ak[AK_SIZE];
+            uint8_t nsk[NSK_SIZE];
+            uint8_t rcm[RCM_SIZE];
+            uint8_t alpha[ALPHA_SIZE];
         };
     };
 } tmp_buf_s;
@@ -274,37 +274,37 @@ typedef struct {
         // STEP 1
         struct {
             uint32_t pos;
-            uint8_t dk[32];
-            uint8_t zip32_seed[32];
-            uint8_t sk[32];
+            uint8_t dk[DK_SIZE];
+            uint8_t zip32_seed[ZIP32_SEED_SIZE];
+            uint8_t sk[SK_SIZE];
         } step1;
 
         struct {
             uint32_t pos;
-            uint8_t dk[32];
-            uint8_t ask[32];
-            uint8_t nsk[32];
+            uint8_t dk[DK_SIZE];
+            uint8_t ask[ASK_SIZE];
+            uint8_t nsk[NSK_SIZE];
         } step2;
         // STEP 2
         struct {
             uint32_t pos;
-            uint8_t ivk[32];
-            uint8_t ak[32];
-            uint8_t nk[32];
+            uint8_t ivk[IVK_SIZE];
+            uint8_t ak[AK_SIZE];
+            uint8_t nk[NK_SIZE];
         } step3;
     };
 } tmp_sampling_s;
 
 uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t *txdata, const uint16_t txdatalen) {
-    uint8_t pubkey[32];
-    MEMCPY(pubkey, txdata, 32);
-    uint8_t rnd1[32];
-    uint8_t sessionkey[32];
+    uint8_t pubkey[PUB_KEY_SIZE];
+    MEMCPY(pubkey, txdata, PUB_KEY_SIZE);
+    uint8_t rnd1[RND1_SIZE];
+    uint8_t sessionkey[SESSION_KEY_SIZE];
     random_fr(rnd1);
     sessionkey_agree(rnd1,pubkey,sessionkey);
     set_session_key(sessionkey);
     pubkey_gen(rnd1,buffer);
-    return 32;
+    return PUB_KEY_SIZE;
 }
 
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
@@ -392,8 +392,8 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *div = start + INDEX_INPUT_INPUTDIV;
         uint8_t *pkd = start + INDEX_INPUT_INPUTPKD;
-        uint8_t rnd1[32];
-        uint8_t rnd2[32];
+        uint8_t rnd1[RND1_SIZE];
+        uint8_t rnd2[RND2_SIZE];
         random_fr(rnd1);
         random_fr(rnd2);
 
@@ -418,10 +418,10 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
-        uint8_t rnd1[32];
-        uint8_t rnd2[32];
+        uint8_t rnd1[RND1_SIZE];
+        uint8_t rnd2[RND2_SIZE];
         random_fr(rnd1);
-        cx_rng(rnd2, 32);
+        cx_rng(rnd2, RND2_SIZE);
         zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
         if (err != zxerr_ok){
             return zxerr_unknown;
@@ -491,8 +491,8 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
     ask_to_ak(tmp.step2.ask,out);
     MEMZERO(&tmp, sizeof(tmp_sampling_s));
     CHECK_APP_CANARY();
-    MEMCPY(out+64, next->rcm, 32);
-    MEMCPY(out+96, next->alpha,32);
+    MEMCPY(out+64, next->rcm, RCM_SIZE);
+    MEMCPY(out+96, next->alpha,ALPHA_SIZE);
 
     if(!spendlist_more_extract()){
         set_state(STATE_PROCESSED_SPEND_EXTRACTIONS);
@@ -521,8 +521,8 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     if (next == NULL){
         return zxerr_unknown;
     }
-    MEMCPY(out, next->rcmvalue, 32);
-    MEMCPY(out+32, next->rseed,32);
+    MEMCPY(out, next->rcmvalue, RCM_V_SIZE);
+    MEMCPY(out+RCM_V_SIZE, next->rseed, RSEED_SIZE);
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
@@ -535,8 +535,8 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
 typedef struct {
     union {
         struct {
-            uint8_t gd[32]; //computed from receiver diversifier
-            uint8_t pkd[32]; //get this from host and show on screen for verification
+            uint8_t gd[GD_SIZE]; //computed from receiver diversifier
+            uint8_t pkd[PKD_SIZE]; //get this from host and show on screen for verification
         } step2;
 
         struct {
@@ -544,8 +544,8 @@ typedef struct {
         } step3;
 
         struct{
-            uint8_t notecommitment[32];
-            uint8_t valuecommitment[32];
+            uint8_t notecommitment[NOTE_COMMITMENT_SIZE];
+            uint8_t valuecommitment[VALUE_COMMITMENT_SIZE];
         } step4;
     };
 } tmp_notecommit;
@@ -564,10 +564,10 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
     view_message_show("Zcash", "Step [3/5]");
     UX_WAIT_DISPLAYED();
 
-    uint8_t hash[32];
+    uint8_t hash[HASH_SIZE];
     prevouts_hash(txdata,hash);
 
-    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_PREVOUTSHASH, 32) != 0){
+    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_PREVOUTSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
     return zxerr_ok;
@@ -583,9 +583,9 @@ zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t
         return zxerr_unknown;
     }
 
-    uint8_t hash[32];
+    uint8_t hash[HASH_SIZE];
     sequence_hash(txdata, hash);
-    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_SEQUENCEHASH, 32) != 0){
+    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_SEQUENCEHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
     return zxerr_ok;
@@ -604,9 +604,9 @@ zxerr_t crypto_check_outputs(uint8_t *buffer, uint16_t bufferLen, const uint8_t 
     }
 
     MEMZERO(buffer, bufferLen);
-    uint8_t hash[32];
+    uint8_t hash[HASH_SIZE];
     outputs_hash(hash);
-    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_OUTPUTSHASH, 32) != 0){
+    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_OUTPUTSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
     return zxerr_ok;
@@ -621,9 +621,9 @@ zxerr_t crypto_check_joinsplits(uint8_t *buffer, uint16_t bufferLen, const uint8
     if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
         return zxerr_unknown;
     }
-    uint8_t hash[32];
+    uint8_t hash[HASH_SIZE];
     MEMZERO(hash,sizeof(hash));
-    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_JOINSPLITSHASH, 32) != 0){
+    if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_JOINSPLITSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
     return zxerr_ok;
@@ -663,12 +663,12 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t zip32_seed[32];
+            uint8_t zip32_seed[ZIP32_SEED_SIZE];
         } step1;
 
         struct {
-            uint8_t ask[32];
-            uint8_t nsk[32];
+            uint8_t ask[ASK_SIZE];
+            uint8_t nsk[NSK_SIZE];
         } step2;
     };
 } tmp_checkspend;
@@ -809,7 +809,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
     tmp_notecommit ncm;
     MEMZERO(&ncm, sizeof(tmp_notecommit));
 
-    uint8_t rcm[32];
+    uint8_t rcm[RCM_SIZE];
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     BEGIN_TRY
@@ -862,42 +862,42 @@ typedef struct {
         // STEP 1
         struct {
             uint8_t dummy[96];
-            uint8_t epk[32]; //computed from receiver diversifier
-            uint8_t esk[32];
+            uint8_t epk[EPK_SIZE]; //computed from receiver diversifier
+            uint8_t esk[ESK_SIZE];
         } step1;
 
         struct{
             uint8_t dummy[11];
             uint8_t compactout[53];
-            uint8_t sharedkey[32];
-            uint8_t epk[32];
-            uint8_t esk[32];
+            uint8_t sharedkey[SHARED_KEY_SIZE];
+            uint8_t epk[EPK_SIZE];
+            uint8_t esk[ESK_SIZE];
         } step2;
 
         struct{
-            uint8_t ovk[32];
-            uint8_t valuecmt[32];
-            uint8_t notecmt[32];
-            uint8_t epk[32];
-            uint8_t esk[32];
+            uint8_t ovk[OVK_SIZE];
+            uint8_t valuecmt[VALUE_COMMITMENT_SIZE];
+            uint8_t notecmt[NOTE_COMMITMENT_SIZE];
+            uint8_t epk[EPK_SIZE];
+            uint8_t esk[ESK_SIZE];
         }step3;
 
         struct{
             uint8_t prfinput[128];
-            uint8_t esk[32];
+            uint8_t esk[ESK_SIZE];
         }step4;
 
         struct{
-            uint8_t outkey[32];
+            uint8_t outkey[OUT_KEY_SIZE];
             uint8_t dummy[64];
-            uint8_t pkd[32];
-            uint8_t esk[32];
+            uint8_t pkd[PKD_SIZE];
+            uint8_t esk[ESK_SIZE];
         }step5;
 
         struct{
-            uint8_t outkey[32];
+            uint8_t outkey[OUT_KEY_SIZE];
             uint8_t dummy[64];
-            uint8_t encciph[64];
+            uint8_t encciph[ENC_CIPHER_SIZE];
         }step6;
     };
 } tmp_enc;
@@ -928,7 +928,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         rseed_get_esk(item->rseed,tmp->step1.esk);
 
         get_epk(tmp->step1.esk, (uint8_t *) item->div, tmp->step1.epk);
-        if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, 32) != 0){
+        if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, EPK_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
@@ -945,20 +945,20 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             return zxerr_unknown;
         }
 
-        MEMCPY(tmp->step3.ovk, item->ovk, 32);
+        MEMCPY(tmp->step3.ovk, item->ovk, OVK_SIZE);
         MEMZERO(out + 160, 32);
-        if(MEMCMP(tmp->step3.ovk, out + 160, 32) != 0){
+        if(MEMCMP(tmp->step3.ovk, out + 160, OVK_SIZE) != 0){
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,32);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,32);
 
             blake2b_prf(tmp->step4.prfinput, tmp->step5.outkey);
-            MEMCPY(tmp->step5.pkd, item->pkd, 32);
+            MEMCPY(tmp->step5.pkd, item->pkd, PKD_SIZE);
 
             counter = 1;
 
-            chacha(tmp->step6.encciph, tmp->step6.encciph, 64, tmp->step6.outkey, nonce,counter);
+            chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey, nonce,counter);
 
-            if (MEMCMP(tmp->step6.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, 64) != 0){
+            if (MEMCMP(tmp->step6.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
                 MEMZERO(out, bufferLen);
                 return zxerr_unknown;
             }
@@ -973,7 +973,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 }
 
 void address_to_script(uint8_t *address, uint8_t *output){
-    uint8_t script[26];
+    uint8_t script[SCRIPT_SIZE];
     script[0] = 0x19;
     script[1] = 0x76;
     script[2] = 0xa9;
@@ -984,7 +984,7 @@ void address_to_script(uint8_t *address, uint8_t *output){
     ripemd160(tmp, CX_SHA256_SIZE, script+4);
     script[24] = 0x88;
     script[25] = 0xac;
-    MEMCPY(output,script,26);
+    MEMCPY(output,script,SCRIPT_SIZE);
 }
 
 typedef struct {
@@ -996,7 +996,7 @@ typedef struct {
             uint8_t v;
             // DER signature max size should be 73
             // https://bitcoin.stackexchange.com/questions/77191/what-is-the-maximum-size-of-a-der-encoded-ecdsa-signature#77192
-            uint8_t der_signature[73];
+            uint8_t der_signature[DER_MAX_SIZE];
         } step1;
 
         struct {
@@ -1032,10 +1032,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[32];
-    uint8_t pubKey[33];
-    uint8_t script[26];
-    uint8_t message_digest[32];
+    uint8_t privateKeyData[PRIV_KEY_SIZE];
+    uint8_t pubKey[PUB_KEY_SIZE+1];
+    uint8_t script[SCRIPT_SIZE];
+    uint8_t message_digest[MESSAGE_DIGEST_SIZE];
 
     unsigned int info = 0;
     signature_tr *const signature = (signature_tr *) buffer;
@@ -1057,11 +1057,11 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                                        item->path,
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
-                cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, 32, &cx_privateKey);
+                cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
                 cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
                 cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
 
-                for (int i = 0; i < 32; i++) {
+                for (int i = 0; i < PUB_KEY_SIZE; i++) {
                     pubKey[i] = cx_publicKey.W[64 - i];
                  }
                 cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
@@ -1070,10 +1070,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 }
                 MEMCPY(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
                 address_to_script(pubKey,script);
-                if(MEMCMP(script,(uint8_t *)(start_tindata + INDEX_TIN_SCRIPT + i * T_IN_TX_LEN), 26) != 0){
+                if(MEMCMP(script,(uint8_t *)(start_tindata + INDEX_TIN_SCRIPT + i * T_IN_TX_LEN), SCRIPT_SIZE) != 0){
                     return zxerr_unknown;
                 }
-                if(MEMCMP(item->script, script,26) !=0){
+                if(MEMCMP(item->script, script,SCRIPT_SIZE) !=0){
                     return zxerr_unknown;
                 }
 
@@ -1101,7 +1101,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                                             message_digest,
                                             CX_SHA256_SIZE,
                                             signature->step1.der_signature,
-                                            73,
+                                            DER_MAX_SIZE,
                                             &info);
                 err_convert_e err = convertDERtoRSV(signature->step1.der_signature, info,  signature->step1.r, signature->step1.s, &signature->step1.v);
                 if (err != no_error) {
@@ -1144,7 +1144,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     uint8_t *start_signdata = (uint8_t *)(txdata + start_sighashdata());
 
-    uint8_t sighash[32];
+    uint8_t sighash[SIG_HASH_SIZE];
 
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
@@ -1423,8 +1423,8 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
         return zxerr_unknown;
     }
 
-    uint8_t div[11];
-    MEMCPY(div, (uint8_t *)(buffer + OFFSET_DATA + 4), 11);
+    uint8_t div[DIV_SIZE];
+    MEMCPY(div, (uint8_t *)(buffer + OFFSET_DATA + 4), DIV_SIZE);
 
     MEMZERO(buffer, bufferLen);
 
@@ -1438,7 +1438,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     tmp.step1.pos = p | 0x80000000;
 
-    MEMCPY(out->diversifier, div, 11);
+    MEMCPY(out->diversifier, div, DIV_SIZE);
     if (!is_valid_diversifier(out->diversifier)){
         return zxerr_unknown;
     }

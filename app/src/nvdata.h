@@ -33,12 +33,12 @@
 
 #define SESSION_KEY_SIZE        32
 
-#define OUTPUT_OVK_SIZE         32
-#define OUTPUT_RSEED_SIZE       32
+#define OVK_SIZE                32
+#define RSEED_SIZE              32
 #define OUTPUT_ADDRESS_SIZE     26
 #define RCM_V_SIZE              32
 
-#define INPUT_SCRIPT_SIZE       26
+#define SCRIPT_SIZE             26
 #define PATH_SIZE               5
 
 #define ADDRESS_SIZE            26
@@ -46,7 +46,7 @@
 
 typedef struct {
     uint32_t path[PATH_SIZE];
-    uint8_t script[INPUT_SCRIPT_SIZE];
+    uint8_t script[SCRIPT_SIZE];
     uint64_t value;
 } t_input_item_t;
 
@@ -99,8 +99,8 @@ typedef struct {
     uint64_t value;
     uint8_t memotype;
     uint8_t rcmvalue[RCM_V_SIZE];
-    uint8_t rseed[OUTPUT_RSEED_SIZE];
-    uint8_t ovk[OUTPUT_OVK_SIZE];
+    uint8_t rseed[RSEED_SIZE];
+    uint8_t ovk[OVK_SIZE];
 } output_item_t;
 
 typedef struct {

@@ -72,7 +72,7 @@ zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
 
     t_input_item_t newitem;
     MEMCPY(newitem.path, p, PATH_SIZE * sizeof(uint32_t));
-    MEMCPY(newitem.script, script, INPUT_SCRIPT_SIZE);
+    MEMCPY(newitem.script, script, SCRIPT_SIZE);
     newitem.value = v;
 
     MEMCPY_NV(
@@ -278,10 +278,10 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t mem
     output_item_t newitem;
     newitem.value = v;
     MEMCPY(newitem.rcmvalue, rcmv, RCM_V_SIZE);
-    MEMCPY(newitem.rseed, rseed, OUTPUT_RSEED_SIZE);
+    MEMCPY(newitem.rseed, rseed, RSEED_SIZE);
     MEMCPY(newitem.div, d, DIV_SIZE);
     MEMCPY(newitem.pkd, pkd, PKD_SIZE);
-    MEMCPY(newitem.ovk, ovk, OUTPUT_OVK_SIZE);
+    MEMCPY(newitem.ovk, ovk, OVK_SIZE);
     newitem.memotype = memotype;
     MEMCPY_NV(
             &N_outputlist.items[transaction_header.outputlist_len],
@@ -335,7 +335,7 @@ void state_reset() {
 
 void zeroize_tin_data(){
     uint32_t p[PATH_SIZE];
-    uint8_t s[INPUT_SCRIPT_SIZE];
+    uint8_t s[SCRIPT_SIZE];
     uint64_t v = 0;
     MEMZERO(p, sizeof(p));
     MEMZERO(s,sizeof(s));
@@ -347,7 +347,7 @@ void zeroize_tin_data(){
 }
 
 void zeroize_tout_data(){
-    uint8_t s[INPUT_SCRIPT_SIZE];
+    uint8_t s[SCRIPT_SIZE];
     uint64_t v = 0;
     MEMZERO(s,sizeof(s));
     transaction_header.t_out_len = 0;
@@ -379,9 +379,9 @@ void zeroize_output_data(){
     uint64_t v = 0;
     uint8_t div[DIV_SIZE];
     uint8_t pkd[PKD_SIZE];
-    uint8_t ovk[OUTPUT_OVK_SIZE];
+    uint8_t ovk[OVK_SIZE];
     uint8_t rcmv[RCM_V_SIZE];
-    uint8_t rseed[OUTPUT_RSEED_SIZE];
+    uint8_t rseed[RSEED_SIZE];
     uint8_t memotype = 0x00;
     MEMZERO(div,sizeof(div));
     MEMZERO(pkd,sizeof(pkd));
