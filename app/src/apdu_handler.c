@@ -153,7 +153,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     uint32_t zip32path = 0;
     parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK,
                                                 &zip32path);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -195,7 +195,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     uint32_t zip32path = 0;
     parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK,
                                                 &zip32path);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -369,7 +369,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
     uint32_t zip32path = 0;
     parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING,
                                                     &zip32path);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
