@@ -110,8 +110,10 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     // 7. 25 bytes BTC address = [extended ripemd-160][checksum]
     // Encode as base58
     size_t outLen = sizeof_field(answer_t, address);
-    encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
-
+    int err = encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
+    if(err != 0){
+        return zxerr_unknown;
+    }
     *replyLen = PK_LEN_SECP256K1 + outLen;
     return zxerr_ok;
 }
@@ -1352,11 +1354,17 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     }
     END_TRY;
 
-    bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_s, address_bech32),
+    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_s, address_raw),
                           1);
+    if(berr != zxerr_ok){
+        MEMZERO(out, bufferLen);
+        MEMZERO(&tmp, sizeof(tmp_sampling_s));
+        *replyLen = 0;
+        return berr;
+    }
     CHECK_APP_CANARY();
 
     *replyLen = sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
@@ -1422,11 +1430,18 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     }
     END_TRY;
 
-    bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_s, address_bech32),
+    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_s, address_raw),
                           1);
+    if(berr != zxerr_ok){
+        MEMZERO(out, bufferLen);
+        MEMZERO(&tmp, sizeof(tmp_sampling_s));
+        *replyLen = 0;
+        return berr;
+    }
+
     CHECK_APP_CANARY();
 
     *replyLen = sizeof_field(tmp_buf_s, address_raw) + strlen((const char *) out->address_bech32);
