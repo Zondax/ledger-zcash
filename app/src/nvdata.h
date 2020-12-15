@@ -40,7 +40,6 @@ typedef struct {
     t_output_item_t items[T_OUT_LIST_SIZE];
 } t_outlist_t;
 
-// TODO: pragma packing 1
 typedef struct {
     uint32_t path;
     uint64_t value;
