@@ -21,14 +21,6 @@
 #include <string.h>
 #include "zxmacros.h"
 
-#if defined(TARGET_NANOX)
-#define RAM_BUFFER_SIZE 8192
-#define FLASH_BUFFER_SIZE 16384
-#elif defined(TARGET_NANOS)
-#define RAM_BUFFER_SIZE 0
-#define FLASH_BUFFER_SIZE 8192
-#endif
-
 // Ram
 uint8_t ram_buffer[RAM_BUFFER_SIZE];
 
