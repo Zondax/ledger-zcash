@@ -277,7 +277,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
-    uint16_t replyLen;
+    uint16_t replyLen = 0;
 
     zemu_log_stack("handleGetAddrSapling_withdiv");
 
@@ -323,7 +323,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint16_t replyLen;
+    uint16_t replyLen = 0;
 
     zemu_log_stack("handleGetAddrSapling_divlist");
 
