@@ -29,29 +29,31 @@
 #include "addr.h"
 #include "key.h"
 #include "parser.h"
+#include "nvdata.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx != APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
     zxerr_t err = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
 
     if (err == zxerr_ok) {
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
+        *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
                                             volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx != APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -59,7 +61,6 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
     zxerr_t err = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (err == zxerr_ok){
         *tx = 64;
@@ -72,6 +73,7 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
 
 __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
                              volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx != APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -79,7 +81,6 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
     zxerr_t err = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (err == zxerr_ok) {
         *tx = 128;
@@ -93,6 +94,7 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
 
 __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx != APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -100,7 +102,6 @@ __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
     zxerr_t err = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
     if (err == zxerr_ok) {
         *tx = 64;
@@ -116,7 +117,8 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
-    zxerr_t err =init_tx();
+    *tx = 0;
+    zxerr_t err = init_tx();
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -129,6 +131,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx < APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -140,7 +143,6 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
@@ -171,6 +173,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx < APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -217,10 +220,12 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
+    *tx = 0;
     zxerr_t err = check_and_sign_tx();
     if (err != zxerr_ok) {
         *tx = 0;
         view_idle_show(0, NULL);
+        transaction_reset();
         THROW(APDU_CODE_DATA_INVALID);
     }else{
         *tx = 32;
@@ -231,7 +236,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
                                        volatile uint32_t *tx, uint32_t rx) {
     extractHDPath(rx, OFFSET_DATA);
-
+    *tx = 0;
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
     uint16_t replyLen = 0;
 
@@ -257,6 +262,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
                                         volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx < APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -304,6 +310,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
                                          volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx < APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -342,6 +349,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
 
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
                                      volatile uint32_t *tx, uint32_t rx) {
+    *tx = 0;
     if(rx < APDU_MIN_LENGTH){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
