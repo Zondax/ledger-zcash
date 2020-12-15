@@ -1067,7 +1067,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                  }
                 cx_publicKey.W[0] = cx_publicKey.W[SIG_S_SIZE + SIG_R_SIZE] & 1 ? 0x03 : 0x02; // "Compress" public key in place
                 if ((cx_publicKey.W[SIG_R_SIZE] & 1) != 0) {
-                    pubKey[31] |= 0x80;
+                    pubKey[PUB_KEY_SIZE - 1] |= 0x80;
                 }
                 MEMCPY(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
                 address_to_script(pubKey,script);
