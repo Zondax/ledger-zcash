@@ -57,6 +57,9 @@ typedef struct {
 } parser_sapling_t;
 
 parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs){
+    if(dataLen < 15){
+        return parser_context_unexpected_size;
+    }
     parser_context_t pars_ctx;
     parser_error_t pars_err;
     pars_ctx.offset = 0;
@@ -73,6 +76,9 @@ parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen,
 }
 
 parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t *p){
+    if(dataLen < 4){
+        return parser_context_unexpected_size;
+    }
     parser_context_t pars_ctx;
     parser_error_t pars_err;
     pars_ctx.offset = 0;
