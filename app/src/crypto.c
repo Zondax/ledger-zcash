@@ -381,7 +381,6 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
         return zxerr_unknown;
     }
 
-    //todo: warning that proofkey is extracted
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
@@ -1087,7 +1086,6 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         {
             // Temporarily get sk from Ed25519
             CHECK_APP_CANARY();
-            //fixme: can we get rid of loading the side n times?
             for(uint8_t i = 0; i < spendlist_len(); i++){
                 crypto_fillSaplingSeed(tmp.step1.zip32_seed);
                 const spend_item_t *item = spendlist_retrieve_item(i);
