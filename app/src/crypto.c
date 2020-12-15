@@ -1213,7 +1213,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     }
     END_TRY;
     CHECK_APP_CANARY();
-    *replyLen = 32;
+    *replyLen = IVK_SIZE;
     return zxerr_ok;
 }
 
@@ -1251,7 +1251,7 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     }
     END_TRY;
     CHECK_APP_CANARY();
-    *replyLen = 32;
+    *replyLen = OVK_SIZE;
     return zxerr_ok;
 }
 
