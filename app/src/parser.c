@@ -28,6 +28,8 @@
 #include "bech32.h"
 #include "base58.h"
 
+#define DEFAULT_MEMOTYPE        0xf6
+
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
 void __assert_fail(const char *assertion, const char *file, unsigned int line,
@@ -40,11 +42,11 @@ void __assert_fail(const char *assertion, const char *file, unsigned int line,
 parser_tx_t parser_state;
 
 typedef enum {
-    type_tin = 0,
-    type_tout = 1,
+    type_tin    = 0,
+    type_tout   = 1,
     type_sspend = 2,
-    type_sout = 3,
-    type_txfee = 4,
+    type_sout   = 3,
+    type_txfee  = 4,
 } sapling_parser_type_e;
 
 typedef struct {
@@ -123,9 +125,9 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
 
-    uint8_t address[43];
-    MEMCPY(address, div, 11);
-    MEMCPY(address + 11, pkd, 32);
+    uint8_t address[DIV_SIZE + PKD_SIZE];
+    MEMCPY(address, div, DIV_SIZE);
+    MEMCPY(address + DIV_SIZE, pkd, PKD_SIZE);
     char tmpBuffer[100];
     bech32EncodeFromBytes(tmpBuffer, sizeof(tmpBuffer),
                           BECH32_HRP,
@@ -205,11 +207,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "T-in address");
+                    snprintf(outKey, outKeyLen, "T-in addr");
                     return parser_sapling_display_address_t(item->script, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "T-in ZECs");
+                    snprintf(outKey, outKeyLen, "T-in (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -221,11 +223,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "T-out address");
+                    snprintf(outKey, outKeyLen, "T-out addr");
                     return parser_sapling_display_address_t(item->address, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "T-out ZECs");
+                    snprintf(outKey, outKeyLen, "T-out (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -236,11 +238,11 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "S-in address");
+                    snprintf(outKey, outKeyLen, "S-in addr");
                     return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "S-in ZECs");
+                    snprintf(outKey, outKeyLen, "S-in (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
             }
@@ -252,30 +254,30 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             uint8_t itemtype = prs.index % NUM_ITEMS_SOUT;
             switch (itemtype) {
                 case 0: {
-                    snprintf(outKey, outKeyLen, "S-out address");
+                    snprintf(outKey, outKeyLen, "S-out addr");
                     return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
-                    snprintf(outKey, outKeyLen, "S-out ZECs");
+                    snprintf(outKey, outKeyLen, "S-out (ZEC)");
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
-                    snprintf(outKey, outKeyLen, "S-out Memotype");
-                    if(item->memotype == 0xf6) {
+                    snprintf(outKey, outKeyLen, "Memo Type");
+                    if(item->memotype == DEFAULT_MEMOTYPE) {
                         snprintf(outVal, outValLen, "Default");
                     }else{
-                        snprintf(outVal, outValLen, "Non-default");
+                        snprintf(outVal, outValLen, "Custom");
                     }
                     return parser_ok;
                 }
 
                 case 3: {
                     snprintf(outKey, outKeyLen, "S-out OVK");
-                    uint8_t dummy[32];
+                    uint8_t dummy[OVK_SIZE];
                     MEMZERO(dummy, sizeof(dummy));
-                    if(MEMCMP(dummy, item->ovk, 32) != 0) {
+                    if(MEMCMP(dummy, item->ovk, OVK_SIZE) != 0) {
                         char tmpBuffer[100];
-                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, 32);
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OVK_SIZE);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return parser_ok;
                     }else{
@@ -287,7 +289,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
 
         case type_txfee: {
-            snprintf(outKey, outKeyLen, "Txfee");
+            snprintf(outKey, outKeyLen, "Fee");
             return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
         }
 
