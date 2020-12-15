@@ -49,21 +49,6 @@ transaction_header_t transaction_header;
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-void set_session_key(uint8_t *key) {
-    MEMCPY_NV(
-            &N_transactioninfo.session_key,
-            key, 32);
-    transaction_header.session_key_set = 1;
-};
-
-bool session_key_set() {
-    return transaction_header.session_key_set == 1;
-}
-
-uint8_t *get_session_key() {
-    return (uint8_t * ) & N_transactioninfo.session_key;
-};
-
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
     if (transaction_header.t_in_len >= T_IN_LIST_SIZE) {
         return zxerr_unknown;
@@ -128,23 +113,28 @@ uint8_t t_outlist_len() {
 }
 
 bool transparent_signatures_more_extract() {
-    return transaction_header.t_sign_index > transaction_header.t_sign_extract_index;
+    return transaction_header.t_sign_index > 0;
 }
 
 
-void transparent_signatures_append(uint8_t *signature) {
+zxerr_t transparent_signatures_append(uint8_t *signature) {
+    if (transaction_header.t_sign_index >= transaction_header.t_in_len){
+        return zxerr_unknown;
+    }
     MEMCPY_NV(
             &N_transactioninfo.transparent_signatures[transaction_header.t_sign_index],
             signature, SIGNATURE_SIZE);
     transaction_header.t_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_transparent_signature(uint8_t *result) {
-    if (transaction_header.t_in_len <= transaction_header.t_sign_extract_index) {
+    uint8_t index = transaction_header.t_in_len - transaction_header.t_sign_index;
+    if (transaction_header.t_in_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, &N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index], SIGNATURE_SIZE);
-    transaction_header.t_sign_extract_index++;
+    MEMCPY(result, &N_transactioninfo.transparent_signatures[index], SIGNATURE_SIZE);
+    transaction_header.t_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
@@ -153,22 +143,28 @@ zxerr_t get_next_transparent_signature(uint8_t *result) {
 }
 
 bool spend_signatures_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_extract_index;
+    return transaction_header.spends_sign_index > 0;
 }
 
-void spend_signatures_append(uint8_t *signature) {
+zxerr_t spend_signatures_append(uint8_t *signature) {
+    if (transaction_header.spends_sign_index >= transaction_header.spendlist_len){
+        return zxerr_unknown;
+    }
+
     MEMCPY_NV(
             &N_transactioninfo.spend_signatures[transaction_header.spends_sign_index],
             signature, SIGNATURE_SIZE);
     transaction_header.spends_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_extract_index) {
+    uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
+    if (transaction_header.spendlist_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, & N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index], SIGNATURE_SIZE);
-    transaction_header.spends_sign_extract_index++;
+    MEMCPY(result, & N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
+    transaction_header.spends_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
@@ -180,15 +176,13 @@ void transaction_reset() {
     transaction_header.t_in_len = 0;
     transaction_header.t_out_len = 0;
     transaction_header.t_sign_index = 0;
-    transaction_header.t_sign_extract_index = 0;
     transaction_header.total_value = 0;
     transaction_header.state = 0;
-    transaction_header.spendlist_extract_index = 0;
+    transaction_header.spenddata_extract_index = 0;
     transaction_header.spendlist_len = 0;
     transaction_header.spends_sign_index = 0;
     transaction_header.outputlist_len = 0;
-    transaction_header.outputlist_extract_index = 0;
-    transaction_header.spends_sign_extract_index = 0;
+    transaction_header.outputdata_extract_index = 0;
     zeroize_flashstorage();
 }
 
@@ -229,39 +223,21 @@ spend_item_t *spendlist_retrieve_item(uint8_t i) {
 }
 
 spend_item_t *spendlist_extract_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spendlist_extract_index) {
+    if (transaction_header.spendlist_len <= transaction_header.spenddata_extract_index) {
         return NULL;
     } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spendlist_extract_index];
-        transaction_header.spendlist_extract_index += 1;
+        spend_item_t *result = &N_spendlist.items[transaction_header.spenddata_extract_index];
+        transaction_header.spenddata_extract_index += 1;
         return result;
     }
 }
 
 bool spendlist_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spendlist_extract_index;
+    return transaction_header.spendlist_len > transaction_header.spenddata_extract_index;
 }
 
 uint8_t spendlist_len() {
     return transaction_header.spendlist_len;
-}
-
-bool spendlist_first_sign() {
-    return transaction_header.spends_sign_index == 0;
-}
-
-bool spendlist_more_sign() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_index;
-}
-
-spend_item_t *spendlist_sign_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_index) {
-        return NULL;
-    } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spends_sign_index];
-        transaction_header.spends_sign_index += 1;
-        return result;
-    }
 }
 
 bool outputlist_is_active() {
@@ -301,17 +277,17 @@ output_item_t *outputlist_retrieve_item(uint8_t i) {
 }
 
 output_item_t *outputlist_extract_next() {
-    if (transaction_header.outputlist_len <= transaction_header.outputlist_extract_index) {
+    if (transaction_header.outputlist_len <= transaction_header.outputdata_extract_index) {
         return NULL;
     } else {
-        output_item_t *result = &N_outputlist.items[transaction_header.outputlist_extract_index];
-        transaction_header.outputlist_extract_index += 1;
+        output_item_t *result = &N_outputlist.items[transaction_header.outputdata_extract_index];
+        transaction_header.outputdata_extract_index += 1;
         return result;
     }
 }
 
 bool outputlist_more_extract() {
-    return transaction_header.outputlist_len > transaction_header.outputlist_extract_index;
+    return transaction_header.outputlist_len > transaction_header.outputdata_extract_index;
 }
 
 uint8_t outputlist_len() {

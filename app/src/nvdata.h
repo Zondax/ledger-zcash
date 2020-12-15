@@ -53,17 +53,14 @@ typedef struct {
 typedef struct {
     uint64_t total_value;
     uint8_t state;
-    uint8_t session_key_set;
     uint8_t t_in_len;
     uint8_t t_out_len;
     uint8_t spendlist_len;
     uint8_t outputlist_len;
-    uint8_t spendlist_extract_index;
-    uint8_t outputlist_extract_index;
+    uint8_t spenddata_extract_index;
+    uint8_t outputdata_extract_index;
     uint8_t spends_sign_index;
-    uint8_t spends_sign_extract_index;
     uint8_t t_sign_index;
-    uint8_t t_sign_extract_index;
 } transaction_header_t;
 
 typedef struct {
@@ -85,7 +82,6 @@ typedef struct {
 } outputlist_t;
 
 typedef struct {
-    uint8_t session_key[SESSION_KEY_SIZE];
     uint8_t transparent_signatures[T_IN_LIST_SIZE][64];
     uint8_t spend_signatures[SPEND_LIST_SIZE][64];
 } transaction_info_t;
@@ -95,10 +91,6 @@ extern "C" {
 #endif
 
 void transaction_reset();
-
-void set_session_key(uint8_t *key);
-
-uint8_t *get_session_key();
 
 //statemachine API
 uint8_t get_state();
@@ -116,21 +108,17 @@ void set_state(uint8_t state);
 //metadata flash api
 uint64_t get_valuebalance();
 
-bool spendlist_first_sign();
-
 bool spendlist_more_sign();
-
-spend_item_t *spendlist_sign_next();
 
 bool transparent_signatures_more_extract();
 
-void transparent_signatures_append(uint8_t *signature);
+zxerr_t transparent_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_transparent_signature(uint8_t *result);
 
 bool spend_signatures_more_extract();
 
-void spend_signatures_append(uint8_t *signature);
+zxerr_t spend_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_spend_signature(uint8_t *result);
 //transparent TxIN API

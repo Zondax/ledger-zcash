@@ -26,7 +26,6 @@ pub use zxformat::{fpi64_to_str, fpu64_to_str};
 
 use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
 
-mod aead;
 mod bolos;
 mod commitments;
 mod constants;
@@ -34,8 +33,6 @@ mod errors;
 mod note_encryption;
 mod pedersen;
 mod redjubjub;
-mod sighash;
-mod tests_crypto;
 mod zeccrypto;
 mod zip32;
 mod zxformat;

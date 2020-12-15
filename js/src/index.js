@@ -243,10 +243,8 @@ export default class ZCashApp {
 
   static saplingprepareChunks(message) {
     const chunks = [];
-    chunks.push(Buffer.alloc(20));
-    const messageBuffer = Buffer.from(message);
-
-    const buffer = Buffer.concat([messageBuffer]);
+    chunks.push(Buffer.from([]));
+    const buffer = Buffer.from(message);
     for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
       let end = i + CHUNK_SIZE;
       if (i > buffer.length) {
@@ -420,20 +418,20 @@ export default class ZCashApp {
   }
 
   async extractspendsig() {
-    return this.transport.send(CLA, INS.EXTRACTSPENDSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSIGResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACTSPENDSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(processSIGResponse, processErrorResponse);
   }
 
   async extracttranssig() {
-    return this.transport.send(CLA, INS.EXTRACTTRANSSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processTRANSIGResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACTTRANSSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(processTRANSIGResponse, processErrorResponse);
   }
 
   async extractoutputdata() {
-    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processOutputResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(processOutputResponse, processErrorResponse);
   }
 
   async extractspenddata() {
     console.log('in extract spend');
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.alloc(20), [0x9000]).then(processSpendResponse, processErrorResponse);
+    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(processSpendResponse, processErrorResponse);
   }
 
   async getdivlist(path, index) {
@@ -475,35 +473,6 @@ export default class ZCashApp {
 
   async signSendChunk(chunkIdx, chunkNum, chunk) {
     return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
-  }
-
-  async sign(path, message, unshielded = false) {
-    return this.signGetChunks(path, message).then((chunks) => {
-      return this.signSendChunk(1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(async (response) => {
-        let result = {
-          return_code: response.return_code,
-          error_message: response.error_message,
-          signature_compact: null,
-          signature_der: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.signSendChunk(1 + i, chunks.length, chunks[i]);
-          if (result.return_code !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
-
-        return {
-          return_code: result.return_code,
-          error_message: result.error_message,
-          // ///
-          signature_compact: result.signature_compact,
-          signature_der: result.signature_der,
-        };
-      }, processErrorResponse);
-    }, processErrorResponse);
   }
 
   async saplingGetChunks(message) {

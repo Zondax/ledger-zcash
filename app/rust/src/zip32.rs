@@ -221,8 +221,7 @@ pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let y = v.mul_by_cofactor();
 
     let v = y.to_niels().multiply_bits(ivk);
-    let t = AffinePoint::from(v);
-    t.to_bytes()
+    extended_to_bytes(&v)
 }
 
 #[inline(never)]
