@@ -32,8 +32,8 @@ jobs:
     docker:
       - image: zondax/builder-bolos:latest
     environment:
-      - BOLOS_SDK=/home/zondax/project/deps/nanos-secure-sdk
-      - BOLOS_ENV=/opt/bolos
+      BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
     steps:
       - checkout
       # Docker entrypoint is not considered
@@ -124,8 +124,8 @@ jobs:
     docker:
       - image: zondax/builder-bolos:latest
     environment:
-      - BOLOS_SDK=/home/zondax/project/deps/nanos-secure-sdk
-      - BOLOS_ENV=/opt/bolos
+      BOLOS_SDK: /home/zondax/project/deps/nanos-secure-sdk
+      BOLOS_ENV: /opt/bolos
     steps:
       - checkout
       - run: git submodule update --init --recursive
