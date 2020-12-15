@@ -260,7 +260,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                     return parser_sapling_display_value(item->value, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
-                    snprintf(outKey, outKeyLen, "Memo Type");
+                    snprintf(outKey, outKeyLen, "S-out Memotype");
                     if(item->memotype == 0xf6) {
                         snprintf(outVal, outValLen, "Default");
                     }else{
