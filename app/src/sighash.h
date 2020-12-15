@@ -14,6 +14,8 @@
 *  limitations under the License.
 ********************************************************************************/
 
+#define HASH_SIZE 32
+
 void prevouts_hash(const uint8_t *input, uint8_t *output);
 
 void sequence_hash(const uint8_t *input, uint8_t *output);

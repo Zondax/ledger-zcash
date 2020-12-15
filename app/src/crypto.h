@@ -26,18 +26,12 @@ extern "C" {
 #include <stdbool.h>
 #include <sigutils.h>
 
-#define CHECKSUM_LENGTH             4
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
 extern address_kind_e addressKind;
 
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
-#define VERSION_P2SH            0x1CBD
-#define VERSION_P2PKH           0x1CB8
-#define BECH32_HRP              "zs"
-#define BECH32_HRP_TEST         "ztestsapling"
+
 
 bool isTestnet();
 
