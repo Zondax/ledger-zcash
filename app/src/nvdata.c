@@ -133,8 +133,8 @@ zxerr_t get_next_transparent_signature(uint8_t *result) {
     if (transaction_header.t_in_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, &N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index], SIGNATURE_SIZE);
-    transaction_header.t_sign_extract_index++;
+    MEMCPY(result, &N_transactioninfo.transparent_signatures[index], SIGNATURE_SIZE);
+    transaction_header.t_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
@@ -163,8 +163,8 @@ zxerr_t get_next_spend_signature(uint8_t *result) {
     if (transaction_header.spendlist_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, & N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index], SIGNATURE_SIZE);
-    transaction_header.spends_sign_extract_index++;
+    MEMCPY(result, & N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
+    transaction_header.spends_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
