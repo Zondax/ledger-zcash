@@ -41,14 +41,24 @@ extern key_state_t key_state;
 
 __Z_INLINE zxerr_t init_tx() {
     tx_reset_state();
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
+    const uint8_t *message = tx_get_buffer();
+    if(tx_get_buffer_length() > FLASH_BUFFER_SIZE){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
+        return zxerr_unknown;
+    }
+
+    const uint16_t messageLength = tx_get_buffer_length();
     zxerr_t err;
     err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
     err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
+        return err;
+    }
     return err;
 
 }
@@ -56,26 +66,34 @@ __Z_INLINE zxerr_t init_tx() {
 __Z_INLINE zxerr_t check_and_sign_tx() {
     // Take "ownership" of the memory used by the transaction parser
     tx_reset_state();
-    const uint8_t *message = tx_get_buffer() + CRYPTO_BLOB_SKIP_BYTES;
-    const uint16_t messageLength = tx_get_buffer_length() - CRYPTO_BLOB_SKIP_BYTES;
+    const uint8_t *message = tx_get_buffer();
+    if(tx_get_buffer_length() > FLASH_BUFFER_SIZE){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
+        return zxerr_unknown;
+    }
+    const uint16_t messageLength = tx_get_buffer_length();
     zxerr_t err;
     err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
     //todo: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
@@ -87,16 +105,19 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     */
     err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
@@ -104,15 +125,18 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
 
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
     err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
     err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if(err != zxerr_ok){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
 
@@ -122,6 +146,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
 __Z_INLINE void app_reject() {
     tx_reset_state();
     transaction_reset();
+    MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
     view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
@@ -138,6 +163,7 @@ __Z_INLINE void app_reply_address() {
 }
 
 __Z_INLINE void app_reply_error() {
+    MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
     view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_DATA_INVALID);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
