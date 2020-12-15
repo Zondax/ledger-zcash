@@ -26,7 +26,6 @@
 #include "tx.h"
 #include "view.h"
 #include "zxmacros.h"
-#include "chacha.h"
 #include "addr.h"
 #include "key.h"
 #include "parser.h"
@@ -333,127 +332,8 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 }
 
 #if defined(APP_TESTING)
-#include "rslib.h"
-
-typedef struct {
-    union {
-        //todo: add zip32
-        struct{
-            uint8_t seed[32];
-            uint8_t dk[32];
-            uint8_t ask[32];
-        } keyphase1;
-
-         struct {
-            uint8_t diversifier[11]; //get this from host and show on screen for verification
-            uint8_t dummy1[21];
-            uint8_t ivk[32]; //maybe compute self or from host (already needed by host earlier)
-            uint8_t dummy2[9];
-            uint8_t dummyxxx[23];
-        } step1;
-
-        // STEP 1
-        struct {
-            uint8_t gd[32]; //computed from receiver diversifier
-            uint8_t pkd[32]; //get this from host and show on screen for verification
-            uint8_t dummy[9];
-            uint8_t dummyxxx[23];
-        } step2;
-
-        struct {
-            uint8_t inputhash[73];
-            uint8_t dummyxxx[23];
-        } step3;
-
-        struct{
-            uint8_t notecommitment[32];
-            uint8_t valuecommitment[32];
-            uint8_t dummy[9];
-            uint8_t dummyxxx[23];
-        } step4;
-    };
-} tmp_notecommit;
-
-typedef struct {
-    union {
-        //todo: add zip32
-        struct{
-            uint8_t ovk[32];
-            uint8_t cv[32];
-            uint8_t cmu[32];
-            uint8_t epk[32];
-        } keyphase1;
-
-        struct {
-            uint8_t input[128];
-        } keyphase2;
-
-        struct {
-            uint8_t key[32];
-            uint8_t pkd[32]; //
-            uint8_t esk[32];
-            uint8_t dummy[32];
-        } keyphase3;
-
-        struct {
-            uint8_t key[32];
-            uint8_t input[64];
-            uint8_t dummy[32];
-        } keyphase4;
-
-        struct {
-            uint8_t key[32];
-            uint8_t output[80];
-            uint8_t dummy[16];
-        } keyphase5;
-
-        //todo: we need a few extra bytes in this union here for smooth transition
-
-        struct {
-            uint8_t epk[32];
-            uint8_t pkd[32]; //
-            uint8_t esk[32];
-            uint8_t dummy[32];
-        } kaphase;
-
-        struct {
-            uint8_t sk[32];
-            uint8_t alpha[32]; //
-            uint8_t pk[32];
-            uint8_t rsk[32];
-        } jubjub;
-
-        struct {
-            uint8_t key[32];
-            uint8_t d[11];
-            uint64_t value;
-            uint8_t rcm[32];
-            uint8_t dummy2;
-        } encphase1;
-
-        struct {
-            uint8_t key[32];
-            uint8_t inputenc[52];
-        } encphase2;
-    };
-} tmp_enc;
 void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    uint8_t buffer[52];
-    uint8_t compact[52] = {0x01, 0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c, 0x00, 0xe1, 0xf5,
-            0x05, 0x00, 0x00, 0x00, 0x00, 0x39, 0x17, 0x6d, 0xac, 0x39, 0xac, 0xe4, 0x98, 0x0e, 0xcc,
-            0x8d, 0x77, 0x8e, 0x89, 0x86, 0x02, 0x55, 0xec, 0x36, 0x15, 0x06, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    uint8_t esk[32] = {0x6d, 0xf8, 0x5b, 0x17, 0x89, 0xb0, 0xb7, 0x8b, 0x46, 0x10, 0xf2, 0x5d, 0x36, 0x8c, 0xb5,
-        0x11, 0x14, 0x0a, 0x7c, 0x0a, 0xf3, 0xbc, 0x3d, 0x2a, 0x22, 0x6f, 0x92, 0x7d, 0xe6, 0x02,
-        0xa7, 0xf1};
-    uint8_t nonce[12] = {0,0,0,0,0,0,0,0,0,0,0,0};
-    uint32_t counter = 1;
-    chacha(buffer, compact, 52,
-                     esk, nonce,
-                     counter);
-    CHECK_APP_CANARY();
-    MEMCPY(G_io_apdu_buffer, buffer, 52);
-    *tx = 52;
+
 }
 #endif
 
