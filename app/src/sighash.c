@@ -84,12 +84,12 @@ void outputs_hash(uint8_t *output){
     for(;i < n-1; i++) {
         t_output_item_t *item = t_outlist_retrieve_item(i);
         MEMCPY(data,(uint8_t *)&(item->value),8);
-        MEMCPY(data + 8,item->address,OUTPUT_ADDRESS_SIZE);
+        MEMCPY(data + 8,item->address,SCRIPT_SIZE);
         cx_hash(&ctx.header, 0, data, sizeof(data), NULL, 0);
     }
     t_output_item_t *item = t_outlist_retrieve_item(i);
     MEMCPY(data,(uint8_t *)&(item->value),8);
-    MEMCPY(data + 8,item->address, OUTPUT_ADDRESS_SIZE);
+    MEMCPY(data + 8,item->address, SCRIPT_SIZE);
     cx_hash(&ctx.header, CX_LAST, data, sizeof(data), output, HASH_SIZE);
 
 }

@@ -117,7 +117,7 @@ uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len) {
 void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[PRIV_KEY_SIZE];
+    uint8_t privateKeyData[SK_SECP256K1_SIZE];
 
     if (pubKeyLen < PK_LEN_SECP256K1) {
         return;
@@ -131,13 +131,13 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
 
-            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
+            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey);
             cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
             cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
         }
         FINALLY {
             MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
-            MEMZERO(privateKeyData, PRIV_KEY_SIZE);
+            MEMZERO(privateKeyData, SK_SECP256K1_SIZE);
         }
     }
     END_TRY;
@@ -148,7 +148,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
     }
     cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
     if ((cx_publicKey.W[PUB_KEY_SIZE] & 1) != 0) {
-        pubKey[31] |= 0x80;
+        pubKey[PUB_KEY_SIZE - 1] |= 0x80;
     }
 
     memcpy(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
@@ -176,7 +176,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
 
     /// Now sign
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[PRIV_KEY_SIZE];
+    uint8_t privateKeyData[SK_SECP256K1_SIZE];
     int signatureLength;
     unsigned int info = 0;
 
@@ -192,7 +192,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
 
-            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
+            cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey);
 
             // Sign
             signatureLength = cx_ecdsa_sign(&cx_privateKey,
@@ -207,7 +207,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
         }
         FINALLY {
             MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
-            MEMZERO(privateKeyData, PRIV_KEY_SIZE);
+            MEMZERO(privateKeyData, SK_SECP256K1_SIZE);
         }
     }
     END_TRY;
@@ -224,7 +224,7 @@ uint16_t crypto_sign(uint8_t *buffer, uint16_t signatureMaxlen, const uint8_t *m
 
 void crypto_fillSaplingSeed(uint8_t *sk) {
     // Get seed from Ed25519
-    MEMZERO(sk, SK_SIZE);
+    MEMZERO(sk, ED25519_SK_SIZE);
     //fixme: make sure this path is not used somewhere else for signing
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
@@ -277,7 +277,7 @@ typedef struct {
             uint32_t pos;
             uint8_t dk[DK_SIZE];
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
-            uint8_t sk[SK_SIZE];
+            uint8_t sk[ED25519_SK_SIZE];
         } step1;
 
         struct {
@@ -299,7 +299,7 @@ typedef struct {
 uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t *txdata, const uint16_t txdatalen) {
     uint8_t pubkey[PUB_KEY_SIZE];
     MEMCPY(pubkey, txdata, PUB_KEY_SIZE);
-    uint8_t rnd1[RND1_SIZE];
+    uint8_t rnd1[RND_SIZE];
     uint8_t sessionkey[SESSION_KEY_SIZE];
     random_fr(rnd1);
     sessionkey_agree(rnd1,pubkey,sessionkey);
@@ -393,8 +393,8 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *div = start + INDEX_INPUT_INPUTDIV;
         uint8_t *pkd = start + INDEX_INPUT_INPUTPKD;
-        uint8_t rnd1[RND1_SIZE];
-        uint8_t rnd2[RND2_SIZE];
+        uint8_t rnd1[RND_SIZE];
+        uint8_t rnd2[RND_SIZE];
         random_fr(rnd1);
         random_fr(rnd2);
 
@@ -419,10 +419,10 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
-        uint8_t rnd1[RND1_SIZE];
-        uint8_t rnd2[RND2_SIZE];
+        uint8_t rnd1[RND_SIZE];
+        uint8_t rnd2[RND_SIZE];
         random_fr(rnd1);
-        cx_rng(rnd2, RND2_SIZE);
+        cx_rng(rnd2, RND_SIZE);
         zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
         if (err != zxerr_ok){
             return zxerr_unknown;
@@ -1033,10 +1033,10 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
-    uint8_t privateKeyData[PRIV_KEY_SIZE];
+    uint8_t privateKeyData[SK_SECP256K1_SIZE];
     uint8_t pubKey[PUB_KEY_SIZE+1];
     uint8_t script[SCRIPT_SIZE];
-    uint8_t message_digest[MESSAGE_DIGEST_SIZE];
+    uint8_t message_digest[HASH_SIZE];
 
     unsigned int info = 0;
     signature_tr *const signature = (signature_tr *) buffer;
@@ -1058,7 +1058,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                                        item->path,
                                        HDPATH_LEN_DEFAULT,
                                        privateKeyData, NULL);
-                cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, PRIV_KEY_SIZE, &cx_privateKey);
+                cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey);
                 cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
                 cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
 
@@ -1388,7 +1388,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
             CHECK_APP_CANARY();
 
             get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
-            for(int i = 0; i < 20; i++){
+            for(int i = 0; i < DIV_LIST_LENGTH; i++){
                 if (!is_valid_diversifier(buffer+i*DIV_SIZE)){
                     MEMZERO(buffer+i*DIV_SIZE,DIV_SIZE);
                 }

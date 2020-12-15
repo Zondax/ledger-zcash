@@ -100,7 +100,7 @@ zxerr_t t_outlist_append_item(uint8_t *addr, uint64_t v) {
     transaction_header.total_value -= v;
 
     t_output_item_t newitem;
-    MEMCPY(newitem.address, addr, ADDRESS_SIZE);
+    MEMCPY(newitem.address, addr, SCRIPT_SIZE);
     newitem.value = v;
 
     MEMCPY_NV(

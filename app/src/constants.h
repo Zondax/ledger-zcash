@@ -16,6 +16,51 @@
 
 #pragma once
 
+// CRYPTO File
+#define CHECKSUM_LENGTH         4
+
+#define SK_SECP256K1_SIZE       32
+#define PUB_KEY_SIZE            32
+#define DER_MAX_SIZE            73
+#define AK_SIZE                 32
+#define NSK_SIZE                32
+#define ASK_SIZE                32
+#define DK_SIZE                 32
+#define NK_SIZE                 32
+#define ED25519_SK_SIZE         32
+#define IVK_SIZE                32
+#define ZIP32_SEED_SIZE         32
+#define RND_SIZE                32
+#define NULLIFIER_SIZE          32
+
+#define ESK_SIZE                32
+#define EPK_SIZE                32
+#define NOTE_COMMITMENT_SIZE    32
+#define VALUE_COMMITMENT_SIZE   32
+#define HASH_SIZE               32
+#define SESSION_KEY_SIZE        32
+#define GD_SIZE                 32
+#define SHARED_KEY_SIZE         32
+#define OUT_KEY_SIZE            32
+#define ENC_CIPHER_SIZE         64
+#define COMPACT_OUT_SIZE        53
+#define MAX_SIZE                160
+#define SIG_R_SIZE              32
+#define SIG_S_SIZE              32
+#define SCRIPT_CONSTS_SIZE      4
+#define PEDERSEN_INPUT_SIZE     73
+#define CHACHA_NONCE_SIZE       12
+
+#define MASK_HARDENED           0x80000000
+
+#define VERSION_SIZE            2
+#define CHECKSUM_SIZE           4
+#define VERSION_P2SH            0x1CBD
+#define VERSION_P2PKH           0x1CB8
+#define BECH32_HRP              "zs"
+#define BECH32_HRP_TEST         "ztestsapling"
+
+
 // NVDATA File
 //fixme: maybe increase some of these
 #define T_IN_LIST_SIZE          5
@@ -34,61 +79,9 @@
 
 #define OVK_SIZE                32
 #define RSEED_SIZE              32
-#define OUTPUT_ADDRESS_SIZE     26
 #define RCM_V_SIZE              32
 
 #define SCRIPT_SIZE             26
 #define PATH_SIZE               5
 
-#define ADDRESS_SIZE            26
-#define SIGNATURE_SIZE          64
-
-// CRYPTO File
-#define CHECKSUM_LENGTH         4
-
-#define PRIV_KEY_SIZE           32
-#define PUB_KEY_SIZE            32
-#define DER_MAX_SIZE            73
-#define AK_SIZE                 32
-#define NSK_SIZE                32
-#define ASK_SIZE                32
-#define DK_SIZE                 32
-#define NK_SIZE                 32
-#define SK_SIZE                 32
-#define IVK_SIZE                32
-#define ZIP32_SEED_SIZE         32
-#define RND1_SIZE               32
-#define RND2_SIZE               32
-#define NULLIFIER_SIZE          32
-
-#define PKD_SIZE                32
-#define ESK_SIZE                32
-#define EPK_SIZE                32
-#define NOTE_COMMITMENT_SIZE    32
-#define VALUE_COMMITMENT_SIZE   32
-#define HASH_SIZE               32
-#define SESSION_KEY_SIZE        32
-#define GD_SIZE                 32
-#define SHARED_KEY_SIZE         32
-#define OUT_KEY_SIZE            32
-#define ENC_CIPHER_SIZE         64
-#define MESSAGE_DIGEST_SIZE     32
-#define COMPACT_OUT_SIZE        53
-#define MAX_SIZE                160
-#define SIG_R_SIZE              32
-#define SIG_S_SIZE              32
-#define SCRIPT_CONSTS_SIZE      4
-#define PEDERSEN_INPUT_SIZE     73
-#define CHACHA_NONCE_SIZE       12
-
-#define MASK_HARDENED           0x80000000
-
-
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
-#define VERSION_P2SH            0x1CBD
-#define VERSION_P2PKH           0x1CB8
-#define BECH32_HRP              "zs"
-#define BECH32_HRP_TEST         "ztestsapling"
-
-
+#define SIGNATURE_SIZE          SIG_R_SIZE + SIG_S_SIZE

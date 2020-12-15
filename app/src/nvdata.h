@@ -28,7 +28,7 @@ typedef struct {
 } t_input_item_t;
 
 typedef struct {
-    uint8_t address[OUTPUT_ADDRESS_SIZE];
+    uint8_t address[SCRIPT_SIZE];
     uint64_t value;
 } t_output_item_t;
 
