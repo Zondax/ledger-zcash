@@ -481,7 +481,7 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
     }
     MEMZERO(buffer, bufferLen);
 
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
 
@@ -503,7 +503,8 @@ zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t
         return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
 
@@ -523,7 +524,8 @@ zxerr_t crypto_check_outputs(uint8_t *buffer, uint16_t bufferLen, const uint8_t 
     if(length_t_in_data() + length_spenddata() + length_outputdata() + LENGTH_HASH_DATA != txdatalen){
         return zxerr_unknown;
     }
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
 
@@ -542,7 +544,8 @@ zxerr_t crypto_check_joinsplits(uint8_t *buffer, uint16_t bufferLen, const uint8
         return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
     uint8_t hash[HASH_SIZE];
@@ -559,10 +562,10 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
         return zxerr_unknown;
     }
     MEMZERO(buffer, bufferLen);
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
-
     parser_context_t pars_ctx;
     parser_error_t pars_err;
 
@@ -607,7 +610,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         return zxerr_unknown;
     }
 
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
 
@@ -715,7 +718,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
     }
     MEMZERO(buffer, bufferLen);
 
-    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+    if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
 

@@ -64,7 +64,11 @@ __Z_INLINE zxerr_t init_tx() {
 }
 
 __Z_INLINE zxerr_t check_and_sign_tx() {
-    // Take "ownership" of the memory used by the transaction parser
+    if(get_state() != STATE_PROCESSED_ALL_EXTRACTIONS){
+        MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
+        return zxerr_unknown;
+    }
+
     tx_reset_state();
     const uint8_t *message = tx_get_buffer();
     if(tx_get_buffer_length() > FLASH_BUFFER_SIZE){
@@ -72,6 +76,9 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
         return zxerr_unknown;
     }
     const uint16_t messageLength = tx_get_buffer_length();
+
+    set_state(STATE_CHECKING_ALL_TXDATA);
+
     zxerr_t err;
     err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
@@ -170,12 +177,6 @@ __Z_INLINE void app_reply_error() {
 }
 
 __Z_INLINE void app_reply_hash() {
-    if(get_state() == STATE_PROCESSED_INPUTS) {
-        view_message_show("Zcash", "Step [1/5]");
-    }else{
-        view_message_show("Zcash", "Step [2/5]");
-    }
-    UX_WAIT_DISPLAYED();
     set_code(G_io_apdu_buffer, 32, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 32 + 2);
 }
