@@ -146,7 +146,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
         MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
-
+    set_state(STATE_SIGNED_TX);
     return zxerr_ok;
 }
 
