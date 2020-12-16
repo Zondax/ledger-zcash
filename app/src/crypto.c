@@ -1191,7 +1191,7 @@ typedef struct {
             uint8_t nk[NK_SIZE];
         } step3;
     };
-} tmp_sampling_s;
+} tmp_sapling_addr_s;
 
 zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
     MEMZERO(buffer, bufferLen);
@@ -1201,8 +1201,8 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     uint8_t *out = buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sampling_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sampling_s));
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     BEGIN_TRY
@@ -1220,12 +1220,12 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
             get_ivk(tmp.step3.ak, tmp.step3.nk, out);
             CHECK_APP_CANARY();
 
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
         FINALLY
         {
             // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
     }
     END_TRY;
@@ -1242,8 +1242,8 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sampling_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sampling_s));
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
 
     BEGIN_TRY
     {
@@ -1270,8 +1270,8 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
-    tmp_sampling_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sampling_s));
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
 
     BEGIN_TRY
@@ -1283,8 +1283,8 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
             CHECK_APP_CANARY();
 
             zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, p);
-            MEMZERO(tmp.step2.ask,sizeof_field(tmp_sampling_s, step2.ask));
-            MEMZERO(tmp.step2.nsk,sizeof_field(tmp_sampling_s, step2.nsk));
+            MEMZERO(tmp.step2.ask,sizeof_field(tmp_sapling_addr_s, step2.ask));
+            MEMZERO(tmp.step2.nsk,sizeof_field(tmp_sapling_addr_s, step2.nsk));
             CHECK_APP_CANARY();
 
             get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
@@ -1294,13 +1294,13 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
                 }
             }
 
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
 
         }
         FINALLY
         {
             // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
     }
     END_TRY;
@@ -1337,8 +1337,8 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sampling_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sampling_s));
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
 
     MEMCPY(out->diversifier, div, DIV_SIZE);
     if (!is_valid_diversifier(out->diversifier)){
@@ -1358,23 +1358,23 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
             nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
             CHECK_APP_CANARY();
 
-            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sampling_s, step2.dk));
+            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sampling_s, step3.ak));
-            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sampling_s, step3.nk));
+            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sapling_addr_s, step3.ak));
+            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sapling_addr_s, step3.nk));
 
             zemu_log_stack("get_pkd");
 
             get_pkd(tmp.step3.ivk, out->diversifier, out->pkd);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sampling_s, step3.ivk));
+            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sapling_addr_s, step3.ivk));
         }
         FINALLY
         {
             // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
     }
     END_TRY;
@@ -1386,7 +1386,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
                           1);
     if(berr != zxerr_ok){
         MEMZERO(out, bufferLen);
-        MEMZERO(&tmp, sizeof(tmp_sampling_s));
+        MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         *replyLen = 0;
         return berr;
     }
@@ -1409,8 +1409,8 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sampling_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sampling_s));
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     BEGIN_TRY
     {
@@ -1427,7 +1427,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
 
             get_diversifier_list(tmp.step2.dk, out->diversifierlist);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sampling_s, step2.dk));
+            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
 
             //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
             get_diversifier_fromlist(out->diversifier,out->diversifierlist);
@@ -1440,18 +1440,18 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sampling_s, step3.ak));
-            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sampling_s, step3.nk));
+            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sapling_addr_s, step3.ak));
+            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sapling_addr_s, step3.nk));
 
             zemu_log_stack("get_pkd");
             get_pkd(tmp.step3.ivk, out->diversifier, out->pkd);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sampling_s, step3.ivk));
+            MEMZERO(tmp.step3.ivk, sizeof_field(tmp_sapling_addr_s, step3.ivk));
         }
         FINALLY
         {
             // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sampling_s));
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
     }
     END_TRY;
@@ -1463,7 +1463,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                           1);
     if(berr != zxerr_ok){
         MEMZERO(out, bufferLen);
-        MEMZERO(&tmp, sizeof(tmp_sampling_s));
+        MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         *replyLen = 0;
         return berr;
     }
