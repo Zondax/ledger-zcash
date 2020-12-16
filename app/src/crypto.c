@@ -731,6 +731,10 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 }
 
 typedef struct {
+    uint8_t shielded_output_hash[HASH_SIZE];
+} tmp_buf_checkoutput;
+
+typedef struct {
     union {
         struct {
             uint8_t gd[GD_SIZE]; //computed from receiver diversifier
@@ -738,7 +742,7 @@ typedef struct {
         } step2;
 
         struct {
-            uint8_t inputhash[PEDERSEN_INPUT_SIZE];
+            uint8_t pedersen_input[PEDERSEN_INPUT_SIZE];
         } step3;
 
         struct{
@@ -746,7 +750,7 @@ typedef struct {
             uint8_t valuecommitment[VALUE_COMMITMENT_SIZE];
         } step4;
     };
-} tmp_notecommit;
+} tmp_checkoutput;
 
 zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
@@ -769,8 +773,8 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_notecommit ncm;
-    MEMZERO(&ncm, sizeof(tmp_notecommit));
+    tmp_checkoutput ncm;
+    MEMZERO(&ncm, sizeof(tmp_checkoutput));
 
     uint8_t rcm[RCM_SIZE];
 
@@ -787,35 +791,43 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
                 }
                 group_hash_from_div(item->div, ncm.step2.gd);
 
-                prepare_input_notecmt(item->value, ncm.step2.gd, item->pkd, ncm.step3.inputhash);
+                prepare_input_notecmt(item->value, ncm.step2.gd, item->pkd, ncm.step3.pedersen_input);
 
-                pedersen_hash_73bytes(ncm.step3.inputhash,ncm.step4.notecommitment);
+                pedersen_hash_73bytes(ncm.step3.pedersen_input,ncm.step4.notecommitment);
                 rseed_get_rcm(item->rseed,rcm);
                 compute_note_commitment(ncm.step4.notecommitment,rcm);
                 compute_value_commitment(item->value, item->rcmvalue, ncm.step4.valuecommitment);
 
-                if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0 || MEMCMP(ncm.step4.notecommitment, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE) != 0){
-                    MEMZERO(&ncm, sizeof(tmp_notecommit));
+                if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
+                    MEMZERO(&ncm, sizeof(tmp_checkoutput));
                     CLOSE_TRY;
                     return zxerr_unknown;
                 }
-                MEMZERO(&ncm, sizeof(tmp_notecommit));
+
+                if(MEMCMP(ncm.step4.notecommitment, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE) != 0){
+                    MEMZERO(&ncm, sizeof(tmp_checkoutput));
+                    CLOSE_TRY;
+                    return zxerr_unknown;
+                }
+                MEMZERO(&ncm, sizeof(tmp_checkoutput));
             }
-            MEMZERO(&ncm, sizeof(tmp_notecommit));
+            MEMZERO(&ncm, sizeof(tmp_checkoutput));
         }
         FINALLY
         {
             // Not necessary, but just in case
-            MEMZERO(&ncm, sizeof(tmp_notecommit));
+            MEMZERO(&ncm, sizeof(tmp_checkoutput));
         }
     }
     END_TRY;
 
+    tmp_buf_checkoutput *const tmp_buf = (tmp_buf_checkoutput *) buffer;
     MEMZERO(out, bufferLen);
+
     if (outputlist_len() > 0){
-        shielded_output_hash(start_outputdata, length_outputdata(), out);
+        shielded_output_hash(start_outputdata, length_outputdata(), tmp_buf->shielded_output_hash);
     }
-    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDOUTPUTHASH, HASH_SIZE) != 0){
+    if(MEMCMP(tmp_buf->shielded_output_hash, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDOUTPUTHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
 
