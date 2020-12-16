@@ -104,6 +104,7 @@ void set_state(uint8_t state);
 #define STATE_PROCESSED_ALL_EXTRACTIONS         3
 #define STATE_CHECKING_ALL_TXDATA               4
 #define STATE_VERIFIED_ALL_TXDATA               5
+#define STATE_SIGNED_TX                         6
 
 //metadata flash api
 uint64_t get_valuebalance();

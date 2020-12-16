@@ -1135,7 +1135,7 @@ zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen
         return zxerr_unknown;
     }
 
-    if(get_state() != STATE_VERIFIED_ALL_TXDATA){
+    if(get_state() != STATE_SIGNED_TX){
         return zxerr_unknown;
     }
 
@@ -1155,7 +1155,7 @@ zxerr_t crypto_extract_spend_signature(uint8_t *buffer, uint16_t bufferLen){
         return zxerr_unknown;
     }
 
-    if(get_state() != STATE_VERIFIED_ALL_TXDATA){
+    if(get_state() != STATE_SIGNED_TX){
         return zxerr_unknown;
     }
 
