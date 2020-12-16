@@ -28,7 +28,6 @@
 #include "parser_common.h"
 #include "chacha.h"
 #include "common/app_main.h"
-#include "view.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -450,8 +449,6 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
-        view_message_show("Zcash", "Step [2/5]");
-        UX_WAIT_DISPLAYED();
     }
     return zxerr_ok;
 }
@@ -484,9 +481,6 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
     if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
-
-    view_message_show("Zcash", "Step [3/5]");
-    UX_WAIT_DISPLAYED();
 
     uint8_t hash[HASH_SIZE];
     prevouts_hash(txdata,hash);
@@ -637,7 +631,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 crypto_fillSaplingSeed(tmp.step1.zip32_seed);
                 const spend_item_t *item = spendlist_retrieve_item(i);
                 if (item == NULL){
-                    return 0;
+                    CLOSE_TRY;
+                    return zxerr_unknown;
                 }
                 zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
@@ -645,15 +640,15 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 sk_to_pk(tmp.step2.ask, tmp.step2.ask);
 
                 if(MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,PUB_KEY_SIZE) != 0){
-                    //maybe spendlist_reset();
+                    CLOSE_TRY;
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     return zxerr_unknown;
                 }
 
                 compute_value_commitment(item->value,item->rcm,tmp.step2.ask);
                 if (MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
-                    //maybe spendlist_reset();
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
+                    CLOSE_TRY;
                     return zxerr_unknown;
                 }
 
@@ -672,7 +667,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     pars_ctx.bufferLen = 8;
                     pars_err = _readUInt64(&pars_ctx, &notepos);
                     if (pars_err != parser_ok){
-                        return 0;
+                        CLOSE_TRY;
+                        return zxerr_unknown;
                     }
                 }
 
@@ -681,6 +677,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     //maybe spendlist_reset();
                     MEMZERO(out, bufferLen);
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
+                    CLOSE_TRY;
                     return zxerr_unknown;
                 }
 
@@ -746,7 +743,8 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
             for(uint8_t i = 0; i < outputlist_len(); i++){
                 const output_item_t *item = outputlist_retrieve_item(i);
                 if (item == NULL){
-                    return 0;
+                    CLOSE_TRY;
+                    return zxerr_unknown;
                 }
                 group_hash_from_div(item->div, ncm.step2.gd);
 
@@ -759,6 +757,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
 
                 if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0 || MEMCMP(ncm.step4.notecommitment, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&ncm, sizeof(tmp_notecommit));
+                    CLOSE_TRY;
                     return zxerr_unknown;
                 }
                 MEMZERO(&ncm, sizeof(tmp_notecommit));
@@ -968,9 +967,6 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
     signature_tr *const signature = (signature_tr *) buffer;
     int signatureLength;
 
-    view_message_show("Zcash", "Step [4/5]");
-    UX_WAIT_DISPLAYED();
-
     BEGIN_TRY
     {
         TRY
@@ -998,9 +994,11 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 MEMCPY(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
                 address_to_script(pubKey,script);
                 if(MEMCMP(script,(uint8_t *)(start_tindata + INDEX_TIN_SCRIPT + i * T_IN_TX_LEN), SCRIPT_SIZE) != 0){
+                    CLOSE_TRY;
                     return zxerr_unknown;
                 }
                 if(MEMCMP(item->script, script,SCRIPT_SIZE) !=0){
+                    CLOSE_TRY;
                     return zxerr_unknown;
                 }
 
@@ -1014,7 +1012,8 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                     pars_ctx.bufferLen = 8;
                     pars_err = _readUInt64(&pars_ctx, &value);
                     if (pars_err != parser_ok){
-                        return 0;
+                        CLOSE_TRY;
+                        return zxerr_unknown;
                     }
                 }
 
@@ -1032,11 +1031,12 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                                             &info);
                 err_convert_e err = convertDERtoRSV(signature->step1.der_signature, info,  signature->step1.r, signature->step1.s, &signature->step1.v);
                 if (err != no_error) {
-                // Error while converting so return length 0
-                return zxerr_unknown;
+                    CLOSE_TRY;
+                    return zxerr_unknown;
                 }
                 zxerr_t zxerr = transparent_signatures_append(signature->step2.rs);
                 if(zxerr != zxerr_ok){
+                    CLOSE_TRY;
                     return zxerr;
                 }
             }
@@ -1094,16 +1094,18 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
             for(uint8_t i = 0; i < spendlist_len(); i++){
                 crypto_fillSaplingSeed(tmp.step1.zip32_seed);
                 const spend_item_t *item = spendlist_retrieve_item(i);
-                /*if (item == NULL){
-                    return 0;
+                if (item == NULL){
+                    CLOSE_TRY;
+                    return zxerr_unknown;
                 }
-                */
+
                 zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
                 sign_redjubjub((uint8_t *)tmp.step2.ask, (uint8_t *)sighash, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);
                 if(zxerr != zxerr_ok){
+                    CLOSE_TRY;
                     return zxerr;
                 }
                 MEMZERO(&tmp, sizeof(tmp_sampling_s));
@@ -1118,9 +1120,6 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         }
     }
     END_TRY;
-
-    view_message_show("Zcash", "Step [5/5]");
-    UX_WAIT_DISPLAYED();
 
     CHECK_APP_CANARY();
     return zxerr_ok;
@@ -1412,6 +1411,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             CHECK_APP_CANARY();
             if(!is_valid_diversifier(out->diversifier)){
                 *replyLen = 0;
+                CLOSE_TRY;
                 return zxerr_unknown;
             }
 

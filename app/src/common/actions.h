@@ -23,7 +23,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "../nvdata.h"
-#include "view.h"
+#include "../parser.h"
 
 typedef struct {
     address_kind_e kind;
@@ -78,6 +78,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     const uint16_t messageLength = tx_get_buffer_length();
 
     set_state(STATE_CHECKING_ALL_TXDATA);
+    view_tx_state();
 
     zxerr_t err;
     err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -129,6 +130,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
     }
 
     set_state(STATE_VERIFIED_ALL_TXDATA);
+    view_tx_state();
 
     err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
@@ -147,6 +149,7 @@ __Z_INLINE zxerr_t check_and_sign_tx() {
         return err;
     }
     set_state(STATE_SIGNED_TX);
+    view_tx_state();
     return zxerr_ok;
 }
 
@@ -154,7 +157,7 @@ __Z_INLINE void app_reject() {
     tx_reset_state();
     transaction_reset();
     MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
-    view_idle_show(0, NULL);
+    view_tx_state();
     set_code(G_io_apdu_buffer, 0, APDU_CODE_COMMAND_NOT_ALLOWED);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
@@ -171,12 +174,12 @@ __Z_INLINE void app_reply_address() {
 
 __Z_INLINE void app_reply_error() {
     MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
-    view_idle_show(0, NULL);
     set_code(G_io_apdu_buffer, 0, APDU_CODE_DATA_INVALID);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 2);
 }
 
 __Z_INLINE void app_reply_hash() {
+    view_tx_state();
     set_code(G_io_apdu_buffer, 32, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 32 + 2);
 }

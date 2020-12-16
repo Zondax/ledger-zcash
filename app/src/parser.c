@@ -30,6 +30,8 @@
 #include "bech32.h"
 #include "base58.h"
 
+#include "view.h"
+
 #define DEFAULT_MEMOTYPE        0xf6
 
 #if defined(TARGET_NANOX)
@@ -91,6 +93,49 @@ parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t
     *p |= 0x80000000;
     return parser_ok;
 }
+
+void view_tx_state(){
+    uint8_t state = get_state();
+    switch (state){
+        case STATE_PROCESSED_INPUTS: {
+            view_message_show("Zcash", "Step [1/5]");
+            break;
+        }
+
+        case STATE_PROCESSED_SPEND_EXTRACTIONS: {
+            view_message_show("Zcash", "Step [1/5]");
+            break;
+
+        }
+
+        case STATE_PROCESSED_ALL_EXTRACTIONS: {
+            view_message_show("Zcash", "Step [2/5]");
+            break;
+        }
+
+        case STATE_CHECKING_ALL_TXDATA: {
+            view_message_show("Zcash", "Step [3/5]");
+            break;
+        }
+
+        case STATE_VERIFIED_ALL_TXDATA: {
+            view_message_show("Zcash", "Step [4/5]");
+            break;
+        }
+
+        case STATE_SIGNED_TX: {
+            view_message_show("Zcash", "Step [5/5]");
+            break;
+        }
+
+        default: {
+            view_idle_show(0, NULL);
+        }
+    }
+    UX_WAIT_DISPLAYED();
+    return;
+}
+
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
                             size_t dataLen) {
