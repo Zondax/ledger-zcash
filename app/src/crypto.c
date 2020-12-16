@@ -193,10 +193,6 @@ typedef struct {
         };
 
         struct {
-            uint8_t ivk[IVK_SIZE];
-        };
-
-        struct {
             uint8_t ak[AK_SIZE];
             uint8_t nsk[NSK_SIZE];
             uint8_t rcm[RCM_SIZE];
@@ -209,21 +205,18 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint32_t pos;
             uint8_t dk[DK_SIZE];
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
             uint8_t sk[ED25519_SK_SIZE];
         } step1;
 
         struct {
-            uint32_t pos;
             uint8_t dk[DK_SIZE];
             uint8_t ask[ASK_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step2;
         // STEP 2
         struct {
-            uint32_t pos;
             uint8_t ivk[IVK_SIZE];
             uint8_t ak[AK_SIZE];
             uint8_t nk[NK_SIZE];
@@ -400,7 +393,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, out + 32, next->path);
+            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, out + AK_SIZE, next->path);
             CHECK_APP_CANARY();
         }
         FINALLY
@@ -452,24 +445,6 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     }
     return zxerr_ok;
 }
-
-typedef struct {
-    union {
-        struct {
-            uint8_t gd[GD_SIZE]; //computed from receiver diversifier
-            uint8_t pkd[PKD_SIZE]; //get this from host and show on screen for verification
-        } step2;
-
-        struct {
-            uint8_t inputhash[PEDERSEN_INPUT_SIZE];
-        } step3;
-
-        struct{
-            uint8_t notecommitment[NOTE_COMMITMENT_SIZE];
-            uint8_t valuecommitment[VALUE_COMMITMENT_SIZE];
-        } step4;
-    };
-} tmp_notecommit;
 
 zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen){
     zemu_log_stack("crypto_checkprevoouts_sapling");
@@ -582,6 +557,28 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
 
 typedef struct {
     union {
+        struct {
+            uint8_t pedersen_input[PEDERSEN_INPUT_SIZE];
+        };
+        struct {
+            uint8_t pedersen_hash[HASH_SIZE];
+        };
+
+        struct {
+            uint8_t ncm_full[NOTE_COMMITMENT_SIZE];
+        };
+        struct {
+            uint8_t nf[NULLIFIER_SIZE];
+        };
+
+        struct {
+            uint8_t spend_hash[HASH_SIZE];
+        };
+    };
+} tmp_buf_checkspend;
+
+typedef struct {
+    union {
         // STEP 1
         struct {
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
@@ -591,6 +588,27 @@ typedef struct {
             uint8_t ask[ASK_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step2;
+
+        struct {
+            uint8_t rk[PUB_KEY_SIZE];
+            uint8_t nsk[NSK_SIZE];
+        } step3;
+
+        struct {
+            uint8_t cv[VALUE_COMMITMENT_SIZE];
+            uint8_t nsk[NSK_SIZE];
+        } step4;
+
+        struct {
+            uint8_t gd[GD_SIZE];
+            uint8_t nsk[NSK_SIZE];
+        } step5;
+
+        struct {
+            uint8_t gd[GD_SIZE];
+            uint8_t nk[NSK_SIZE];
+        } step6;
+
     };
 } tmp_checkspend;
 
@@ -610,8 +628,10 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     zemu_log_stack("crypto_checkspend_sapling");
 
-    uint8_t *out = (uint8_t *) buffer;
-    MEMZERO(out, bufferLen);
+    uint8_t *out = buffer;
+
+    tmp_buf_checkspend *const tmp_buf = (tmp_buf_checkspend *) buffer;
+    MEMZERO(tmp_buf, bufferLen);
 
     uint8_t *start_spenddata = (uint8_t *)(txdata + length_t_in_data() + length_spend_old_data());
     uint8_t *start_spendolddata = (uint8_t *)(txdata + length_t_in_data());
@@ -637,26 +657,27 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
-                sk_to_pk(tmp.step2.ask, tmp.step2.ask);
+                sk_to_pk(tmp.step2.ask, tmp.step3.rk);
 
-                if(MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,PUB_KEY_SIZE) != 0){
+                if(MEMCMP(tmp.step3.rk, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,PUB_KEY_SIZE) != 0){
                     CLOSE_TRY;
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     return zxerr_unknown;
                 }
 
-                compute_value_commitment(item->value,item->rcm,tmp.step2.ask);
-                if (MEMCMP(tmp.step2.ask, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
+                compute_value_commitment(item->value,item->rcm,tmp.step4.cv);
+                if (MEMCMP(tmp.step4.cv, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
+                    MEMZERO(out,bufferLen);
                     CLOSE_TRY;
                     return zxerr_unknown;
                 }
 
-                group_hash_from_div(item->div, tmp.step2.ask);
-                prepare_input_notecmt(item->value, tmp.step2.ask, item->pkd, out);
-                pedersen_hash_73bytes(out,out);
-                compute_note_commitment_fullpoint(out, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN);
-                nsk_to_nk(tmp.step2.nsk,tmp.step2.nsk);
+                group_hash_from_div(item->div, tmp.step5.gd);
+                prepare_input_notecmt(item->value, tmp.step5.gd, item->pkd, tmp_buf->pedersen_input);
+                pedersen_hash_73bytes(tmp_buf->pedersen_input,tmp_buf->pedersen_hash);
+                compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN);
+                nsk_to_nk(tmp.step5.nsk,tmp.step6.nk);
                 uint64_t notepos = 0;
                 {
                     parser_context_t pars_ctx;
@@ -671,9 +692,9 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                         return zxerr_unknown;
                     }
                 }
-
-                compute_nullifier(out, notepos, tmp.step2.nsk, out);
-                if (MEMCMP(out, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
+                //void compute_nullifier(uint8_t *ncmptr, uint64_t pos, uint8_t *nkptr, uint8_t *outputptr);
+                compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step6.nk, tmp_buf->nf);
+                if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
                     //maybe spendlist_reset();
                     MEMZERO(out, bufferLen);
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
@@ -683,7 +704,6 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
                 MEMZERO(out, bufferLen);
                 MEMZERO(&tmp, sizeof(tmp_checkspend));
-
 
             }
 
@@ -700,14 +720,33 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     MEMZERO(out, bufferLen);
     if (spendlist_len() > 0){
-        shielded_spend_hash(start_spenddata, length_spend_new_data(), out);
+        shielded_spend_hash(start_spenddata, length_spend_new_data(), tmp_buf->spend_hash);
     }
-    if(MEMCMP(out, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDSPENDHASH, HASH_SIZE) != 0){
+    if(MEMCMP(tmp_buf->spend_hash, txdata + start_sighashdata() + INDEX_HASH_SHIELDEDSPENDHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
+    MEMZERO(out,bufferLen);
 
     return zxerr_ok; //or some code for ok
 }
+
+typedef struct {
+    union {
+        struct {
+            uint8_t gd[GD_SIZE]; //computed from receiver diversifier
+            uint8_t pkd[PKD_SIZE]; //get this from host and show on screen for verification
+        } step2;
+
+        struct {
+            uint8_t inputhash[PEDERSEN_INPUT_SIZE];
+        } step3;
+
+        struct{
+            uint8_t notecommitment[NOTE_COMMITMENT_SIZE];
+            uint8_t valuecommitment[VALUE_COMMITMENT_SIZE];
+        } step4;
+    };
+} tmp_notecommit;
 
 zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     if (bufferLen < sizeof(tmp_buf_s)) {
