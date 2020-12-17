@@ -82,6 +82,7 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     zxerr_t err = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    view_tx_state();
     if (err == zxerr_ok) {
         *tx = 128;
         THROW(APDU_CODE_OK);
@@ -103,6 +104,7 @@ __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     zxerr_t err = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    view_tx_state();
     if (err == zxerr_ok) {
         *tx = 64;
         THROW(APDU_CODE_OK);
