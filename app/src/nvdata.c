@@ -19,6 +19,7 @@
 #include "coin.h"
 #include "app_main.h"
 #include "nvdata.h"
+#include "constants.h"
 #include "view.h"
 
 t_inlist_t NV_CONST
@@ -48,21 +49,6 @@ transaction_header_t transaction_header;
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-void set_session_key(uint8_t *key) {
-    MEMCPY_NV(
-            &N_transactioninfo.session_key,
-            key, 32);
-    transaction_header.session_key_set = 1;
-};
-
-bool session_key_set() {
-    return transaction_header.session_key_set == 1;
-}
-
-uint8_t *get_session_key() {
-    return (uint8_t * ) & N_transactioninfo.session_key;
-};
-
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
     if (transaction_header.t_in_len >= T_IN_LIST_SIZE) {
         return zxerr_unknown;
@@ -71,8 +57,8 @@ zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
     transaction_header.total_value += v;
 
     t_input_item_t newitem;
-    MEMCPY(newitem.path, p, 5 * sizeof(uint32_t));
-    MEMCPY(newitem.script, script, 26);
+    MEMCPY(newitem.path, p, PATH_SIZE * sizeof(uint32_t));
+    MEMCPY(newitem.script, script, SCRIPT_SIZE);
     newitem.value = v;
 
     MEMCPY_NV(
@@ -99,7 +85,7 @@ zxerr_t t_outlist_append_item(uint8_t *addr, uint64_t v) {
     transaction_header.total_value -= v;
 
     t_output_item_t newitem;
-    MEMCPY(newitem.address, addr, 26);
+    MEMCPY(newitem.address, addr, SCRIPT_SIZE);
     newitem.value = v;
 
     MEMCPY_NV(
@@ -127,23 +113,28 @@ uint8_t t_outlist_len() {
 }
 
 bool transparent_signatures_more_extract() {
-    return transaction_header.t_sign_index > transaction_header.t_sign_extract_index;
+    return transaction_header.t_sign_index > 0;
 }
 
 
-void transparent_signatures_append(uint8_t *signature) {
+zxerr_t transparent_signatures_append(uint8_t *signature) {
+    if (transaction_header.t_sign_index >= transaction_header.t_in_len){
+        return zxerr_unknown;
+    }
     MEMCPY_NV(
             &N_transactioninfo.transparent_signatures[transaction_header.t_sign_index],
-            signature, 64);
+            signature, SIGNATURE_SIZE);
     transaction_header.t_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_transparent_signature(uint8_t *result) {
-    if (transaction_header.t_in_len <= transaction_header.t_sign_extract_index) {
+    uint8_t index = transaction_header.t_in_len - transaction_header.t_sign_index;
+    if (transaction_header.t_in_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, &N_transactioninfo.transparent_signatures[transaction_header.t_sign_extract_index], 64);
-    transaction_header.t_sign_extract_index++;
+    MEMCPY(result, &N_transactioninfo.transparent_signatures[index], SIGNATURE_SIZE);
+    transaction_header.t_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
@@ -152,22 +143,28 @@ zxerr_t get_next_transparent_signature(uint8_t *result) {
 }
 
 bool spend_signatures_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_extract_index;
+    return transaction_header.spends_sign_index > 0;
 }
 
-void spend_signatures_append(uint8_t *signature) {
+zxerr_t spend_signatures_append(uint8_t *signature) {
+    if (transaction_header.spends_sign_index >= transaction_header.spendlist_len){
+        return zxerr_unknown;
+    }
+
     MEMCPY_NV(
             &N_transactioninfo.spend_signatures[transaction_header.spends_sign_index],
-            signature, 64);
+            signature, SIGNATURE_SIZE);
     transaction_header.spends_sign_index++;
+    return zxerr_ok;
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_extract_index) {
+    uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
+    if (transaction_header.spendlist_len <= index || index < 0) {
         return zxerr_unknown;
     }
-    MEMCPY(result, & N_transactioninfo.spend_signatures[transaction_header.spends_sign_extract_index], 64);
-    transaction_header.spends_sign_extract_index++;
+    MEMCPY(result, & N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
+    transaction_header.spends_sign_index--;
     if(!transparent_signatures_more_extract() && !spend_signatures_more_extract()){
         transaction_reset();
         view_idle_show(0, NULL);
@@ -179,15 +176,13 @@ void transaction_reset() {
     transaction_header.t_in_len = 0;
     transaction_header.t_out_len = 0;
     transaction_header.t_sign_index = 0;
-    transaction_header.t_sign_extract_index = 0;
     transaction_header.total_value = 0;
     transaction_header.state = 0;
-    transaction_header.spendlist_extract_index = 0;
+    transaction_header.spenddata_extract_index = 0;
     transaction_header.spendlist_len = 0;
     transaction_header.spends_sign_index = 0;
     transaction_header.outputlist_len = 0;
-    transaction_header.outputlist_extract_index = 0;
-    transaction_header.spends_sign_extract_index = 0;
+    transaction_header.outputdata_extract_index = 0;
     zeroize_flashstorage();
 }
 
@@ -206,10 +201,10 @@ zxerr_t spendlist_append_item(uint32_t p, uint64_t v, uint8_t *div, uint8_t *pkd
     spend_item_t newitem;
     newitem.path = path;
     newitem.value = v;
-    MEMCPY(newitem.div, div, 11);
-    MEMCPY(newitem.pkd, pkd, 32);
-    MEMCPY(newitem.rcm, rcm, 32);
-    MEMCPY(newitem.alpha, alpha, 32);
+    MEMCPY(newitem.div, div, DIV_SIZE);
+    MEMCPY(newitem.pkd, pkd, PKD_SIZE);
+    MEMCPY(newitem.rcm, rcm, RCM_SIZE);
+    MEMCPY(newitem.alpha, alpha, ALPHA_SIZE);
 
     MEMCPY_NV(
             &N_spendlist.items[transaction_header.spendlist_len],
@@ -228,39 +223,21 @@ spend_item_t *spendlist_retrieve_item(uint8_t i) {
 }
 
 spend_item_t *spendlist_extract_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spendlist_extract_index) {
+    if (transaction_header.spendlist_len <= transaction_header.spenddata_extract_index) {
         return NULL;
     } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spendlist_extract_index];
-        transaction_header.spendlist_extract_index += 1;
+        spend_item_t *result = &N_spendlist.items[transaction_header.spenddata_extract_index];
+        transaction_header.spenddata_extract_index += 1;
         return result;
     }
 }
 
 bool spendlist_more_extract() {
-    return transaction_header.spendlist_len > transaction_header.spendlist_extract_index;
+    return transaction_header.spendlist_len > transaction_header.spenddata_extract_index;
 }
 
 uint8_t spendlist_len() {
     return transaction_header.spendlist_len;
-}
-
-bool spendlist_first_sign() {
-    return transaction_header.spends_sign_index == 0;
-}
-
-bool spendlist_more_sign() {
-    return transaction_header.spendlist_len > transaction_header.spends_sign_index;
-}
-
-spend_item_t *spendlist_sign_next() {
-    if (transaction_header.spendlist_len <= transaction_header.spends_sign_index) {
-        return NULL;
-    } else {
-        spend_item_t *result = &N_spendlist.items[transaction_header.spends_sign_index];
-        transaction_header.spends_sign_index += 1;
-        return result;
-    }
 }
 
 bool outputlist_is_active() {
@@ -277,11 +254,11 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t mem
 
     output_item_t newitem;
     newitem.value = v;
-    MEMCPY(newitem.rcmvalue, rcmv, 32);
-    MEMCPY(newitem.rseed, rseed, 32);
-    MEMCPY(newitem.div, d, 11);
-    MEMCPY(newitem.pkd, pkd, 32);
-    MEMCPY(newitem.ovk, ovk, 32);
+    MEMCPY(newitem.rcmvalue, rcmv, RCM_V_SIZE);
+    MEMCPY(newitem.rseed, rseed, RSEED_SIZE);
+    MEMCPY(newitem.div, d, DIV_SIZE);
+    MEMCPY(newitem.pkd, pkd, PKD_SIZE);
+    MEMCPY(newitem.ovk, ovk, OVK_SIZE);
     newitem.memotype = memotype;
     MEMCPY_NV(
             &N_outputlist.items[transaction_header.outputlist_len],
@@ -300,17 +277,17 @@ output_item_t *outputlist_retrieve_item(uint8_t i) {
 }
 
 output_item_t *outputlist_extract_next() {
-    if (transaction_header.outputlist_len <= transaction_header.outputlist_extract_index) {
+    if (transaction_header.outputlist_len <= transaction_header.outputdata_extract_index) {
         return NULL;
     } else {
-        output_item_t *result = &N_outputlist.items[transaction_header.outputlist_extract_index];
-        transaction_header.outputlist_extract_index += 1;
+        output_item_t *result = &N_outputlist.items[transaction_header.outputdata_extract_index];
+        transaction_header.outputdata_extract_index += 1;
         return result;
     }
 }
 
 bool outputlist_more_extract() {
-    return transaction_header.outputlist_len > transaction_header.outputlist_extract_index;
+    return transaction_header.outputlist_len > transaction_header.outputdata_extract_index;
 }
 
 uint8_t outputlist_len() {
@@ -334,8 +311,8 @@ void state_reset() {
 }
 
 void zeroize_tin_data(){
-    uint32_t p[5];
-    uint8_t s[26];
+    uint32_t p[PATH_SIZE];
+    uint8_t s[SCRIPT_SIZE];
     uint64_t v = 0;
     MEMZERO(p, sizeof(p));
     MEMZERO(s,sizeof(s));
@@ -347,7 +324,7 @@ void zeroize_tin_data(){
 }
 
 void zeroize_tout_data(){
-    uint8_t s[26];
+    uint8_t s[SCRIPT_SIZE];
     uint64_t v = 0;
     MEMZERO(s,sizeof(s));
     transaction_header.t_out_len = 0;
@@ -360,10 +337,10 @@ void zeroize_tout_data(){
 void zeroize_spend_data(){
     uint32_t p = 0;
     uint64_t v = 0;
-    uint8_t div[11];
-    uint8_t pkd[32];
-    uint8_t rcm[32];
-    uint8_t alpha[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
+    uint8_t rcm[RCM_SIZE];
+    uint8_t alpha[ALPHA_SIZE];
     MEMZERO(div,sizeof(div));
     MEMZERO(pkd,sizeof(pkd));
     MEMZERO(rcm,sizeof(rcm));
@@ -377,11 +354,11 @@ void zeroize_spend_data(){
 
 void zeroize_output_data(){
     uint64_t v = 0;
-    uint8_t div[11];
-    uint8_t pkd[32];
-    uint8_t ovk[32];
-    uint8_t rcmv[32];
-    uint8_t rseed[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
+    uint8_t ovk[OVK_SIZE];
+    uint8_t rcmv[RCM_V_SIZE];
+    uint8_t rseed[RSEED_SIZE];
     uint8_t memotype = 0x00;
     MEMZERO(div,sizeof(div));
     MEMZERO(pkd,sizeof(pkd));
@@ -396,8 +373,8 @@ void zeroize_output_data(){
 }
 
 void zeroize_signatures(){
-    uint8_t sig[64];
-    MEMZERO(sig, 64);
+    uint8_t sig[SIGNATURE_SIZE];
+    MEMZERO(sig, SIGNATURE_SIZE);
 
     transaction_header.t_sign_index = 0;
     for(int i = 0; i < T_IN_LIST_SIZE; i++) {

@@ -26,18 +26,12 @@ extern "C" {
 #include <stdbool.h>
 #include <sigutils.h>
 
-#define CHECKSUM_LENGTH             4
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
 extern address_kind_e addressKind;
 
-#define VERSION_SIZE            2
-#define CHECKSUM_SIZE           4
-#define VERSION_P2SH            0x1CBD
-#define VERSION_P2PKH           0x1CB8
-#define BECH32_HRP              "zs"
-#define BECH32_HRP_TEST         "ztestsapling"
+
 
 bool isTestnet();
 
@@ -45,20 +39,15 @@ void crypto_fillSaplingSeed(uint8_t *sk);
 
 void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen);
 
-uint16_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen);
+zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
 
-uint16_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen);
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
+zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div, uint16_t *replyLen);
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen);
 
-uint16_t crypto_sign(uint8_t *signature,
-                     uint16_t signatureMaxlen,
-                     const uint8_t *message,
-                     uint16_t messageLen);
+zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
+zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
 
-uint16_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen);
-
-uint16_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen);
 
 zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen);
 

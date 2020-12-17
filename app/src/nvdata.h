@@ -19,20 +19,16 @@
 #include <stdbool.h>
 #include "zxerror.h"
 #include "coin.h"
-//fixme: maybe increase some of these
-#define T_IN_LIST_SIZE                 5
-#define T_OUT_LIST_SIZE                 5
-#define SPEND_LIST_SIZE                 5
-#define OUTPUT_LIST_SIZE                 5
+#include "constants.h"
 
 typedef struct {
-    uint32_t path[5];
-    uint8_t script[26];
+    uint32_t path[PATH_SIZE];
+    uint8_t script[SCRIPT_SIZE];
     uint64_t value;
 } t_input_item_t;
 
 typedef struct {
-    uint8_t address[26];
+    uint8_t address[SCRIPT_SIZE];
     uint64_t value;
 } t_output_item_t;
 
@@ -44,30 +40,26 @@ typedef struct {
     t_output_item_t items[T_OUT_LIST_SIZE];
 } t_outlist_t;
 
-// TODO: pragma packing 1
 typedef struct {
     uint32_t path;
     uint64_t value;
-    uint8_t div[11];
-    uint8_t pkd[32];
-    uint8_t rcm[32];
-    uint8_t alpha[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
+    uint8_t rcm[RCM_SIZE];
+    uint8_t alpha[ALPHA_SIZE];
 } spend_item_t;
 
 typedef struct {
     uint64_t total_value;
     uint8_t state;
-    uint8_t session_key_set;
     uint8_t t_in_len;
     uint8_t t_out_len;
     uint8_t spendlist_len;
     uint8_t outputlist_len;
-    uint8_t spendlist_extract_index;
-    uint8_t outputlist_extract_index;
+    uint8_t spenddata_extract_index;
+    uint8_t outputdata_extract_index;
     uint8_t spends_sign_index;
-    uint8_t spends_sign_extract_index;
     uint8_t t_sign_index;
-    uint8_t t_sign_extract_index;
 } transaction_header_t;
 
 typedef struct {
@@ -75,13 +67,13 @@ typedef struct {
 } spendlist_t;
 
 typedef struct {
-    uint8_t div[11];
-    uint8_t pkd[32];
+    uint8_t div[DIV_SIZE];
+    uint8_t pkd[PKD_SIZE];
     uint64_t value;
     uint8_t memotype;
-    uint8_t rcmvalue[32];
-    uint8_t rseed[32];
-    uint8_t ovk[32];
+    uint8_t rcmvalue[RCM_V_SIZE];
+    uint8_t rseed[RSEED_SIZE];
+    uint8_t ovk[OVK_SIZE];
 } output_item_t;
 
 typedef struct {
@@ -89,7 +81,6 @@ typedef struct {
 } outputlist_t;
 
 typedef struct {
-    uint8_t session_key[32];
     uint8_t transparent_signatures[T_IN_LIST_SIZE][64];
     uint8_t spend_signatures[SPEND_LIST_SIZE][64];
 } transaction_info_t;
@@ -99,10 +90,6 @@ extern "C" {
 #endif
 
 void transaction_reset();
-
-void set_session_key(uint8_t *key);
-
-uint8_t *get_session_key();
 
 //statemachine API
 uint8_t get_state();
@@ -120,21 +107,17 @@ void set_state(uint8_t state);
 //metadata flash api
 uint64_t get_valuebalance();
 
-bool spendlist_first_sign();
-
 bool spendlist_more_sign();
-
-spend_item_t *spendlist_sign_next();
 
 bool transparent_signatures_more_extract();
 
-void transparent_signatures_append(uint8_t *signature);
+zxerr_t transparent_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_transparent_signature(uint8_t *result);
 
 bool spend_signatures_more_extract();
 
-void spend_signatures_append(uint8_t *signature);
+zxerr_t spend_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_spend_signature(uint8_t *result);
 //transparent TxIN API

@@ -269,16 +269,6 @@ pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
 
 //assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
 #[no_mangle]
-pub extern "C" fn pedersen_hash_1byte(input: u8, output_ptr: *mut [u8; 32]) {
-    let input_msg = [input];
-    let output_msg = unsafe { &mut *output_ptr };
-
-    let h = pedersen_hash(&input_msg, 3);
-    output_msg.copy_from_slice(&h);
-}
-
-//assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
-#[no_mangle]
 pub extern "C" fn pedersen_hash_73bytes(input: *const [u8; 73], output_ptr: *mut [u8; 32]) {
     let input_msg = unsafe { &*input };
     let output_msg = unsafe { &mut *output_ptr };
@@ -314,19 +304,6 @@ mod tests {
         let m: [u8; 1] = [0xb0; 1];
         assert_eq!(
             pedersen_hash(&m, 3),
-            [
-                115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
-                188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22
-            ]
-        );
-    }
-
-    #[test]
-    fn test_pedersen_ledger() {
-        let output = [0u8; 32];
-        pedersen_hash_1byte(0xb0, output.as_ptr() as *mut [u8; 32]);
-        assert_eq!(
-            output,
             [
                 115, 27, 180, 151, 186, 120, 30, 98, 134, 221, 162, 136, 54, 82, 230, 141, 30, 114,
                 188, 151, 176, 20, 4, 182, 255, 43, 30, 173, 67, 98, 64, 22

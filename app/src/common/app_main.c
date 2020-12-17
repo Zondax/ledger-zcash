@@ -126,7 +126,6 @@ bool process_chunk(volatile uint32_t *tx, uint32_t rx) {
         case 0:
             tx_initialize();
             tx_reset();
-            extractHDPath(rx, OFFSET_DATA);
             return false;
         case 1:
             added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);

@@ -43,7 +43,6 @@ void rseed_get_esk(const uint8_t *input, uint8_t *output_ptr);
 void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
 //Pedersen hash
-void pedersen_hash_1byte(const uint8_t input, uint8_t *output_ptr);
 void pedersen_hash_73bytes(const uint8_t *input, uint8_t *output_ptr);
 
 //Commitments
@@ -57,16 +56,10 @@ void compute_valueBalance_commitment(const uint64_t u64, uint8_t *output);
 
 //Note encryption
 void blake2b_prf(uint8_t *inputptr, uint8_t *outptr);
-void encrypt_out(uint8_t *key, uint8_t *input,uint8_t *output);
 void get_epk(uint8_t *esk_ptr, uint8_t *d_ptr, uint8_t *output_ptr);
 
 void ka_to_key(uint8_t *esk_ptr, uint8_t *pkd_ptr, uint8_t *epk_ptr, uint8_t *output_ptr);
 void prepare_enccompact_input(uint8_t *d, uint64_t value, uint8_t *rcm, uint8_t memotype, uint8_t *output);
-void encrypt_enctext(uint8_t *key, uint8_t *input,uint8_t *output);
-void encryptcompact(uint8_t *key, uint8_t *input,uint8_t *output);
-
-//Sighash
-void sighash(uint8_t *input_ptr, uint8_t *output);
 
 //RedJubjub
 void random_fr(uint8_t *alpha_ptr);
