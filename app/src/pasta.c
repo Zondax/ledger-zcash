@@ -321,8 +321,8 @@ void group_dbl(Group *r, const Group *p)
     field_mul(r->Z, FIELD_TWO, t10); // Z3 = 2*t12
 }
 
-// https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/addition/add-2007-bl.op3
-// cost 11M + 5S + 9add + 4*2
+// https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/addition/add-1986-cc.op3
+// cost 10M + 5S + 33 + 6add
 void group_add(Group *r, const Group *p, const Group *q)
 {
     if (is_zero(p)) {
@@ -339,46 +339,38 @@ void group_add(Group *r, const Group *p, const Group *q)
         return group_dbl(r, p);
     }
 
-    Field z1z1, z2z2;
-    field_sq(z1z1, p->Z);         // Z1Z1 = Z1^2
-    field_sq(z2z2, q->Z);         // Z2Z2 = Z2^2
+    Field t0, U1, t1, U2, t2;
+    field_sq(t0, q->Z);        // t0 = Z2^2
+    field_mul(U1, p->X, t0);   // U1 = X1*t0
+    field_sq(t1, p->Z);        // t1 = Z1^2
+    field_mul(U2, q->X, t1);   // U2 = X2*t1
+    field_mul(t2, t0, q->Z);   // t2 = Z2^3
 
-    Field u1, u2, s1, s2;
-    field_mul(u1, p->X, z2z2);    // u1 = x1 * z2z2
-    field_mul(u2, q->X, z1z1);    // u2 = x2 * z1z1
-    field_mul(r->X, q->Z, z2z2);  // t0 = z2 * z2z2
-    field_mul(s1, p->Y, r->X);    // s1 = y1 * t0
-    field_mul(r->Y, p->Z, z1z1);  // t1 = z1 * z1z1
-    field_mul(s2, q->Y, r->Y);    // s2 = y2 * t1
+    Field S1, S2, P, R;
+    field_mul(S1, p->Y, t2);   // S1 = Y1*t2
+    field_mul(t0, t1, p->Z);   // t0 = Z1^3
+    field_mul(S2, q->Y, t0);   // S2 = Y2*t0
+    field_sub(P, U2, U1);      // P = U2-U1
+    field_sub(R, S2, S1);      // R = S2-S1
+    field_add(t1, U1, U2);     // t1 = U1+U2
 
-    Field h, i, j, w, v;
-    field_sub(h, u2, u1);         // h = u2 - u1
-    field_add(r->Z, h, h);        // t2 = 2 * h
-    field_sq(i, r->Z);            // i = t2^2
-    field_mul(j, h, i);           // j = h * i
-    field_sub(r->X, s2, s1);      // t3 = s2 - s1
-    field_add(w, r->X, r->X);     // w = 2 * t3
-    field_mul(v, u1, i);          // v = u1 * i
+    field_sq(t2, R);           // t2 = R^2
+    field_sq(U2, P);           // U2 = P^2
+    field_mul(S2, t1, U2);     // S2 = t1*U2
+    field_sub(r->X, t2, S2);   // X3 = t2-S2
 
-    // X3 = w^2 - j - 2*v
-    field_sq(r->X, w);            // t4 = w^2
-    field_add(r->Y, v, v);        // t5 = 2 * v
-    field_sub(r->Z, r->X, j);     // t6 = t4 - j
-    field_sub(r->X, r->Z, r->Y);  // t6 - t5
+                               // t8 = P^2 [t8 = U2]
+    field_mul(t1, U1, U2);     // t1 = U1*U2
+    field_sub(t2, t1, r->X);   // t2 = t1-X3
+    field_mul(t0, U2, P);      // t0 = P^3
+    field_mul(S2, S1, t0);     // S2 = S1*t0
 
-    // Y3 = w * (v - X3) - 2*s1*j
-    field_sub(r->Y, v, r->X);     // t7 = v - X3
-    field_mul(r->Z, s1, j);       // t8 = s1 * j
-    field_add(s1, r->Z, r->Z);    // t9 = 2 * t8
-    field_mul(r->Z, w, r->Y);     // t10 = w * t7
-    field_sub(r->Y, r->Z, s1);    // w * (v - X3) - 2*s1*j
+    Field t3, t4;
 
-    // Z3 = ((Z1 + Z2)^2 - Z1Z1 - Z2Z2) * h
-    field_add(r->Z, p->Z, q->Z);  // t11 = z1 + z2
-    field_sq(s1, r->Z);           // t12 = (z1 + z2)^2
-    field_sub(r->Z, s1, z1z1);    // t13 = (z1 + z2)^2 - z1z1
-    field_sub(j, r->Z, z2z2);     // t14 = (z1 + z2)^2 - z1z1 - z2z2
-    field_mul(r->Z, j, h);        // ((z1 + z2)^2 - z1z1 - z2z2) * h
+    field_mul(t3, R, t2);      // t3 = R*t2
+    field_sub(r->Y, t3, S2);   // Y3 = t3-S2
+    field_mul(t4, q->Z, P);    // t4 = Z2*P
+    field_mul(r->Z, p->Z, t4); // Z3 = Z1*t4
 }
 
 // Montgomery ladder scalar multiplication (this could be optimized further)
