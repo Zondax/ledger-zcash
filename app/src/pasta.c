@@ -284,8 +284,8 @@ void projective_to_affine(Affine *r, const Group *p)
     field_mul(r->y, p->Y, zi3); // Y/Z^3
 }
 
-// https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/doubling/dbl-2009-l.op3
-// cost 2M + 5S + 6add + 3*2 + 1*3 + 1*8
+// https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/doubling/dbl-1986-cc.op3
+// cost 3M + 3S + 24 + 1*a + 4add + 2*2 + 1*3 + 1*4 + 1*8
 void group_dbl(Group *r, const Group *p)
 {
     if (is_zero(p)) {
@@ -293,30 +293,32 @@ void group_dbl(Group *r, const Group *p)
         return;
     }
 
-    Field a, b, c;
-    field_sq(a, p->X);            // a = X1^2
-    field_sq(b, p->Y);            // b = Y1^2
-    field_sq(c, b);               // c = b^2
+    Field t0, t1, S;
+    field_sq(t0, p->Y);              // t0 = Y1^2
+    field_mul(t1, p->X, t0);         // t1 = X1*t0
+    field_mul(S, FIELD_FOUR, t1);    // S = 4*t1
 
-    Field d, e, f;
-    field_add(r->X, p->X, b);     // t0 = X1 + b
-    field_sq(r->Y, r->X);         // t1 = t0^2
-    field_sub(r->Z, r->Y, a);     // t2 = t1 - a
-    field_sub(r->X, r->Z, c);     // t3 = t2 - c
-    field_add(d, r->X, r->X);     // d = 2 * t3
-    field_mul(e, FIELD_THREE, a); // e = 3 * a
-    field_sq(f, e);               // f = e^2
+    Field t2, t3;
+    field_sq(t2, p->X);              // t2 = X1^2
+                                     // t3 = Z1^4
+                                     // t4 = a*t3 [a = 0]
+    field_mul(t3, FIELD_THREE, t2);  // t3 = 3*t2
 
-    field_add(r->Y, d, d);        // t4 = 2 * d
-    field_sub(r->X, f, r->Y);     // X = f - t4
+    Field t4, t5;
+                                     // M = t3+t4
+    field_sq(t4, t3);                // t4 = M^2
+    field_mul(t5, FIELD_TWO, S);     // t5 = 2*S
+    field_sub(r->X, t4, t5);         // T = t4-t5
+                                     // X3 = T
 
-    field_sub(r->Y, d, r->X);     // t5 = d - X
-    field_mul(f, FIELD_EIGHT, c); // t6 = 8 * c
-    field_mul(r->Z, e, r->Y);     // t7 = e * t5
-    field_sub(r->Y, r->Z, f);     // Y = t7 - t6
-
-    field_mul(f, p->Y, p->Z);     // t8 = Y1 * Z1
-    field_add(r->Z, f, f);        // Z = 2 * t8
+    Field t6, t7, t8, t9, t10;
+    field_sub(t6, S, r->X);          // t6 = S-T
+    field_sq(t7, t0);                // t7 = Y1^4
+    field_mul(t8, FIELD_EIGHT, t7);  // t8 = 8*t7
+    field_mul(t9, t3, t6);           // t9 = M*t6
+    field_sub(r->Y, t9, t8);         // Y3 = t11-t10
+    field_mul(t10, p->Y, p->Z);      // t10 = Y1*Z1
+    field_mul(r->Z, FIELD_TWO, t10); // Z3 = 2*t12
 }
 
 // https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/addition/add-2007-bl.op3
