@@ -10,7 +10,6 @@ extern "C" {
 #define FIELD_BYTES    32
 #define SCALAR_BYTES   32
 #define SCALAR_BITS    256
-#define SCALAR_OFFSET  2   // Scalars have 254 used bits
 
 typedef uint8_t Field[FIELD_BYTES];
 typedef uint8_t Scalar[SCALAR_BYTES];

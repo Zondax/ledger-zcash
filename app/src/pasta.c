@@ -9,6 +9,8 @@
 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOX)
 
+#include <stdbool.h>
+
 #include <os.h>
 
 #include "pasta.h"
@@ -168,7 +170,12 @@ void field_pow(Field c, const Field a, const Field e)
     cx_math_powm(c, a, e, FIELD_BYTES, FIELD_MODULUS, FIELD_BYTES);
 }
 
-unsigned int field_eq(const Field a, const Field b)
+bool field_is_odd(const Field y)
+{
+    return y[FIELD_BYTES - 1] & 0x01;
+}
+
+bool field_eq(const Field a, const Field b)
 {
     return (os_memcmp(a, b, FIELD_BYTES) == 0);
 }
@@ -212,15 +219,14 @@ void scalar_pow(Scalar c, const Scalar a, const Scalar e)
     cx_math_powm(c, a, e, SCALAR_BYTES, GROUP_ORDER, SCALAR_BYTES);
 }
 
-unsigned int scalar_eq(const Scalar a, const Scalar b)
+bool scalar_eq(const Scalar a, const Scalar b)
 {
     return (os_memcmp(a, b, SCALAR_BYTES) == 0);
 }
 
-// zero is the only point with Z = 0 in jacobian coordinates
-unsigned int is_zero(const Group *p)
+bool scalar_is_zero(const Scalar a)
 {
-    return field_eq(p->Z, FIELD_ZERO);
+    return scalar_eq(a, SCALAR_ZERO);
 }
 
 unsigned int affine_is_zero(const Affine *p)
@@ -228,10 +234,10 @@ unsigned int affine_is_zero(const Affine *p)
     return (field_eq(p->x, FIELD_ZERO) && field_eq(p->y, FIELD_ZERO));
 }
 
-unsigned int is_on_curve(const Group *p)
+bool is_on_curve(const Group *p)
 {
-    if (is_zero(p)) {
-        return 1;
+    if (group_is_zero(p)) {
+        return true;
     }
 
     Field lhs, rhs;
@@ -291,11 +297,17 @@ void projective_to_affine(Affine *r, const Group *p)
     field_mul(r->y, p->Y, zi3); // Y/Z^3
 }
 
+// zero is the only point with Z = 0 in jacobian coordinates
+bool group_is_zero(const Group *p)
+{
+    return field_eq(p->Z, FIELD_ZERO);
+}
+
 // https://www.hyperelliptic.org/EFD/g1p/auto-code/shortw/jacobian-0/doubling/dbl-1986-cc.op3
 // cost 3M + 3S + 24 + 1*a + 4add + 2*2 + 1*3 + 1*4 + 1*8
 void group_dbl(Group *r, const Group *p)
 {
-    if (is_zero(p)) {
+    if (group_is_zero(p)) {
         *r = *p;
         return;
     }
@@ -332,12 +344,12 @@ void group_dbl(Group *r, const Group *p)
 // cost 10M + 5S + 33 + 6add
 void group_add(Group *r, const Group *p, const Group *q)
 {
-    if (is_zero(p)) {
+    if (group_is_zero(p)) {
         *r = *q;
         return;
     }
 
-    if (is_zero(q)) {
+    if (group_is_zero(q)) {
         *r = *p;
         return;
     }
@@ -380,32 +392,29 @@ void group_add(Group *r, const Group *p, const Group *q)
     field_mul(r->Z, p->Z, t4); // Z3 = Z1*t4
 }
 
-// Montgomery ladder scalar multiplication (this could be optimized further)
-void group_scalar_mul(Group *r, const Scalar k, const Group *p)
+// Double-and-add scalar multiplication (CORRECT)
+void group_scalar_mul(Group *q, const Scalar k, const Group *p)
 {
-    *r = GROUP_ZERO;
-    if (is_zero(p)) {
+    *q = GROUP_ZERO;
+    if (group_is_zero(p)) {
         return;
     }
-    if (scalar_eq(k, SCALAR_ZERO)) {
+    if (scalar_is_zero(k)) {
         return;
     }
 
-    Group r1 = *p;
-    for (size_t i = SCALAR_OFFSET; i < SCALAR_BITS; i++) {
-        uint8_t di = k[i / 8] & (1 << (7 - (i % 8)));
-        Group q0;
-        if (!di) {
-            group_add(&q0, r, &r1); // r1 = r0 + r1
-            r1 = q0;
-            group_dbl(&q0, r);      // r0 = r0 + r0
-            *r = q0;
-        }
-        else {
-            group_add(&q0, r, &r1); // r0 = r0 + r1
-            *r = q0;
-            group_dbl(&q0, &r1);    // r1 = r1 + r1
-            r1 = q0;
+    Group t0;
+    for (size_t i = 0; i < SCALAR_BITS; i++) {
+        uint8_t di = (k[i / 8] >> (7 - (i % 8))) & 0x01;
+
+        // q = 2q
+        group_dbl(t0, q);
+        *q = t0;
+
+        if (di) {
+            // q = q + p
+            group_add(t0, q, p);
+            *q = t0;
         }
     }
 }
@@ -416,11 +425,6 @@ void affine_scalar_mul(Affine *r, const Scalar k, const Affine *p)
     affine_to_projective(&pp, p);
     group_scalar_mul(&pr, k, &pp);
     projective_to_affine(r, &pr);
-}
-
-inline unsigned int is_odd(const Field y)
-{
-    return y[FIELD_BYTES - 1] & 0x01;
 }
 
 #endif // #if defined(TARGET_NANOS) || defined(TARGET_NANOX)
