@@ -178,7 +178,7 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
     char tmpBuffer[100];
-    fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 0);
+    fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 8);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
