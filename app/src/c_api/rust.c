@@ -108,19 +108,79 @@ void c_aes256_encryptblock(const uint8_t *key, const uint8_t *in, uint8_t *out) 
 // Overriding requires -z muldefs
 // FIXME: add a python script to ensure that the correct version is used by inspecting app.asm
 
-//#define LMULSIZE sizeof(long long)
-//
-//long long __aeabi_lmul(long long a, long long b) {
-//    char result[2 * LMULSIZE];
-//    cx_math_mult((unsigned char *) &result, (unsigned char *) &a, (unsigned char *) &b, LMULSIZE);
-//    return *((long long *) result);
-//}
-//
-//long long __multi3(long long a, long long b) {
-//    char result[2 * LMULSIZE];
-//    cx_math_mult((unsigned char *) &result, (unsigned char *) &a, (unsigned char *) &b, LMULSIZE);
-//    return *((long long *) result);
-//}
+#define LMULSIZE sizeof(long long)
+
+long long __aeabi_lmul(long long a, long long b) {
+    long long a_be = ((a & 0xff) << 56)
+                   | ((a >> 8 & 0xff) << 48)
+                   | ((a >> 16 & 0xff) << 40)
+                   | ((a >> 24 & 0xff) << 32)
+                   | ((a >> 32 & 0xff) << 24)
+                   | ((a >> 40 & 0xff) << 16)
+                   | ((a >> 48 & 0xff) << 8)
+                   | ((a >> 56 & 0xff) << 0);
+
+    long long b_be = ((b & 0xff) << 56)
+                   | ((b >> 8 & 0xff) << 48)
+                   | ((b >> 16 & 0xff) << 40)
+                   | ((b >> 24 & 0xff) << 32)
+                   | ((b >> 32 & 0xff) << 24)
+                   | ((b >> 40 & 0xff) << 16)
+                   | ((b >> 48 & 0xff) << 8)
+                   | ((b >> 56 & 0xff) << 0);
+
+
+    char result[2 * LMULSIZE];
+    MEMZERO(result, 2 * LMULSIZE);
+    cx_math_mult((unsigned char *) &result, (unsigned char *) &a_be, (unsigned char *) &b_be, LMULSIZE);
+
+    long long r_le = 0;
+    r_le |= result[LMULSIZE]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 1]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 2]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 3]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 4]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 5]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 6]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 7];
+    return r_le;
+}
+
+long long __multi3(long long a, long long b) {
+    long long a_be = ((a & 0xff) << 56)
+                     | ((a >> 8 & 0xff) << 48)
+                     | ((a >> 16 & 0xff) << 40)
+                     | ((a >> 24 & 0xff) << 32)
+                     | ((a >> 32 & 0xff) << 24)
+                     | ((a >> 40 & 0xff) << 16)
+                     | ((a >> 48 & 0xff) << 8)
+                     | ((a >> 56 & 0xff) << 0);
+
+    long long b_be = ((b & 0xff) << 56)
+                     | ((b >> 8 & 0xff) << 48)
+                     | ((b >> 16 & 0xff) << 40)
+                     | ((b >> 24 & 0xff) << 32)
+                     | ((b >> 32 & 0xff) << 24)
+                     | ((b >> 40 & 0xff) << 16)
+                     | ((b >> 48 & 0xff) << 8)
+                     | ((b >> 56 & 0xff) << 0);
+
+
+    char result[2 * LMULSIZE];
+    MEMZERO(result, 2 * LMULSIZE);
+    cx_math_mult((unsigned char *) &result, (unsigned char *) &a_be, (unsigned char *) &b_be, LMULSIZE);
+
+    long long r_le = 0;
+    r_le |= result[LMULSIZE]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 1]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 2]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 3]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 4]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 5]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 6]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 7];
+    return r_le;
+}
 
 //typedef struct {
 //    unsigned quot;
