@@ -14,6 +14,7 @@ use core::mem;
 use itertools::zip;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
+use crate::commitments::bytes_to_extended;
 use crate::pedersen::extended_to_bytes;
 use crate::{bolos, constants};
 
@@ -214,14 +215,24 @@ pub fn multwithgd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
 }
 
 #[inline(never)]
+pub fn mul_by_cof(p: &mut ExtendedPoint) {
+    *p = p.mul_by_cofactor();
+}
+
+#[inline(never)]
+pub fn niels_multbits(p: &mut ExtendedPoint, b: &[u8; 32]) {
+    *p = p.to_niels().multiply_bits(b);
+}
+
+#[inline(never)]
 pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let h = bolos::blake2s_diversification(d);
 
-    let v = AffinePoint::from_bytes(h).unwrap();
-    let y = v.mul_by_cofactor();
+    let mut y = bytes_to_extended(h);
+    mul_by_cof(&mut y);
 
-    let v = y.to_niels().multiply_bits(ivk);
-    extended_to_bytes(&v)
+    niels_multbits(&mut y, ivk);
+    extended_to_bytes(&y)
 }
 
 #[inline(never)]

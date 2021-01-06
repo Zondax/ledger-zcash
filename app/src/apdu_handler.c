@@ -451,7 +451,7 @@ void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
         G_io_apdu_buffer[0] = 0xaa;
     }else{
         G_io_apdu_buffer[0] = 0xbb;
-    }16
+    };
 
     *tx = 1;
 }

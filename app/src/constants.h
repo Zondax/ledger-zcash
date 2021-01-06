@@ -44,7 +44,7 @@
 #define OUT_KEY_SIZE            32
 #define ENC_CIPHER_SIZE         64
 #define COMPACT_OUT_SIZE        53
-#define MAX_SIZE                160
+#define MAX_SIZE                172
 #define SIG_R_SIZE              32
 #define SIG_S_SIZE              32
 #define SCRIPT_CONSTS_SIZE      4

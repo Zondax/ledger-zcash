@@ -44,7 +44,7 @@ const sim_options = {
    ,X11: true
 };
 
-jest.setTimeout(600000)
+jest.setTimeout(600000);
 
 describe('Zcashtool tests', function () {
     test('get ivk', async function () {
