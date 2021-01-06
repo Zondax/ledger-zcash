@@ -786,7 +786,6 @@ typedef struct {
         } step1;
 
         struct{
-            uint8_t dummy[MAX_SIZE - COMPACT_OUT_SIZE - SHARED_KEY_SIZE - EPK_SIZE - ESK_SIZE - CHACHA_NONCE_SIZE];
             uint8_t chachanonce[CHACHA_NONCE_SIZE];
             uint8_t compactout[COMPACT_OUT_SIZE];
             uint8_t sharedkey[SHARED_KEY_SIZE];
@@ -795,6 +794,7 @@ typedef struct {
         } step2;
 
         struct{
+            uint8_t dummy[MAX_SIZE - OVK_SIZE - VALUE_COMMITMENT_SIZE - NOTE_COMMITMENT_SIZE - EPK_SIZE - ESK_SIZE];
             uint8_t ovk[OVK_SIZE];
             uint8_t valuecmt[VALUE_COMMITMENT_SIZE];
             uint8_t notecmt[NOTE_COMMITMENT_SIZE];
@@ -803,7 +803,8 @@ typedef struct {
         }step3;
 
         struct{
-            uint8_t prfinput[MAX_SIZE - ESK_SIZE];
+            uint8_t dummy[MAX_SIZE - PRF_INPUT_SIZE - ESK_SIZE];
+            uint8_t prfinput[PRF_INPUT_SIZE];
             uint8_t esk[ESK_SIZE];
         }step4;
 
