@@ -55,7 +55,7 @@ describe('Zcashtool tests', function () {
 
             const ivkreq = app.getivk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
@@ -81,7 +81,7 @@ describe('Zcashtool tests', function () {
 
             const ovkreq = app.getovk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
