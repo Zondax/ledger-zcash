@@ -786,7 +786,7 @@ typedef struct {
         } step1;
 
         struct{
-            uint8_t dummy[MAX_SIZE - COMPACT_OUT_SIZE - SHARED_KEY_SIZE - EPK_SIZE - ESK_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
             uint8_t compactout[COMPACT_OUT_SIZE];
             uint8_t sharedkey[SHARED_KEY_SIZE];
             uint8_t epk[EPK_SIZE];
@@ -794,6 +794,7 @@ typedef struct {
         } step2;
 
         struct{
+            uint8_t dummy[MAX_SIZE - OVK_SIZE - VALUE_COMMITMENT_SIZE - NOTE_COMMITMENT_SIZE - EPK_SIZE - ESK_SIZE];
             uint8_t ovk[OVK_SIZE];
             uint8_t valuecmt[VALUE_COMMITMENT_SIZE];
             uint8_t notecmt[NOTE_COMMITMENT_SIZE];
@@ -802,7 +803,8 @@ typedef struct {
         }step3;
 
         struct{
-            uint8_t prfinput[MAX_SIZE - ESK_SIZE];
+            uint8_t dummy[MAX_SIZE - PRF_INPUT_SIZE - ESK_SIZE];
+            uint8_t prfinput[PRF_INPUT_SIZE];
             uint8_t esk[ESK_SIZE];
         }step4;
 
@@ -815,7 +817,8 @@ typedef struct {
 
         struct{
             uint8_t outkey[OUT_KEY_SIZE];
-            uint8_t dummy[MAX_SIZE - OUT_KEY_SIZE - ENC_CIPHER_SIZE];
+            uint8_t dummy[MAX_SIZE - OUT_KEY_SIZE - ENC_CIPHER_SIZE - CHACHA_NONCE_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
             uint8_t encciph[ENC_CIPHER_SIZE];
         }step6;
     };
@@ -842,20 +845,21 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             return zxerr_unknown;
         }
         rseed_get_esk(item->rseed,tmp->step1.esk);
-
+        CHECK_APP_CANARY();
         get_epk(tmp->step1.esk, (uint8_t *) item->div, tmp->step1.epk);
+        CHECK_APP_CANARY();
         if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, EPK_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
         ka_to_key(tmp->step1.esk, (uint8_t *) item->pkd, tmp->step1.epk, tmp->step2.sharedkey);
+        CHECK_APP_CANARY();
         prepare_enccompact_input((uint8_t *) item->div, item->value, (uint8_t *) item->rseed, item->memotype, tmp->step2.compactout);
-
-        uint8_t nonce[CHACHA_NONCE_SIZE] = {0,0,0,0,0,0,0,0,0,0,0,0};
-        uint32_t counter = 1;
-        chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, nonce,counter);
-
+        CHECK_APP_CANARY();
+        MEMZERO(tmp->step2.chachanonce,CHACHA_NONCE_SIZE);
+        chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, tmp->step2.chachanonce,1);
+        CHECK_APP_CANARY();
         if (MEMCMP(tmp->step2.compactout, start_outputdata + INDEX_OUTPUT_ENC + i * OUTPUT_TX_LEN, COMPACT_OUT_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
@@ -868,12 +872,13 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
 
             blake2b_prf(tmp->step4.prfinput, tmp->step5.outkey);
+            CHECK_APP_CANARY();
             MEMCPY(tmp->step5.pkd, item->pkd, PKD_SIZE);
 
-            counter = 1;
+            MEMZERO(tmp->step6.chachanonce,CHACHA_NONCE_SIZE);
 
-            chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey, nonce,counter);
-
+            chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey, tmp->step6.chachanonce,1);
+            CHECK_APP_CANARY();
             if (MEMCMP(tmp->step6.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
                 MEMZERO(out, bufferLen);
                 return zxerr_unknown;

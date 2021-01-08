@@ -44,7 +44,7 @@ const sim_options = {
    ,X11: true
 };
 
-jest.setTimeout(600000)
+jest.setTimeout(600000);
 
 describe('Zcashtool tests', function () {
     test('get ivk', async function () {
@@ -55,7 +55,7 @@ describe('Zcashtool tests', function () {
 
             const ivkreq = app.getivk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
@@ -81,7 +81,7 @@ describe('Zcashtool tests', function () {
 
             const ovkreq = app.getovk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
@@ -134,7 +134,7 @@ describe('Zcashtool tests', function () {
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
             const addrreq = app.showaddrdiv(path,div);
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickRight();

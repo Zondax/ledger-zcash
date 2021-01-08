@@ -402,8 +402,8 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 }
 
 #if defined(APP_TESTING)
-void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
+void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 }
 #endif
 
