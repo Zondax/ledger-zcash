@@ -47,6 +47,9 @@ extern "C" {
 //ak, nsk
 #define LEN_PGK                     64u
 
+
+#define ENABLE_SDK_MULT             0
+
 typedef enum {
     addr_secp256k1 = 0,
     addr_sapling = 1,

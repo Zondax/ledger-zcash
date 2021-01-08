@@ -5,6 +5,7 @@
 #include "os.h"
 #include "cx.h"
 #include "aes.h"
+#include "coin.h"
 
 #define CTX_REDJUBJUB "Zcash_RedJubjubH"
 #define CTX_REDJUBJUB_LEN 16
@@ -107,7 +108,7 @@ void c_aes256_encryptblock(const uint8_t *key, const uint8_t *in, uint8_t *out) 
 // Replace functions affected by non-constant time opcodes
 // Overriding requires -z muldefs
 // FIXME: add a python script to ensure that the correct version is used by inspecting app.asm
-
+#if ENABLE_SDK_MULT
 #define SWAP_BYTES(x, y, tmp) { \
                    tmp = x;     \
                    x = y;       \
@@ -144,7 +145,7 @@ long long __attribute__ ((noinline)) __aeabi_lmul(long long a, long long b) {
     SWAP_ENDIAN(ptr, tmp);
     return *((long long *) ptr);
 }
-
+#endif
 /*
 long long __multi3(long long a, long long b) {
     long long a_be = ((a & 0xff) << 56)
