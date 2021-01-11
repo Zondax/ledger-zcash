@@ -291,7 +291,6 @@ describe('Zcashtool tests', function () {
 
             /*
             The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-            It CAN send along an outgoing viewing key (OVK), can also be all zero's.
             It furthermore uses the spend address and value from the UI.
             We also need the witness from the blockchain, which is now a fake/incorrect one.
              */
@@ -322,10 +321,6 @@ describe('Zcashtool tests', function () {
             expect(req3.return_code).toEqual(0x9000);
             expect(req3.key_raw.toString('hex')).toEqual(expected_proofkey_raw);
 
-            /*
-            For this spend we don't use a OVK (i.e. all-zero's).
-             */
-
             var spendj2 = {
                 proofkey: req3.key_raw,
                 rcv: req3.rcv_raw,
@@ -344,6 +339,7 @@ describe('Zcashtool tests', function () {
             We cannot get more spend data from the ledger.
             We now start the shielded output process.
              */
+
 
             /*
            To add a shielded output to the builder, we need:
@@ -383,6 +379,8 @@ describe('Zcashtool tests', function () {
             /*
             This process needs to be repeated for the second output.
             Note that this output address belongs to Alice.
+            There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
+            The UI needs to take care of this before initalizing a transaction to the ledger.
              */
 
             const req5 = await app.extractoutputdata();
@@ -619,7 +617,6 @@ describe('Zcashtool tests', function () {
 
             /*
             The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-            It CAN send along an outgoing viewing key (OVK), can also be all zero's.
             It furthermore uses the spend address and value from the UI.
              */
 
