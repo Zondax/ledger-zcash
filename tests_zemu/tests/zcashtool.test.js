@@ -367,9 +367,10 @@ describe('Zcashtool tests', function () {
                 address: s_out1.address,
                 value: s_out1.value,
                 memo: "0000",
-                hash_seed: "0000000000000000000000000000000000000000000000000000000000000000",
+                hash_seed: req4.hash_seed,
             }
 
+            console.log(req4.hash_seed);
             /*
             The builder adds the shielded output to its state.
              */
@@ -388,6 +389,8 @@ describe('Zcashtool tests', function () {
             console.log(req5);
             expect(req5.return_code).toEqual(0x9000);
 
+            console.log(req5.hash_seed);
+
             var outj2 = {
                 rcv: req5.rcv_raw,
                 rseed: req5.rseed_raw,
@@ -395,8 +398,9 @@ describe('Zcashtool tests', function () {
                 address: s_out2.address,
                 value: s_out2.value,
                 memo: "0000",
-                hash_seed: null,
+                hash_seed: req5.hash_seed,
             }
+
 
             var b4 = builder.add_sapling_output(outj2);
             console.log(b4);
@@ -670,7 +674,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out1.ovk,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -695,7 +700,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out2.ovk,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1308,7 +1314,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1333,7 +1340,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1589,7 +1597,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1618,7 +1627,8 @@ describe('Zcashtool tests', function () {
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1837,7 +1847,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1866,7 +1877,8 @@ describe('Zcashtool tests', function () {
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
                 address: s_out1.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);

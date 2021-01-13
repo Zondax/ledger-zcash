@@ -103,10 +103,11 @@ __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
     if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-    zxerr_t err = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
+    uint16_t replyLen = 0;
+    zxerr_t err = crypto_extract_output_rnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
     view_tx_state();
     if (err == zxerr_ok) {
-        *tx = 64;
+        *tx = replyLen;
         THROW(APDU_CODE_OK);
     } else {
         *tx = 0;

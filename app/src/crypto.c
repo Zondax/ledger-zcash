@@ -295,7 +295,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint8_t hash_seed[OVK_SET_SIZE];
         if(ovk[0] == 0x00){
             MEMZERO(hash_seed,OVK_SET_SIZE);
-            //cx_rng(hash_seed + 1, OVK_SIZE);
+            cx_rng(hash_seed + 1, OVK_SIZE);
             ovk = hash_seed;
         }
 
@@ -395,7 +395,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
     return zxerr_ok;
 }
 
-zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen){
     if(!outputlist_more_extract()){
         return zxerr_unknown;
     }
@@ -413,6 +413,13 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     }
     MEMCPY(out, next->rcmvalue, RCM_V_SIZE);
     MEMCPY(out+RCM_V_SIZE, next->rseed, RSEED_SIZE);
+
+    if(next->ovk[0] == 0x00){
+        MEMCPY(out+RCM_V_SIZE + RSEED_SIZE, next->ovk + 1, OVK_SIZE);
+        *replyLen = RCM_V_SIZE + RSEED_SIZE + OVK_SIZE;
+    }else{
+        *replyLen = RCM_V_SIZE + RSEED_SIZE;
+    }
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
