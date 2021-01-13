@@ -215,12 +215,12 @@ describe('Zcashtool tests', function () {
                 memo_type: 0xf6,
                 ovk: null,
             }
-
+            //CHANGE ADDRESS:
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-1000-55000,
                 memo_type: 0xf6,
-                ovk: null,
+                ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
             }
 
             const tx_input_data = {
@@ -236,7 +236,7 @@ describe('Zcashtool tests', function () {
             */
 
             const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
-            console.log(ledgerblob_initdata);
+            console.log(Buffer.from(ledgerblob_initdata).byteLength);
 
             /*
             The output of the get_inittx_data can be send to the ledger.
@@ -250,7 +250,7 @@ describe('Zcashtool tests', function () {
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             //we have to click several times...
-            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
+            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst + clicksOVKset; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -363,7 +363,7 @@ describe('Zcashtool tests', function () {
             var outj1 = {
                 rcv: req4.rcv_raw,
                 rseed: req4.rseed_raw,
-                ovk: null,
+                ovk: s_out1.ovk,
                 address: s_out1.address,
                 value: s_out1.value,
                 memo: "0000"
@@ -390,7 +390,7 @@ describe('Zcashtool tests', function () {
             var outj2 = {
                 rcv: req5.rcv_raw,
                 rseed: req5.rseed_raw,
-                ovk: null,
+                ovk: s_out2.ovk,
                 address: s_out2.address,
                 value: s_out2.value,
                 memo: "0000"

@@ -79,6 +79,7 @@
 #define SESSION_KEY_SIZE        32
 
 #define OVK_SIZE                32
+#define OVK_SET_SIZE            1 + OVK_SIZE
 #define RSEED_SIZE              32
 #define RCM_V_SIZE              32
 

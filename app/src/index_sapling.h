@@ -19,7 +19,7 @@
 #define T_IN_INPUT_LEN              54 //fixme: maybe add more options to HDPATH
 #define T_OUT_INPUT_LEN             34
 #define SPEND_INPUT_LEN             55
-#define OUTPUT_INPUT_LEN            84
+#define OUTPUT_INPUT_LEN            85
 
 #define INDEX_INPUT_TIN_PATH        0
 #define INDEX_INPUT_TIN_SCRIPT      20

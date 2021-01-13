@@ -288,6 +288,17 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
+        if(ovk[0] != 0x00 && ovk[0] != 0x01){
+            zemu_log_stack("invalid OVK SET");
+            return zxerr_unknown;
+        }
+        uint8_t hash_seed[OVK_SET_SIZE];
+        if(ovk[0] == 0x00){
+            MEMZERO(hash_seed,OVK_SET_SIZE);
+            cx_rng(hash_seed + 1, OVK_SIZE);
+            ovk = hash_seed;
+        }
+
         uint8_t rnd1[RND_SIZE];
         uint8_t rnd2[RND_SIZE];
         random_fr(rnd1);
@@ -865,9 +876,9 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             return zxerr_unknown;
         }
 
-        MEMCPY(tmp->step3.ovk, item->ovk, OVK_SIZE);
-        MEMZERO(out + MAX_SIZE, OVK_SIZE);
-        if(MEMCMP(tmp->step3.ovk, out + MAX_SIZE, OVK_SIZE) != 0){
+        MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
+        if(item->ovk[0] != 0x00){
+            zemu_log_stack("OVK SET");
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
 
@@ -884,6 +895,8 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
                 return zxerr_unknown;
             }
 
+        }else{
+            zemu_log_stack("OVK NOT SET");
         }
         CHECK_APP_CANARY();
         MEMZERO(out, bufferLen);

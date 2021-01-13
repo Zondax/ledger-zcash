@@ -258,7 +258,7 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t mem
     MEMCPY(newitem.rseed, rseed, RSEED_SIZE);
     MEMCPY(newitem.div, d, DIV_SIZE);
     MEMCPY(newitem.pkd, pkd, PKD_SIZE);
-    MEMCPY(newitem.ovk, ovk, OVK_SIZE);
+    MEMCPY(newitem.ovk, ovk, OVK_SET_SIZE);
     newitem.memotype = memotype;
     MEMCPY_NV(
             &N_outputlist.items[transaction_header.outputlist_len],
