@@ -43,6 +43,7 @@
 #define SHARED_KEY_SIZE         32
 #define OUT_KEY_SIZE            32
 #define ENC_CIPHER_SIZE         64
+#define ENC_CIPHER_HALVE_SIZE   32
 #define COMPACT_OUT_SIZE        53
 #define PRF_INPUT_SIZE          128
 #define MAX_SIZE                161

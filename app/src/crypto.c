@@ -295,7 +295,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint8_t hash_seed[OVK_SET_SIZE];
         if(ovk[0] == 0x00){
             MEMZERO(hash_seed,OVK_SET_SIZE);
-            cx_rng(hash_seed + 1, OVK_SIZE);
+            //cx_rng(hash_seed + 1, OVK_SIZE);
             ovk = hash_seed;
         }
 
@@ -832,6 +832,20 @@ typedef struct {
             uint8_t chachanonce[CHACHA_NONCE_SIZE];
             uint8_t encciph[ENC_CIPHER_SIZE];
         }step6;
+
+        struct{
+            uint8_t hashseed[OVK_SET_SIZE];
+            uint8_t outkey[OUT_KEY_SIZE];
+            uint8_t encciph_part1[ENC_CIPHER_HALVE_SIZE];
+            uint8_t encciph_part2[ENC_CIPHER_HALVE_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
+        }step3b;
+        struct{
+            uint8_t hashseed[OVK_SET_SIZE];
+            uint8_t outkey[OUT_KEY_SIZE];
+            uint8_t encciph[ENC_CIPHER_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
+        }step4b;
     };
 } tmp_enc;
 
@@ -876,9 +890,9 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             return zxerr_unknown;
         }
 
-        MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
         if(item->ovk[0] != 0x00){
             zemu_log_stack("OVK SET");
+            MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
 
@@ -897,6 +911,18 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
         }else{
             zemu_log_stack("OVK NOT SET");
+            MEMCPY(tmp->step3b.hashseed, item->ovk, OVK_SET_SIZE);
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.outkey, CX_SHA256_SIZE);
+            tmp->step3b.hashseed[0] = 0x01;
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part1, CX_SHA256_SIZE);
+            tmp->step3b.hashseed[0] = 0x02;
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part2, CX_SHA256_SIZE);
+            MEMZERO(tmp->step3b.chachanonce,CHACHA_NONCE_SIZE);
+            chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,1);
+            if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
+                MEMZERO(out, bufferLen);
+                return zxerr_unknown;
+            }
         }
         CHECK_APP_CANARY();
         MEMZERO(out, bufferLen);

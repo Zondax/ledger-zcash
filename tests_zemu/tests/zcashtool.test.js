@@ -366,7 +366,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out1.ovk,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: "0000000000000000000000000000000000000000000000000000000000000000",
             }
 
             /*
@@ -393,7 +394,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out2.ovk,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: null,
             }
 
             var b4 = builder.add_sapling_output(outj2);
