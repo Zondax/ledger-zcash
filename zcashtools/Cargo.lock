@@ -989,8 +989,9 @@ checksum = "85e60b0d1b5f99db2556934e21937020776a5d31520bf169e851ac44e6420214"
 
 [[package]]
 name = "zcash-hsmbuilder"
-version = "0.0.5"
-source = "git+https://github.com/Zondax/ledger-zcash-rs/?branch=ovksupport#da219b4407bd864e2e998c7e0fb54c1a3cca60b6"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a367c747efc9bc46fdf60999652b5fcb46367d638b2d80e9405a0f7f16cbda0a"
 dependencies = [
  "bellman",
  "blake2b_simd",
