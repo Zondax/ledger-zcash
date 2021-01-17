@@ -358,9 +358,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                     snprintf(outKey, outKeyLen, "S-out OVK");
                     uint8_t dummy[OVK_SIZE];
                     MEMZERO(dummy, sizeof(dummy));
-                    if(MEMCMP(dummy, item->ovk, OVK_SIZE) != 0) {
+                    if(item->ovk[0] == 0x01) {
                         char tmpBuffer[100];
-                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OVK_SIZE);
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk + 1, OVK_SIZE);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return parser_ok;
                     }else{

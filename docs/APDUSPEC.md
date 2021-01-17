@@ -181,6 +181,7 @@ Returns a sapling incoming viewing key. Forced user confirmation (So P1 needs to
 | INS     | byte (1) | Instruction ID            | 0xf0       |
 | P1      | byte (1) | Request User confirmation | 1  |
 | P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
 | ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
 
 
@@ -205,6 +206,7 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 | INS     | byte (1) | Instruction ID            | 0xf1     |
 | P1      | byte (1) | Request User confirmation | 1 |
 | P2      | byte (1) | Parameter 2               | ignored    |
+| L       | byte (1) | Bytes in payload          | (depends)  |
 | ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
 
 
@@ -286,11 +288,6 @@ _First Packet_
 
 | Field   | Type     | Content              | Expected |
 | ------- | -------- | -------------------- | -------- |
-| Path[0] | byte (4) | Derivation Path Data | ignored  |
-| Path[1] | byte (4) | Derivation Path Data | ignored  |
-| Path[2] | byte (4) | Derivation Path Data | ignored  |
-| Path[3] | byte (4) | Derivation Path Data | ignored  |
-| Path[4] | byte (4) | Derivation Path Data | ignored  |
 
 _Other Chunks/Packets_
 
@@ -326,12 +323,7 @@ already called the INS_INITTX_SAPLING. This command requires that it is needed t
 | INS     | byte (1) | Instruction ID            | 0xa1      |
 | P1      | byte (1) | Request User confirmation | No = 0    |
 | P2      | byte (1) | Parameter 2               | ignored   |
-| L       | byte (1) | Bytes in payload          | (depends) |
-| Path[0] | byte (4) | Derivation Path Data      | ignored   |
-| Path[1] | byte (4) | Derivation Path Data      | ignored   |
-| Path[2] | byte (4) | Derivation Path Data      | ignored   |
-| Path[3] | byte (4) | Derivation Path Data      | ignored   |
-| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+| L       | byte (1) | Bytes in payload          | 0 (empty) |
 
 #### Response
 
@@ -346,7 +338,7 @@ already called the INS_INITTX_SAPLING. This command requires that it is needed t
 
 ### INS_GET_OUTPUTINFO
 
-Returns randomness (rcv and rseed (after ZIP202)) for a sapling output. This command requires you already called the
+Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a sapling output. This command requires you already called the
 INS_INITTX_SAPLING. This command requires you already called the correct number of INS_GET_SPENDINFO. This command
 requires that it is needed to extract outputinfo.
 
@@ -358,12 +350,7 @@ requires that it is needed to extract outputinfo.
 | INS     | byte (1) | Instruction ID            | 0xa2      |
 | P1      | byte (1) | Request User confirmation | No = 0    |
 | P2      | byte (1) | Parameter 2               | ignored   |
-| L       | byte (1) | Bytes in payload          | (depends) |
-| Path[0] | byte (4) | Derivation Path Data      | ignored   |
-| Path[1] | byte (4) | Derivation Path Data      | ignored   |
-| Path[2] | byte (4) | Derivation Path Data      | ignored   |
-| Path[3] | byte (4) | Derivation Path Data      | ignored   |
-| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+| L       | byte (1) | Bytes in payload          | 0 (empty) |
 
 #### Response
 
@@ -371,6 +358,7 @@ requires that it is needed to extract outputinfo.
 | --------- | --------- | ----------- | ------------------------ |
 | rcv_RAW   | byte (32) | Raw rcv     |                          |
 | rseed_RAW | byte (32) | Raw rseed   |                          |
+| hash_seed | byte (32) | Raw hash_seed| Only returned if OVK=None for this output |
 | SW1-SW2   | byte (2)  | Return code | see list of return codes |
 
 ---
@@ -451,11 +439,6 @@ _First Packet_
 
 | Field   | Type     | Content              | Expected |
 | ------- | -------- | -------------------- | -------- |
-| Path[0] | byte (4) | Derivation Path Data | ignored  |
-| Path[1] | byte (4) | Derivation Path Data | ignored  |
-| Path[2] | byte (4) | Derivation Path Data | ignored  |
-| Path[3] | byte (4) | Derivation Path Data | ignored  |
-| Path[4] | byte (4) | Derivation Path Data | ignored  |
 
 _Other Chunks/Packets_
 
@@ -481,7 +464,9 @@ Data is defined as:
 ### INS_GET_TRANSPARENT_SIGNATURE
 
 Returns a SECP256K1 signature for a sapling transparent input. This command requires that you already called
-INS_CHECKANDSIGN_SAPLING.
+INS_CHECKANDSIGN_SAPLING. It gives the signatures in order of the transaction. 
+Returns error if all signatures are retrieved.
+
 
 #### Command
 
@@ -491,12 +476,7 @@ INS_CHECKANDSIGN_SAPLING.
 | INS     | byte (1) | Instruction ID            | 0xa5      |
 | P1      | byte (1) | Request User confirmation | No = 0    |
 | P2      | byte (1) | Parameter 2               | ignored   |
-| L       | byte (1) | Bytes in payload          | (depends) |
-| Path[0] | byte (4) | Derivation Path Data      | ignored   |
-| Path[1] | byte (4) | Derivation Path Data      | ignored   |
-| Path[2] | byte (4) | Derivation Path Data      | ignored   |
-| Path[3] | byte (4) | Derivation Path Data      | ignored   |
-| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+| L       | byte (1) | Bytes in payload          | 0 (empty) |
 
 #### Response
 
@@ -520,12 +500,7 @@ INS_CHECKANDSIGN_SAPLING.
 | INS     | byte (1) | Instruction ID            | 0xa4      |
 | P1      | byte (1) | Request User confirmation | No = 0    |
 | P2      | byte (1) | Parameter 2               | ignored   |
-| L       | byte (1) | Bytes in payload          | (depends) |
-| Path[0] | byte (4) | Derivation Path Data      | ignored   |
-| Path[1] | byte (4) | Derivation Path Data      | ignored   |
-| Path[2] | byte (4) | Derivation Path Data      | ignored   |
-| Path[3] | byte (4) | Derivation Path Data      | ignored   |
-| Path[4] | byte (4) | Derivation Path Data      | ignored   |
+| L       | byte (1) | Bytes in payload          | 0 (empty) |
 
 #### Response
 
@@ -537,6 +512,7 @@ INS_CHECKANDSIGN_SAPLING.
 ---
 
 ### INS_SIGN_SECP256K1
+### OLD COMMAND: NOT SUPPORTED
 
 #### Command
 
@@ -589,6 +565,7 @@ Data is defined as:
 ---
 
 ### INS_SIGN_SAPLING
+### OLD COMMAND: NOT SUPPORTED
 
 | Field | Type     | Content                | Expected  |
 | ----- | -------- | ---------------------- | --------- |

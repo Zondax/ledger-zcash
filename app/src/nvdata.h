@@ -73,7 +73,7 @@ typedef struct {
     uint8_t memotype;
     uint8_t rcmvalue[RCM_V_SIZE];
     uint8_t rseed[RSEED_SIZE];
-    uint8_t ovk[OVK_SIZE];
+    uint8_t ovk[OVK_SET_SIZE];
 } output_item_t;
 
 typedef struct {

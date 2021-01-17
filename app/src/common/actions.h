@@ -51,11 +51,13 @@ __Z_INLINE zxerr_t init_tx() {
     zxerr_t err;
     err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        transaction_reset();
         MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }
     err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok){
+        transaction_reset();
         MEMZERO(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE);
         return err;
     }

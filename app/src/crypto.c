@@ -288,6 +288,17 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
+        if(ovk[0] != 0x00 && ovk[0] != 0x01){
+            zemu_log_stack("invalid OVK SET");
+            return zxerr_unknown;
+        }
+        uint8_t hash_seed[OVK_SET_SIZE];
+        if(ovk[0] == 0x00){
+            MEMZERO(hash_seed,OVK_SET_SIZE);
+            cx_rng(hash_seed + 1, OVK_SIZE);
+            ovk = hash_seed;
+        }
+
         uint8_t rnd1[RND_SIZE];
         uint8_t rnd2[RND_SIZE];
         random_fr(rnd1);
@@ -384,7 +395,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
     return zxerr_ok;
 }
 
-zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
+zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen){
     if(!outputlist_more_extract()){
         return zxerr_unknown;
     }
@@ -402,6 +413,13 @@ zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen){
     }
     MEMCPY(out, next->rcmvalue, RCM_V_SIZE);
     MEMCPY(out+RCM_V_SIZE, next->rseed, RSEED_SIZE);
+
+    if(next->ovk[0] == 0x00){
+        MEMCPY(out+RCM_V_SIZE + RSEED_SIZE, next->ovk + 1, OVK_SIZE);
+        *replyLen = RCM_V_SIZE + RSEED_SIZE + OVK_SIZE;
+    }else{
+        *replyLen = RCM_V_SIZE + RSEED_SIZE;
+    }
 
     if(!outputlist_more_extract()){
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS);
@@ -821,6 +839,20 @@ typedef struct {
             uint8_t chachanonce[CHACHA_NONCE_SIZE];
             uint8_t encciph[ENC_CIPHER_SIZE];
         }step6;
+
+        struct{
+            uint8_t hashseed[OVK_SET_SIZE];
+            uint8_t outkey[OUT_KEY_SIZE];
+            uint8_t encciph_part1[ENC_CIPHER_HALVE_SIZE];
+            uint8_t encciph_part2[ENC_CIPHER_HALVE_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
+        }step3b;
+        struct{
+            uint8_t hashseed[OVK_SET_SIZE];
+            uint8_t outkey[OUT_KEY_SIZE];
+            uint8_t encciph[ENC_CIPHER_SIZE];
+            uint8_t chachanonce[CHACHA_NONCE_SIZE];
+        }step4b;
     };
 } tmp_enc;
 
@@ -865,9 +897,9 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             return zxerr_unknown;
         }
 
-        MEMCPY(tmp->step3.ovk, item->ovk, OVK_SIZE);
-        MEMZERO(out + MAX_SIZE, OVK_SIZE);
-        if(MEMCMP(tmp->step3.ovk, out + MAX_SIZE, OVK_SIZE) != 0){
+        if(item->ovk[0] != 0x00){
+            zemu_log_stack("OVK SET");
+            MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
 
@@ -884,6 +916,20 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
                 return zxerr_unknown;
             }
 
+        }else{
+            zemu_log_stack("OVK NOT SET");
+            MEMCPY(tmp->step3b.hashseed, item->ovk, OVK_SET_SIZE);
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.outkey, CX_SHA256_SIZE);
+            tmp->step3b.hashseed[0] = 0x01;
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part1, CX_SHA256_SIZE);
+            tmp->step3b.hashseed[0] = 0x02;
+            cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part2, CX_SHA256_SIZE);
+            MEMZERO(tmp->step3b.chachanonce,CHACHA_NONCE_SIZE);
+            chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,1);
+            if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
+                MEMZERO(out, bufferLen);
+                return zxerr_unknown;
+            }
         }
         CHECK_APP_CANARY();
         MEMZERO(out, bufferLen);

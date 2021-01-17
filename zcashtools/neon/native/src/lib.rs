@@ -32,15 +32,6 @@ pub struct ZcashBuilderBridge {
 }
 
 impl ZcashBuilderBridge {
-    pub fn get_public_key(&mut self) -> Result<Vec<u8>, Error> {
-        self.zcashbuilder.keygen();
-        self.zcashbuilder.get_public_key()
-    }
-
-    pub fn set_session_key(&mut self, input: &[u8]) -> Result<(), Error> {
-        self.zcashbuilder.set_session_key(input)
-    }
-
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
         self.zcashbuilder.add_transparent_input(t)
     }
@@ -82,41 +73,6 @@ declare_types! {
             Ok(ZcashBuilderBridge {
                 zcashbuilder: b,
             })
-        }
-
-        method get_public_key(mut cx){
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
-            value = thishandler.get_public_key();
-            }
-            if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap())?;
-                Ok(js_value)
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
-        }
-
-        method set_session_key(mut cx){
-            let handler_input = cx.argument::<JsBuffer>(0)?;
-            let input = cx.borrow(&handler_input, |data| data.as_slice::<u8>());
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
-
-            //grab input
-            value = thishandler.set_session_key(input);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
 
         method add_transparent_input(mut cx) {
