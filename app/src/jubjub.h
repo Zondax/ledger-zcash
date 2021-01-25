@@ -21,8 +21,8 @@ typedef unsigned char jubjub_fr[JUBJUB_SCALAR_BYTES];
 typedef unsigned char jubjub_fq[JUBJUB_FIELD_BYTES];
 
 typedef struct {
-    jubjub_fq X;
-    jubjub_fq Y;
+    jubjub_fq U;
+    jubjub_fq V;
     jubjub_fq Z;
     jubjub_fq T1;
     jubjub_fq T2;
@@ -43,8 +43,8 @@ jubjub_fq JUBJUB_FQ_ONE = {    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
 jubjub_extendedpoint const JUBJUB_GEN = {
-        .X = {9, 38, 212, 243, 32, 89, 199, 18, 212, 24, 167, 255, 38, 117, 59, 106, 213, 185, 167, 211, 239, 142, 40, 39, 71, 191, 70, 146, 10, 149, 167, 83},
-        .Y = {87, 161, 1, 158, 109, 233, 182, 117, 83, 187, 55, 208, 194, 28, 253, 5, 109, 101, 103, 77, 206, 219, 221, 188, 48, 86, 50, 173, 170, 242, 181, 48},
+        .U = {9, 38, 212, 243, 32, 89, 199, 18, 212, 24, 167, 255, 38, 117, 59, 106, 213, 185, 167, 211, 239, 142, 40, 39, 71, 191, 70, 146, 10, 149, 167, 83},
+        .V = {87, 161, 1, 158, 109, 233, 182, 117, 83, 187, 55, 208, 194, 28, 253, 5, 109, 101, 103, 77, 206, 219, 221, 188, 48, 86, 50, 173, 170, 242, 181, 48},
         .Z = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -74,3 +74,4 @@ SWAP_BYTES(*(x+3), *(x + 4), tmp);         \
 }
 
 void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p);
+void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p);
