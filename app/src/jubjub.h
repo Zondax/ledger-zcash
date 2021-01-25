@@ -28,6 +28,14 @@ typedef struct {
     jubjub_fq T2;
 } jubjub_extendedpoint;
 
+typedef struct {
+    jubjub_fq U;
+    jubjub_fq V;
+    jubjub_fq Z;
+    jubjub_fq T1;
+    jubjub_fq T2;
+} jubjub_extendednielspoint;
+
 unsigned char const JUBJUB_FR_MODULUS_BYTES[JUBJUB_SCALAR_BYTES] =  {14, 125, 180, 234, 101, 51, 175, 169, 6, 103, 59, 1,
                                                     1, 52, 59, 0, 166, 104, 32, 147, 204, 200, 16, 130,
                                                     208, 151, 14, 94, 214, 247, 44, 183};
@@ -36,11 +44,14 @@ unsigned char const JUBJUB_FQ_MODULUS_BYTES[JUBJUB_FIELD_BYTES] =  {0x73, 0xed, 
                                                     0x39, 0xd8, 0x08, 0x09, 0xa1, 0xd8, 0x05, 0x53, 0xbd,
                                                     0xa4, 0x02, 0xff, 0xfe, 0x5b, 0xfe, 0xff, 0xff, 0xff,
                                                     0xff, 0x00, 0x00, 0x00, 0x01};
-
-jubjub_fq JUBJUB_FQ_ONE = {    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+unsigned char JUBJUB_FQ_ONE[JUBJUB_FIELD_BYTES] = {    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
+
+const jubjub_fq JUBJUB_FQ_EDWARDS_2D = {85, 38, 49, 206, 151, 244, 86, 145, 235, 251, 36, 15, 205,
+                          122, 255, 168, 82, 90, 254, 218, 110, 175, 58, 76, 2, 12,
+                          191, 173, 172, 104, 125, 98};
 
 jubjub_extendedpoint const JUBJUB_GEN = {
         .U = {9, 38, 212, 243, 32, 89, 199, 18, 212, 24, 167, 255, 38, 117, 59, 106, 213, 185, 167, 211, 239, 142, 40, 39, 71, 191, 70, 146, 10, 149, 167, 83},
@@ -75,3 +86,4 @@ SWAP_BYTES(*(x+3), *(x + 4), tmp);         \
 
 void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p);
 void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p);
+void jubjub_extendedpoint_add(jubjub_extendedpoint *r, jubjub_extendedpoint p);

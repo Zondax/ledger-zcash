@@ -410,10 +410,12 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 
 void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
-    jubjub_extendedpoint G;
+    jubjub_extendedpoint G, T;
     MEMCPY(&G, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
+    MEMCPY(&T, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
     jubjub_extendedpoint_double(&G,G);
-    jubjub_extendedpoint_tobytes(G_io_apdu_buffer, G);
+    jubjub_extendedpoint_add(&T,G);
+    jubjub_extendedpoint_tobytes(G_io_apdu_buffer, T);
     *tx = 32;
     return;
 

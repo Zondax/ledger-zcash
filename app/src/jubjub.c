@@ -21,12 +21,17 @@
 //jubjub_scalar_
 //jubjub_field_
 
+void jubjub_field_one(jubjub_fq r){
+    MEMZERO(r, sizeof(jubjub_fq));
+    MEMCPY(r,JUBJUB_FQ_ONE, sizeof(jubjub_fq));
+}
+
 void jubjub_field_copy(jubjub_fq r, jubjub_fq a){
     MEMZERO(r, sizeof(jubjub_fq));
     MEMCPY(r,a, sizeof(jubjub_fq));
 }
 
-void jubjub_field_mult(jubjub_fq r, jubjub_fq a, jubjub_fq b){
+void jubjub_field_mult(jubjub_fq r, const jubjub_fq a, const jubjub_fq b){
     cx_math_multm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
@@ -50,7 +55,59 @@ void jubjub_field_double(jubjub_fq r, jubjub_fq a){
     cx_math_addm(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
+void jubjub_extendedpoint_normalize(jubjub_extendedpoint *r, jubjub_extendedpoint p){
+    jubjub_fq zinv;
+    jubjub_field_inverse(zinv, r->Z);
+    jubjub_field_one(r->Z);
+    jubjub_field_mult(r->U, p.U, zinv);
+    jubjub_field_mult(r->V, p.V, zinv);
+    jubjub_field_copy(r->T1, p.U);
+    jubjub_field_copy(r->T2, p.V);
+}
+
+void jubjub_extendedpoint_add(jubjub_extendedpoint *r, jubjub_extendedpoint p){
+    //jubjub_extendedpoint np;
+    //jubjub_extendedpoint_normalize(&np, p);
+    //extendednielspoint
+    jubjub_fq v_minus_u, v_plus_u, t2d;
+
+    jubjub_field_add(v_plus_u, p.V, p.U);
+    jubjub_field_sub(v_minus_u, p.V, p.U);
+    jubjub_field_mult(t2d, p.T1, p.T2);
+    jubjub_field_mult(t2d, t2d, JUBJUB_FQ_EDWARDS_2D);
+
+    jubjub_fq a,b,c,d;
+
+    jubjub_field_sub(a, r->V, r->U);
+    jubjub_field_mult(a,a,v_minus_u);
+
+    jubjub_field_add(b, r->V, r->U);
+    jubjub_field_mult(b, b, v_plus_u);
+
+    jubjub_field_mult(c, r->T1, r->T2);
+    jubjub_field_mult(c,c,t2d);
+
+    jubjub_field_mult(d, r->Z, p.Z);
+    jubjub_field_double(d,d);
+
+    //completed point
+    jubjub_fq u,v,z,t;
+    jubjub_field_sub(u,b,a);
+    jubjub_field_add(v,b,a);
+    jubjub_field_add(z, d, c);
+    jubjub_field_sub(t,d,c);
+
+    //completed point to extended
+    jubjub_field_mult(r->U, u,t);
+    jubjub_field_mult(r->V, v,z);
+    jubjub_field_mult(r->Z, t,z);
+    jubjub_field_copy(r->T1, u);
+    jubjub_field_copy(r->T2, v);
+
+}
+
 void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p){
+
     jubjub_fq uu, vv;
     jubjub_fq zz2, uv2;
     jubjub_fq vv_plus_uu, vv_minus_uu;
