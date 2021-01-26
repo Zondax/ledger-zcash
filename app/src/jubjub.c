@@ -141,6 +141,20 @@ void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p
 
 }
 
+void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar){
+    jubjub_extendedpoint p, q;
+    MEMCPY(&p, &JUBJUB_ID, sizeof(jubjub_extendedpoint));
+    MEMCPY(&q, r, sizeof(jubjub_extendedpoint));
+    for(int i = 0; i < 256; i++) {
+        uint8_t di = (scalar[i / 8] >> (7 - (i % 8))) & 0x01;
+        jubjub_extendedpoint_double(&p,p);
+        if (di){
+            jubjub_extendedpoint_add(&p, q);
+        }
+    }
+    MEMCPY(r, &p, sizeof(jubjub_extendedpoint));
+}
+
 void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p){
 
     jubjub_fq x, y, zinv;
