@@ -421,10 +421,9 @@ void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
     jubjub_extendedpoint G;
     MEMCPY(&G, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
-    //jubjub_extendedpoint_tobytes(G_io_apdu_buffer, G);
     jubjub_extendedpoint_scalarmult(&G, scal);
-    jubjub_extendedpoint_tobytes(G_io_apdu_buffer + 32, G);
-    *tx = 64;
+    jubjub_extendedpoint_tobytes(G_io_apdu_buffer, G);
+    *tx = 32;
     return;
 
 }

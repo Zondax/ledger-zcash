@@ -55,6 +55,25 @@ void jubjub_field_double(jubjub_fq r, jubjub_fq a){
     cx_math_addm(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
+void jubjub_field_cmov(jubjub_fq r, jubjub_fq a, unsigned int bit){
+    uint8_t mask = (uint8_t) (-(int8_t) bit);
+    jubjub_fq h, x;
+    for(int i = 0; i < JUBJUB_FIELD_BYTES; i++){
+        h[i] = r[i];
+        x[i] = h[i] ^ a[i];
+        x[i] &= mask;
+        r[i] = r[i] ^ x[i];
+    }
+}
+
+void jubjub_extendedpoint_cmov(jubjub_extendedpoint *r, jubjub_extendedpoint p, unsigned int bit){
+    jubjub_field_cmov(r->U, p.U, bit);
+    jubjub_field_cmov(r->V, p.V, bit);
+    jubjub_field_cmov(r->Z, p.Z, bit);
+    jubjub_field_cmov(r->T1, p.T1, bit);
+    jubjub_field_cmov(r->T1, p.T2, bit);
+}
+
 void jubjub_extendedpoint_normalize(jubjub_extendedpoint *r, jubjub_extendedpoint p){
     jubjub_fq zinv;
     jubjub_field_inverse(zinv, r->Z);
@@ -142,15 +161,14 @@ void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p
 }
 
 void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar){
-    jubjub_extendedpoint p, q;
+    jubjub_extendedpoint p, dummy;
     MEMCPY(&p, &JUBJUB_ID, sizeof(jubjub_extendedpoint));
-    MEMCPY(&q, r, sizeof(jubjub_extendedpoint));
     for(int i = 0; i < 256; i++) {
         uint8_t di = (scalar[i / 8] >> (7 - (i % 8))) & 0x01;
         jubjub_extendedpoint_double(&p,p);
-        if (di){
-            jubjub_extendedpoint_add(&p, q);
-        }
+        MEMCPY(&dummy, &p, sizeof(jubjub_extendedpoint));
+        jubjub_extendedpoint_add(&dummy, *r);
+        jubjub_extendedpoint_cmov(&p, dummy, di);
     }
     MEMCPY(r, &p, sizeof(jubjub_extendedpoint));
 }
