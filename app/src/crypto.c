@@ -1371,6 +1371,7 @@ typedef struct {
         };
         struct {
             uint8_t dummy[ADDR_LEN_SAPLING];
+            uint8_t startindex[DIV_INDEX_SIZE];
             uint8_t diversifierlist[DIV_DEFAULT_LIST_LEN * DIV_SIZE];
         };
     };
@@ -1476,12 +1477,19 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
             CHECK_APP_CANARY();
 
-            get_diversifier_list(tmp.step2.dk, out->diversifierlist);
-            CHECK_APP_CANARY();
-            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
-
-            //MEMZERO(tmp.step1.zip32_seed, sizeof_field(tmp_sampling_s, step1.zip32_seed));
-            get_diversifier_fromlist(out->diversifier,out->diversifierlist);
+            bool found = false;
+            while(!found){
+                get_default_diversifier_list_withstartindex(tmp.step2.dk, out->startindex, out->diversifierlist);
+                uint8_t *ptr = out->diversifierlist;
+                for(uint8_t i = 0; i < DIV_DEFAULT_LIST_LEN; i++, ptr += DIV_SIZE){
+                    if(!found && is_valid_diversifier(ptr)){
+                        MEMCPY(out->diversifier, ptr, DIV_SIZE);
+                        MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
+                        MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
+                        found = true;
+                    }
+                }
+            }
             CHECK_APP_CANARY();
             if(!is_valid_diversifier(out->diversifier)){
                 *replyLen = 0;

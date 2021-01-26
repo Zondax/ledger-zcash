@@ -74,8 +74,10 @@
 #define RCM_SIZE                32
 #define ALPHA_SIZE              32
 #define DIV_SIZE                11
+#define DIV_INDEX_SIZE          11
 #define DIV_LIST_LENGTH         20
-#define DIV_DEFAULT_LIST_LEN    10
+#define DIV_DEFAULT_LIST_LEN    4
+#define MAX_SIZE_BUF_ADDR       143
 
 #define SESSION_KEY_SIZE        32
 
