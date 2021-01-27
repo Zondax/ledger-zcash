@@ -410,22 +410,18 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 
 void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
-    unsigned char scal[32] = {
-            0x32, 0x16, 0xae, 0x47, 0xe9, 0xf5, 0x3e, 0x8a, 0x52, 0x79, 0x6f, 0x24, 0xb6, 0x24,
-            0x60, 0x77, 0x6b, 0xd5, 0xf2, 0x05, 0xa7, 0x8e, 0x15, 0x95, 0xbc, 0x8e, 0xfe, 0xdc,
-            0x51, 0x9d, 0x36, 0x0b};
-    SWAP_ENDIAN_BYTES(scal);
-
-    jubjub_fr one;
-    MEMCPY(one, &JUBJUB_FQ_ONE, 32);
-
     jubjub_extendedpoint G;
     MEMCPY(&G, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
-    jubjub_extendedpoint_scalarmult(&G, scal);
     jubjub_extendedpoint_tobytes(G_io_apdu_buffer, G);
-    *tx = 32;
-    return;
 
+    zxerr_t err = jubjub_extendedpoint_frombytes(&G, G_io_apdu_buffer);
+    if(err != zxerr_ok){
+        *tx = 5;
+        THROW(APDU_CODE_OK);
+    }else{
+        *tx = 32;
+        THROW(APDU_CODE_OK);
+    }
 }
 #endif
 

@@ -14,6 +14,7 @@
 *  limitations under the License.
 ********************************************************************************/
 
+#include <zxerror.h>
 #include <zxmacros.h>
 #include "jubjub.h"
 #include "cx.h"
@@ -21,12 +22,35 @@
 //jubjub_scalar_
 //jubjub_field_
 
+void u8_cmov(uint8_t r, uint8_t a, unsigned int bit){
+    uint8_t mask = (uint8_t) (-(int8_t) bit);
+    uint8_t h,x;
+    h = r;
+    x = h ^ a;
+    x ^= mask;
+    r = r ^ x;
+}
+
+void jubjub_field_frombytes(jubjub_fq r, uint8_t *s){
+    MEMZERO(r, sizeof(jubjub_fq));
+    MEMCPY(r,s, sizeof(jubjub_fq));
+    cx_math_modm(r, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+}
+
+int jubjub_field_iszero(const jubjub_fq r){
+    return cx_math_is_zero(r,JUBJUB_FIELD_BYTES);
+}
+
+int jubjub_field_is_equal(const jubjub_fq a, const jubjub_fq b){
+    return MEMCMP(a,b,sizeof(jubjub_fq)) == 0;
+}
+
 void jubjub_field_one(jubjub_fq r){
     MEMZERO(r, sizeof(jubjub_fq));
     MEMCPY(r,JUBJUB_FQ_ONE, sizeof(jubjub_fq));
 }
 
-void jubjub_field_copy(jubjub_fq r, jubjub_fq a){
+void jubjub_field_copy(jubjub_fq r, const jubjub_fq a){
     MEMZERO(r, sizeof(jubjub_fq));
     MEMCPY(r,a, sizeof(jubjub_fq));
 }
@@ -35,11 +59,11 @@ void jubjub_field_mult(jubjub_fq r, const jubjub_fq a, const jubjub_fq b){
     cx_math_multm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
-void jubjub_field_add(jubjub_fq r, jubjub_fq a, jubjub_fq b){
+void jubjub_field_add(jubjub_fq r, const jubjub_fq a, const jubjub_fq b){
     cx_math_addm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
-void jubjub_field_sub(jubjub_fq r, jubjub_fq a, jubjub_fq b){
+void jubjub_field_sub(jubjub_fq r, const jubjub_fq a, const jubjub_fq b){
     cx_math_subm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
@@ -55,7 +79,15 @@ void jubjub_field_double(jubjub_fq r, jubjub_fq a){
     cx_math_addm(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
-void jubjub_field_cmov(jubjub_fq r, jubjub_fq a, unsigned int bit){
+void jubjub_field_pow_t(jubjub_fq r, const jubjub_fq a){
+    cx_math_powm(r, a, JUBJUB_FQ_SQRT_T, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+}
+
+void jubjub_field_negate(jubjub_fq r, const jubjub_fq a){
+    cx_math_subm(r, JUBJUB_FQ_ZERO, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+}
+
+void jubjub_field_cmov(jubjub_fq r, const jubjub_fq a, unsigned int bit){
     uint8_t mask = (uint8_t) (-(int8_t) bit);
     jubjub_fq h, x;
     for(int i = 0; i < JUBJUB_FIELD_BYTES; i++){
@@ -64,6 +96,53 @@ void jubjub_field_cmov(jubjub_fq r, jubjub_fq a, unsigned int bit){
         x[i] &= mask;
         r[i] = r[i] ^ x[i];
     }
+}
+
+zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a){
+    jubjub_fq w,x,b,z;
+    jubjub_field_pow_t(w,a);
+    uint8_t v = 32;
+    jubjub_field_mult(x,a,w);
+    jubjub_field_mult(b,x,w);
+    jubjub_field_copy(z,JUBJUB_FQ_ROOT_OF_UNITY);
+    jubjub_fq tmp;
+    for(uint8_t max_v = 32; max_v >= 1; max_v--){
+        uint8_t k = 1;
+        jubjub_field_square(tmp,b);
+        uint8_t j_less_than_v = 1;
+
+        for(uint8_t j = 2; j < max_v; j++){
+            uint8_t tmp_is_one = jubjub_field_is_equal(tmp,JUBJUB_FQ_ONE);
+            jubjub_fq squared;
+            jubjub_field_copy(squared,tmp);
+            jubjub_field_cmov(squared, z, tmp_is_one);
+            jubjub_field_square(squared,squared);
+            jubjub_field_cmov(tmp,squared,tmp_is_one);
+            jubjub_fq new_z;
+            jubjub_field_copy(new_z, squared);
+            jubjub_field_cmov(new_z, z, tmp_is_one);
+            j_less_than_v &= !(j == v);
+            u8_cmov(k,j,tmp_is_one);
+            jubjub_field_cmov(z,new_z,j_less_than_v);
+        }
+
+        jubjub_fq result;
+        jubjub_field_mult(result, x, z);
+        uint8_t b_is_one = jubjub_field_is_equal(b, JUBJUB_FQ_ONE);
+
+        jubjub_field_cmov(x,result,b_is_one);
+        jubjub_field_square(z,z);
+        jubjub_field_mult(b,b,z);
+        v = k;
+    }
+
+    jubjub_field_square(w,x);
+    uint8_t correct = jubjub_field_is_equal(w,a);
+    if(!correct){
+        return zxerr_unknown;
+    }
+    jubjub_field_copy(r,x);
+    return zxerr_ok;
 }
 
 void jubjub_extendedpoint_cmov(jubjub_extendedpoint *r, jubjub_extendedpoint p, unsigned int bit){
@@ -183,5 +262,48 @@ void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p){
     MEMCPY(s, y, sizeof(jubjub_fq));
     s[0] |= x[31] << 7;
     SWAP_ENDIAN_BYTES(&s[0]);
+}
 
+zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s){
+    uint8_t b[JUBJUB_FIELD_BYTES];
+    MEMCPY(b, s, JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(&b[0]);
+
+    uint8_t sign = b[0] >> 7;
+    b[0] &= 0x01111111;
+
+    jubjub_fq v, v2, v3, u;
+
+    jubjub_field_frombytes(v, b);
+    jubjub_field_square(v2,v);
+    jubjub_field_copy(v3,v2);
+    jubjub_field_mult(v2,v2, JUBJUB_FQ_EDWARDS_D);
+    jubjub_field_add(v2,v2,JUBJUB_FQ_ONE);
+
+    if (jubjub_field_iszero(v2)){
+        zemu_log_stack("iszero fails");
+        return zxerr_unknown;
+    }
+
+    jubjub_field_inverse(v2,v2);
+    jubjub_field_sub(v3,v3,JUBJUB_FQ_ONE);
+    jubjub_field_mult(v3,v3,v2);
+    if (jubjub_field_sqrt(u,v3) != zxerr_ok){
+        zemu_log_stack("sqrt fails");
+        return zxerr_unknown;
+    }
+
+
+    uint8_t flip_sign = (u[JUBJUB_FIELD_BYTES - 1] ^ sign) & 1;
+    jubjub_fq u_neg;
+    jubjub_field_negate(u_neg, u);
+
+    jubjub_field_cmov(u,u_neg, flip_sign);
+
+    jubjub_field_copy(p->U, u);
+    jubjub_field_copy(p->V, v);
+    jubjub_field_copy(p->Z, JUBJUB_FQ_ONE);
+    jubjub_field_copy(p->T1, u);
+    jubjub_field_copy(p->T2, v);
+    return zxerr_ok;
 }

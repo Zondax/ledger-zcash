@@ -13,6 +13,7 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
+#include <zxerror.h>
 
 #define JUBJUB_SCALAR_BYTES         32
 #define JUBJUB_FIELD_BYTES          32
@@ -37,14 +38,31 @@ unsigned char const JUBJUB_FQ_MODULUS_BYTES[JUBJUB_FIELD_BYTES] =  {0x73, 0xed, 
                                                     0xa4, 0x02, 0xff, 0xfe, 0x5b, 0xfe, 0xff, 0xff, 0xff,
                                                     0xff, 0x00, 0x00, 0x00, 0x01};
 
+const jubjub_fq JUBJUB_FQ_ZERO = {    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
 const jubjub_fq JUBJUB_FQ_ONE = {    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
+const jubjub_fq JUBJUB_FQ_EDWARDS_D = {
+        42, 147, 24, 231, 75, 250, 43, 72, 245, 253, 146, 7, 230, 189, 127, 212, 41, 45, 127, 109, 55, 87, 157, 38, 1, 6, 95, 214, 214, 52, 62, 177
+};
+
 const jubjub_fq JUBJUB_FQ_EDWARDS_2D = {85, 38, 49, 206, 151, 244, 86, 145, 235, 251, 36, 15, 205,
                           122, 255, 168, 82, 90, 254, 218, 110, 175, 58, 76, 2, 12,
                           191, 173, 172, 104, 125, 98};
+
+const jubjub_fq JUBJUB_FQ_SQRT_T = {
+        0, 0, 0, 0, 57, 246, 211, 169, 148, 206, 190, 164, 25, 156, 236, 4, 4, 208, 236, 2, 169, 222, 210, 1, 127, 255, 45, 255, 127, 255, 255, 255
+};
+const jubjub_fq JUBJUB_FQ_ROOT_OF_UNITY = {
+        91, 243, 173, 218, 25, 233, 178, 123, 10, 245, 58, 227, 82, 163, 30, 100, 91, 27, 76, 128, 24, 25, 215, 236,
+        185, 181, 141, 140, 95, 14, 70, 106
+};
 
 const jubjub_extendedpoint JUBJUB_GEN = {
         .U = {9, 38, 212, 243, 32, 89, 199, 18, 212, 24, 167, 255, 38, 117, 59, 106, 213, 185, 167, 211, 239, 142, 40, 39, 71, 191, 70, 146, 10, 149, 167, 83},
@@ -104,3 +122,5 @@ void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p);
 void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p);
 void jubjub_extendedpoint_add(jubjub_extendedpoint *r, jubjub_extendedpoint p);
 void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar);
+
+zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s);
