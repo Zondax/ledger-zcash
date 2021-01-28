@@ -16,6 +16,7 @@ use cstr_core::CStr;
 #[cfg(test)]
 #[cfg(target_arch = "x86_64")]
 use getrandom::getrandom;
+use jubjub::AffinePoint;
 use rand::{CryptoRng, RngCore};
 
 extern "C" {
@@ -61,6 +62,28 @@ extern "C" {
     fn check_app_canary();
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn c_zcash_blake2b_redjubjub(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
+    fn c_jubjub_scalarmult(point: *mut u8, scalar: *const u8);
+}
+
+#[cfg(not(test))]
+pub fn sdk_jubjub_scalarmult(point: &mut [u8], scalar: &[u8]) {
+    c_zemu_log_stack(b"scalarmult in sdk\x00".as_ref());
+    unsafe {
+        c_jubjub_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
+    }
+}
+
+#[cfg(test)]
+pub fn sdk_jubjub_scalarmult(point: &mut [u8], scalar: &[u8]) {
+    let mut bytes = [0u8; 32];
+    bytes.copy_from_slice(&point);
+    let mut scalarbytes = [0u8; 32];
+    scalarbytes.copy_from_slice(&scalar);
+    let result = jubjub::AffinePoint::from_bytes(bytes)
+        .unwrap()
+        .to_niels()
+        .multiply_bits(&scalarbytes);
+    point.copy_from_slice(&AffinePoint::from(result).to_bytes());
 }
 
 #[cfg(test)]

@@ -121,6 +121,5 @@ void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p);
 void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p);
 void jubjub_extendedpoint_add(jubjub_extendedpoint *r, jubjub_extendedpoint p);
 void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar);
-
+void jubjub_field_frombytes(jubjub_fq r, const uint8_t *s);
 zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s);
-zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a);

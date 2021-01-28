@@ -32,7 +32,7 @@ void u8_cmov(uint8_t *r, uint8_t a, uint8_t bit){
     *r = *r ^ x;
 }
 
-void jubjub_field_frombytes(jubjub_fq r, uint8_t *s){
+void jubjub_field_frombytes(jubjub_fq r, const uint8_t *s){
     MEMZERO(r, sizeof(jubjub_fq));
     MEMCPY(r,s, sizeof(jubjub_fq));
     cx_math_modm(r, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
@@ -265,7 +265,7 @@ void jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint p){
     jubjub_field_mult(y, p.V, zinv);
 
     MEMCPY(s, y, sizeof(jubjub_fq));
-    s[0] |= x[31] << 7;
+    s[0] |= (x[31] << 7);
     SWAP_ENDIAN_BYTES(&s[0]);
 }
 
@@ -275,7 +275,7 @@ zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s){
     SWAP_ENDIAN_BYTES(&b[0]);
 
     uint8_t sign = b[0] >> 7;
-    b[0] &= 0x01111111;
+    b[0] &= 0x7f;
 
     jubjub_fq v, v2, v3, u;
 
@@ -286,23 +286,19 @@ zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s){
     jubjub_field_add(v2,v2,JUBJUB_FQ_ONE);
 
     if (jubjub_field_iszero(v2)){
-        zemu_log_stack("iszero fails");
         return zxerr_unknown;
     }
 
     jubjub_field_inverse(v2,v2);
     jubjub_field_sub(v3,v3,JUBJUB_FQ_ONE);
     jubjub_field_mult(v3,v3,v2);
-
     if (jubjub_field_sqrt(u,v3) != zxerr_ok){
-        zemu_log_stack("sqrt fails");
         return zxerr_unknown;
     }
 
     uint8_t flip_sign = (u[JUBJUB_FIELD_BYTES - 1] ^ sign) & 1;
     jubjub_fq u_neg;
     jubjub_field_negate(u_neg, u);
-
     jubjub_field_cmov(u,u_neg, flip_sign);
 
     jubjub_field_copy(p->U, u);
