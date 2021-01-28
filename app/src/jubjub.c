@@ -87,8 +87,9 @@ void jubjub_field_negate(jubjub_fq r, const jubjub_fq a){
     cx_math_subm(r, JUBJUB_FQ_ZERO, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
-void jubjub_field_cmov(jubjub_fq r, const jubjub_fq a, unsigned int bit){
-    uint8_t mask = (uint8_t) (-(int8_t) bit);
+void jubjub_field_cmov(jubjub_fq r, const jubjub_fq a, uint8_t bit){
+    uint8_t b = bit & 0x01;
+    uint8_t mask = (uint8_t) (-(int8_t) b);
     jubjub_fq h, x;
     for(int i = 0; i < JUBJUB_FIELD_BYTES; i++){
         h[i] = r[i];
@@ -101,6 +102,7 @@ void jubjub_field_cmov(jubjub_fq r, const jubjub_fq a, unsigned int bit){
 zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a){
     jubjub_fq w,x,b,z;
     jubjub_field_pow_t(w,a);
+
     uint8_t v = 32;
     jubjub_field_mult(x,a,w);
     jubjub_field_mult(b,x,w);
@@ -114,15 +116,15 @@ zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a){
         for(uint8_t j = 2; j < max_v; j++){
             uint8_t tmp_is_one = jubjub_field_is_equal(tmp,JUBJUB_FQ_ONE);
             jubjub_fq squared;
-            jubjub_field_copy(squared,tmp);
-            jubjub_field_cmov(squared, z, tmp_is_one);
+            jubjub_field_copy(squared,z);
+            jubjub_field_cmov(squared, tmp, !tmp_is_one);
             jubjub_field_square(squared,squared);
-            jubjub_field_cmov(tmp,squared,tmp_is_one);
+            jubjub_field_cmov(tmp,squared,!tmp_is_one);
             jubjub_fq new_z;
             jubjub_field_copy(new_z, squared);
-            jubjub_field_cmov(new_z, z, tmp_is_one);
-            j_less_than_v &= !(j == v);
-            u8_cmov(k,j,tmp_is_one);
+            jubjub_field_cmov(new_z, z, !tmp_is_one);
+            j_less_than_v &= !(j==v);
+            u8_cmov(k,j,!tmp_is_one);
             jubjub_field_cmov(z,new_z,j_less_than_v);
         }
 
@@ -130,17 +132,22 @@ zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a){
         jubjub_field_mult(result, x, z);
         uint8_t b_is_one = jubjub_field_is_equal(b, JUBJUB_FQ_ONE);
 
-        jubjub_field_cmov(x,result,b_is_one);
+        jubjub_field_cmov(x,result,!b_is_one);
         jubjub_field_square(z,z);
         jubjub_field_mult(b,b,z);
         v = k;
     }
 
+    MEMCPY(r,x,32);
+    return zxerr_ok;
+
     jubjub_field_square(w,x);
     uint8_t correct = jubjub_field_is_equal(w,a);
+
     if(!correct){
         return zxerr_unknown;
     }
+
     jubjub_field_copy(r,x);
     return zxerr_ok;
 }
@@ -288,6 +295,7 @@ zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s){
     jubjub_field_inverse(v2,v2);
     jubjub_field_sub(v3,v3,JUBJUB_FQ_ONE);
     jubjub_field_mult(v3,v3,v2);
+
     if (jubjub_field_sqrt(u,v3) != zxerr_ok){
         zemu_log_stack("sqrt fails");
         return zxerr_unknown;

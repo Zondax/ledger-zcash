@@ -60,8 +60,7 @@ const jubjub_fq JUBJUB_FQ_SQRT_T = {
         0, 0, 0, 0, 57, 246, 211, 169, 148, 206, 190, 164, 25, 156, 236, 4, 4, 208, 236, 2, 169, 222, 210, 1, 127, 255, 45, 255, 127, 255, 255, 255
 };
 const jubjub_fq JUBJUB_FQ_ROOT_OF_UNITY = {
-        91, 243, 173, 218, 25, 233, 178, 123, 10, 245, 58, 227, 82, 163, 30, 100, 91, 27, 76, 128, 24, 25, 215, 236,
-        185, 181, 141, 140, 95, 14, 70, 106
+        22, 162, 161, 158, 223, 232, 31, 32, 208, 155, 104, 25, 34, 200, 19, 180, 182, 54, 131, 80, 140, 34, 128, 185, 56, 41, 151, 31, 67, 159, 13, 43
 };
 
 const jubjub_extendedpoint JUBJUB_GEN = {
@@ -124,3 +123,4 @@ void jubjub_extendedpoint_add(jubjub_extendedpoint *r, jubjub_extendedpoint p);
 void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar);
 
 zxerr_t jubjub_extendedpoint_frombytes(jubjub_extendedpoint *p, uint8_t *s);
+zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a);

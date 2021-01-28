@@ -414,7 +414,18 @@ void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     MEMCPY(&G, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
     jubjub_extendedpoint_tobytes(G_io_apdu_buffer, G);
 
-    zxerr_t err = jubjub_extendedpoint_frombytes(&G, G_io_apdu_buffer);
+    uint8_t scal[32] = {0x85, 0x48, 0xa1, 0x4a, 0x47, 0x3e, 0xa5, 0x47, 0xaa, 0x23, 0x78, 0x40, 0x20, 0x44,
+                0xf8, 0x18, 0xcf, 0x19, 0x11, 0xcf, 0x5d, 0xd2, 0x05, 0x4f, 0x67, 0x83, 0x45, 0xf0,
+                0x0d, 0x0e, 0x88, 0x06};
+
+    SWAP_ENDIAN_BYTES(scal);
+
+    jubjub_fq r,a;
+    MEMCPY(a,scal, 32);
+
+    zxerr_t err = jubjub_field_sqrt(r, a);
+    MEMCPY(G_io_apdu_buffer,r,sizeof(jubjub_fq));
+    SWAP_ENDIAN_BYTES(G_io_apdu_buffer);
     if(err != zxerr_ok){
         *tx = 5;
         THROW(APDU_CODE_OK);
