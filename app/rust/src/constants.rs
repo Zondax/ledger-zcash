@@ -38,6 +38,11 @@ pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
 )
 .to_niels();
 
+pub const PROVING_BASE_BYTES: [u8; 32] = [
+    231, 232, 93, 224, 247, 249, 122, 70, 210, 73, 161, 245, 234, 81, 223, 80, 204, 72, 73, 15,
+    132, 1, 201, 222, 122, 42, 223, 24, 7, 209, 182, 212,
+];
+
 pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
         0xe4b3_d35d_f1a7_adfe,
