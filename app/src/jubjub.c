@@ -247,7 +247,8 @@ void jubjub_extendedpoint_double(jubjub_extendedpoint *r, jubjub_extendedpoint p
 void jubjub_extendedpoint_scalarmult(jubjub_extendedpoint *r, jubjub_fr scalar){
     jubjub_extendedpoint p, dummy;
     MEMCPY(&p, &JUBJUB_ID, sizeof(jubjub_extendedpoint));
-    for(int i = 0; i < 256; i++) {
+    //skip the first 4 bits as they are always 0
+    for(int i = 4; i < 8*JUBJUB_SCALAR_BYTES; i++) {
         uint8_t di = (scalar[i / 8] >> (7 - (i % 8))) & 0x01;
         jubjub_extendedpoint_double(&p,p);
         MEMCPY(&dummy, &p, sizeof(jubjub_extendedpoint));

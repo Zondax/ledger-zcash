@@ -114,7 +114,7 @@ void c_jubjub_scalarmult(uint8_t *point, const uint8_t *scalar){
 
     zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
     if(err!=zxerr_ok){
-        MEMZERO(point, 32);
+        MEMZERO(point, JUBJUB_FIELD_BYTES);
         return;
     }
     jubjub_extendedpoint_scalarmult(&p, scal);
