@@ -1,5 +1,6 @@
 //! Rust interfaces to Ledger SDK APIs.
 
+use crate::constants;
 use aes::{
     block_cipher_trait::{
         generic_array::typenum::{U16, U32, U8},
@@ -63,6 +64,23 @@ extern "C" {
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn c_zcash_blake2b_redjubjub(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn c_jubjub_scalarmult(point: *mut u8, scalar: *const u8);
+    fn c_jubjub_spending_base_scalarmult(point: *mut u8, scalar: *const u8);
+}
+
+#[cfg(not(test))]
+pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
+    c_zemu_log_stack(b"scalarmult in sdk\x00".as_ref());
+    unsafe {
+        c_jubjub_spending_base_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
+    }
+}
+
+#[cfg(test)]
+pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
+    let mut scalarbytes = [0u8; 32];
+    scalarbytes.copy_from_slice(&scalar);
+    let result = constants::SPENDING_KEY_BASE.multiply_bits(&scalarbytes);
+    point.copy_from_slice(&AffinePoint::from(result).to_bytes());
 }
 
 #[cfg(not(test))]

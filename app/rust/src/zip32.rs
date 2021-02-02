@@ -39,8 +39,8 @@ pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
-    let mut point = constants::SPENDING_BASE_BYTES;
-    bolos::sdk_jubjub_scalarmult(&mut point, &ask[..]);
+    let mut point = [0u8; 32];
+    bolos::sdk_jubjub_scalarmult_spending_base(&mut point, &ask[..]);
     point
 }
 

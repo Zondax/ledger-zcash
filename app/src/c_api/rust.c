@@ -121,6 +121,16 @@ void c_jubjub_scalarmult(uint8_t *point, const uint8_t *scalar){
     jubjub_extendedpoint_tobytes(point,p);
 }
 
+void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar){
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    MEMCPY(scal,scalar,JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(scal);
+    MEMCPY(&p, &JUBJUB_GEN,sizeof(jubjub_extendedpoint));
+    jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
+}
+
 // Replace functions affected by non-constant time opcodes
 // Overriding requires -z muldefs
 // FIXME: add a python script to ensure that the correct version is used by inspecting app.asm

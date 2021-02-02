@@ -2,7 +2,9 @@ use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 use rand::RngCore;
 
 use crate::bolos::c_zemu_log_stack;
-use crate::bolos::{blake2b_redjubjub, sdk_jubjub_scalarmult, Trng};
+use crate::bolos::{
+    blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base, Trng,
+};
 use crate::commitments::bytes_to_extended;
 use crate::constants;
 use crate::constants::*;
@@ -15,8 +17,8 @@ pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
 
 #[inline(never)]
 pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {
-    let mut point = constants::SPENDING_BASE_BYTES;
-    sdk_jubjub_scalarmult(&mut point, &sk[..]);
+    let mut point = [0u8; 32];
+    sdk_jubjub_scalarmult_spending_base(&mut point, &sk[..]);
     point
 }
 
