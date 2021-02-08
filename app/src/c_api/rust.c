@@ -6,6 +6,7 @@
 #include "cx.h"
 #include "aes.h"
 #include "coin.h"
+#include "jubjub.h"
 
 #define CTX_REDJUBJUB "Zcash_RedJubjubH"
 #define CTX_REDJUBJUB_LEN 16
@@ -103,6 +104,31 @@ void c_aes256_encryptblock(const uint8_t *key, const uint8_t *in, uint8_t *out) 
     // encrypts in place, so we copy and encrypt
     MEMCPY(out, in, AES_BLOCKLEN);
     AES_ECB_encrypt(&ctx, out);
+}
+
+void c_jubjub_scalarmult(uint8_t *point, const uint8_t *scalar){
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    MEMCPY(scal,scalar,JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(scal);
+
+    zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
+    if(err!=zxerr_ok){
+        MEMZERO(point, JUBJUB_FIELD_BYTES);
+        return;
+    }
+    jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
+}
+
+void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar){
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    MEMCPY(scal,scalar,JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(scal);
+    MEMCPY(&p, &JUBJUB_GEN,sizeof(jubjub_extendedpoint));
+    jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
 }
 
 // Replace functions affected by non-constant time opcodes

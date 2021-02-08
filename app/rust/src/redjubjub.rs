@@ -2,8 +2,11 @@ use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 use rand::RngCore;
 
 use crate::bolos::c_zemu_log_stack;
-use crate::bolos::{blake2b_redjubjub, Trng};
+use crate::bolos::{
+    blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base, Trng,
+};
 use crate::commitments::bytes_to_extended;
+use crate::constants;
 use crate::constants::*;
 use crate::pedersen::extended_to_bytes;
 
@@ -13,8 +16,10 @@ pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
 }
 
 #[inline(never)]
-pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> ExtendedPoint {
-    SPENDING_KEY_BASE.multiply_bits(sk)
+pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {
+    let mut point = [0u8; 32];
+    sdk_jubjub_scalarmult_spending_base(&mut point, &sk[..]);
+    point
 }
 
 #[inline(never)]
@@ -24,7 +29,8 @@ pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
 
 #[inline(never)]
 pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
-    *pk += SPENDING_KEY_BASE.multiply_bits(&alpha);
+    let rndpk = jubjub_sk_to_pk(&alpha);
+    *pk += bytes_to_extended(rndpk);
 }
 
 #[inline(never)]
@@ -111,7 +117,7 @@ pub extern "C" fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
     let sk = unsafe { &*sk_ptr };
     let pk = unsafe { &mut *pk_ptr };
     let pubkey = jubjub_sk_to_pk(sk);
-    pk.copy_from_slice(&extended_to_bytes(&pubkey));
+    pk.copy_from_slice(&pubkey);
 }
 
 #[no_mangle]
@@ -136,8 +142,7 @@ mod tests {
             0x51, 0x9d, 0x36, 0x0b,
         ];
         let skfr = Fr::from_bytes(&sk).unwrap();
-        let pk = jubjub_sk_to_pk(&sk);
-        let b = AffinePoint::from(&pk).to_bytes();
+        let b = jubjub_sk_to_pk(&sk);
         assert_eq!(
             b,
             [
@@ -207,7 +212,7 @@ mod tests {
             ]
         );
 
-        let mut pk = jubjub_sk_to_pk(&sk);
+        let mut pk = bytes_to_extended(jubjub_sk_to_pk(&sk));
 
         jubjub_randomized_pk(&mut pk, alpha);
 

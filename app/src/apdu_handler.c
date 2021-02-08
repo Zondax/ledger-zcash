@@ -403,8 +403,38 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 }
 
 #if defined(APP_TESTING)
+#include <zxmacros.h>
+#include "cx.h"
+#include "rslib.h"
+#include "jubjub.h"
 
 void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+
+    uint8_t point[32] = {    48, 181, 242, 170, 173, 50, 86, 48, 188, 221, 219, 206, 77, 103, 101, 109, 5, 253, 28, 194,
+    208, 55, 187, 83, 117, 182, 233, 109, 158, 1, 161, 215};
+
+    uint8_t scalar[32] = {            0x66, 0x5e, 0xd6, 0xf7, 0xb7, 0x93, 0xaf, 0xa1, 0x82, 0x21, 0xe1, 0x57, 0xba, 0xd5,
+            0x43, 0x3c, 0x54, 0x23, 0xf4, 0xfe, 0xc9, 0x46, 0xe0, 0x8e, 0xd6, 0x30, 0xa0, 0xc6,
+            0x0a, 0x1f, 0xac, 0x02,};
+
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    jubjub_field_frombytes(scal,scalar);
+
+    jubjub_extendedpoint_tobytes(point,JUBJUB_GEN);
+    zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
+    if(err!=zxerr_ok){
+        *tx = 0;
+        MEMZERO(point, 32);
+        THROW(APDU_CODE_OK);
+    }
+    //MEMCPY(&p, &JUBJUB_GEN, 32);
+    //jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
+
+    MEMCPY(G_io_apdu_buffer, point,32);
+    *tx = 32;
+    THROW(APDU_CODE_OK);
 }
 #endif
 

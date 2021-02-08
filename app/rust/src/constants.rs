@@ -17,6 +17,11 @@ pub const SPENDING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
 )
 .to_niels();
 
+pub const SPENDING_BASE_BYTES: [u8; 32] = [
+    48, 181, 242, 170, 173, 50, 86, 48, 188, 221, 219, 206, 77, 103, 101, 109, 5, 253, 28, 194,
+    208, 55, 187, 83, 117, 182, 233, 109, 158, 1, 161, 215,
+];
+
 pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
         0x3af2_dbef_b96e_2571,
@@ -32,6 +37,11 @@ pub const PROVING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     ]),
 )
 .to_niels();
+
+pub const PROVING_BASE_BYTES: [u8; 32] = [
+    231, 232, 93, 224, 247, 249, 122, 70, 210, 73, 161, 245, 234, 81, 223, 80, 204, 72, 73, 15,
+    132, 1, 201, 222, 122, 42, 223, 24, 7, 209, 182, 212,
+];
 
 pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([

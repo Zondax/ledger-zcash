@@ -39,8 +39,9 @@ pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
-    let ak = constants::SPENDING_KEY_BASE.multiply_bits(&ask);
-    AffinePoint::from(ak).to_bytes()
+    let mut point = [0u8; 32];
+    bolos::sdk_jubjub_scalarmult_spending_base(&mut point, &ask[..]);
+    point
 }
 
 #[inline(never)]
@@ -82,6 +83,9 @@ fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
 
 #[inline(never)]
 fn diversifier_group_hash_light(tag: &[u8]) -> bool {
+    if tag == [0u8; 11] {
+        return false;
+    }
     let hash_tag = bolos::blake2s_diversification(tag);
 
     //    diversifier_group_hash_check(&x)
@@ -163,6 +167,34 @@ pub fn ff1aes_list(sk: &[u8; 32], result: &mut [u8; 110]) {
 }
 
 //list of 4 diversifiers
+#[inline(never)]
+pub fn ff1aes_list_with_startingindex_default(
+    sk: &[u8; 32],
+    counter: &mut [u8; 11],
+    result: &mut [u8; 44],
+) {
+    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
+    let mut scratch = [0u8; 12];
+    let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
+    let mut d: [u8; 11];
+
+    let size = 4;
+
+    for c in 0..size {
+        d = *counter;
+        ff1.encrypt(&mut d).unwrap();
+        result[c * 11..(c + 1) * 11].copy_from_slice(&d);
+        for k in 0..11 {
+            counter[k] = counter[k].wrapping_add(1);
+            if counter[k] != 0 {
+                // No overflow
+                break;
+            }
+        }
+    }
+}
+
+//list of 20 diversifiers
 #[inline(never)]
 pub fn ff1aes_list_with_startingindex(
     sk: &[u8; 32],
@@ -560,6 +592,18 @@ pub extern "C" fn get_diversifier_list_withstartindex(
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
     ff1aes_list_with_startingindex(sk, start, diversifier);
+}
+
+#[no_mangle]
+pub extern "C" fn get_default_diversifier_list_withstartindex(
+    sk_ptr: *const [u8; 32],
+    start_index: *mut [u8; 11],
+    diversifier_list_ptr: *mut [u8; 44],
+) {
+    let sk = unsafe { &*sk_ptr };
+    let start = unsafe { &mut *start_index };
+    let diversifier = unsafe { &mut *diversifier_list_ptr };
+    ff1aes_list_with_startingindex_default(sk, start, diversifier);
 }
 
 #[no_mangle]
