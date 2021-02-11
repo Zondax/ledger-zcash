@@ -85,12 +85,26 @@ jobs:
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - run: git submodule update --init --recursive
       - run:
-          name: Install rust
+          name: Install rustup
           command: |
             sudo apt-get update
             sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
           no_output_timeout: 1800s
+      - run:
+          name: Install rustup 1.49
+          command: |
+            source $HOME/.cargo/env
+            rustup toolchain install 1.49
+            rustup target add thumbv6m-none-eabi --toolchain 1.49
+            rustup default 1.49
+      - run:
+          name: Install rustup 1.47
+          command: |
+            source $HOME/.cargo/env
+            rustup toolchain install 1.47
+            rustup target add thumbv6m-none-eabi --toolchain 1.47
+            rustup default 1.47
       - run:
           name: Install node + yarn
           command: |
