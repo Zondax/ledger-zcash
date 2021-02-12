@@ -62,12 +62,12 @@ jobs:
             cd ~/project/app/rust
             cargo clippy --version
             cargo clippy --all-features --all-targets || true
-      - run:
-          name: audit
-          command: |
-            cd ~/project/app/rust
-            cargo audit --version
-            cargo audit
+#      - run:
+#          name: audit
+#          command: |
+#            cd ~/project/app/rust
+#            cargo audit --version
+#            cargo audit
       - run:
           name: run tests
           command: |
@@ -91,13 +91,13 @@ jobs:
             sudo apt-get install -y cmake binutils-dev libcurl4-openssl-dev libiberty-dev libelf-dev libdw-dev
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --default-toolchain none -y;
           no_output_timeout: 1800s
-      - run:
-          name: Install rustup 1.49
-          command: |
-            source $HOME/.cargo/env
-            rustup toolchain install 1.49
-            rustup target add thumbv6m-none-eabi --toolchain 1.49
-            rustup default 1.49
+#      - run:
+#          name: Install rustup 1.49
+#          command: |
+#            source $HOME/.cargo/env
+#            rustup toolchain install 1.49
+#            rustup target add thumbv6m-none-eabi --toolchain 1.49
+#            rustup default 1.49
       - run:
           name: Install rustup 1.47
           command: |
