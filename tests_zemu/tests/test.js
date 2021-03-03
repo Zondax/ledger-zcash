@@ -33,7 +33,7 @@ const sim_options = {
     ,X11: true
 };
 
-jest.setTimeout(20000)
+jest.setTimeout(600000)
 
 describe('Basic checks', function () {
     test('can start and stop container', async function () {
@@ -141,7 +141,7 @@ describe('Basic checks', function () {
 
             const addrRequest = app.showAddressAndPubKey(1000);
             // Wait until we are not in the main menu
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
 
             await sim.clickRight();
             await sim.clickRight();

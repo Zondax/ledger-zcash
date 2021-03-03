@@ -73,7 +73,7 @@ typedef struct {
     uint8_t memotype;
     uint8_t rcmvalue[RCM_V_SIZE];
     uint8_t rseed[RSEED_SIZE];
-    uint8_t ovk[OVK_SIZE];
+    uint8_t ovk[OVK_SET_SIZE];
 } output_item_t;
 
 typedef struct {
@@ -102,7 +102,9 @@ void set_state(uint8_t state);
 #define STATE_PROCESSED_INPUTS                  1
 #define STATE_PROCESSED_SPEND_EXTRACTIONS       2
 #define STATE_PROCESSED_ALL_EXTRACTIONS         3
-#define STATE_VERIFIED_ALL_TXDATA               4
+#define STATE_CHECKING_ALL_TXDATA               4
+#define STATE_VERIFIED_ALL_TXDATA               5
+#define STATE_SIGNED_TX                         6
 
 //metadata flash api
 uint64_t get_valuebalance();

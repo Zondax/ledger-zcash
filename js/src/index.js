@@ -133,10 +133,17 @@ function processOutputResponse(response) {
 
   const rcv = Buffer.from(partialResponse.slice(0, 32));
   const rseed = Buffer.from(partialResponse.slice(32, 64));
+  let hashseed;
+  if (partialResponse.byteLength == 96 + 2){
+    hashseed = Buffer.from(partialResponse.slice(64, 96)).toString('hex');
+  } else {
+    hashseed = null;
+  }
 
   return {
     rcv_raw: rcv.toString('hex'),
     rseed_raw: rseed.toString('hex'),
+    hash_seed: hashseed,
     return_code: returnCode,
     error_message: errorCodeToString(returnCode),
   };

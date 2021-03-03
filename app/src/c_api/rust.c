@@ -5,6 +5,8 @@
 #include "os.h"
 #include "cx.h"
 #include "aes.h"
+#include "coin.h"
+#include "jubjub.h"
 
 #define CTX_REDJUBJUB "Zcash_RedJubjubH"
 #define CTX_REDJUBJUB_LEN 16
@@ -104,23 +106,109 @@ void c_aes256_encryptblock(const uint8_t *key, const uint8_t *in, uint8_t *out) 
     AES_ECB_encrypt(&ctx, out);
 }
 
+void c_jubjub_scalarmult(uint8_t *point, const uint8_t *scalar){
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    MEMCPY(scal,scalar,JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(scal);
+
+    zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
+    if(err!=zxerr_ok){
+        MEMZERO(point, JUBJUB_FIELD_BYTES);
+        return;
+    }
+    jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
+}
+
+void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar){
+    jubjub_extendedpoint p;
+    jubjub_fq scal;
+    MEMCPY(scal,scalar,JUBJUB_FIELD_BYTES);
+    SWAP_ENDIAN_BYTES(scal);
+    MEMCPY(&p, &JUBJUB_GEN,sizeof(jubjub_extendedpoint));
+    jubjub_extendedpoint_scalarmult(&p, scal);
+    jubjub_extendedpoint_tobytes(point,p);
+}
+
 // Replace functions affected by non-constant time opcodes
 // Overriding requires -z muldefs
 // FIXME: add a python script to ensure that the correct version is used by inspecting app.asm
+#if ENABLE_SDK_MULT
+#define SWAP_BYTES(x, y, tmp) { \
+                   tmp = x;     \
+                   x = y;       \
+                   y = tmp;\
+}
 
-//#define LMULSIZE sizeof(long long)
-//
-//long long __aeabi_lmul(long long a, long long b) {
-//    char result[2 * LMULSIZE];
-//    cx_math_mult((unsigned char *) &result, (unsigned char *) &a, (unsigned char *) &b, LMULSIZE);
-//    return *((long long *) result);
-//}
-//
-//long long __multi3(long long a, long long b) {
-//    char result[2 * LMULSIZE];
-//    cx_math_mult((unsigned char *) &result, (unsigned char *) &a, (unsigned char *) &b, LMULSIZE);
-//    return *((long long *) result);
-//}
+#define SWAP_ENDIAN(x, tmp) { \
+                 SWAP_BYTES(*x, *(x + 7), tmp); \
+SWAP_BYTES(*(x+1), *(x + 6), tmp);         \
+SWAP_BYTES(*(x+2), *(x + 5), tmp);         \
+SWAP_BYTES(*(x+3), *(x + 4), tmp);         \
+}
+
+#define LMULSIZE sizeof(long long)
+
+long long __attribute__ ((noinline)) __aeabi_lmul(long long a, long long b) {
+    uint8_t tmp = 0;
+    uint8_t *ptr = (uint8_t *)&a;
+
+    SWAP_ENDIAN(ptr, tmp);
+
+    ptr = (uint8_t *)&b;
+    SWAP_ENDIAN(ptr, tmp);
+
+    char result[2 * LMULSIZE];
+    MEMZERO(result, 2 * LMULSIZE);
+    cx_math_mult((unsigned char *) &result, (unsigned char *) &a, (unsigned char *) &b, LMULSIZE);
+
+    SWAP_ENDIAN(ptr, tmp);
+    ptr = (uint8_t *)&a;
+    SWAP_ENDIAN(ptr, tmp);
+
+    ptr = (uint8_t *)&result[LMULSIZE];
+    SWAP_ENDIAN(ptr, tmp);
+    return *((long long *) ptr);
+}
+#endif
+/*
+long long __multi3(long long a, long long b) {
+    long long a_be = ((a & 0xff) << 56)
+                     | ((a >> 8 & 0xff) << 48)
+                     | ((a >> 16 & 0xff) << 40)
+                     | ((a >> 24 & 0xff) << 32)
+                     | ((a >> 32 & 0xff) << 24)
+                     | ((a >> 40 & 0xff) << 16)
+                     | ((a >> 48 & 0xff) << 8)
+                     | ((a >> 56 & 0xff) << 0);
+
+    long long b_be = ((b & 0xff) << 56)
+                     | ((b >> 8 & 0xff) << 48)
+                     | ((b >> 16 & 0xff) << 40)
+                     | ((b >> 24 & 0xff) << 32)
+                     | ((b >> 32 & 0xff) << 24)
+                     | ((b >> 40 & 0xff) << 16)
+                     | ((b >> 48 & 0xff) << 8)
+                     | ((b >> 56 & 0xff) << 0);
+
+
+    char result[2 * LMULSIZE];
+    MEMZERO(result, 2 * LMULSIZE);
+    cx_math_mult((unsigned char *) &result, (unsigned char *) &a_be, (unsigned char *) &b_be, LMULSIZE);
+
+    long long r_le = 0;
+    r_le |= result[LMULSIZE]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 1]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 2]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 3]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 4]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 5]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 6]; r_le <<= 8;
+    r_le |= result[LMULSIZE + 7];
+    return r_le;
+}
+ */
 
 //typedef struct {
 //    unsigned quot;

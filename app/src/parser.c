@@ -30,6 +30,8 @@
 #include "bech32.h"
 #include "base58.h"
 
+#include "view.h"
+
 #define DEFAULT_MEMOTYPE        0xf6
 
 #if defined(TARGET_NANOX)
@@ -92,6 +94,49 @@ parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t
     return parser_ok;
 }
 
+void view_tx_state(){
+    uint8_t state = get_state();
+    switch (state){
+        case STATE_PROCESSED_INPUTS: {
+            view_message_show("Zcash", "Step [1/5]");
+            break;
+        }
+
+        case STATE_PROCESSED_SPEND_EXTRACTIONS: {
+            view_message_show("Zcash", "Step [1/5]");
+            break;
+
+        }
+
+        case STATE_PROCESSED_ALL_EXTRACTIONS: {
+            view_message_show("Zcash", "Step [2/5]");
+            break;
+        }
+
+        case STATE_CHECKING_ALL_TXDATA: {
+            view_message_show("Zcash", "Step [3/5]");
+            break;
+        }
+
+        case STATE_VERIFIED_ALL_TXDATA: {
+            view_message_show("Zcash", "Step [4/5]");
+            break;
+        }
+
+        case STATE_SIGNED_TX: {
+            view_message_show("Zcash", "Step [5/5]");
+            break;
+        }
+
+        default: {
+            view_idle_show(0, NULL);
+        }
+    }
+    UX_WAIT_DISPLAYED();
+    return;
+}
+
+
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
                             size_t dataLen) {
     parser_state.state = NULL;
@@ -133,7 +178,7 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount){
     char tmpBuffer[100];
-    fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 0);
+    fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 8);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
@@ -313,9 +358,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
                     snprintf(outKey, outKeyLen, "S-out OVK");
                     uint8_t dummy[OVK_SIZE];
                     MEMZERO(dummy, sizeof(dummy));
-                    if(MEMCMP(dummy, item->ovk, OVK_SIZE) != 0) {
+                    if(item->ovk[0] == 0x01) {
                         char tmpBuffer[100];
-                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk, OVK_SIZE);
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk + 1, OVK_SIZE);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return parser_ok;
                     }else{

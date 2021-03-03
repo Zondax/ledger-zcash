@@ -44,7 +44,7 @@ const sim_options = {
    ,X11: true
 };
 
-jest.setTimeout(600000)
+jest.setTimeout(600000);
 
 describe('Zcashtool tests', function () {
     test('get ivk', async function () {
@@ -55,7 +55,7 @@ describe('Zcashtool tests', function () {
 
             const ivkreq = app.getivk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
@@ -81,7 +81,7 @@ describe('Zcashtool tests', function () {
 
             const ovkreq = app.getovk(1000);
 
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickBoth();
@@ -134,7 +134,7 @@ describe('Zcashtool tests', function () {
             const div = Buffer.from("c69e979c6763c1b09238dc",'hex');
 
             const addrreq = app.showaddrdiv(path,div);
-            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
+            await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(),600000);
             await sim.clickRight();
             await sim.clickRight();
             await sim.clickRight();
@@ -215,12 +215,12 @@ describe('Zcashtool tests', function () {
                 memo_type: 0xf6,
                 ovk: null,
             }
-
+            //CHANGE ADDRESS:
             const s_out2 = {
                 address: "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
                 value: 100000-1000-55000,
                 memo_type: 0xf6,
-                ovk: null,
+                ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
             }
 
             const tx_input_data = {
@@ -236,7 +236,7 @@ describe('Zcashtool tests', function () {
             */
 
             const ledgerblob_initdata = addon.get_inittx_data(tx_input_data);
-            console.log(ledgerblob_initdata);
+            console.log(Buffer.from(ledgerblob_initdata).byteLength);
 
             /*
             The output of the get_inittx_data can be send to the ledger.
@@ -250,7 +250,7 @@ describe('Zcashtool tests', function () {
 
             await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot());
             //we have to click several times...
-            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst; i += 1) {
+            for (let i = 1; i < 2*clicksSSPEND + 2 * clicksSOUT + clicksConst + clicksOVKset; i += 1) {
                 await sim.clickRight();
             }
             await sim.clickBoth();
@@ -291,7 +291,6 @@ describe('Zcashtool tests', function () {
 
             /*
             The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-            It CAN send along an outgoing viewing key (OVK), can also be all zero's.
             It furthermore uses the spend address and value from the UI.
             We also need the witness from the blockchain, which is now a fake/incorrect one.
              */
@@ -322,10 +321,6 @@ describe('Zcashtool tests', function () {
             expect(req3.return_code).toEqual(0x9000);
             expect(req3.key_raw.toString('hex')).toEqual(expected_proofkey_raw);
 
-            /*
-            For this spend we don't use a OVK (i.e. all-zero's).
-             */
-
             var spendj2 = {
                 proofkey: req3.key_raw,
                 rcv: req3.rcv_raw,
@@ -344,6 +339,7 @@ describe('Zcashtool tests', function () {
             We cannot get more spend data from the ledger.
             We now start the shielded output process.
              */
+
 
             /*
            To add a shielded output to the builder, we need:
@@ -367,12 +363,14 @@ describe('Zcashtool tests', function () {
             var outj1 = {
                 rcv: req4.rcv_raw,
                 rseed: req4.rseed_raw,
-                ovk: null,
+                ovk: s_out1.ovk,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
+            console.log(req4.hash_seed);
             /*
             The builder adds the shielded output to its state.
              */
@@ -383,20 +381,26 @@ describe('Zcashtool tests', function () {
             /*
             This process needs to be repeated for the second output.
             Note that this output address belongs to Alice.
+            There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
+            The UI needs to take care of this before initalizing a transaction to the ledger.
              */
 
             const req5 = await app.extractoutputdata();
             console.log(req5);
             expect(req5.return_code).toEqual(0x9000);
 
+            console.log(req5.hash_seed);
+
             var outj2 = {
                 rcv: req5.rcv_raw,
                 rseed: req5.rseed_raw,
-                ovk: null,
+                ovk: s_out2.ovk,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
+
 
             var b4 = builder.add_sapling_output(outj2);
             console.log(b4);
@@ -619,7 +623,6 @@ describe('Zcashtool tests', function () {
 
             /*
             The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-            It CAN send along an outgoing viewing key (OVK), can also be all zero's.
             It furthermore uses the spend address and value from the UI.
              */
 
@@ -671,7 +674,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out1.ovk,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -696,7 +700,8 @@ describe('Zcashtool tests', function () {
                 ovk: s_out2.ovk,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1309,7 +1314,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1334,7 +1340,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1590,7 +1597,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1619,7 +1627,8 @@ describe('Zcashtool tests', function () {
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
                 address: s_out2.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);
@@ -1838,7 +1847,8 @@ describe('Zcashtool tests', function () {
                 ovk: null,
                 address: s_out1.address,
                 value: s_out1.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req4.hash_seed,
             }
 
             /*
@@ -1867,7 +1877,8 @@ describe('Zcashtool tests', function () {
                 ovk: "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
                 address: s_out1.address,
                 value: s_out2.value,
-                memo: "0000"
+                memo: "0000",
+                hash_seed: req5.hash_seed,
             }
 
             var b4 = builder.add_sapling_output(outj2);

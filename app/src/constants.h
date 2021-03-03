@@ -43,8 +43,10 @@
 #define SHARED_KEY_SIZE         32
 #define OUT_KEY_SIZE            32
 #define ENC_CIPHER_SIZE         64
+#define ENC_CIPHER_HALVE_SIZE   32
 #define COMPACT_OUT_SIZE        53
-#define MAX_SIZE                160
+#define PRF_INPUT_SIZE          128
+#define MAX_SIZE                161
 #define SIG_R_SIZE              32
 #define SIG_S_SIZE              32
 #define SCRIPT_CONSTS_SIZE      4
@@ -72,12 +74,15 @@
 #define RCM_SIZE                32
 #define ALPHA_SIZE              32
 #define DIV_SIZE                11
+#define DIV_INDEX_SIZE          11
 #define DIV_LIST_LENGTH         20
-#define DIV_DEFAULT_LIST_LEN    10
+#define DIV_DEFAULT_LIST_LEN    4
+#define MAX_SIZE_BUF_ADDR       143
 
 #define SESSION_KEY_SIZE        32
 
 #define OVK_SIZE                32
+#define OVK_SET_SIZE            1 + OVK_SIZE
 #define RSEED_SIZE              32
 #define RCM_V_SIZE              32
 

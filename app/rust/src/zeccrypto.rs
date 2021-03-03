@@ -6,7 +6,9 @@ use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr, SubgroupPoint
 use rand::RngCore;
 
 use crate::bolos::{c_zemu_log_stack, Trng};
+use crate::commitments::bytes_to_extended;
 use crate::constants;
+use crate::zip32::*;
 use crate::{bolos, pedersen::extended_to_bytes, zip32};
 
 #[inline(never)]
@@ -39,11 +41,10 @@ pub fn derive_public(esk: &[u8; 32], g_d: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sapling_ka_agree(esk: &[u8; 32], pk_d: &[u8; 32]) -> [u8; 32] {
-    let p = AffinePoint::from_bytes(*pk_d).unwrap();
-    let q = p.mul_by_cofactor();
-    let v = q.to_niels().multiply_bits(esk);
-    let t = AffinePoint::from(v);
-    t.to_bytes()
+    let mut y = bytes_to_extended(*pk_d);
+    mul_by_cof(&mut y);
+    niels_multbits(&mut y, esk);
+    extended_to_bytes(&y)
 }
 
 pub fn kdf_sapling(dhsecret: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
