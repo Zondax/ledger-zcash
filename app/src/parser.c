@@ -398,8 +398,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display_idx_out_of_range";
         case parser_display_page_out_of_range:
             return "display_page_out_of_range";
-        case parser_unexepected_error:
-            return "Unexepected internal error";
+        case parser_unexpected_error:
+            return "Unexpected internal error";
         case parser_no_memory_for_state:
             return "No enough memory for parser state";
             /////////// Context specific
