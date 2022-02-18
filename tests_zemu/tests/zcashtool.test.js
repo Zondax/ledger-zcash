@@ -192,7 +192,7 @@ describe('Zcashtool tests', function () {
             /*
             In this test, Alice wants to send 55000 ZEC to Bob.
             For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
-            The inputs to the initialization is therefor two spend notes and two output notes.
+            The inputs to the initialization is therefore two spend notes and two output notes.
             She takes a transaction fee of 1000.
             All this info is gathered from the UI and put in the correct jsons.
              */
@@ -382,7 +382,7 @@ describe('Zcashtool tests', function () {
             This process needs to be repeated for the second output.
             Note that this output address belongs to Alice.
             There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
-            The UI needs to take care of this before initalizing a transaction to the ledger.
+            The UI needs to take care of this before initializing a transaction to the ledger.
              */
 
             const req5 = await app.extractoutputdata();
@@ -492,7 +492,7 @@ describe('Zcashtool tests', function () {
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
             For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
             She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-            The inputs to the initialization is therefor:
+            The inputs to the initialization is therefore:
             - one transparent input and one transparent output
             - one shielded spend notes and two shielded output notes.
             She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
@@ -584,7 +584,7 @@ describe('Zcashtool tests', function () {
 
             /*
             To add transparent inputs to the builder, we dont need fresh information from the ledger.
-            The builder does need the secp256k1 public key beloging to the address.
+            The builder does need the secp256k1 public key belonging to the address.
              The builder also need outpoint from the blockchain.
              */
 
@@ -1143,7 +1143,7 @@ describe('Zcashtool tests', function () {
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
             For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
             She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-            The inputs to the initialization is therefor:
+            The inputs to the initialization is therefore:
             - one transparent input and one transparent output
             - one shielded spend notes and two shielded output notes.
             She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
@@ -1223,7 +1223,7 @@ describe('Zcashtool tests', function () {
 
             /*
             To add transparent inputs to the builder, we dont need fresh information from the ledger.
-            The builder does need the secp256k1 public key beloging to the address.
+            The builder does need the secp256k1 public key belonging to the address.
              The builder also need outpoint from the blockchain.
              */
 
@@ -1425,7 +1425,7 @@ describe('Zcashtool tests', function () {
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
             For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
             She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-            The inputs to the initialization is therefor:
+            The inputs to the initialization is therefore:
             - one transparent input and one transparent output
             - one shielded spend notes and two shielded output notes.
             She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
@@ -1506,7 +1506,7 @@ describe('Zcashtool tests', function () {
 
             /*
             To add transparent inputs to the builder, we dont need fresh information from the ledger.
-            The builder does need the secp256k1 public key beloging to the address.
+            The builder does need the secp256k1 public key belonging to the address.
              The builder also need outpoint from the blockchain.
              */
 
@@ -1676,7 +1676,7 @@ describe('Zcashtool tests', function () {
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
             For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
             She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-            The inputs to the initialization is therefor:
+            The inputs to the initialization is therefore:
             - one transparent input and one transparent output
             - one shielded spend notes and two shielded output notes.
             She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
@@ -1756,7 +1756,7 @@ describe('Zcashtool tests', function () {
 
             /*
             To add transparent inputs to the builder, we dont need fresh information from the ledger.
-            The builder does need the secp256k1 public key beloging to the address.
+            The builder does need the secp256k1 public key belonging to the address.
              The builder also need outpoint from the blockchain.
              */
 
@@ -1919,7 +1919,7 @@ describe('Zcashtool tests', function () {
             In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
             For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
             She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-            The inputs to the initialization is therefor:
+            The inputs to the initialization is therefore:
             - one transparent input and one transparent output
             - one shielded spend notes and two shielded output notes.
             She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
@@ -2006,7 +2006,7 @@ describe('Zcashtool tests', function () {
             /*
             In this test, Alice wants to send 55000 ZEC to Bob.
             For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
-            The inputs to the initialization is therefor two spend notes and two output notes.
+            The inputs to the initialization is therefore two spend notes and two output notes.
             She takes a transaction fee of 1000.
             All this info is gathered from the UI and put in the correct jsons.
              */
