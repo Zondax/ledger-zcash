@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2019 Zondax GmbH
+*  (c) 2019-2021 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <stddef.h>
 
 #define CLA                             0x85
 
@@ -64,10 +61,13 @@ typedef enum {
 #define VIEW_ADDRESS_OFFSET_SECP256K1       PK_LEN_SECP256K1
 #define VIEW_ADDRESS_OFFSET_SAPLING         ADDR_LEN_SAPLING
 
-#define MENU_MAIN_APP_LINE1     "Zcash"
-#define MENU_MAIN_APP_LINE2     "DO NOT USE!"
-#define APPVERSION_LINE1        "Zcash"
-#define APPVERSION_LINE2        "v"APPVERSION
+#define MENU_MAIN_APP_LINE1                "Zcash"
+#define MENU_MAIN_APP_LINE2                "DO NOT USE!"
+#define APPVERSION_LINE1                   "Zcash"
+#define APPVERSION_LINE2                   ("v" APPVERSION)
+
+#define MENU_MAIN_APP_LINE2_SECRET         "?"
+#define COIN_SECRET_REQUIRED_CLICKS         0
 
 #define COIN_AMOUNT_DECIMAL_PLACES  18      // FIXME: Check this
 #define CRYPTO_BLOB_SKIP_BYTES      0

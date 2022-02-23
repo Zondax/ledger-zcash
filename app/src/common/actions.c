@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2019 Zondax GmbH
+*   (c) 2021 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -16,5 +16,5 @@
 
 #include "actions.h"
 
-address_state_t address_state;
+address_state_t action_addrResponse;
 key_state_t key_state;

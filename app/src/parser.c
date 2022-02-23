@@ -1,18 +1,18 @@
 /*******************************************************************************
- *   (c) 2019 Zondax GmbH
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- ********************************************************************************/
+*   (c) 2019 Zondax GmbH
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 
 #include "parser.h"
 #include "parser_impl.h"
@@ -24,7 +24,6 @@
 #include "coin.h"
 #include "parser_txdef.h"
 #include "rslib.h"
-#include "zbuffer.h"
 #include "nvdata.h"
 #include "zxformat.h"
 #include "bech32.h"
@@ -36,10 +35,8 @@
 
 #if defined(TARGET_NANOX)
 // For some reason NanoX requires this function
-void __assert_fail(const char *assertion, const char *file, unsigned int line,
-                   const char *function) {
-    while (1) {
-    };
+void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function){
+    while(1) {};
 }
 #endif
 
@@ -149,10 +146,11 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
         return parser_context_unexpected_size;
     }
 
-    if (zb_allocate(parser_state.len) != zb_no_error ||
-        zb_get(&parser_state.state) != zb_no_error) {
-        return parser_init_context_empty;
-    }
+    // FIXME: correct this
+//    if (zb_allocate(parser_state.len) != zb_no_error ||
+//        zb_get(&parser_state.state) != zb_no_error) {
+//        return parser_init_context_empty;
+//    }
 
     parser_error_t err = parser_ok; // TODO;
     return err;
@@ -383,7 +381,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
     return parser_ok;
 }
 
-void parser_resetState() { zb_deallocate(); }
+void parser_resetState() {
+    // FIXME: zb_deallocate();
+}
 
 const char *parser_getErrorDescription(parser_error_t err) {
     switch (err) {

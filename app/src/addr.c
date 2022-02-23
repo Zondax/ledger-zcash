@@ -18,6 +18,7 @@
 #include "coin.h"
 #include "zxerror.h"
 #include "zxmacros.h"
+#include "zxformat.h"
 #include "app_mode.h"
 #include "crypto.h"
 #include "actions.h"
@@ -35,10 +36,11 @@ zxerr_t addr_getItem(int8_t displayIdx,
                      char *outKey, uint16_t outKeyLen,
                      char *outVal, uint16_t outValLen,
                      uint8_t pageIdx, uint8_t *pageCount) {
-    zemu_log_stack("addr_getItem");
+    ZEMU_LOGF(200, "[addr_getItem] %d/%d\n", displayIdx, pageIdx)
+
     switch (displayIdx) {
         case 0:
-            switch (address_state.kind) {
+            switch (action_addrResponse.kind) {
                 case addr_secp256k1:
                     snprintf(outKey, outKeyLen, "Unshielded");
                     pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx,

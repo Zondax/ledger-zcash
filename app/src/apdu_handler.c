@@ -1,32 +1,36 @@
 /*******************************************************************************
- *   (c) 2018, 2019 Zondax GmbH
- *   (c) 2016 Ledger
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- ********************************************************************************/
+*   (c) 2018, 2019 Zondax GmbH
+*   (c) 2016 Ledger
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
 
-#include <os.h>
-#include <os_io_seproxyhal.h>
-#include <string.h>
-
-#include "actions.h"
 #include "app_main.h"
-#include "coin.h"
-#include "crypto.h"
-#include "tx.h"
+
+#include <string.h>
+#include <os_io_seproxyhal.h>
+#include <os.h>
+#include <ux.h>
+
 #include "view.h"
-#include "zxmacros.h"
+#include "actions.h"
+#include "tx.h"
 #include "addr.h"
+#include "crypto.h"
+#include "coin.h"
+#include "zxmacros.h"
+#include "app_mode.h"
+
 #include "key.h"
 #include "parser.h"
 #include "nvdata.h"
@@ -249,8 +253,8 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
         THROW(APDU_CODE_DATA_INVALID);
     }
 
-    address_state.kind = addr_secp256k1;
-    address_state.len = replyLen;
+    action_addrResponse.kind = addr_secp256k1;
+    action_addrResponse.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
@@ -298,8 +302,8 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    address_state.kind = addr_sapling_div;
-    address_state.len = replyLen;
+    action_addrResponse.kind = addr_sapling_div;
+    action_addrResponse.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
@@ -383,8 +387,8 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    address_state.kind = addr_sapling;
-    address_state.len = replyLen;
+    action_addrResponse.kind = addr_sapling;
+    action_addrResponse.len = replyLen;
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
@@ -540,7 +544,9 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
             }
         }
         CATCH(EXCEPTION_IO_RESET)
-        { THROW(EXCEPTION_IO_RESET); }
+        {
+            THROW(EXCEPTION_IO_RESET);
+        }
         CATCH_OTHER(e)
         {
             switch (e & 0xF000) {
@@ -557,7 +563,8 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
             *tx += 2;
         }
         FINALLY
-        {}
+        {
+        }
     }
     END_TRY;
 }

@@ -23,7 +23,7 @@
 #define RAM_BUFFER_SIZE 8192
 #define FLASH_BUFFER_SIZE 16384
 #elif defined(TARGET_NANOS)
-#define RAM_BUFFER_SIZE 0
+#define RAM_BUFFER_SIZE 256
 #define FLASH_BUFFER_SIZE 8192
 #endif
 
@@ -51,9 +51,6 @@ uint8_t *tx_get_buffer();
 /// This function should be called as soon as full buffer data is loaded.
 /// \return It returns NULL if data is valid or error message otherwise.
 const char *tx_parse();
-
-/// Release zbuffer memory
-void tx_reset_state();
 
 /// Return the number of items in the transaction
 zxerr_t tx_getNumItems(uint8_t *num_items);

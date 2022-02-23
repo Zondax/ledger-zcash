@@ -90,3 +90,7 @@ yarn.lock
 /app/rust/Cargo.lock
 /zcashtools/target/
 !/zcashtools/neon/yarn.lock
+
+app/glyphs/glyphs.c
+
+app/glyphs/glyphs.h

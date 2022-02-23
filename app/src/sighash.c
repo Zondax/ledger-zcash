@@ -17,7 +17,6 @@
 #include <inttypes.h>
 #include <zxmacros.h>
 #include <zxformat.h>
-#include <zbuffer.h>
 #include "os.h"
 #include "cx.h"
 #include "nvdata.h"

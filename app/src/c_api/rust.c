@@ -1,7 +1,7 @@
+#include <bolos_target.h>
 #include <inttypes.h>
 #include <zxmacros.h>
 #include <zxformat.h>
-#include <zbuffer.h>
 #include "os.h"
 #include "cx.h"
 #include "aes.h"
@@ -15,6 +15,20 @@
 #define CTX_EXPAND_SEED "Zcash_ExpandSeed"
 #define CTX_EXPAND_SEED_LEN 16
 #define CTX_EXPAND_SEED_HASH_LEN 64
+
+#include <bolos_target.h>
+#include <inttypes.h>
+#include <stddef.h>
+
+#if defined (TARGET_NANOS)
+void cx_rng_no_throw(uint8_t *buffer, size_t len);
+
+unsigned char *cx_rng(uint8_t *buffer, size_t len)
+{
+    cx_rng_no_throw(buffer, len);
+    return buffer;
+}
+#endif
 
 void c_blake2b32_withpersonal(const uint8_t *person, const uint8_t *a, uint32_t a_len, uint8_t *out) {
     cx_blake2b_t ctx;
@@ -87,9 +101,7 @@ uint16_t fp_uint64_to_str(char *out, uint16_t outLen, const uint64_t value, uint
     return fpuint64_to_str(out, outLen, value, decimals);
 }
 
-
 void check_canary() {
-    zb_check_canary();
 }
 
 void _zemu_log_stack(uint8_t *buffer) {

@@ -55,12 +55,33 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display_idx_out_of_range";
         case parser_display_page_out_of_range:
             return "display_page_out_of_range";
+            // Coin specific
+        case parser_not_allowed:
+            return "Not allowed";
+        case parser_not_supported:
+            return "Not supported";
         case parser_unexpected_buffer_end:
             return "Unexpected buffer end";
         case parser_unexpected_value:
             return "Unexpected value";
         case parser_value_out_of_range:
             return "Value out of range";
+        case parser_value_too_many_bytes:
+            return "Value too many bytes";
+        case parser_unexpected_module:
+            return "Unexpected module";
+        case parser_unexpected_callIndex:
+            return "Unexpected call index";
+        case parser_unexpected_unparsed_bytes:
+            return "Unexpected unparsed bytes";
+        case parser_print_not_supported:
+            return "Value cannot be printed";
+        case parser_tx_nesting_not_supported:
+            return "Call nesting not supported";
+        case parser_tx_nesting_limit_reached:
+            return "Max nested calls reached";
+        case parser_tx_call_vec_too_large:
+            return "Call vector exceeds limit";
         default:
             return "Unrecognized error code";
     }

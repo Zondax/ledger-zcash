@@ -20,11 +20,11 @@
 extern "C" {
 #endif
 
-#include <zxerror.h>
 #include <zxmacros.h>
 #include "coin.h"
 #include <stdbool.h>
 #include <sigutils.h>
+#include "zxerror.h"
 
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];

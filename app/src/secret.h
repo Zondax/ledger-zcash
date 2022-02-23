@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2020 Zondax GmbH
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,26 +15,23 @@
 ********************************************************************************/
 #pragma once
 
-#include <inttypes.h>
-#include <stdint.h>
+#include "zxmacros.h"
+#include <stdbool.h>
+#include "zxerror.h"
 
-typedef enum {
-    zb_no_error,
-    zb_misaligned_buffer,
-    zb_not_allocated
-} zbuffer_error_e;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-zbuffer_error_e zb_init();
+zxerr_t secret_enabled();
 
-// allocate a block at the end of the stack
-// maximum size will not be checked
-zbuffer_error_e zb_allocate(uint16_t size);
+zxerr_t secret_getNumItems(uint8_t *num_items);
 
-// deallocate memory block as the end of the stack
-zbuffer_error_e zb_deallocate();
+zxerr_t secret_getItem(int8_t displayIdx,
+                       char *outKey, uint16_t outKeyLen,
+                       char *outValue, uint16_t outValueLen,
+                       uint8_t pageIdx, uint8_t *pageCount);
 
-// obtain a pointer to the allocated block
-zbuffer_error_e zb_get(uint8_t **buffer);
-
-// check that the block boundary has not been corrupted
-zbuffer_error_e zb_check_canary();
+#ifdef __cplusplus
+}
+#endif
