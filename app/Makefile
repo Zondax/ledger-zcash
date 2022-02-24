@@ -83,7 +83,7 @@ OUTPUT_INSTALLER := $(CURDIR)/pkg/installer_s.sh
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
-SCRIPT_LD:=$(CURDIR)/script_x.ld
+APP_STACK_SIZE:=4096
 ICONNAME:=$(CURDIR)/nanox_icon.gif
 OUTPUT_ELF ?= $(CURDIR)/output/app_x.elf
 OUTPUT_INSTALLER:= $(CURDIR)/pkg/installer_x.sh

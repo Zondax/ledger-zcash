@@ -25,9 +25,9 @@ zxerr_t key_getNumItems(uint8_t *num_items);
 
 /// Gets an specific item from the address view (including paging)
 zxerr_t key_getItem(int8_t displayIdx,
-                     char *outKey, uint16_t outKeyLen,
-                     char *outValue, uint16_t outValueLen,
-                     uint8_t pageIdx, uint8_t *pageCount);
+                    char *outKey, uint16_t outKeyLen,
+                    char *outValue, uint16_t outValueLen,
+                    uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }

@@ -36,12 +36,12 @@
 #include "nvdata.h"
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+                                            volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx != APDU_MIN_LENGTH){
+    if (rx != APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != 0) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     zxerr_t err = crypto_extract_spend_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
@@ -56,17 +56,17 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
-                                            volatile uint32_t *tx, uint32_t rx) {
+                                                  volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx != APDU_MIN_LENGTH){
+    if (rx != APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != 0) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     zxerr_t err = crypto_extract_transparent_signature(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
-    if (err == zxerr_ok){
+    if (err == zxerr_ok) {
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
@@ -76,13 +76,13 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
-                             volatile uint32_t *tx, uint32_t rx) {
+                                       volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx != APDU_MIN_LENGTH){
+    if (rx != APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != 0) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     zxerr_t err = crypto_extract_spend_proofkeyandrnd(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);
@@ -98,13 +98,13 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+                                        volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx != APDU_MIN_LENGTH){
+    if (rx != APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != 0){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != 0) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
     uint16_t replyLen = 0;
@@ -139,15 +139,15 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx < APDU_MIN_LENGTH){
+    if (rx < APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK){
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -169,7 +169,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     uint16_t replyLen = 0;
 
     zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
-    if(err != zxerr_ok){
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -181,15 +181,15 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx < APDU_MIN_LENGTH){
+    if (rx < APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK){
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -211,7 +211,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     uint16_t replyLen = 0;
 
     zxerr_t err = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
-    if(err != zxerr_ok){
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -234,7 +234,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         view_idle_show(0, NULL);
         transaction_reset();
         THROW(APDU_CODE_DATA_INVALID);
-    }else{
+    } else {
         *tx = 32;
         THROW(APDU_CODE_OK);
     }
@@ -248,7 +248,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
     uint16_t replyLen = 0;
 
     zxerr_t err = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
-    if(err != zxerr_ok) {
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -270,15 +270,15 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
                                         volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx < APDU_MIN_LENGTH){
+    if (rx < APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV){
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -291,14 +291,16 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
-    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
+    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV,
+                                                         &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if(prserr != parser_ok){
+    if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path, parser_addr.div, &replyLen);
-    if(err != zxerr_ok){
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3,
+                                                              parser_addr.path, parser_addr.div, &replyLen);
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -318,15 +320,15 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
                                          volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx < APDU_MIN_LENGTH){
+    if (rx < APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_DIV_LIST){
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_DIV_LIST) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_DIV_LIST){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_DIV_LIST) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -337,13 +339,15 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
-    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST, &parser_addr);
+    parser_error_t prserr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST,
+                                                         &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if(prserr != parser_ok){
+    if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, parser_addr.path,
+                                                     parser_addr.div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;
@@ -357,15 +361,15 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
                                      volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    if(rx < APDU_MIN_LENGTH){
+    if (rx < APDU_MIN_LENGTH) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_SAPLING){
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_SAPLING) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if(G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING){
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -375,15 +379,15 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     uint32_t zip32path = 0;
     parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING,
-                                                    &zip32path);
+                                                &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
     uint16_t replyLen = 0;
-    zxerr_t err = crypto_fillAddress_sapling(G_io_apdu_buffer,IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
-    if(err != zxerr_ok){
+    zxerr_t err = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }

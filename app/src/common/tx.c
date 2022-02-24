@@ -85,8 +85,7 @@ const char *tx_parse() {
     return NULL;
 }
 
-void tx_parse_reset()
-{
+void tx_parse_reset() {
     MEMZERO(&tx_obj, sizeof(tx_obj));
 }
 
