@@ -14,8 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import { expect, test } from "jest";
-import Zemu from "@zondax/zemu";
+import Zemu, { DEFAULT_START_OPTIONS } from "@zondax/zemu";
 import ZCashApp from "@zondax/ledger-zcash";
 
 import { TX_TESTS } from './unshielded_tx';
@@ -23,10 +22,12 @@ import { TX_TESTS } from './unshielded_tx';
 const Resolve = require("path").resolve;
 const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
-var addon = require('../../zcashtools/neon/native');
+
+var addon = require('@zondax/zcashtools');
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
+    ...DEFAULT_START_OPTIONS,
     logging: true,
     start_delay: 3000,
     custom: `-s "${APP_SEED}"`

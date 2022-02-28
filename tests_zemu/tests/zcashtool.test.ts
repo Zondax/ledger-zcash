@@ -14,8 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import { expect, test } from "jest";
-import Zemu from "@zondax/zemu";
+import Zemu, { DEFAULT_START_OPTIONS } from "@zondax/zemu";
 import ZCashApp from "@zondax/ledger-zcash";
 
 import { TX_TESTS } from './unshielded_tx';
@@ -23,7 +22,7 @@ import { TX_TESTS } from './unshielded_tx';
 const Resolve = require("path").resolve;
 const APP_PATH = Resolve("../app/bin/app.elf");
 const fs = require('fs');
-var addon = require('../../zcashtools/neon/native');
+var addon = require('@zondax/zcashtools');
 const crypto = require('crypto');
 
 const SPEND_PATH = Resolve("../zcashtools/params/sapling-spend.params");
@@ -38,6 +37,7 @@ const clicksConst = 2
 
 const APP_SEED = "equip will roof matter pink blind book anxiety banner elbow sun young"
 const sim_options = {
+    ...DEFAULT_START_OPTIONS,
     logging: true,
     start_delay: 3000,
     custom: `-s "${APP_SEED}"`
@@ -938,7 +938,7 @@ describe('Zcashtool tests', function () {
             await sim.start(sim_options);
             const app = new ZCashApp(sim.getTransport());
 
-            const req = app.extractspenddata();
+            const req = await app.extractspenddata();
             expect(req.return_code).not.toEqual(0x9000);
             expect(req.proofkey).toEqual(undefined);
 

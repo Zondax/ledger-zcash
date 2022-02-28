@@ -7,3 +7,6 @@ members = [
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
 overflow-checks = true
+
+[patch.crates-io]
+zcash-hsmbuilder = { git = "https://github.com/Zondax/ledger-zcash-rs" }
