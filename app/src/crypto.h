@@ -20,17 +20,16 @@
 extern "C" {
 #endif
 
-#include <zxerror.h>
 #include <zxmacros.h>
 #include "coin.h"
 #include <stdbool.h>
 #include <sigutils.h>
+#include "zxerror.h"
 
 
 extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
 extern address_kind_e addressKind;
-
 
 
 bool isTestnet();
@@ -42,8 +41,10 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
 zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
 
 zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
-zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div, uint16_t *replyLen);
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen);
+zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div,
+                                                    uint16_t *replyLen);
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex,
+                                           uint16_t *replylen);
 
 zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
 zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
@@ -59,7 +60,7 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
 zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *outputdata,
                                         const uint16_t outputdatalen);
 
-uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen,  const uint8_t *txdata, const uint16_t txdatalen);
+uint16_t crypto_key_exchange(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 
 zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen);
@@ -82,7 +83,8 @@ zxerr_t crypto_check_joinsplits(uint8_t *buffer, uint16_t bufferLen, const uint8
 zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 
 void address_to_script(uint8_t *address, uint8_t *output);
-zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
+zxerr_t
+crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
 zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen);
 #ifdef __cplusplus
 }

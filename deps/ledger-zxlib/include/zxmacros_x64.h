@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2020 Zondax GmbH
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -15,26 +15,26 @@
 ********************************************************************************/
 #pragma once
 
-#include <inttypes.h>
-#include <stdint.h>
+#if !defined (TARGET_NANOS) && !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
 
-typedef enum {
-    zb_no_error,
-    zb_misaligned_buffer,
-    zb_not_allocated
-} zbuffer_error_e;
+// This macros are kept for backwards compatibility
+// the most recent SDK has unified implementations and deprecated the original os_***
+#define MEMMOVE memmove
+#define MEMSET memset
+#define MEMCPY memcpy
+#define MEMCMP memcmp
+#define MEMCPY_NV memcpy
 
-zbuffer_error_e zb_init();
+#define PIC(x) (x)
+#define CHECK_APP_CANARY() {}
+#define CX_ECCINFO_PARITY_ODD 1u
+#define CX_ECCINFO_xGTn 2u
 
-// allocate a block at the end of the stack
-// maximum size will not be checked
-zbuffer_error_e zb_allocate(uint16_t size);
+#ifndef __APPLE__
+#define MEMZERO explicit_bzero
+#else
+__Z_INLINE void __memzero(void *buffer, size_t s) { memset(buffer, 0, s); }
+#define MEMZERO __memzero
+#endif
 
-// deallocate memory block as the end of the stack
-zbuffer_error_e zb_deallocate();
-
-// obtain a pointer to the allocated block
-zbuffer_error_e zb_get(uint8_t **buffer);
-
-// check that the block boundary has not been corrupted
-zbuffer_error_e zb_check_canary();
+#endif

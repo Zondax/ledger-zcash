@@ -27,6 +27,11 @@
 #define OFFSET_DATA                     5  //< Data offset
 
 #define APDU_MIN_LENGTH                 5
+
+#define P1_INIT                         0  //< P1
+#define P1_ADD                          1  //< P1
+#define P1_LAST                         2  //< P1
+
 #define DATA_LENGTH_GET_IVK             4   //ZIP32-path
 #define DATA_LENGTH_GET_OVK             4   //ZIP32-path
 #define DATA_LENGTH_GET_ADDR_SAPLING    4   //ZIP32-path
@@ -68,8 +73,6 @@ void extractHDPath(uint32_t rx, uint32_t offset);
 bool process_chunk(volatile uint32_t *tx, uint32_t rx);
 
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx);
-
-void handle_generic_apdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx);
 
 __Z_INLINE void handle_getversion(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 #ifdef DEBUG

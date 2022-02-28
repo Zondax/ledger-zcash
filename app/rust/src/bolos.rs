@@ -21,7 +21,7 @@ use jubjub::AffinePoint;
 use rand::{CryptoRng, RngCore};
 
 extern "C" {
-    fn cx_rng(buffer: *mut u8, len: u32);
+    fn bolos_cx_rng(buffer: *mut u8, len: u32);
     fn c_zcash_blake2b_expand_seed(
         input_a: *const u8,
         input_a_len: u32,
@@ -372,7 +372,7 @@ impl RngCore for Trng {
     #[cfg(not(target_arch = "x86_64"))]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         unsafe {
-            cx_rng(dest.as_mut_ptr(), dest.len() as u32);
+            bolos_cx_rng(dest.as_mut_ptr(), dest.len() as u32);
         }
     }
 

@@ -18,6 +18,7 @@
 #include "coin.h"
 #include "zxerror.h"
 #include "zxmacros.h"
+#include "zxformat.h"
 #include "app_mode.h"
 #include "crypto.h"
 #include "actions.h"
@@ -32,9 +33,9 @@ zxerr_t key_getNumItems(uint8_t *num_items) {
 }
 
 zxerr_t key_getItem(int8_t displayIdx,
-                     char *outKey, uint16_t outKeyLen,
-                     char *outVal, uint16_t outValLen,
-                     uint8_t pageIdx, uint8_t *pageCount) {
+                    char *outKey, uint16_t outKeyLen,
+                    char *outVal, uint16_t outValLen,
+                    uint8_t pageIdx, uint8_t *pageCount) {
     snprintf(outKey, outKeyLen, "?");
     snprintf(outVal, outValLen, "?");
 
