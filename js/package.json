@@ -45,10 +45,12 @@
     "jest": "^26.1.0",
     "jest-serial-runner": "^1.1.0",
     "prettier": "^2.0.5",
-    "secp256k1": "^4.0.2"
+    "secp256k1": "^4.0.2",
+    "typescript": "^4.5.5"
   },
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build": "babel src --out-dir dist && yarn build:types",
+    "build:types": "tsc -d --outDir dist/ --declarationMap --emitDeclarationOnly",
     "test:unit": "jest -c jest.config.unit.js",
     "test:integration": "jest -c jest.config.integration.js --runInBand --detectOpenHandles"
   },
