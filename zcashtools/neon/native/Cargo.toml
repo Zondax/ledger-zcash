@@ -16,7 +16,7 @@ neon-build = "0.9.1"
 
 [dependencies]
 neon = "0.9.1"
-zcash-hsmbuilder = ""
+zcash-hsmbuilder = "0.2"
 neon-serde = { git = "https://github.com/Zondax/neon-serde" }
 serde_derive = "1.0.136"
 serde = "1"
