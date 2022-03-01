@@ -67,6 +67,30 @@ describe('Zcashtool tests', function () {
     }
   });
 
+  test.each(models)('get outgoing viewing key', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({...defaultOptions, model: m.name})
+      const app = new ZCashApp(sim.getTransport());
+
+      const ovkreq = app.getovk(1000);
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000);
+      
+      const clickSchedule = m.name == "nanos" ? [2, 0] : [3, 0]
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getovk`, clickSchedule)
+
+      const ovk = await ovkreq;
+      console.log(ovk)
+      expect(ovk.return_code).toEqual(0x9000);
+
+      const expected_ovk_raw = "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca";
+      const ovk_raw = ovk.ovk_raw.toString('hex');
+      expect(ovk_raw).toEqual(expected_ovk_raw);
+    } finally {
+      await sim.close();
+    }
+  });
   // test('get outgoing viewing key', async function () {
   //   const sim = new Zemu(APP_PATH);
   //   try {
