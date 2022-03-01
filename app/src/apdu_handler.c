@@ -173,6 +173,8 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
+    key_state.len = replyLen;
+
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show();
     *flags |= IO_ASYNCH_REPLY;
