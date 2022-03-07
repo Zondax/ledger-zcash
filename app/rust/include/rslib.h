@@ -33,6 +33,8 @@ void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
 void zip32_child(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
+void zip32_child_ida(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ak, uint8_t *nk, const uint32_t pos);
+
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
 void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);
