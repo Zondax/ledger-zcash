@@ -375,7 +375,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, out, out + AK_SIZE, next->path);
+            zip32_child_proof_key(tmp.step1.zip32_seed, tmp.step2.dk, out, out + AK_SIZE, next->path);
             CHECK_APP_CANARY();
         }
         FINALLY

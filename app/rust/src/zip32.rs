@@ -644,6 +644,29 @@ pub extern "C" fn zip32_child_ida(
 }
 
 #[no_mangle]
+pub extern "C" fn zip32_child_proof_key(
+    seed_ptr: *const [u8; 32],
+    dk_ptr: *mut [u8; 32],
+    ak_ptr: *mut [u8; 32],
+    nsk_ptr: *mut [u8; 32],
+    pos: u32,
+) {
+    let seed = unsafe { &*seed_ptr };
+    let dk = unsafe { &mut *dk_ptr };
+    let ak = unsafe { &mut *ak_ptr };
+    let nsk = unsafe { &mut *nsk_ptr };
+
+    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
+    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
+    let k = derive_zip32_child_fromseedandpath_ida(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet
+
+    // k = dk || ask || nsk || ak || nk
+    dk.copy_from_slice(&k[0..32]);
+    ak.copy_from_slice(&k[96..128]);
+    nsk.copy_from_slice(&k[64..96]);
+}
+
+#[no_mangle]
 pub extern "C" fn zip32_child_ask_nsk(
     seed_ptr: *const [u8; 32],
     ask_ptr: *mut [u8; 32],
