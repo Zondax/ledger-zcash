@@ -89,14 +89,6 @@ GEN_DEC_READFIX_UNSIGNED(64);
 
 parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);
 
-parser_error_t _readTx(parser_context_t *c, parser_tx_t *v);
-
-uint8_t _getAddressType();
-
-
-parser_error_t _toStringPubkeyAsAddress(const uint8_t *pubkey,
-                                        char *outValue, uint16_t outValueLen,
-                                        uint8_t pageIdx, uint8_t *pageCount);
 
 #ifdef __cplusplus
 }

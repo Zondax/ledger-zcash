@@ -169,6 +169,7 @@ zxerr_t get_next_spend_signature(uint8_t *result) {
 }
 
 void transaction_reset() {
+    // TODO: change this to a memzero?
     transaction_header.t_in_len = 0;
     transaction_header.t_out_len = 0;
     transaction_header.t_sign_index = 0;

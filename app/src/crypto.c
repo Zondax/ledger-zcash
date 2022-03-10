@@ -28,6 +28,7 @@
 #include "parser_common.h"
 #include "chacha.h"
 #include "common/app_main.h"
+#include "lcx_ripemd160.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -36,7 +37,6 @@ bool isTestnet() {
            hdPath[1] == HDPATH_1_TESTNET;
 }
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX)
 #include "cx.h"
 
 typedef struct {
@@ -1530,6 +1530,3 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) + strlen((const char *) out->address_bech32);
     return zxerr_ok;
 }
-
-#endif
-

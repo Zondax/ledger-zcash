@@ -19,10 +19,9 @@
 #include "parser_txdef.h"
 #include "coin.h"
 #include "crypto.h"
+#include "zxformat.h"
 
-parser_error_t parser_init_context(parser_context_t *ctx,
-                                   const uint8_t *buffer,
-                                   uint16_t bufferSize) {
+parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
     ctx->offset = 0;
     ctx->buffer = NULL;
     ctx->bufferLen = 0;
@@ -34,6 +33,9 @@ parser_error_t parser_init_context(parser_context_t *ctx,
 
     ctx->buffer = buffer;
     ctx->bufferLen = bufferSize;
+
+    ZEMU_LOGF(100, "init_context %d bytes", bufferSize);
+
     return parser_ok;
 }
 

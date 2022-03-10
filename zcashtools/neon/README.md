@@ -1,6 +1,6 @@
 # zcashtools
 
-The main Node entry point is at: `zcashtools/lib/index.js`
+The main Node entry point is at: `zcashtools/lib/index.ts`
 
 The main Rust entry point is at: `zcashtools/native/src/lib.rs`
 
