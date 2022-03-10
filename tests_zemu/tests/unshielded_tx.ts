@@ -1,7 +1,5 @@
 
-export const TX_TESTS = raw_transactions;
-
-const raw_transactions = {
+export const TX_TESTS = {
     parser_unshielded_tests: [
         {
             name: 'one_input_two_output',

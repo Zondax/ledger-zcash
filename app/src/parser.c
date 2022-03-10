@@ -196,9 +196,14 @@ parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
     cx_hash_sha256(address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE,
                    address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE);
 
-    uint8_t tmpBuffer[50];
-    size_t outLen = sizeof(tmpBuffer);
-    encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
+    uint8_t tmpBuffer[60];
+    const size_t outLen = sizeof(tmpBuffer);
+
+    if (!encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen)) {
+        return parser_unexpected_error;
+    }
+
+    ZEMU_LOGF(50, "addr size %d\n", outLen);
 
     pageString(outVal, outValLen, (char *) tmpBuffer, pageIdx, pageCount);
     return parser_ok;
