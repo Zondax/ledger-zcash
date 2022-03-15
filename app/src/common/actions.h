@@ -22,148 +22,23 @@
 #include <os_io_seproxyhal.h>
 #include "coin.h"
 #include "app_main.h"
-#include "../nvdata.h"
-#include "../parser.h"
+#include "nvdata.h"
+#include "parser.h"
 
 typedef struct {
     address_kind_e kind;
     uint8_t len;
 } address_state_t;
 
-extern address_state_t action_addrResponse;
-
 typedef struct {
     key_type_e kind;
     uint8_t len;
 } key_state_t;
 
+extern address_state_t action_addrResponse;
 extern key_state_t key_state;
 
-__Z_INLINE zxerr_t
-
-init_tx() {
-    // TODO: check this
-    //  tx_reset_state();
-    const uint8_t *message = tx_get_buffer();
-    if (tx_get_buffer_length() > FLASH_BUFFER_SIZE) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return zxerr_unknown;
-    }
-
-    const uint16_t messageLength = tx_get_buffer_length();
-    zxerr_t err;
-    err = crypto_extracttx_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        transaction_reset();
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-    err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        transaction_reset();
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-    return err;
-
-}
-
-__Z_INLINE zxerr_t
-
-check_and_sign_tx() {
-    if (get_state() != STATE_PROCESSED_ALL_EXTRACTIONS) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return zxerr_unknown;
-    }
-
-    // TODO: check this
-    // tx_reset_state();
-    const uint8_t *message = tx_get_buffer();
-    if (tx_get_buffer_length() > FLASH_BUFFER_SIZE) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return zxerr_unknown;
-    }
-    const uint16_t messageLength = tx_get_buffer_length();
-
-    set_state(STATE_CHECKING_ALL_TXDATA);
-    view_tx_state();
-
-    zxerr_t err;
-    err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-    //todo: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
-    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    /*
-    if(err != zxerr_ok){
-        return 0;
-    }
-    */
-    err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    set_state(STATE_VERIFIED_ALL_TXDATA);
-    view_tx_state();
-
-    err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-    err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-
-    err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    if (err != zxerr_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        return err;
-    }
-    set_state(STATE_SIGNED_TX);
-    view_tx_state();
-    return zxerr_ok;
-}
-
 __Z_INLINE void app_reject() {
-    // TODO: check this
-    // tx_reset_state();
     transaction_reset();
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     view_tx_state();

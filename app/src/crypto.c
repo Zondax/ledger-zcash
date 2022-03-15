@@ -28,6 +28,7 @@
 #include "parser_common.h"
 #include "chacha.h"
 #include "common/app_main.h"
+#include "lcx_ripemd160.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
@@ -36,7 +37,6 @@ bool isTestnet() {
            hdPath[1] == HDPATH_1_TESTNET;
 }
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX)
 #include "cx.h"
 
 typedef struct {
@@ -375,7 +375,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, out + AK_SIZE, next->path);
+            zip32_child_proof_key(tmp.step1.zip32_seed, tmp.step2.dk, out, out + AK_SIZE, next->path);
             CHECK_APP_CANARY();
         }
         FINALLY
@@ -386,7 +386,6 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
     END_TRY;
     CHECK_APP_CANARY();
 
-    ask_to_ak(tmp.step2.ask,out);
     MEMZERO(&tmp, sizeof(tmp_spendinfo_s));
     CHECK_APP_CANARY();
     MEMCPY(out+AK_SIZE+NSK_SIZE, next->rcm, RCM_SIZE);
@@ -1248,7 +1247,8 @@ typedef struct {
     };
 } tmp_sapling_addr_s;
 
-zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
+
+zxerr_t crypto_ivk_sapling_ida(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ivk_sapling");
@@ -1267,9 +1267,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, p);
-            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
-            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
             CHECK_APP_CANARY();
 
             get_ivk(tmp.step3.ak, tmp.step3.nk, out);
@@ -1337,9 +1335,9 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, p);
-            MEMZERO(tmp.step2.ask,sizeof_field(tmp_sapling_addr_s, step2.ask));
-            MEMZERO(tmp.step2.nsk,sizeof_field(tmp_sapling_addr_s, step2.nsk));
+            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
+            MEMZERO(tmp.step3.ak,sizeof_field(tmp_sapling_addr_s, step3.ak));
+            MEMZERO(tmp.step3.nk,sizeof_field(tmp_sapling_addr_s, step3.nk));
             CHECK_APP_CANARY();
 
             get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
@@ -1409,9 +1407,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, p);
-            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
-            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
             CHECK_APP_CANARY();
 
             MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
@@ -1476,9 +1472,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk,p);
-            ask_to_ak(tmp.step2.ask,tmp.step3.ak);
-            nsk_to_nk(tmp.step2.nsk,tmp.step3.nk);
+            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
             CHECK_APP_CANARY();
 
             bool found = false;
@@ -1536,6 +1530,3 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) + strlen((const char *) out->address_bech32);
     return zxerr_ok;
 }
-
-#endif
-

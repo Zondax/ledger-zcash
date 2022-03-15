@@ -14,33 +14,31 @@
 *  limitations under the License.
 ********************************************************************************/
 
+#include <stdio.h>
+#include <zxmacros.h>
+#include <zxformat.h>
+#include "app_mode.h"
 #include "parser.h"
 #include "parser_impl.h"
 #include "parser_common.h"
-
-#include <stdio.h>
-#include <zxmacros.h>
 
 #include "coin.h"
 #include "parser_txdef.h"
 #include "rslib.h"
 #include "nvdata.h"
-#include "zxformat.h"
 #include "bech32.h"
 #include "base58.h"
 #include "view.h"
+#include <os_io_seproxyhal.h>
 
 #define DEFAULT_MEMOTYPE        0xf6
 
 #if defined(TARGET_NANOX)
-#include "os_io_seproxyhal.h"
 // For some reason NanoX requires this function
 void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function){
     while(1) {};
 }
 #endif
-
-parser_tx_t parser_state;
 
 typedef enum {
     type_tin = 0,
@@ -70,7 +68,7 @@ parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen,
         return pars_err;
     }
     prs->path = p | 0x80000000;
-    MEMCPY(prs->div, data + 4, 11);
+    memcpy(prs->div, data + 4, 11);
     return parser_ok;
 }
 
@@ -133,40 +131,25 @@ void view_tx_state() {
     return;
 }
 
+parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
+    CHECK_PARSER_ERR(parser_init(ctx, data, dataLen))
 
-parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data,
-                            size_t dataLen) {
-    parser_state.state = NULL;
-    parser_state.len = 0;
 
-    // TODO
-    // CHECK_PARSER_ERR(_parser_init(ctx, data, dataLen, &parser_state.len))
 
-    if (parser_state.len == 0) {
-        return parser_context_unexpected_size;
-    }
-
-    // FIXME: correct this
-//    if (zb_allocate(parser_state.len) != zb_no_error ||
-//        zb_get(&parser_state.state) != zb_no_error) {
-//        return parser_init_context_empty;
-//    }
-
-    parser_error_t err = parser_ok; // TODO;
-    return err;
+    return parser_ok;
 }
 
 parser_error_t parser_validate(const parser_context_t *ctx) {
+    // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
-    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems));
+    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
 
     char tmpKey[30];
     char tmpVal[30];
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount = 0;
-        CHECK_PARSER_ERR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey),
-                                        tmpVal, sizeof(tmpVal), 0, &pageCount))
+        CHECK_PARSER_ERR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
 
     return parser_ok;
@@ -184,21 +167,32 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
 parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount) {
-
+    ZEMU_LOGF(50, "[parser_sapling_display_address_t]\n")
+    MEMZERO(outVal, outValLen);
 
     uint8_t address[VERSION_SIZE + CX_RIPEMD160_SIZE + CX_SHA256_SIZE];
     address[0] = VERSION_P2PKH >> 8;
     address[1] = VERSION_P2PKH & 0xFF;
     MEMCPY(address + VERSION_SIZE, addr + 4, CX_RIPEMD160_SIZE);
 
-    cx_hash_sha256(address, VERSION_SIZE + CX_RIPEMD160_SIZE, address + VERSION_SIZE + CX_RIPEMD160_SIZE,
+    cx_hash_sha256(address,
+                   VERSION_SIZE + CX_RIPEMD160_SIZE,
+                   address + VERSION_SIZE + CX_RIPEMD160_SIZE,
                    CX_SHA256_SIZE);
+
     cx_hash_sha256(address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE,
                    address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE);
 
-    uint8_t tmpBuffer[50];
+    uint8_t tmpBuffer[60];
     size_t outLen = sizeof(tmpBuffer);
-    encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
+
+    int err = encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
+    if (err != 0) {
+        ZEMU_LOGF(50, "[parser_sapling_display_address_t] ERR %d\n", err)
+        return parser_unexpected_error;
+    }
+
+    ZEMU_LOGF(50, "addr size %d\n", outLen);
 
     pageString(outVal, outValLen, (char *) tmpBuffer, pageIdx, pageCount);
     return parser_ok;
@@ -251,45 +245,53 @@ parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx,
-                                  uint8_t *num_items) {
-    *num_items =
-            t_inlist_len() * NUM_ITEMS_TIN + t_outlist_len() * NUM_ITEMS_TOUT + spendlist_len() * NUM_ITEMS_SSPEND +
-            outputlist_len() * NUM_ITEMS_SOUT + NUM_ITEMS_CONST;
+parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
+    *num_items = t_inlist_len() * NUM_ITEMS_TIN +
+                 t_outlist_len() * NUM_ITEMS_TOUT +
+                 spendlist_len() * NUM_ITEMS_SSPEND +
+                 outputlist_len() * NUM_ITEMS_SOUT +
+                 NUM_ITEMS_CONST;
+
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
-                              char *outKey, uint16_t outKeyLen, char *outVal,
-                              uint16_t outValLen, uint8_t pageIdx,
-                              uint8_t *pageCount) {
+parser_error_t parser_getItem(const parser_context_t *ctx,
+                              uint8_t displayIdx,
+                              char *outKey, uint16_t outKeyLen,
+                              char *outVal, uint16_t outValLen,
+                              uint8_t pageIdx, uint8_t *pageCount) {
+    ZEMU_LOGF(50, "[tx_getItem] %d/%d\n", displayIdx, pageIdx);
+
     MEMZERO(outKey, outKeyLen);
     MEMZERO(outVal, outValLen);
     snprintf(outKey, outKeyLen, "?");
     snprintf(outVal, outValLen, "?");
-    *pageCount = 0;
+    *pageCount = 1;
 
     uint8_t numItems;
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
     CHECK_APP_CANARY()
 
+    ZEMU_LOGF(50, "[tx_getItem] items: %d\n", numItems)
+
     if (displayIdx < 0 || displayIdx >= numItems) {
         return parser_no_data;
     }
-
-    *pageCount = 1;
 
     parser_sapling_t prs;
     MEMZERO(&prs, sizeof(parser_sapling_t));
     CHECK_PARSER_ERR(parser_sapling_getTypes(displayIdx, &prs));
 
-    //fixme: what decimals to take for ZECs?
+    // FIXME: what decimals to take for ZECs?
 
     switch (prs.type) {
         case type_tin : {
+            ZEMU_LOGF(50, "[tx_getItem] type: type_tin\n")
+
             uint8_t itemnum = prs.index / NUM_ITEMS_TIN;
             t_input_item_t *item = t_inlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
+
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "T-in addr");
@@ -303,6 +305,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
 
         case type_tout : {
+            ZEMU_LOGF(50, "[tx_getItem] type: type_tout\n")
+
             uint8_t itemnum = prs.index / NUM_ITEMS_TOUT;
             t_output_item_t *item = t_outlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
@@ -318,6 +322,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
             }
         }
         case type_sspend: {
+            ZEMU_LOGF(50, "[tx_getItem] type: type_sspend\n")
+
             uint8_t itemnum = prs.index / NUM_ITEMS_SSPEND;
             spend_item_t *item = spendlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
@@ -335,6 +341,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
 
         case type_sout: {
+            ZEMU_LOGF(50, "[tx_getItem] type: type_sout\n")
+
             uint8_t itemnum = prs.index / NUM_ITEMS_SOUT;
             output_item_t *item = outputlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_SOUT;
@@ -376,6 +384,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
 
         case type_txfee: {
+            ZEMU_LOGF(50, "[tx_getItem] type: type_txfee\n")
+
             snprintf(outKey, outKeyLen, "Fee");
             return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
         }
@@ -385,10 +395,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint16_t displayIdx,
         }
     }
     return parser_ok;
-}
-
-void parser_resetState() {
-    // FIXME: zb_deallocate();
 }
 
 const char *parser_getErrorDescription(parser_error_t err) {

@@ -33,9 +33,14 @@ void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
 void zip32_child(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
+void zip32_child_ida(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ak, uint8_t *nk, const uint32_t pos);
+
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
 void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);
+
+void zip32_child_proof_key(const uint8_t *seed_ptr, uint8_t *dk_ptr, uint8_t *ak_ptr, uint8_t *nsk_ptr,
+                           const uint32_t pos);
 
 //Rseed
 void rseed_get_esk(const uint8_t *input, uint8_t *output_ptr);

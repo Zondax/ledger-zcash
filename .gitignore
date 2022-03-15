@@ -94,3 +94,8 @@ yarn.lock
 app/glyphs/glyphs.c
 
 app/glyphs/glyphs.h
+.vscode/configurationCache.log
+.vscode/dryrun.log
+.vscode/settings.json
+.vscode/targets.log
+/tests_zemu/yarn.lock

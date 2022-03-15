@@ -15,7 +15,7 @@ use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
 use cstr_core::CStr;
 #[cfg(test)]
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(unix, windows))]
 use getrandom::getrandom;
 use jubjub::AffinePoint;
 use rand::{CryptoRng, RngCore};
@@ -369,21 +369,21 @@ impl RngCore for Trng {
         u64::from_le_bytes(out)
     }
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(unix, windows)))]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         unsafe {
             bolos_cx_rng(dest.as_mut_ptr(), dest.len() as u32);
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[cfg(test)]
+    #[cfg(any(unix, windows))]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         getrandom(dest).unwrap()
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[cfg(not(test))]
+    #[cfg(any(unix, windows))]
     fn fill_bytes(&mut self, _dest: &mut [u8]) {}
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {

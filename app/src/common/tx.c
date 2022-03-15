@@ -34,7 +34,8 @@ storage_t NV_CONST N_appdata_impl __attribute__ ((aligned(64)));
 #define N_appdata (*(NV_VOLATILE storage_t *)PIC(&N_appdata_impl))
 #endif
 
-parser_context_t ctx_parsed_tx;
+static parser_tx_t tx_obj;
+static parser_context_t ctx_parsed_tx;
 
 void tx_initialize() {
     buffering_init(
@@ -61,15 +62,14 @@ uint8_t *tx_get_buffer() {
     return buffering_get_buffer()->data;
 }
 
-static parser_tx_t tx_obj;
-
 const char *tx_parse() {
     MEMZERO(&tx_obj, sizeof(tx_obj));
 
     uint8_t err = parser_parse(
             &ctx_parsed_tx,
             tx_get_buffer(),
-            tx_get_buffer_length());
+            tx_get_buffer_length(),
+            &tx_obj);
 
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
@@ -83,10 +83,6 @@ const char *tx_parse() {
     }
 
     return NULL;
-}
-
-void tx_parse_reset() {
-    MEMZERO(&tx_obj, sizeof(tx_obj));
 }
 
 zxerr_t tx_getNumItems(uint8_t *num_items) {

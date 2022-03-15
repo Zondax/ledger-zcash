@@ -122,6 +122,7 @@ bool spend_signatures_more_extract();
 zxerr_t spend_signatures_append(uint8_t *signature);
 
 zxerr_t get_next_spend_signature(uint8_t *result);
+
 //transparent TxIN API
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v);
 
