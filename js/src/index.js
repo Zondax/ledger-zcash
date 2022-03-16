@@ -412,12 +412,6 @@ export default class ZCashApp {
     }
   }
 
-  async getivkida(path) {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport.send(CLA, INS.GET_IVK_SAPLING_IDA, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(processIVKResponse, processErrorResponse);
-  }
-
   async getivk(path) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);

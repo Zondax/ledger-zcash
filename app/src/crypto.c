@@ -1251,7 +1251,7 @@ typedef struct {
 } tmp_sapling_addr_s;
 
 
-zxerr_t crypto_ivk_sapling_ida(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
+zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ivk_sapling");
@@ -1270,10 +1270,9 @@ zxerr_t crypto_ivk_sapling_ida(uint8_t *buffer, uint16_t bufferLen, uint32_t p, 
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
-            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
-            CHECK_APP_CANARY();
 
-            get_ivk(tmp.step3.ak, tmp.step3.nk, out);
+            get_ivk(tmp.step1.zip32_seed, p, out);
+
             CHECK_APP_CANARY();
 
             MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
@@ -1338,9 +1337,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
-            MEMZERO(tmp.step3.ak,sizeof_field(tmp_sapling_addr_s, step3.ak));
-            MEMZERO(tmp.step3.nk,sizeof_field(tmp_sapling_addr_s, step3.nk));
+            get_dk(tmp.step1.zip32_seed, tmp.step2.dk,p);
             CHECK_APP_CANARY();
 
             get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
@@ -1410,15 +1407,8 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
-            CHECK_APP_CANARY();
 
-            MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
-
-            get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
-            CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sapling_addr_s, step3.ak));
-            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sapling_addr_s, step3.nk));
+            get_ivk(tmp.step1.zip32_seed, p, tmp.step3.ivk);
 
             zemu_log_stack("get_pkd");
 
@@ -1475,7 +1465,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child_ida(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step3.ak, tmp.step3.nk, p);
+            get_dk(tmp.step1.zip32_seed, tmp.step2.dk,p);
             CHECK_APP_CANARY();
 
             bool found = false;
@@ -1498,10 +1488,8 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                 return zxerr_unknown;
             }
 
-            get_ivk(tmp.step3.ak, tmp.step3.nk, tmp.step3.ivk);
+            get_ivk(tmp.step1.zip32_seed, p, tmp.step3.ivk);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.step3.ak, sizeof_field(tmp_sapling_addr_s, step3.ak));
-            MEMZERO(tmp.step3.nk, sizeof_field(tmp_sapling_addr_s, step3.nk));
 
             zemu_log_stack("get_pkd");
             get_pkd(tmp.step3.ivk, out->diversifier, out->pkd);

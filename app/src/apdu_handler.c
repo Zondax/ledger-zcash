@@ -204,7 +204,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     key_state.kind = key_ivk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_ivk_sapling_ida(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -632,11 +632,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_GET_ADDR_SECP256K1: {
                     handleGetAddrSecp256K1(flags, tx, rx);
-                    break;
-                }
-
-                case INS_GET_IVK_IDA: {
-                    handleGetKeyIVK(flags, tx, rx);
                     break;
                 }
 

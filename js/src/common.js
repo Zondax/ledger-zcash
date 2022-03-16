@@ -13,7 +13,6 @@ export const INS = {
   SIGN_SAPLING: 0x12,
   GET_IVK_SAPLING: 0xf0,
   GET_OVK_SAPLING: 0xf1,
-  GET_IVK_SAPLING_IDA: 0xf2,
 
   INIT_TX: 0xa0,
   KEY_EXCHANGE: 0xaa,

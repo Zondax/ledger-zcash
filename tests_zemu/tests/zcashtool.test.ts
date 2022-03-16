@@ -72,32 +72,6 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('get ivk ida', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new ZCashApp(sim.getTransport())
-
-      // const ivkreq = app.getivk(1000);
-      const ivkreq = app.getivkida(1000)
-
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
-
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getivk`, clickSchedule)
-
-      const ivk = await ivkreq
-      console.log(ivk)
-      expect(ivk.return_code).toEqual(0x9000)
-
-      const expected_ivk_raw = '6dfadf175921e6fbfa093c8f7c704a0bdb07328474f56c833dfcfa5301082d03'
-      const ivk_raw = ivk.ivk_raw.toString('hex')
-      expect(ivk_raw).toEqual(expected_ivk_raw)
-    } finally {
-      await sim.close()
-    }
-  })
-
   test.each(models)('get outgoing viewing key', async function (m) {
     const sim = new Zemu(m.path)
     try {
