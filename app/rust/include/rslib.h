@@ -47,15 +47,10 @@ void rseed_get_esk(const uint8_t *input, uint8_t *output_ptr);
 
 void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
-//Pedersen hash
-void pedersen_hash_73bytes(const uint8_t *input, uint8_t *output_ptr);
-
 //Commitments
-void prepare_input_notecmt(const uint64_t value, const uint8_t *gd, const uint8_t *pkd, uint8_t *output);
+void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
 
-void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr);
-
-void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr);
+void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
 
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 

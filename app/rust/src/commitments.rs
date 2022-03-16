@@ -176,6 +176,35 @@ fn u64_to_bytes(value: u64) -> [u8; 32] {
 }
 
 #[inline(never)]
+pub fn prepare_and_hash_input_commitment(
+    value: u64,
+    g_d_ptr: *const [u8; 32],
+    pkd_ptr: *const [u8; 32],
+    output_ptr: *mut [u8; 32],
+)  {
+    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
+    let gd = unsafe { &*g_d_ptr };
+    let pkd = unsafe { &*pkd_ptr };
+
+    let mut prepared_msg =  [0u8; 73];
+    let mut input_hash = [0u8; 73];
+    let output_msg = unsafe { &mut *output_ptr };
+
+
+    let vbytes = write_u64_tobytes(value);
+    input_hash[0..8].copy_from_slice(&vbytes);
+
+    revert(gd, &mut input_hash[8..40]);
+    revert(pkd, &mut input_hash[40..72]);
+
+    shiftsixbits(&mut input_hash);
+    prepared_msg.copy_from_slice(&input_hash);
+
+    let h = pedersen_hash_pointbytes(&mut prepared_msg, 582);
+    output_msg.copy_from_slice(&h);
+}
+
+#[inline(never)]
 pub fn value_commitment_step1(value: u64) -> ExtendedPoint {
     c_zemu_log_stack(b"insidevaluecommitment\x00".as_ref());
     let scalar = u64_to_bytes(value);
@@ -254,30 +283,52 @@ pub extern "C" fn compute_nullifier(
 }
 
 #[no_mangle]
-pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32], rcm_ptr: *const [u8; 32]) {
+pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
+                                              rcm_ptr: *const [u8; 32],
+                                              value: u64,
+                                              g_d_ptr: *const [u8; 32],
+                                              pkd_ptr: *const [u8; 32]) {
+
+    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
+
+    let gd = unsafe { &*g_d_ptr };
+    let pkd = unsafe { &*pkd_ptr };
+    let out = unsafe { &mut *input_ptr };
+
+    prepare_and_hash_input_commitment(value, gd, pkd, out);
+
     c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
-    let inputhash = unsafe { &mut *input_ptr };
     let rc = unsafe { &*rcm_ptr };
-    let mut e = bytes_to_extended(*inputhash);
+    let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
     add_to_point(&mut e, &s);
 
-    inputhash.copy_from_slice(&extended_to_u_bytes(&e));
+    out.copy_from_slice(&extended_to_u_bytes(&e));
 }
+
 
 #[no_mangle]
 pub extern "C" fn compute_note_commitment_fullpoint(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
-) {
+    value: u64,
+    g_d_ptr: *const [u8; 32],
+    pkd_ptr: *const [u8; 32]) {
+    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
+    let gd = unsafe { &*g_d_ptr };
+    let pkd = unsafe { &*pkd_ptr };
+
+    let out = unsafe { &mut *input_ptr };
+
+    prepare_and_hash_input_commitment(value, gd, pkd, out);
+
     c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
-    let inputhash = unsafe { &mut *input_ptr };
     let rc = unsafe { &*rcm_ptr };
-    let mut e = bytes_to_extended(*inputhash);
+    let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
     add_to_point(&mut e, &s);
 
-    inputhash.copy_from_slice(&extended_to_bytes(&e));
+    out.copy_from_slice(&extended_to_bytes(&e));
 }
 
 #[no_mangle]
@@ -299,30 +350,6 @@ pub extern "C" fn compute_value_commitment(
     output_msg.copy_from_slice(&vcm);
 }
 
-#[no_mangle]
-pub extern "C" fn prepare_input_notecmt(
-    value: u64,
-    g_d_ptr: *const [u8; 32],
-    pkd_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 73],
-) {
-    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
-    let gd = unsafe { &*g_d_ptr };
-    let pkd = unsafe { &*pkd_ptr };
-
-    let output_msg = unsafe { &mut *output_ptr };
-    let mut input_hash = [0u8; 73];
-
-    let vbytes = write_u64_tobytes(value);
-    input_hash[0..8].copy_from_slice(&vbytes);
-
-    revert(gd, &mut input_hash[8..40]);
-    revert(pkd, &mut input_hash[40..72]);
-
-    shiftsixbits(&mut input_hash);
-    output_msg.copy_from_slice(&input_hash);
-}
-
 pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> bool {
     let v = bytes_to_extended(*valuecommitsum);
     let r = VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcmsum);
@@ -341,21 +368,19 @@ mod tests {
         let rcm = [0u8; 32];
         let output = [0u8; 32];
 
-        let inputhash = [0u8; 73];
-
-        prepare_input_notecmt(
+        prepare_and_hash_input_commitment(
             v,
             gd.as_ptr() as *const [u8; 32],
             pkd.as_ptr() as *const [u8; 32],
-            inputhash.as_ptr() as *mut [u8; 73],
-        );
-        pedersen_hash_73bytes(
-            inputhash.as_ptr() as *const [u8; 73],
             output.as_ptr() as *mut [u8; 32],
         );
+
         compute_note_commitment(
             output.as_ptr() as *mut [u8; 32],
             rcm.as_ptr() as *const [u8; 32],
+            v,
+            gd.as_ptr() as *const [u8; 32],
+            pkd.as_ptr() as *const [u8; 32]
         );
 
         assert_eq!(
