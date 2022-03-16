@@ -1270,11 +1270,8 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
-
-            get_ivk(tmp.step1.zip32_seed, p, out);
-
+            zip32_ivk(tmp.step1.zip32_seed, out, p);
             CHECK_APP_CANARY();
-
             MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
         FINALLY
@@ -1337,10 +1334,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, 
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            get_dk(tmp.step1.zip32_seed, tmp.step2.dk,p);
-            CHECK_APP_CANARY();
-
-            get_diversifier_list_withstartindex(tmp.step2.dk,startindex,buffer);
+            get_diversifier_list_withstartindex(tmp.step1.zip32_seed,p,startindex,buffer);
             for(int i = 0; i < DIV_LIST_LENGTH; i++){
                 if (!is_valid_diversifier(buffer+i*DIV_SIZE)){
                     MEMZERO(buffer+i*DIV_SIZE,DIV_SIZE);
@@ -1408,7 +1402,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
             CHECK_APP_CANARY();
 
 
-            get_ivk(tmp.step1.zip32_seed, p, tmp.step3.ivk);
+            zip32_ivk(tmp.step1.zip32_seed, tmp.step3.ivk, p);
 
             zemu_log_stack("get_pkd");
 
@@ -1465,18 +1459,14 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            get_dk(tmp.step1.zip32_seed, tmp.step2.dk,p);
-            CHECK_APP_CANARY();
-
             bool found = false;
             while(!found){
-                get_default_diversifier_list_withstartindex(tmp.step2.dk, out->startindex, out->diversifierlist);
+                get_default_diversifier_list_withstartindex(tmp.step1.zip32_seed, p, out->startindex, out->diversifierlist);
                 uint8_t *ptr = out->diversifierlist;
                 for(uint8_t i = 0; i < DIV_DEFAULT_LIST_LEN; i++, ptr += DIV_SIZE){
                     if(!found && is_valid_diversifier(ptr)){
                         MEMCPY(out->diversifier, ptr, DIV_SIZE);
                         MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
-                        MEMZERO(tmp.step2.dk, sizeof_field(tmp_sapling_addr_s, step2.dk));
                         found = true;
                     }
                 }
@@ -1488,7 +1478,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                 return zxerr_unknown;
             }
 
-            get_ivk(tmp.step1.zip32_seed, p, tmp.step3.ivk);
+            zip32_ivk(tmp.step1.zip32_seed, tmp.step3.ivk, p);
             CHECK_APP_CANARY();
 
             zemu_log_stack("get_pkd");

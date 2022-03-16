@@ -490,6 +490,24 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
 }
 
 #[no_mangle]
+pub fn get_dk(
+    seed_ptr: *const [u8; 32],
+    dk_ptr: *mut [u8; 32],
+    pos: u32,
+) {
+    let seed = unsafe { &*seed_ptr };
+    let dk = unsafe { &mut *dk_ptr };
+
+    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
+    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
+    let k = derive_zip32_child_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet
+
+    // k = dk || ask || nsk || ak || nk
+    dk.copy_from_slice(&k[0..32]);
+}
+
+
+#[no_mangle]
 pub extern "C" fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
     let nsk = unsafe { &*nsk_ptr };
     let nk = unsafe { &mut *nk_ptr };
@@ -498,10 +516,10 @@ pub extern "C" fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
 }
 
 #[no_mangle]
-pub extern "C" fn get_ivk(
+pub extern "C" fn zip32_ivk(
     seed_ptr: *const [u8; 32],
-    pos: u32,
     ivk_ptr: *mut [u8; 32],
+    pos: u32,
 ) {
     let seed = unsafe { &*seed_ptr };
     let mut ak =  [0u8; 32];
@@ -572,23 +590,6 @@ pub extern "C" fn zip32_child(
 }
 
 #[no_mangle]
-pub extern "C" fn get_dk(
-    seed_ptr: *const [u8; 32],
-    dk_ptr: *mut [u8; 32],
-    pos: u32,
-) {
-    let seed = unsafe { &*seed_ptr };
-    let dk = unsafe { &mut *dk_ptr };
-
-    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
-    let k = derive_zip32_child_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet
-
-    // k = dk || ask || nsk || ak || nk
-    dk.copy_from_slice(&k[0..32]);
-}
-
-#[no_mangle]
 pub extern "C" fn zip32_child_proof_key(
     seed_ptr: *const [u8; 32],
     dk_ptr: *mut [u8; 32],
@@ -641,26 +642,32 @@ pub extern "C" fn get_diversifier_list(
 
 #[no_mangle]
 pub extern "C" fn get_diversifier_list_withstartindex(
-    sk_ptr: *const [u8; 32],
+    seed_ptr: *const [u8; 32],
+    pos: u32,
     start_index: *const [u8; 11],
     diversifier_list_ptr: *mut [u8; 220],
 ) {
-    let sk = unsafe { &*sk_ptr };
+    let mut dk =  [0u8; 32];
+    let seed = unsafe { &*seed_ptr };
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    ff1aes_list_with_startingindex(sk, start, diversifier);
+    get_dk(seed,&mut dk,pos);
+    ff1aes_list_with_startingindex(&mut dk, start, diversifier);
 }
 
 #[no_mangle]
 pub extern "C" fn get_default_diversifier_list_withstartindex(
-    sk_ptr: *const [u8; 32],
+    seed_ptr: *const [u8; 32],
+    pos: u32,
     start_index: *mut [u8; 11],
     diversifier_list_ptr: *mut [u8; 44],
 ) {
-    let sk = unsafe { &*sk_ptr };
+    let mut dk =  [0u8; 32];
+    let seed = unsafe { &*seed_ptr };
     let start = unsafe { &mut *start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    ff1aes_list_with_startingindex_default(sk, start, diversifier);
+    get_dk(seed,&mut dk,pos);
+    ff1aes_list_with_startingindex_default(&mut dk, start, diversifier);
 }
 
 #[no_mangle]
