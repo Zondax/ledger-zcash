@@ -335,13 +335,11 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
             uint8_t sk[ED25519_SK_SIZE];
         } step1;
 
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t ask[ASK_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step2;
@@ -375,7 +373,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
-            zip32_child_proof_key(tmp.step1.zip32_seed, tmp.step2.dk, out, out + AK_SIZE, next->path);
+            zip32_child_proof_key(tmp.step1.zip32_seed, out, out + AK_SIZE, next->path);
             CHECK_APP_CANARY();
         }
         FINALLY
@@ -1102,12 +1100,10 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
         } step1;
 
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t ask[ASK_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step2;
@@ -1161,7 +1157,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                zip32_child(tmp.step1.zip32_seed, tmp.step2.dk, tmp.step2.ask, tmp.step2.nsk, item->path);
+                zip32_child(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step3.rsk);
                 sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)sighash, (uint8_t *)out);
@@ -1231,13 +1227,11 @@ typedef struct {
     union {
         // STEP 1
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
             uint8_t sk[ED25519_SK_SIZE];
         } step1;
 
         struct {
-            uint8_t dk[DK_SIZE];
             uint8_t ask[ASK_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step2;
