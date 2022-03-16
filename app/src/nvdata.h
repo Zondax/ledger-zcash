@@ -45,7 +45,7 @@ typedef struct {
     uint64_t value;
     uint8_t div[DIV_SIZE];
     uint8_t pkd[PKD_SIZE];
-    uint8_t rcm[RCM_SIZE];
+    uint8_t rcmvalue[RCM_SIZE];
     uint8_t alpha[ALPHA_SIZE];
 } spend_item_t;
 

@@ -200,7 +200,7 @@ zxerr_t spendlist_append_item(uint32_t p, uint64_t v, uint8_t *div, uint8_t *pkd
     newitem.value = v;
     MEMCPY(newitem.div, div, DIV_SIZE);
     MEMCPY(newitem.pkd, pkd, PKD_SIZE);
-    MEMCPY(newitem.rcm, rcm, RCM_SIZE);
+    MEMCPY(newitem.rcmvalue, rcm, RCM_SIZE);
     MEMCPY(newitem.alpha, alpha, ALPHA_SIZE);
 
     MEMCPY_NV((void *) &N_spendlist.items[transaction_header.spendlist_len],

@@ -388,7 +388,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
 
     MEMZERO(&tmp, sizeof(tmp_spendinfo_s));
     CHECK_APP_CANARY();
-    MEMCPY(out+AK_SIZE+NSK_SIZE, next->rcm, RCM_SIZE);
+    MEMCPY(out+AK_SIZE+NSK_SIZE, next->rcmvalue, RCM_SIZE);
     MEMCPY(out+AK_SIZE+NSK_SIZE+RCM_SIZE, next->alpha,ALPHA_SIZE);
 
     if(!spendlist_more_extract()){
@@ -634,7 +634,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                compute_value_commitment(item->value,item->rcm,tmp.step4.cv); // TODO: I think its rcmvalue for value commitments...
+                compute_value_commitment(item->value,item->rcmvalue,tmp.step4.cv); // TODO: I think its rcmvalue for value commitments...
                 if (MEMCMP(tmp.step4.cv, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     MEMZERO(out,bufferLen);
