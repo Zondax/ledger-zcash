@@ -99,16 +99,12 @@ int decode_base58(const char *in, size_t length,
 int encode_base58(const unsigned char *in, size_t length,
                   unsigned char *out, size_t *outlen) {
     unsigned char buffer[MAX_ENC_INPUT_SIZE * 138 / 100 + 1] = {0};
-    MEMZERO(out, *outlen);
-    MEMZERO(buffer, sizeof(buffer));
-
     size_t i, j;
     size_t startAt, stopAt;
     size_t zeroCount = 0;
     size_t outputSize;
 
     if (length > MAX_ENC_INPUT_SIZE) {
-        ZEMU_LOGF(30, "required %d", length)
         return -1;
     }
 
@@ -139,7 +135,7 @@ int encode_base58(const unsigned char *in, size_t length,
 
     if (*outlen < zeroCount + outputSize - j) {
         *outlen = zeroCount + outputSize - j;
-        return -2;
+        return -1;
     }
 
     MEMSET(out, BASE58ALPHABET[0], zeroCount);
@@ -149,7 +145,6 @@ int encode_base58(const unsigned char *in, size_t length,
         out[i++] = BASE58ALPHABET[buffer[j++]];
     }
     *outlen = i;
-
     return 0;
 }
 
