@@ -329,13 +329,11 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
     }
 
-    // TODO: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
     err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-    /*
     if(err != zxerr_ok){
-        return 0;
+        // TODO: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
+        // return 0;
     }
-    */
 
     err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok) {
