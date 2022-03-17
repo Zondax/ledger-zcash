@@ -182,7 +182,7 @@ pub fn prepare_and_hash_input_commitment(
     pkd_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 )  {
-    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
+    c_zemu_log_stack(b"prepare_and_hash_intput_for_notecommit\x00".as_ref());
     let gd = unsafe { &*g_d_ptr };
     let pkd = unsafe { &*pkd_ptr };
 
@@ -314,7 +314,7 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     value: u64,
     g_d_ptr: *const [u8; 32],
     pkd_ptr: *const [u8; 32]) {
-    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
+    c_zemu_log_stack(b"entry_preparenotecommit_full\x00".as_ref());
     let gd = unsafe { &*g_d_ptr };
     let pkd = unsafe { &*pkd_ptr };
 

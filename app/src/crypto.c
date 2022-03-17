@@ -373,6 +373,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
             crypto_fillSaplingSeed(tmp.step1.zip32_seed);
             CHECK_APP_CANARY();
 
+            // Gets ak and nsk
             zip32_child_proof_key(tmp.step1.zip32_seed, out, out + AK_SIZE, next->path);
             CHECK_APP_CANARY();
         }
@@ -619,8 +620,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                // if we want to have this also return nk, we need to change the tmp_checkspend structure so that step1
-                // uses an extra 32 uint8's for nk in step 1. Then step 6 will no longer be necessary.
+                // we later need nsk
                 zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
                 randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
@@ -632,7 +632,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                compute_value_commitment(item->value,item->rcmvalue,tmp.step4.cv); // TODO: I think its rcmvalue for value commitments...
+                // step4.cv = step3.rk.
+                compute_value_commitment(item->value,item->rcmvalue,tmp.step4.cv);
                 if (MEMCMP(tmp.step4.cv, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     MEMZERO(out,bufferLen);
@@ -644,7 +645,6 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
                 compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN,item->value, tmp.step5.gd, item->pkd);
 
-                // TODO: we could get nk at the same time as ask and nsk
                 nsk_to_nk(tmp.step5.nsk,tmp.step6.nk);
                 uint64_t notepos = 0;
                 {
@@ -664,6 +664,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step6.nk, tmp_buf->nf);
                 if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
                     //maybe spendlist_reset();
+                    zemu_log_stack("Nullifier is bad\n");
                     MEMZERO(out, bufferLen);
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     CLOSE_TRY;
@@ -880,9 +881,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
-        rseed_get_esk(item->rseed,tmp->step1.esk);
-        CHECK_APP_CANARY();
-        get_epk(tmp->step1.esk, (uint8_t *) item->div, tmp->step1.epk);
+        rseed_get_esk_epk(item->rseed,(uint8_t *) item->div, tmp->step1.esk, tmp->step1.epk);
         CHECK_APP_CANARY();
         if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, EPK_SIZE) != 0){
             MEMZERO(out, bufferLen);
@@ -1157,9 +1156,9 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                zip32_child(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
+                //zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
-                randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step3.rsk);
+                randomized_secret_from_seed(tmp.step1.zip32_seed,item->path, (uint8_t *)item->alpha, tmp.step3.rsk);
                 sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)sighash, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);
                 if(zxerr != zxerr_ok){
