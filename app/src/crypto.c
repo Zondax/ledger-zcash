@@ -1155,9 +1155,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     CLOSE_TRY;
                     return zxerr_unknown;
                 }
-
-                //zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
-
+                // combining these causes a stack overflow
                 randomized_secret_from_seed(tmp.step1.zip32_seed,item->path, (uint8_t *)item->alpha, tmp.step3.rsk);
                 sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)sighash, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);

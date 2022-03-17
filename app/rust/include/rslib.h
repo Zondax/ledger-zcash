@@ -63,7 +63,7 @@ void prepare_enccompact_input(uint8_t *d, uint64_t value, uint8_t *rcm, uint8_t 
 //RedJubjub
 void random_fr(uint8_t *alpha_ptr);
 
-void randomized_secret_from_seed(const uint8_t *seed_ptr,const uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
+void randomized_secret_from_seed(uint8_t *seed_ptr, uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
 void randomized_secret(uint8_t *sk_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
