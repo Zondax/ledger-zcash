@@ -684,15 +684,19 @@ pub extern "C" fn get_diversifier_fromlist(
 
 #[no_mangle]
 pub extern "C" fn get_pkd(
-    ivk_ptr: *const [u8; 32],
+    seed_ptr: *const [u8; 32],
+    pos: u32,
     diversifier_ptr: *const [u8; 11],
     pkd_ptr: *mut [u8; 32],
 ) {
-    let ivk = unsafe { &*ivk_ptr };
+    let mut ivk = [0u8;32];
+    let ivk_ptr = { &mut ivk };
     let diversifier = unsafe { &*diversifier_ptr };
     let pkd = unsafe { &mut *pkd_ptr };
 
-    let tmp_pkd = default_pkd(&ivk, &diversifier);
+    zip32_ivk(seed_ptr,ivk_ptr, pos);
+
+    let tmp_pkd = default_pkd(ivk_ptr, &diversifier);
     pkd.copy_from_slice(&tmp_pkd)
 }
 

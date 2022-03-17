@@ -13,7 +13,7 @@ void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
 
 void nsk_to_nk(const uint8_t *nsk_ptr, uint8_t *nk_ptr);
 
-void get_pkd(const uint8_t *ivk_ptr, const uint8_t *diversifier_ptr, uint8_t *pkd);
+void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void group_hash_from_div(const uint8_t *diversifier_ptr, uint8_t *gd);
 
