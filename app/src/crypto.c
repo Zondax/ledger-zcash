@@ -1062,14 +1062,14 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                     return zxerr_unknown;
                 }
                 signature_script_hash(start_signdata, LENGTH_HASH_DATA, start_tindata + i * T_IN_TX_LEN, T_IN_TX_LEN, message_digest);
-                signatureLength = cx_ecdsa_sign(&cx_privateKey,
-                                            CX_RND_RFC6979 | CX_LAST,
-                                            CX_SHA256,
-                                            message_digest,
-                                            CX_SHA256_SIZE,
-                                            signature->step1.der_signature,
-                                            DER_MAX_SIZE,
-                                            &info);
+                cx_ecdsa_sign(&cx_privateKey,
+                              CX_RND_RFC6979 | CX_LAST,
+                              CX_SHA256,
+                              message_digest,
+                              CX_SHA256_SIZE,
+                              signature->step1.der_signature,
+                              DER_MAX_SIZE,
+                              &info);
                 err_convert_e err = convertDERtoRSV(signature->step1.der_signature, info,  signature->step1.r, signature->step1.s, &signature->step1.v);
                 if (err != no_error) {
                     CLOSE_TRY;
