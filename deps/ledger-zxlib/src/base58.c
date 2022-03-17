@@ -99,6 +99,8 @@ int decode_base58(const char *in, size_t length,
 int encode_base58(const unsigned char *in, size_t length,
                   unsigned char *out, size_t *outlen) {
     unsigned char buffer[MAX_ENC_INPUT_SIZE * 138 / 100 + 1] = {0};
+    MEMZERO(out, *outlen);
+
     size_t i, j;
     size_t startAt, stopAt;
     size_t zeroCount = 0;
