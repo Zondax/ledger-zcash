@@ -142,7 +142,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (messageLength > FLASH_BUFFER_SIZE) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);      // TODO: be more specific
+        THROW(APDU_CODE_DATA_TOO_LONG);
     }
 
     zxerr_t err;
@@ -151,7 +151,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
         transaction_reset();
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);      // TODO: be more specific
+        THROW(APDU_CODE_EXTRACT_TRANSACTION_FAIL);
     }
 
     err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -159,7 +159,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
         transaction_reset();
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);      // TODO: be more specific
+        THROW(APDU_CODE_HASH_MSG_BUF_FAIL);
     }
 
 ////////////
@@ -288,7 +288,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_UNPROCESSED_TX);
     }
 
     // TODO: check this
@@ -302,7 +302,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_PREVOUT_INVALID);
     }
 
     err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -310,7 +310,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_SEQUENCE_INVALID);
     }
 
     err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -318,7 +318,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_OUTPUTS_INVALID);
     }
 
     err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -326,14 +326,14 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_JOINSPLIT_INVALID);
     }
 
     // TODO: the valuebalance sometimes fails, maybe bug in emulator? Add check later when it is fixed.
     err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     /*
     if(err != zxerr_ok){
-        return 0;
+        THROW(APDU_CODE_SPEND_INVALID);  // TODO: be more specific
     }
     */
 
@@ -342,7 +342,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_SPEND_INVALID);
     }
 
     err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -350,7 +350,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_OUTPUT_CONTENT_INVALID);
     }
 
     err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -358,7 +358,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_ENCRYPTION_INVALID);
     }
 
     set_state(STATE_VERIFIED_ALL_TXDATA);
@@ -369,7 +369,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_CHECK_SIGN_TR_FAIL);
     }
 
     err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -377,7 +377,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_SIGN_SPEND_FAIL);
     }
 
     err = crypto_hash_messagebuffer(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
@@ -385,7 +385,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
-        THROW(APDU_CODE_DATA_INVALID);  // TODO: be more specific
+        THROW(APDU_CODE_HASH_MSG_BUF_FAIL);
     }
 
     set_state(STATE_SIGNED_TX);
