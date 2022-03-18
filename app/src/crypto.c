@@ -881,53 +881,80 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
+        // compute random ephemeral private and public keys (esk,epk) from seed and diversifier
         rseed_get_esk_epk(item->rseed,(uint8_t *) item->div, tmp->step1.esk, tmp->step1.epk);
         CHECK_APP_CANARY();
+
+        // compare the computed epk to that provided in the transaction data
         if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, EPK_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
+        // get shared key (used as encryption key) from esk, epk and pkd
         ka_to_key(tmp->step1.esk, (uint8_t *) item->pkd, tmp->step1.epk, tmp->step2.sharedkey);
         CHECK_APP_CANARY();
+        // encode (div, value rseed and memotype) into step2.compactout ready to be encrypted
         prepare_enccompact_input((uint8_t *) item->div, item->value, (uint8_t *) item->rseed, item->memotype, tmp->step2.compactout);
         CHECK_APP_CANARY();
         MEMZERO(tmp->step2.chachanonce,CHACHA_NONCE_SIZE);
+        // encrypt the previously obtained encoding, and store it in step2.compactoutput (reusing the same memory for input and output)
         chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, tmp->step2.chachanonce,1);
         CHECK_APP_CANARY();
+        // check that the computed encryption is the same as that provided in the transaction data
         if (MEMCMP(tmp->step2.compactout, start_outputdata + INDEX_OUTPUT_ENC + i * OUTPUT_TX_LEN, COMPACT_OUT_SIZE) != 0){
             MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
+        // if an ovk was provided
         if(item->ovk[0] != 0x00){
             zemu_log_stack("OVK SET");
+            // copy ovk, the value commitment and note-commitment from flash memory and transaction to
+            // local tmp structure so as to hash
             MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i* OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i* OUTPUT_TX_LEN,NOTE_COMMITMENT_SIZE);
-
+            // Note that tmp->step4.prfinput is the same memory chunk as the concatenation of
+            // tmp->step3.ovk || tmp->step3.valuecmt || tmp->step3.notecmt || tmp->step3.epk
+            // so next we hash that concatenation, and store hash in tmp->step5.outkey
             blake2b_prf(tmp->step4.prfinput, tmp->step5.outkey);
             CHECK_APP_CANARY();
+
+            // get pkd from flash memory, store it in tmp->step5.pkd
             MEMCPY(tmp->step5.pkd, item->pkd, PKD_SIZE);
 
             MEMZERO(tmp->step6.chachanonce,CHACHA_NONCE_SIZE);
 
+            // tmp->step6.encciph = tmp->step5.pkd || tmp->step5.esk
+            // encrypt that, using as encryption key the output of the blake2b PRF
+            // store resulting ciphertext in tmp->step6.encciph
             chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey, tmp->step6.chachanonce,1);
             CHECK_APP_CANARY();
+
+            // check that the computed encryption is the same as that provided in the transaction data
             if (MEMCMP(tmp->step6.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
                 MEMZERO(out, bufferLen);
                 return zxerr_unknown;
             }
 
+        // if no ovk was provided
         }else{
             zemu_log_stack("OVK NOT SET");
+            // copy the contents of flash memory for ovk, and hash it. This hash will be the encryption key
             MEMCPY(tmp->step3b.hashseed, item->ovk, OVK_SET_SIZE);
             cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.outkey, CX_SHA256_SIZE);
+            // replace the first 0x00 of the copied ovk with 0x01, hash again, this will be
+            // the first half of the plaintext to encrypt
             tmp->step3b.hashseed[0] = 0x01;
             cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part1, CX_SHA256_SIZE);
+            // replace the first 0x01 of the copied ovk with 0x02, hash again, this will be
+            // the second half of the plaintext to encrypt
             tmp->step3b.hashseed[0] = 0x02;
             cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.encciph_part2, CX_SHA256_SIZE);
             MEMZERO(tmp->step3b.chachanonce,CHACHA_NONCE_SIZE);
+            // tmp->step4b.encciph = tmp->step3b.encciph_part1 || tmp->step3b.encciph_part2
+            // encrypt and compare computed encryption to that provided in the transaction data
             chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,1);
             if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
                 MEMZERO(out, bufferLen);
