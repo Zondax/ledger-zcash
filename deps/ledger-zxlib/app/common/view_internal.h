@@ -91,7 +91,6 @@ extern view_t viewdata;
 
 void splitValueField();
 void splitValueAddress();
-
 max_char_display get_max_char_per_line();
 
 ///////////////////////////////////////////////
