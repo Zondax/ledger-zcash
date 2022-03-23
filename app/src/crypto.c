@@ -1032,8 +1032,6 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
 
     unsigned int info = 0;
     signature_tr *const signature = (signature_tr *) buffer;
-    int signatureLength;
-
     BEGIN_TRY
     {
         TRY

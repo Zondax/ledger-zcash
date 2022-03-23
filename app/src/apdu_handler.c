@@ -329,7 +329,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_JOINSPLIT_INVALID);
     }
 
-    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    // err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     /*
     if(err != zxerr_ok){
         THROW(APDU_CODE_SPEND_INVALID);  // TODO: be more specific
