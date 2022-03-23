@@ -47,6 +47,7 @@
 #define APDU_CODE_ENCRYPTION_INVALID        0x6998
 #define APDU_CODE_CHECK_SIGN_TR_FAIL        0x6999
 #define APDU_SIGN_SPEND_FAIL                0x69A0
+#define APDU_CODE_BAD_VALUEBALANCE          0x69A1
 
 #define APDU_CODE_BAD_KEY_HANDLE            0x6A80
 #define APDU_CODE_INVALIDP1P2               0x6B00

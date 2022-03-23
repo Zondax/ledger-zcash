@@ -54,6 +54,74 @@ void zemu_log_stack(__Z_UNUSED const char *ctx) {}
 
 #endif
 
+#if defined(ZEMU_LOGGING) && (defined (TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2))
+static void x64toa(unsigned long long val, char *buf, unsigned radix, int is_neg)
+{
+    char *p;
+    char *firstdig;
+    char temp;
+    unsigned digval;
+    p = buf; *p=0,p[1]='\0';
+    if (val==0||radix<2||radix>32||radix&1) return;
+    if ( is_neg )  *p++ = '-', val = (unsigned long long)(-(long long)val);
+    firstdig = p;
+    if(radix--==10)
+        do { // optimized for fixed division
+            digval = (unsigned) (val % 10);
+            val /= 10;
+            *p++ = (char) (digval + '0');
+        } while (val > 0);
+    else do { temp=radix;
+            digval = (unsigned) (val & radix );
+            while(temp) val>>=1,temp>>=1;
+            *p++ = digval>9?(char)(digval + 'W'):(char) (digval + '0');
+        } while (val>0);
+    *p-- = '\0';
+    do { // reverse string
+        temp = *p;
+        *p = *firstdig;
+        *firstdig = temp;
+        --p;
+        ++firstdig;
+    } while (firstdig < p);
+}
+//----------------------------------------------------------------------------
+char* l2s(long long v,int sign) { char r,s;
+    static char buff[33];  r=sign>>8; s=sign;
+    if(!r)
+        r=10;
+    if((r!=10)||(s&&v>=0))
+        s=0;
+    if(r<8)
+        r=0;
+    x64toa(v,buff,r,s); return buff;
+}
+
+
+void zemu_log_stack_uint64(uint64_t val) {
+    #define STACK_SHIFT 20
+    char buf[70];
+    snprintf(buf, sizeof(buf), "%s \n",l2s(val,0));
+    zemu_log(buf);
+    (void) val;
+}
+
+void zemu_log_stack_int64(int64_t val) {
+    #define STACK_SHIFT 20
+    char buf[70];
+    snprintf(buf, sizeof(buf), "%s \n",l2s(val,1));
+    zemu_log(buf);
+    (void) val;
+}
+
+#else
+
+void zemu_log_stack_uint64(__Z_UNUSED uint64_t v) {}
+void zemu_log_stack_int64(__Z_UNUSED int64_t v) {}
+
+
+#endif
+
 
 #if defined(ZEMU_LOGGING) && (defined (TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2))
 void zemu_trace(const char *file, uint32_t line) {

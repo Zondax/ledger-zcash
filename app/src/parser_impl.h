@@ -78,6 +78,17 @@ extern "C" {
     }                                                                                       \
     return parser_ok;                                                                       \
 }
+#define GEN_DEC_READFIX_SIGNED(BITS) parser_error_t _readInt ## BITS(parser_context_t *ctx, int ## BITS ##_t *value)
+#define GEN_DEF_READFIX_SIGNED(BITS) parser_error_t _readInt ## BITS(parser_context_t *ctx, int ## BITS ##_t *value) \
+{                                                                                           \
+    if (value == NULL)  return parser_no_data;                                              \
+    *value = 0;                                                                            \
+    for(int8_t i=0; i < (BITS>>3); i++, ctx->offset++) {                              \
+        if (ctx->offset >= ctx->bufferLen) return parser_unexpected_buffer_end;             \
+        *value += (int ## BITS ##_t) *(ctx->buffer + ctx->offset) << (8*i);               \
+    }                                                                                       \
+    return parser_ok;                                                                       \
+}
 
 GEN_DEC_READFIX_UNSIGNED(8);
 
@@ -86,6 +97,8 @@ GEN_DEC_READFIX_UNSIGNED(16);
 GEN_DEC_READFIX_UNSIGNED(32);
 
 GEN_DEC_READFIX_UNSIGNED(64);
+
+GEN_DEC_READFIX_SIGNED(64);
 
 parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);
 

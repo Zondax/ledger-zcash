@@ -314,7 +314,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         start += OUTPUT_INPUT_LEN;
     }
 
-    uint64_t value_flash = get_valuebalance();
+    uint64_t value_flash = get_totalvalue();
     if (value_flash != 1000){
         return zxerr_unknown;
     }
@@ -464,7 +464,7 @@ zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t
 
 zxerr_t crypto_check_outputs(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen){
     zemu_log_stack("crypto_check_outputs");
-    if(length_t_in_data() + length_spenddata() + length_outputdata() + LENGTH_HASH_DATA != txdatalen){
+    if(start_sighashdata() + LENGTH_HASH_DATA != txdatalen){
         return zxerr_unknown;
     }
 
@@ -509,15 +509,19 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
     pars_ctx.offset = 0;
     pars_ctx.buffer = txdata + start_sighashdata() + INDEX_HASH_VALUEBALANCE;
     pars_ctx.bufferLen = 8;
-    uint64_t v = 0;
-    pars_err = _readUInt64(&pars_ctx, &v);
+    int64_t v = 0;
+    pars_err = _readInt64(&pars_ctx, &v);
     if (pars_err != parser_ok){
         return 0;
     }
 
-    uint64_t valuebalance = get_valuebalance();
-    uint8_t *value_flash = (uint8_t *)&valuebalance;
-    if(MEMCMP(txdata + start_sighashdata() + INDEX_HASH_VALUEBALANCE, value_flash, 8) != 0){
+    int64_t valuebalance = get_valuebalance();
+    int64_t *value_flash = (int64_t *)&valuebalance;
+    if(MEMCMP(&v, value_flash, 8) != 0){
+        zemu_log("The value balance in the transaction is: ");
+        zemu_log_stack_int64(v);
+        zemu_log("The value balance in flash is: ");
+        zemu_log_stack_int64(*value_flash);
         return zxerr_unknown;
     }
     return zxerr_ok;

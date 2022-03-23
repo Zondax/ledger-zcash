@@ -387,7 +387,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
             ZEMU_LOGF(50, "[tx_getItem] type: type_txfee\n")
 
             snprintf(outKey, outKeyLen, "Fee");
-            return parser_sapling_display_value(get_valuebalance(), outVal, outValLen, pageIdx, pageCount);
+            return parser_sapling_display_value(get_totalvalue(), outVal, outValLen, pageIdx, pageCount);
         }
 
         default: {

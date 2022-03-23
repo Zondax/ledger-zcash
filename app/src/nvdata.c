@@ -174,6 +174,7 @@ void transaction_reset() {
     transaction_header.t_out_len = 0;
     transaction_header.t_sign_index = 0;
     transaction_header.total_value = 0;
+    transaction_header.sapling_value = 0;
     transaction_header.state = 0;
     transaction_header.spenddata_extract_index = 0;
     transaction_header.spendlist_len = 0;
@@ -192,6 +193,7 @@ zxerr_t spendlist_append_item(uint32_t p, uint64_t v, uint8_t *div, uint8_t *pkd
         return zxerr_unknown;
     }
 
+    transaction_header.sapling_value += v;
     transaction_header.total_value += v;
     uint32_t path = p | 0x80000000;
 
@@ -245,7 +247,7 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t mem
     if (transaction_header.outputlist_len >= OUTPUT_LIST_SIZE) {
         return zxerr_unknown;
     }
-
+    transaction_header.sapling_value -= v;
     transaction_header.total_value -= v;
 
     output_item_t newitem;
@@ -289,10 +291,15 @@ uint8_t outputlist_len() {
     return transaction_header.outputlist_len;
 }
 
-uint64_t get_valuebalance() {
+// valueBalance is not the total value, but the
+// net value of Sapling Spend transfers minus Output transfers.
+// i.e. the contents of the Sapling value pool
+int64_t get_valuebalance() {
+    return transaction_header.sapling_value;
+}
+uint64_t get_totalvalue() {
     return transaction_header.total_value;
 }
-
 uint8_t get_state() {
     return transaction_header.state;
 }
