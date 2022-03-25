@@ -13,9 +13,7 @@ void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
 
 void nsk_to_nk(const uint8_t *nsk_ptr, uint8_t *nk_ptr);
 
-void get_ivk(const uint8_t *ak_ptr, const uint8_t *nk_ptr, uint8_t *ivk_ptr);
-
-void get_pkd(const uint8_t *ivk_ptr, const uint8_t *diversifier_ptr, uint8_t *pkd);
+void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void group_hash_from_div(const uint8_t *diversifier_ptr, uint8_t *gd);
 
@@ -25,37 +23,29 @@ void get_diversifier_fromlist(const uint8_t *diversifier_list, uint8_t *diversif
 
 bool is_valid_diversifier(const uint8_t *diversifier);
 
-void get_diversifier_list_withstartindex(const uint8_t *sk_ptr, const uint8_t *startindex, uint8_t *diversifier_list);
+void get_diversifier_list_withstartindex(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *startindex, uint8_t *diversifier_list);
 
-void get_default_diversifier_list_withstartindex(const uint8_t *sk_ptr, uint8_t *startindex, uint8_t *diversifier_list);
+void get_default_diversifier_list_withstartindex(const uint8_t *seed_ptr, const uint32_t pos, uint8_t *startindex, uint8_t *diversifier_list);
 
 void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
-void zip32_child(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
-
-void zip32_child_ida(const uint8_t *seed_ptr, uint8_t *dk, uint8_t *ak, uint8_t *nk, const uint32_t pos);
-
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
+
+void zip32_ivk(const uint8_t *ak_ptr, uint8_t *ivk_ptr, const uint32_t pos);
 
 void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);
 
-void zip32_child_proof_key(const uint8_t *seed_ptr, uint8_t *dk_ptr, uint8_t *ak_ptr, uint8_t *nsk_ptr,
-                           const uint32_t pos);
+void zip32_child_proof_key(const uint8_t *seed_ptr, uint8_t *ak_ptr, uint8_t *nsk_ptr, const uint32_t pos);
 
 //Rseed
-void rseed_get_esk(const uint8_t *input, uint8_t *output_ptr);
+void rseed_get_esk_epk(const uint8_t *seed_ptr, uint8_t *d_ptr, uint8_t *output_esk_ptr, uint8_t *output_epk_ptr);
 
 void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
-//Pedersen hash
-void pedersen_hash_73bytes(const uint8_t *input, uint8_t *output_ptr);
-
 //Commitments
-void prepare_input_notecmt(const uint64_t value, const uint8_t *gd, const uint8_t *pkd, uint8_t *output);
+void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
 
-void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr);
-
-void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr);
+void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
 
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 
@@ -66,14 +56,14 @@ void compute_valueBalance_commitment(const uint64_t u64, uint8_t *output);
 //Note encryption
 void blake2b_prf(uint8_t *inputptr, uint8_t *outptr);
 
-void get_epk(uint8_t *esk_ptr, uint8_t *d_ptr, uint8_t *output_ptr);
-
 void ka_to_key(uint8_t *esk_ptr, uint8_t *pkd_ptr, uint8_t *epk_ptr, uint8_t *output_ptr);
 
 void prepare_enccompact_input(uint8_t *d, uint64_t value, uint8_t *rcm, uint8_t memotype, uint8_t *output);
 
 //RedJubjub
 void random_fr(uint8_t *alpha_ptr);
+
+void randomized_secret_from_seed(uint8_t *seed_ptr, uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
 void randomized_secret(uint8_t *sk_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
 

@@ -58,7 +58,6 @@
 
 #define INS_GET_IVK                     0xf0
 #define INS_GET_OVK                     0xf1
-#define INS_GET_IVK_IDA                 0xf2
 #define INS_CRASH_TEST                  0xff
 
 #if defined(APP_TESTING)

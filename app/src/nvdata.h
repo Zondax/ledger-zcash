@@ -45,12 +45,13 @@ typedef struct {
     uint64_t value;
     uint8_t div[DIV_SIZE];
     uint8_t pkd[PKD_SIZE];
-    uint8_t rcm[RCM_SIZE];
+    uint8_t rcmvalue[RCM_SIZE];
     uint8_t alpha[ALPHA_SIZE];
 } spend_item_t;
 
 typedef struct {
     uint64_t total_value;
+    int64_t sapling_value;
     uint8_t state;
     uint8_t t_in_len;
     uint8_t t_out_len;
@@ -107,7 +108,9 @@ void set_state(uint8_t state);
 #define STATE_SIGNED_TX                         6
 
 //metadata flash api
-uint64_t get_valuebalance();
+int64_t get_valuebalance();
+
+uint64_t get_totalvalue();
 
 bool spendlist_more_sign();
 

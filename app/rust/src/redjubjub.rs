@@ -9,6 +9,7 @@ use crate::commitments::bytes_to_extended;
 use crate::constants;
 use crate::constants::*;
 use crate::pedersen::extended_to_bytes;
+use crate::zip32::zip32_child_ask_nsk;
 
 #[inline(never)]
 pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
@@ -93,6 +94,27 @@ pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
     let alpha = unsafe { &mut *alpha_ptr };
     let fr = random_scalar();
     alpha.copy_from_slice(&fr.to_bytes());
+}
+
+#[no_mangle]
+pub extern "C" fn randomized_secret_from_seed(
+    seed_ptr: *const [u8; 32],
+    pos: u32,
+    alpha_ptr: *const [u8; 32],
+    output_ptr: *mut [u8; 32],
+) {
+    c_zemu_log_stack(b"random_sk\x00".as_ref());
+    let mut ask = [0u8;32];
+    let mut nsk = [0u8;32];
+    let alpha = unsafe { &*alpha_ptr };
+    let output = unsafe { &mut *output_ptr };
+
+    zip32_child_ask_nsk(seed_ptr,&mut ask, &mut nsk, pos);
+
+    let mut skfr = Fr::from_bytes(&ask).unwrap();
+    let alphafr = Fr::from_bytes(&alpha).unwrap();
+    skfr += alphafr;
+    output.copy_from_slice(&skfr.to_bytes());
 }
 
 #[no_mangle]

@@ -23,7 +23,7 @@ pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32
 }
 
 #[no_mangle]
-pub extern "C" fn get_epk(
+pub fn get_epk(
     esk_ptr: *const [u8; 32],
     d_ptr: *const [u8; 11],
     output_ptr: *mut [u8; 32],
@@ -34,6 +34,22 @@ pub extern "C" fn get_epk(
     let output = unsafe { &mut *output_ptr };
     let epk = multwithgd(esk, d);
     output.copy_from_slice(&epk);
+}
+
+#[no_mangle]
+pub extern "C" fn rseed_get_esk_epk(rseed_ptr: *const [u8; 32],
+                                    d_ptr: *const [u8; 11],
+                                    output_esk_ptr: *mut [u8; 32],
+                                    output_epk_ptr: *mut [u8; 32]) {
+    let rseed = unsafe { &*rseed_ptr };
+//    let d = unsafe { &*d_ptr };
+    let output_esk = unsafe { &mut *output_esk_ptr };
+    let output_epk = unsafe { &mut *output_epk_ptr };
+    rseed_get_esk(rseed, output_esk);
+
+    //let epk = multwithgd(output_esk, d);
+    get_epk(output_esk,d_ptr,output_epk);
+    //output_epk.copy_from_slice(&epk);
 }
 
 #[no_mangle]

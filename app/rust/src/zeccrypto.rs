@@ -88,7 +88,7 @@ pub extern "C" fn rseed_get_rcm(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8
 }
 
 #[no_mangle]
-pub extern "C" fn rseed_get_esk(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
+pub fn rseed_get_esk(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
     let rseed = unsafe { &*rseed_ptr };
     let output = unsafe { &mut *output_ptr };
     let p = rseed_generate_esk(rseed);

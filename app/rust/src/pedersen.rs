@@ -267,15 +267,6 @@ pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
     extended_to_bytes(&result_point)
 }
 
-//assumption here that ceil(bitsize / 8) == m.len(), so appended with zero bits to fill the bytes
-#[no_mangle]
-pub extern "C" fn pedersen_hash_73bytes(input: *const [u8; 73], output_ptr: *mut [u8; 32]) {
-    let input_msg = unsafe { &*input };
-    let output_msg = unsafe { &mut *output_ptr };
-
-    let h = pedersen_hash_pointbytes(input_msg, 582);
-    output_msg.copy_from_slice(&h);
-}
 
 #[cfg(test)]
 mod tests {
@@ -314,11 +305,10 @@ mod tests {
     #[test]
     fn test_pedersen_ledger2() {
         let msg = [0u8; 73];
-        let output = [0u8; 32];
-        pedersen_hash_73bytes(
-            msg.as_ptr() as *const [u8; 73],
-            output.as_ptr() as *mut [u8; 32],
-        );
+        let mut output = [0u8; 32];
+
+        let h = pedersen_hash_pointbytes(&msg, 582);
+        output.copy_from_slice(&h);
         assert_eq!(
             output,
             [

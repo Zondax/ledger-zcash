@@ -74,6 +74,10 @@ __Z_INLINE void strncpy_s(char *dst, const char *src, size_t dstSize) {
 #define sizeof_field(type, member) sizeof(((type *)0)->member)
 #define array_length(array) (sizeof(array) / sizeof((array)[0]))
 
+void zemu_log_stack_uint64(uint64_t val);
+
+void zemu_log_stack_int64(int64_t val);
+
 void zemu_trace(const char *file, uint32_t line);
 
 #define ZEMU_TRACE() zemu_trace( __func__, __LINE__ );
