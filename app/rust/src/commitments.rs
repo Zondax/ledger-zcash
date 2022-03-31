@@ -6,6 +6,8 @@ use crate::bolos::c_zemu_log_stack;
 use crate::pedersen::*;
 use crate::redjubjub::*;
 use crate::zeccrypto::prf_ock;
+use crate::zip32::group_hash_from_div;
+
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -284,19 +286,19 @@ pub extern "C" fn compute_nullifier(
 
 #[no_mangle]
 pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
-                                              rcm_ptr: *const [u8; 32],
-                                              value: u64,
-                                              g_d_ptr: *const [u8; 32],
-                                              pkd_ptr: *const [u8; 32]) {
-
+                                          rcm_ptr: *const [u8; 32],
+                                          value: u64,
+                                          diversifier_ptr: *const [u8; 11],
+                                          pkd_ptr: *const [u8; 32]) {
     c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
 
-    let gd = unsafe { &*g_d_ptr };
+    let mut gd = [0u8; 32];
+    let diversifier = unsafe { &*diversifier_ptr };
+    group_hash_from_div(diversifier, &mut gd);
+
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
-
-    prepare_and_hash_input_commitment(value, gd, pkd, out);
-
+    prepare_and_hash_input_commitment(value, &gd, pkd, out);
     c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
@@ -312,16 +314,17 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
     value: u64,
-    g_d_ptr: *const [u8; 32],
+    diversifier_ptr: *const [u8; 11],
     pkd_ptr: *const [u8; 32]) {
     c_zemu_log_stack(b"entry_preparenotecommit_full\x00".as_ref());
-    let gd = unsafe { &*g_d_ptr };
+    let mut gd = [0u8; 32];
+    let diversifier = unsafe { &*diversifier_ptr };
+
+    group_hash_from_div(diversifier, &mut gd);
+
     let pkd = unsafe { &*pkd_ptr };
-
     let out = unsafe { &mut *input_ptr };
-
-    prepare_and_hash_input_commitment(value, gd, pkd, out);
-
+    prepare_and_hash_input_commitment(value, &gd, pkd, out);
     c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);

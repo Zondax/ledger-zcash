@@ -645,9 +645,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                group_hash_from_div(item->div, tmp.step5.gd);
-
-                compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN,item->value, tmp.step5.gd, item->pkd);
+                compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN,item->value, item->div, item->pkd);
 
                 nsk_to_nk(tmp.step5.nsk,tmp.step6.nk);
                 uint64_t notepos = 0;
@@ -759,11 +757,9 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
                     return zxerr_unknown;
                 }
 
-                group_hash_from_div(item->div, ncm.step2.gd);
                 rseed_get_rcm(item->rseed,rcm);
 
-                compute_note_commitment(ncm.step4.notecommitment,rcm,item->value, ncm.step2.gd, item->pkd);
-
+                compute_note_commitment(ncm.step4.notecommitment,rcm,item->value, item->div, item->pkd);
                 compute_value_commitment(item->value, item->rcmvalue, ncm.step4.valuecommitment);
 
                 if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){

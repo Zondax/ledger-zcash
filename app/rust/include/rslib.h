@@ -15,8 +15,6 @@ void nsk_to_nk(const uint8_t *nsk_ptr, uint8_t *nk_ptr);
 
 void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
-void group_hash_from_div(const uint8_t *diversifier_ptr, uint8_t *gd);
-
 void get_diversifier_list(const uint8_t *sk_ptr, uint8_t *diversifier_list);
 
 void get_diversifier_fromlist(const uint8_t *diversifier_list, uint8_t *diversifier);
@@ -43,9 +41,9 @@ void rseed_get_esk_epk(const uint8_t *seed_ptr, uint8_t *d_ptr, uint8_t *output_
 void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
 //Commitments
-void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
+void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *diversifier_ptr, const uint8_t *pkd);
 
-void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
+void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd);
 
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 
