@@ -74,6 +74,31 @@ pub fn random_scalar() -> Fr {
     Fr::from_bytes_wide(&t)
 }
 
+#[inline(never)]
+pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
+    c_zemu_log_stack(b"sk_to_pk\x00".as_ref());
+    let sk = unsafe { &*sk_ptr };
+    let pk = unsafe { &mut *pk_ptr };
+    let pubkey = jubjub_sk_to_pk(sk);
+    pk.copy_from_slice(&pubkey);
+}
+
+#[inline(never)]
+pub fn randomized_secret(
+    sk_ptr: *const [u8; 32],
+    alpha_ptr: *const [u8; 32],
+    output_ptr: *mut [u8; 32],
+) {
+    c_zemu_log_stack(b"random_sk\x00".as_ref());
+    let alpha = unsafe { &*alpha_ptr };
+    let sk = unsafe { &*sk_ptr };
+    let output = unsafe { &mut *output_ptr };
+    let mut skfr = Fr::from_bytes(&sk).unwrap();
+    let alphafr = Fr::from_bytes(&alpha).unwrap();
+    skfr += alphafr;
+    output.copy_from_slice(&skfr.to_bytes());
+}
+
 #[no_mangle]
 pub extern "C" fn sign_redjubjub(
     key_ptr: *const [u8; 32],
@@ -118,28 +143,18 @@ pub extern "C" fn randomized_secret_from_seed(
 }
 
 #[no_mangle]
-pub extern "C" fn randomized_secret(
-    sk_ptr: *const [u8; 32],
+pub extern "C" fn get_rk(
+    ask_ptr: *const [u8; 32],
     alpha_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
+    rk_ptr: *mut [u8; 32],
 ) {
     c_zemu_log_stack(b"random_sk\x00".as_ref());
     let alpha = unsafe { &*alpha_ptr };
-    let sk = unsafe { &*sk_ptr };
-    let output = unsafe { &mut *output_ptr };
-    let mut skfr = Fr::from_bytes(&sk).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
-    skfr += alphafr;
-    output.copy_from_slice(&skfr.to_bytes());
-}
-
-#[no_mangle]
-pub extern "C" fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"sk_to_pk\x00".as_ref());
-    let sk = unsafe { &*sk_ptr };
-    let pk = unsafe { &mut *pk_ptr };
-    let pubkey = jubjub_sk_to_pk(sk);
-    pk.copy_from_slice(&pubkey);
+    let ask = unsafe { &*ask_ptr };
+    let rk = unsafe { &mut *rk_ptr };
+    let mut rsk = [0u8; 32];
+    randomized_secret(ask, alpha, &mut rsk);
+    sk_to_pk(&rsk, rk);
 }
 
 #[no_mangle]

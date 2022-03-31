@@ -61,9 +61,7 @@ void random_fr(uint8_t *alpha_ptr);
 
 void randomized_secret_from_seed(uint8_t *seed_ptr, uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
-void randomized_secret(uint8_t *sk_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
-
-void sk_to_pk(uint8_t *sk_ptr, uint8_t *pk_ptr);
+void get_rk(uint8_t *ask_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
 void randomize_pk(uint8_t *alpha_ptr, uint8_t *pk_ptr);
 
