@@ -515,8 +515,8 @@ pub fn get_dk(
 }
 
 
-#[no_mangle]
-pub extern "C" fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
+#[inline(never)]
+pub fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
     let nsk = unsafe { &*nsk_ptr };
     let nk = unsafe { &mut *nk_ptr };
     let tmp_nk = sapling_nsk_to_nk(&nsk);

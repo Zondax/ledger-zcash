@@ -6,8 +6,7 @@ use crate::bolos::c_zemu_log_stack;
 use crate::pedersen::*;
 use crate::redjubjub::*;
 use crate::zeccrypto::prf_ock;
-use crate::zip32::group_hash_from_div;
-
+use crate::zip32::{group_hash_from_div, nsk_to_nk};
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -271,17 +270,19 @@ pub fn bytes_to_extended(m: [u8; 32]) -> ExtendedPoint {
 pub extern "C" fn compute_nullifier(
     ncm_ptr: *const [u8; 32],
     pos: u64,
-    nk_ptr: *const [u8; 32],
+    nsk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
     c_zemu_log_stack(b"compute_nullifier\x00".as_ref());
     let ncm = unsafe { *ncm_ptr };
-    let nk = unsafe { &*nk_ptr };
+    let nsk = unsafe { &*nsk_ptr };
+    let mut nk = [0u8; 32];
+    nsk_to_nk(nsk, &mut nk);
     let scalar = Fr::from(pos);
     let e = bytes_to_extended(ncm);
     let rho = mixed_pedersen(&e, scalar);
     let output = unsafe { &mut *output_ptr };
-    output.copy_from_slice(&prf_nf(nk, &rho));
+    output.copy_from_slice(&prf_nf(&nk, &rho));
 }
 
 #[no_mangle]

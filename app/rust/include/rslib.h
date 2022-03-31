@@ -11,8 +11,6 @@
 //ZIP32 functions
 void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
 
-void nsk_to_nk(const uint8_t *nsk_ptr, uint8_t *nk_ptr);
-
 void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void get_diversifier_list(const uint8_t *sk_ptr, uint8_t *diversifier_list);
@@ -47,7 +45,7 @@ void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,
 
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 
-void compute_nullifier(uint8_t *ncmptr, uint64_t pos, uint8_t *nkptr, uint8_t *outputptr);
+void compute_nullifier(uint8_t *ncmptr, uint64_t pos, const uint8_t *nsk_ptr, uint8_t *outputptr);
 
 void compute_valueBalance_commitment(const uint64_t u64, uint8_t *output);
 
