@@ -1,10 +1,8 @@
-extern crate neon;
-extern crate neon_serde;
+use neon::prelude::*;
 
 use std::path::Path;
 
-use neon::prelude::*;
-
+use neon_serde::ResultExt;
 use zcash_hsmbuilder::errors::Error;
 use zcash_hsmbuilder::*;
 
@@ -16,11 +14,11 @@ use zcash_hsmbuilder::*;
 fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     // First get call arguments
     let arg0 = cx.argument::<JsValue>(0)?;
-    let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0)?;
+    let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
     let output = arg0_value.to_hsm_bytes();
     let js_value;
     if output.is_ok() {
-        js_value = neon_serde::to_value(&mut cx, &output.unwrap())?;
+        js_value = neon_serde::to_value(&mut cx, &output.unwrap()).throw(&mut cx)?;
         Ok(js_value)
     } else {
         cx.throw_error(output.err().unwrap().to_string())
@@ -77,7 +75,7 @@ declare_types! {
 
         method add_transparent_input(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0)?;
+            let arg0_value :TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
             let value;
             {
             let mut this = cx.this();
@@ -96,7 +94,7 @@ declare_types! {
 
         method add_transparent_output(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)?;
+            let arg0_value :TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
             let value;
             {
             let mut this = cx.this();
@@ -115,7 +113,7 @@ declare_types! {
 
         method add_sapling_spend(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0)?;
+            let arg0_value :SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
             let value;
             {
             let mut this = cx.this();
@@ -134,7 +132,7 @@ declare_types! {
 
         method add_sapling_output(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)?;
+            let arg0_value :OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
             let value;
             {
             let mut this = cx.this();
@@ -164,7 +162,7 @@ declare_types! {
             value = thishandler.build(&spendpath, &outputpath);
             }
             if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap())?;
+                let js_value = neon_serde::to_value(&mut cx, &value.unwrap()).throw(&mut cx)?;
                 Ok(js_value)
             }else{
                 cx.throw_error(value.err().unwrap().to_string())
@@ -173,7 +171,7 @@ declare_types! {
 
         method add_signatures(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransactionSignatures = neon_serde::from_value(&mut cx, arg0)?;
+            let arg0_value :TransactionSignatures = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
             let value;
             {
             let mut this = cx.this();
@@ -200,7 +198,7 @@ declare_types! {
             value = thishandler.finalize();
             }
             if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap())?;
+                let js_value = neon_serde::to_value(&mut cx, &value.unwrap()).throw(&mut cx)?;
                 Ok(js_value)
             }else{
                 cx.throw_error(value.err().unwrap().to_string())
