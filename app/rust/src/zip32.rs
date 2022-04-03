@@ -489,6 +489,14 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
     result
 }
 
+#[inline(never)]
+pub fn group_hash_from_div(diversifier_ptr: *const [u8; 11], gd_ptr: *mut [u8; 32]) {
+    let diversifier = unsafe { &*diversifier_ptr };
+    let gd = unsafe { &mut *gd_ptr };
+    let gd_tmp = pkd_group_hash(diversifier);
+    gd.copy_from_slice(&gd_tmp);
+}
+
 #[no_mangle]
 pub fn get_dk(
     seed_ptr: *const [u8; 32],
@@ -507,8 +515,8 @@ pub fn get_dk(
 }
 
 
-#[no_mangle]
-pub extern "C" fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
+#[inline(never)]
+pub fn nsk_to_nk(nsk_ptr: *const [u8; 32], nk_ptr: *mut [u8; 32]) {
     let nsk = unsafe { &*nsk_ptr };
     let nk = unsafe { &mut *nk_ptr };
     let tmp_nk = sapling_nsk_to_nk(&nsk);
@@ -680,14 +688,6 @@ pub extern "C" fn get_pkd(
 
     let tmp_pkd = default_pkd(ivk_ptr, &diversifier);
     pkd.copy_from_slice(&tmp_pkd)
-}
-
-#[no_mangle]
-pub extern "C" fn group_hash_from_div(diversifier_ptr: *const [u8; 11], gd_ptr: *mut [u8; 32]) {
-    let diversifier = unsafe { &*diversifier_ptr };
-    let gd = unsafe { &mut *gd_ptr };
-    let gd_tmp = pkd_group_hash(diversifier);
-    gd.copy_from_slice(&gd_tmp);
 }
 
 #[cfg(test)]

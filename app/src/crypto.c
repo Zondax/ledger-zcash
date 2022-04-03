@@ -570,17 +570,6 @@ typedef struct {
             uint8_t cv[VALUE_COMMITMENT_SIZE];
             uint8_t nsk[NSK_SIZE];
         } step4;
-
-        struct {
-            uint8_t gd[GD_SIZE];
-            uint8_t nsk[NSK_SIZE];
-        } step5;
-
-        struct {
-            uint8_t gd[GD_SIZE];
-            uint8_t nk[NSK_SIZE];
-        } step6;
-
     };
 } tmp_checkspend;
 
@@ -627,8 +616,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 // we later need nsk
                 zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk, item->path);
 
-                randomized_secret(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step2.ask);
-                sk_to_pk(tmp.step2.ask, tmp.step3.rk);
+                get_rk(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step3.rk);
 
                 if(MEMCMP(tmp.step3.rk, start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,PUB_KEY_SIZE) != 0){
                     CLOSE_TRY;
@@ -645,11 +633,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                     return zxerr_unknown;
                 }
 
-                group_hash_from_div(item->div, tmp.step5.gd);
+                compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN,item->value, item->div, item->pkd);
 
-                compute_note_commitment_fullpoint(tmp_buf->pedersen_hash, start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN,item->value, tmp.step5.gd, item->pkd);
-
-                nsk_to_nk(tmp.step5.nsk,tmp.step6.nk);
                 uint64_t notepos = 0;
                 {
                     parser_context_t pars_ctx;
@@ -664,7 +649,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                         return zxerr_unknown;
                     }
                 }
-                compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step6.nk, tmp_buf->nf);
+                compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step4.nsk, tmp_buf->nf);
                 if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
                     //maybe spendlist_reset();
                     zemu_log_stack("Nullifier is bad\n");
@@ -759,11 +744,9 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
                     return zxerr_unknown;
                 }
 
-                group_hash_from_div(item->div, ncm.step2.gd);
                 rseed_get_rcm(item->rseed,rcm);
 
-                compute_note_commitment(ncm.step4.notecommitment,rcm,item->value, ncm.step2.gd, item->pkd);
-
+                compute_note_commitment(ncm.step4.notecommitment,rcm,item->value, item->div, item->pkd);
                 compute_value_commitment(item->value, item->rcmvalue, ncm.step4.valuecommitment);
 
                 if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){

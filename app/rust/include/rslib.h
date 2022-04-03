@@ -11,11 +11,7 @@
 //ZIP32 functions
 void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
 
-void nsk_to_nk(const uint8_t *nsk_ptr, uint8_t *nk_ptr);
-
 void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
-
-void group_hash_from_div(const uint8_t *diversifier_ptr, uint8_t *gd);
 
 void get_diversifier_list(const uint8_t *sk_ptr, uint8_t *diversifier_list);
 
@@ -43,13 +39,13 @@ void rseed_get_esk_epk(const uint8_t *seed_ptr, uint8_t *d_ptr, uint8_t *output_
 void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
 //Commitments
-void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
+void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *diversifier_ptr, const uint8_t *pkd);
 
-void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value,const uint8_t *gd, const uint8_t *pkd);
+void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd);
 
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 
-void compute_nullifier(uint8_t *ncmptr, uint64_t pos, uint8_t *nkptr, uint8_t *outputptr);
+void compute_nullifier(uint8_t *ncmptr, uint64_t pos, const uint8_t *nsk_ptr, uint8_t *outputptr);
 
 void compute_valueBalance_commitment(const uint64_t u64, uint8_t *output);
 
@@ -65,9 +61,7 @@ void random_fr(uint8_t *alpha_ptr);
 
 void randomized_secret_from_seed(uint8_t *seed_ptr, uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
-void randomized_secret(uint8_t *sk_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
-
-void sk_to_pk(uint8_t *sk_ptr, uint8_t *pk_ptr);
+void get_rk(uint8_t *ask_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
 void randomize_pk(uint8_t *alpha_ptr, uint8_t *pk_ptr);
 
