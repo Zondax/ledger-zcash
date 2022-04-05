@@ -27,6 +27,8 @@ void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
+void zip32_nsk_from_seed(const uint8_t *seed_ptr, uint8_t *nsk);
+
 void zip32_ivk(const uint8_t *ak_ptr, uint8_t *ivk_ptr, const uint32_t pos);
 
 void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);

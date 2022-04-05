@@ -424,6 +424,16 @@ export default class ZCashApp {
     return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(processOVKResponse, processErrorResponse);
   }
 
+  async getnullifier(path, pos, cm) {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+//    buf.writeUInt32LE(pos, 4);
+//    buf.writeUInt32LE(cm, 12);
+    return this.transport
+      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, pos, cm]), [0x9000])
+      .then(processNullifierResponse, processErrorResponse);
+  }
+
   async extractspendsig() {
     return this.transport.send(CLA, INS.EXTRACTSPENDSIG, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(processSIGResponse, processErrorResponse);
   }

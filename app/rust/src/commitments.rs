@@ -247,6 +247,7 @@ pub fn mixed_pedersen(e: &ExtendedPoint, scalar: Fr) -> [u8; 32] {
 
 #[inline(never)]
 pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
+    // BLAKE2s Personalization for PRF^nf = BLAKE2s(nk | rho)
     pub const CRH_NF: &[u8; 8] = b"Zcash_nf";
     let h = Blake2sParams::new()
         .hash_length(32)

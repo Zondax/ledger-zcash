@@ -416,6 +416,20 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
 }
 
 #[inline(never)]
+pub fn master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
+
+    let tmp = master_spending_key_zip32(seed); //64
+    let mut key = [0u8; 32]; //32
+
+    key.copy_from_slice(&tmp[..32]);
+
+    let nsk = Fr::from_bytes_wide(&prf_expand(&key, &[0x01]));
+    let mut result = [0u8; 32];
+    result.copy_from_slice(&nsk.to_bytes());
+    result
+}
+
+#[inline(never)]
 pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 160] {
     //ASSERT: len(path) == len(harden)
 
@@ -612,6 +626,19 @@ pub extern "C" fn zip32_child_ask_nsk(
     let k = derive_zip32_child_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet;
     ask.copy_from_slice(&k[32..64]);
     nsk.copy_from_slice(&k[64..96]);
+}
+
+#[no_mangle]
+pub extern "C" fn zip32_nsk_from_seed(
+    seed_ptr: *const [u8; 32],
+    nsk_ptr: *mut [u8; 32],
+) {
+    let seed = unsafe { &*seed_ptr };
+    let nsk = unsafe { &mut *nsk_ptr };
+
+    let k = master_nsk_from_seed(seed);
+
+    nsk.copy_from_slice(&k);
 }
 
 #[no_mangle]

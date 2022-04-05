@@ -1324,6 +1324,51 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     return zxerr_ok;
 }
 
+typedef struct {
+    uint8_t zip32_seed[ZIP32_SEED_SIZE];
+    uint8_t nsk[NSK_SIZE];
+} tmp_sapling_nullifier;
+
+// handleGetNullifier
+zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint64_t notepos, uint8_t *cm,
+                                 uint16_t *replyLen){
+    MEMZERO(buffer, bufferLen);
+
+    zemu_log_stack("crypto_nullifier_sapling");
+
+    uint8_t *nf_out = (uint8_t *) buffer;
+    MEMZERO(nf_out, bufferLen);
+
+    tmp_sapling_nullifier tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_nullifier));
+
+    BEGIN_TRY
+    {
+        TRY
+        {
+            crypto_fillSaplingSeed(tmp.zip32_seed);
+            CHECK_APP_CANARY();
+
+            // nk can be computed from nsk which itself can be computed from the seed.
+            zip32_nsk_from_seed(tmp.zip32_seed,tmp.nsk);
+
+            compute_nullifier(cm, notepos, tmp.nsk,nf_out);
+
+            MEMZERO(&tmp,sizeof(tmp));
+            CHECK_APP_CANARY();
+        }
+        FINALLY
+        {
+            MEMZERO(&tmp,sizeof(tmp));
+        }
+    }
+    END_TRY;
+    CHECK_APP_CANARY();
+    *replyLen = NULLIFIER_SIZE;
+    return zxerr_ok;
+}
+
+
 // handleGetDiversifierList
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");

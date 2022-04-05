@@ -34,6 +34,7 @@
 
 #define DATA_LENGTH_GET_IVK             4   //ZIP32-path
 #define DATA_LENGTH_GET_OVK             4   //ZIP32-path
+#define DATA_LENGTH_GET_NF              42  // ZIP32-path + 8-byte note position + 32-byte note commitment
 #define DATA_LENGTH_GET_ADDR_SAPLING    4   //ZIP32-path
 #define DATA_LENGTH_GET_DIV_LIST        15   //ZIP32-path + 11-byte index
 #define DATA_LENGTH_GET_ADDR_DIV        15   //ZIP32-path + 11-byte div
@@ -58,6 +59,7 @@
 
 #define INS_GET_IVK                     0xf0
 #define INS_GET_OVK                     0xf1
+#define INS_GET_NF                      0xf2
 #define INS_CRASH_TEST                  0xff
 
 #if defined(APP_TESTING)
