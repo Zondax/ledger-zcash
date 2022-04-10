@@ -56,6 +56,12 @@ zxerr_t key_getItem(int8_t displayIdx,
                     array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
                     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                     return zxerr_ok;
+                case nf:
+                    zemu_log_stack("Send NF?");
+                    snprintf(outKey, outKeyLen, "Send NF?");
+                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                    return zxerr_ok;
                 default:
                     return zxerr_unknown;
             }

@@ -86,7 +86,7 @@ bool h_paging_can_increase() {
 
     // passed page count, go to next index
     if (viewdata.itemCount > 0 && viewdata.itemIdx < (viewdata.itemCount - 1 + INCLUDE_ACTIONS_COUNT)) {
-        zemu_log_stack("h_paging_can_increase");
+        zemu_log_stack("h_paging_can_increase (passed page count)");
         return true;
     }
 

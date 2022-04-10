@@ -277,20 +277,25 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
+        zemu_log("Too short!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF) {
+        ZEMU_LOGF(100, "rx is %d\n", rx);
+        zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF) {
+        zemu_log("Wrong offset data length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     if (!requireConfirmation) {
+        zemu_log("Confirmation required!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -300,6 +305,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     if (prserr != parser_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         *tx = 0;
+        zemu_log("Failed to get seed!\n");
         THROW(APDU_CODE_DATA_INVALID);
     }
 
@@ -315,6 +321,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
 
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
 
+    key_state.kind = nf;
     uint16_t replyLen = 0;
 
     // this needs to get Full viewing key = (ak, nk, ovk) and note position, to then compute nullifier
@@ -322,6 +329,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, notepos,
                                            cm, &replyLen);
     if (err != zxerr_ok) {
+        zemu_log("Failed to get nullifier!\n");
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -503,14 +511,17 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
+        zemu_log_stack("too short");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV) {
+        zemu_log_stack("wrong length");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV) {
+        zemu_log_stack("wrong value at OFFSET_DATA_LEN");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 

@@ -483,7 +483,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
         update_exk_zip32(&key, &mut expkey);
     }
 
-    // Get ak from ask ... call ask_to_ak?
+    // Get ak from ask
     let mut ak = [0u8; 32];
     bolos::sdk_jubjub_scalarmult_spending_base(&mut ak, &ask.to_bytes());
 

@@ -774,6 +774,47 @@ describe('Zcashtool tests', function () {
     }
   })
 
+
+  test.each(models)('Get nullifier', async function (m) {
+
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      const cm = Buffer.from(
+          [33, 201, 70, 152, 202, 50, 75, 76, 186, 206, 41, 29,
+            39, 171, 182, 138, 10, 175, 39, 55, 220, 69, 86, 84, 28,
+            127, 205, 232, 206, 17, 221, 232])
+
+      //const pos = Uint8Array.from([2578461368])
+      const pos = Uint8Array.from([184,50,176,153,0,0,0,0])
+      const nfreq = app.getnullifier(1000, pos,cm)
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+
+      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-nullifier`, clickSchedule)
+
+      const nf = await nfreq
+
+      console.log(nf)
+      expect(nf.return_code).toEqual(0x9000)
+
+      const expected_nf = Buffer.from(
+          [37, 241, 242, 207, 94, 44, 43, 195, 29, 7, 182, 111,
+            77, 84, 240, 144, 173, 137, 177, 152, 137, 63, 18, 173,
+            174, 68, 125, 223, 132, 226, 20, 90])
+
+      const nfRaw = nf.nf_raw
+      expect(expected_nf).toEqual(nfRaw)
+    } finally {
+      await sim.close()
+    }
+  })
+
+
+
   test.each(models)('make a tx with 1 transparent output 1 spend 2 shielded outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {

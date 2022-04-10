@@ -1453,11 +1453,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
             crypto_fillSaplingSeed(tmp.zip32_seed);
             CHECK_APP_CANARY();
 
-
-            zemu_log_stack("get_pkd");
-
             get_pkd(tmp.zip32_seed, p, out->diversifier, out->pkd);
-
 
             CHECK_APP_CANARY();
             MEMZERO(tmp.zip32_seed, sizeof_field(tmp_sapling_addr_s, zip32_seed));
