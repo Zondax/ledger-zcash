@@ -67,3 +67,12 @@ pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
 //68
 pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
 pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
+
+pub const DIV_SIZE:             usize = 11;
+pub const DIV_DEFAULT_LIST_LEN: usize = 4;
+pub const MAX_SIZE_BUF_ADDR:    usize = 143;
+
+pub const FIRSTVALUE:   u32 = 32 ^ 0x8000_0000;
+pub const COIN_TYPE:    u32 = 133 ^ 0x8000_0000;
+
+pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk";

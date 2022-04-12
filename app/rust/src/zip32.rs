@@ -16,7 +16,20 @@ use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use crate::commitments::bytes_to_extended;
 use crate::pedersen::extended_to_bytes;
-use crate::{bolos, constants};
+use crate::{bolos, c_check_app_canary, constants};
+
+
+extern "C" {
+    fn zemu_log_stack(buffer: *const u8);
+}
+
+#[cfg(not(test))]
+pub fn c_zemu_log_stack(s: &[u8]) {
+    unsafe { zemu_log_stack(s.as_ptr()) }
+}
+
+#[cfg(test)]
+pub fn c_zemu_log_stack(_s: &[u8]) {}
 
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
@@ -52,12 +65,11 @@ pub fn sapling_nsk_to_nk(nsk: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
-    pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk"; //move to constants
+    c_zemu_log_stack(b"aknk_to_ivk\x00\n".as_ref());
 
-    // blake2s CRH_IVK_PERSONALIZATION || ak || nk
     let h = Blake2sParams::new()
         .hash_length(32)
-        .personal(CRH_IVK_PERSONALIZATION)
+        .personal(constants::CRH_IVK_PERSONALIZATION)
         .to_state()
         .update(ak)
         .update(nk)
@@ -248,6 +260,7 @@ pub fn multwithgd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn mul_by_cof(p: &mut ExtendedPoint) {
+    c_zemu_log_stack(b"mul_by_cof\x00\n".as_ref());
     *p = p.mul_by_cofactor();
 }
 
@@ -259,12 +272,15 @@ pub fn niels_multbits(p: &mut ExtendedPoint, b: &[u8; 32]) {
 #[inline(never)]
 pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let h = bolos::blake2s_diversification(d);
-
+    c_zemu_log_stack(b"default_pkd\x00\n".as_ref());
     let mut y = bytes_to_extended(h);
+    c_zemu_log_stack(b"finished bytes_to_extended\x00".as_ref());
     mul_by_cof(&mut y);
 
     niels_multbits(&mut y, ivk);
-    extended_to_bytes(&y)
+    let tmp = extended_to_bytes(&y);
+    c_zemu_log_stack(b"finished extended_to_bytes\x00".as_ref());
+    tmp
 }
 
 #[inline(never)]
@@ -432,7 +448,7 @@ pub fn master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
 #[inline(never)]
 pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 160] {
     //ASSERT: len(path) == len(harden)
-
+    c_zemu_log_stack(b"derive_zip32_child start\x00\n".as_ref());
     let mut tmp = master_spending_key_zip32(seed); //64
     let mut key = [0u8; 32]; //32
     let mut chain = [0u8; 32]; //32
@@ -500,6 +516,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8;
     result[64..96].copy_from_slice(&nsk.to_bytes());
     result[96..128].copy_from_slice(&ak);
     result[128..160].copy_from_slice(&nk.to_bytes());
+    c_check_app_canary();
     result
 }
 
@@ -673,6 +690,7 @@ pub extern "C" fn get_default_diversifier_list_withstartindex(
     start_index: *mut [u8; 11],
     diversifier_list_ptr: *mut [u8; 44],
 ) {
+    c_zemu_log_stack(b"get_default_divlist_withstartidx\x00\n".as_ref());
     let mut dk =  [0u8; 32];
     let seed = unsafe { &*seed_ptr };
     let start = unsafe { &mut *start_index };
@@ -680,6 +698,59 @@ pub extern "C" fn get_default_diversifier_list_withstartindex(
     get_dk(seed,&mut dk,pos);
     ff1aes_list_with_startingindex_default(&mut dk, start, diversifier);
 }
+
+#[no_mangle]
+pub extern "C" fn get_pkd_from_seed(
+    seed_ptr: *const [u8; 32],
+    pos: u32,
+    start_index: *mut [u8; 11],
+    diversifier_ptr: *mut [u8; 11],
+    pkd_ptr: *mut [u8; 32])
+{
+    c_zemu_log_stack(b"get_pkd_from_seed\x00\n".as_ref());
+    let seed = unsafe { &*seed_ptr };
+    let start = unsafe { &mut *start_index };
+    let div = unsafe {&mut *diversifier_ptr};
+
+    let mut div_list = [0u8;constants::DIV_SIZE*constants::DIV_DEFAULT_LIST_LEN];
+    let mut good_diversifier = [0u8;constants::DIV_SIZE];
+
+    let keys = derive_zip32_child_fromseedandpath(&seed,
+                                                  &[constants::FIRSTVALUE,
+                                                      constants::COIN_TYPE, pos]);
+
+    let mut found = false;
+
+    while !found {
+        c_zemu_log_stack(b"get_pkd_from_default_diversifier_list_from_start_index\x00\n".as_ref());
+        ff1aes_list_with_startingindex_default(&mut keys[0..32].try_into().unwrap(),
+                                               start, &mut div_list);
+        c_zemu_log_stack(b"Got diversifier list\x00\n".as_ref());
+        for i in 0..constants::DIV_DEFAULT_LIST_LEN {
+            if !found && is_valid_diversifier(&div_list[i*constants::DIV_SIZE..(i+1)*constants::DIV_SIZE].try_into().unwrap()) {
+                found = true;
+                good_diversifier = div_list[i*constants::DIV_SIZE..(i+1)*constants::DIV_SIZE].try_into().unwrap();
+                c_zemu_log_stack(b"Found valid one\x00\n".as_ref());
+            }
+        }
+    }
+    if is_valid_diversifier(&good_diversifier) {
+        c_zemu_log_stack(b"good_diversifier valid \x00\n".as_ref());
+    }
+    else { c_zemu_log_stack(b"good_diversifier invalid\x00\n".as_ref()); }
+    let  ivk = aknk_to_ivk(&keys[96..128].try_into().unwrap(),
+                           &keys[128..160].try_into().unwrap());
+
+    let pkd = unsafe { &mut *pkd_ptr };
+    let tmp_pkd = default_pkd(&ivk, &good_diversifier);
+    c_zemu_log_stack(b"Finished default_pkd\x00\n".as_ref());
+    pkd.copy_from_slice(&tmp_pkd);
+    div.copy_from_slice(&good_diversifier);
+    c_zemu_log_stack(b"Finished copy from slice\x00\n".as_ref());
+
+}
+
+
 
 #[no_mangle]
 pub extern "C" fn is_valid_diversifier(div_ptr: *const [u8; 11]) -> bool {
@@ -710,7 +781,6 @@ pub extern "C" fn get_pkd(
     let ivk_ptr = { &mut ivk };
     let diversifier = unsafe { &*diversifier_ptr };
     let pkd = unsafe { &mut *pkd_ptr };
-
     zip32_ivk(seed_ptr,ivk_ptr, pos);
 
     let tmp_pkd = default_pkd(ivk_ptr, &diversifier);

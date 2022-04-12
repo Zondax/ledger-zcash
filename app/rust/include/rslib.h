@@ -13,6 +13,8 @@ void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
 
 void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
+void get_pkd_from_seed(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *start_index, uint8_t *diversifier_ptr, uint8_t *pkd);
+
 void get_diversifier_list(const uint8_t *sk_ptr, uint8_t *diversifier_list);
 
 void get_diversifier_fromlist(const uint8_t *diversifier_list, uint8_t *diversifier);

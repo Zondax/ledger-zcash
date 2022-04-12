@@ -164,6 +164,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
 }
 
 void crypto_fillSaplingSeed(uint8_t *sk) {
+    zemu_log_stack("crypto_fillSaplingSeed");
     // Get seed from Ed25519
     MEMZERO(sk, ED25519_SK_SIZE);
     //fixme: make sure this path is not used somewhere else for signing
@@ -1251,7 +1252,7 @@ zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uin
 
 typedef struct {
             uint8_t zip32_seed[ZIP32_SEED_SIZE];
-            uint8_t sk[ED25519_SK_SIZE]; // Removing this causes a segfault... strange...
+            uint8_t dummy; // Removing this causes a segfault... strange...
 } tmp_sapling_addr_s;
 
 // handleGetKeyIVK
@@ -1419,7 +1420,6 @@ typedef struct {
         struct {
             uint8_t dummy[ADDR_LEN_SAPLING];
             uint8_t startindex[DIV_INDEX_SIZE];
-            uint8_t diversifierlist[DIV_DEFAULT_LIST_LEN * DIV_SIZE];
         };
     };
 } tmp_buf_addr_s;
@@ -1432,7 +1432,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     MEMZERO(buffer, bufferLen);
 
-    zemu_log_stack("crypto_fillAddress_sapling");
+    zemu_log_stack("crypto_fillAddress_with_diversifier_sapling");
 
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
@@ -1465,12 +1465,15 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
         }
     }
     END_TRY;
-
-    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
+    //zxerr_t berr =
+    bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
                           1);
+    CHECK_APP_CANARY();
+    zemu_log_stack("Returned ok");
+
     if(berr != zxerr_ok){
         MEMZERO(out, bufferLen);
         MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
@@ -1478,8 +1481,11 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
         return berr;
     }
     CHECK_APP_CANARY();
+    zemu_log_stack("About to get length");
 
     *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) + strlen((const char *) out->address_bech32);
+    zemu_log_stack("Got length");
+
     return zxerr_ok;
 }
 
@@ -1507,8 +1513,16 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             crypto_fillSaplingSeed(tmp.zip32_seed);
             CHECK_APP_CANARY();
 
+            get_pkd_from_seed(tmp.zip32_seed, p, out->startindex, out->diversifier, out->pkd);
+
+            // TODO: clear buffer memory
+            // MEMZERO(out + constants::DIV_SIZE, constants::MAX_SIZE_BUF_ADDR - constants::DIV_SIZE);
+            // TODO: add CLOSE_TRY if the diversifier was not valid?
+            /*
             bool found = false;
             while(!found){
+                // problem: this function calls derive_zip32_child_fromseedandpath ans so does get_pkd
+                // not efficient and causing overflow
                 get_default_diversifier_list_withstartindex(tmp.zip32_seed, p, out->startindex, out->diversifierlist);
                 uint8_t *ptr = out->diversifierlist;
                 for(uint8_t i = 0; i < DIV_DEFAULT_LIST_LEN; i++, ptr += DIV_SIZE){
@@ -1528,7 +1542,8 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
             zemu_log_stack("get_pkd");
 
             get_pkd(tmp.zip32_seed, p, out->diversifier, out->pkd);
-
+             */
+            MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
             CHECK_APP_CANARY();
             MEMZERO(tmp.zip32_seed, sizeof_field(tmp_sapling_addr_s, zip32_seed));
         }
@@ -1539,6 +1554,8 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
         }
     }
     END_TRY;
+    zemu_log_stack("Got raw address");
+    CHECK_APP_CANARY();
 
     zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
                           BECH32_HRP,
@@ -1546,6 +1563,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                           sizeof_field(tmp_buf_addr_s, address_raw),
                           1);
     if(berr != zxerr_ok){
+        zemu_log_stack("Error getting BECH32 address");
         MEMZERO(out, bufferLen);
         MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         *replyLen = 0;

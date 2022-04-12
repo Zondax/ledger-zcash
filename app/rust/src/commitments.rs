@@ -263,7 +263,6 @@ pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
 #[inline(never)]
 pub fn bytes_to_extended(m: [u8; 32]) -> ExtendedPoint {
     c_zemu_log_stack(b"bytes_to_extended\x00".as_ref());
-
     ExtendedPoint::from(AffinePoint::from_bytes(m).unwrap())
 }
 

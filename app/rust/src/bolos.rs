@@ -69,9 +69,11 @@ extern "C" {
 
 #[cfg(not(test))]
 pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
-    c_zemu_log_stack(b"scalarmult in sdk\x00".as_ref());
+    c_zemu_log_stack(b"scalarmult spending base in sdk\x00".as_ref());
     unsafe {
         c_jubjub_spending_base_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
+        c_zemu_log_stack(b"after scalarmult spending base\x00".as_ref());
+        check_app_canary();
     }
 }
 
