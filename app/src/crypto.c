@@ -1432,7 +1432,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     MEMZERO(buffer, bufferLen);
 
-    zemu_log_stack("crypto_fillAddress_with_diversifier_sapling");
+    zemu_log_stack("crypto_fillAddress_with_div_sapling");
 
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
@@ -1465,8 +1465,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
         }
     }
     END_TRY;
-    //zxerr_t berr =
-    bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
+    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
@@ -1515,34 +1514,6 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
 
             get_pkd_from_seed(tmp.zip32_seed, p, out->startindex, out->diversifier, out->pkd);
 
-            // TODO: clear buffer memory
-            // MEMZERO(out + constants::DIV_SIZE, constants::MAX_SIZE_BUF_ADDR - constants::DIV_SIZE);
-            // TODO: add CLOSE_TRY if the diversifier was not valid?
-            /*
-            bool found = false;
-            while(!found){
-                // problem: this function calls derive_zip32_child_fromseedandpath ans so does get_pkd
-                // not efficient and causing overflow
-                get_default_diversifier_list_withstartindex(tmp.zip32_seed, p, out->startindex, out->diversifierlist);
-                uint8_t *ptr = out->diversifierlist;
-                for(uint8_t i = 0; i < DIV_DEFAULT_LIST_LEN; i++, ptr += DIV_SIZE){
-                    if(!found && is_valid_diversifier(ptr)){
-                        MEMCPY(out->diversifier, ptr, DIV_SIZE);
-                        MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
-                        found = true;
-                    }
-                }
-            }
-            CHECK_APP_CANARY();
-            if(!is_valid_diversifier(out->diversifier)){
-                *replyLen = 0;
-                CLOSE_TRY;
-                return zxerr_unknown;
-            }
-            zemu_log_stack("get_pkd");
-
-            get_pkd(tmp.zip32_seed, p, out->diversifier, out->pkd);
-             */
             MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
             CHECK_APP_CANARY();
             MEMZERO(tmp.zip32_seed, sizeof_field(tmp_sapling_addr_s, zip32_seed));

@@ -53,7 +53,5 @@ zxerr_t bech32EncodeFromBytes(char *out,
     if (err == 0) {
         return zxerr_encoding_failed;
     }
-    zemu_log_stack("All ok");
-    CHECK_APP_CANARY();
     return zxerr_ok;
 }

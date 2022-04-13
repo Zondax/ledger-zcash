@@ -27,9 +27,9 @@
 #define ASK_SIZE                32
 #define DK_SIZE                 32
 #define NK_SIZE                 32
-#define ED25519_SK_SIZE         32
+#define ED25519_SK_SIZE         64
 #define IVK_SIZE                32
-#define ZIP32_SEED_SIZE         32
+#define ZIP32_SEED_SIZE         64
 #define ZIP32_PATH_SIZE         4
 #define RND_SIZE                32
 #define NULLIFIER_SIZE          32
