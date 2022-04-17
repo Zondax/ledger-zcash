@@ -18,7 +18,7 @@
   "dependencies": {
     "@zondax/ledger-zcash": "link:../js",
     "@zondax/zcashtools": "link:../zcashtools/neon/native",
-    "@zondax/zemu": "^0.27.4"
+    "@zondax/zemu": "^0.29.0"
   },
   "devDependencies": {
     "@types/jest": "^27.4.0",

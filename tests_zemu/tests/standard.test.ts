@@ -32,10 +32,12 @@ beforeAll(async () => {
 })
 
 describe('Standard', function () {
+  // eslint-disable-next-line jest/expect-expect
   test.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
+      await sim.dumpEvents()
     } finally {
       await sim.close()
     }
@@ -45,7 +47,7 @@ describe('Standard', function () {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])
+      expect(await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])).toEqual(true)
     } finally {
       await sim.close()
     }
@@ -129,6 +131,7 @@ describe('Standard', function () {
       const app = new ZCashApp(sim.getTransport())
 
       const addr = await app.getAddressAndPubKey(1000)
+
       console.log(addr)
       expect(addr.return_code).toEqual(0x9000)
 
