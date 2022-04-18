@@ -99,3 +99,5 @@ app/glyphs/glyphs.h
 .vscode/settings.json
 .vscode/targets.log
 /tests_zemu/yarn.lock
+
+node_modules/.yarn-integrity
