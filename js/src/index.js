@@ -30,6 +30,7 @@ import {
   SAPLING_ADDR_LEN,
   SAPLING_IVK_LEN,
   SAPLING_OVK_LEN,
+  SAPLING_NF_LEN,
   SAPLING_PGK_LEN,
   SAPLING_RND_LEN,
 } from "./common";
@@ -79,6 +80,20 @@ function processDivListResponse(response) {
   };
 }
 
+function processNullifierResponse(response) {
+  const partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+  const nfraw = Buffer.from(partialResponse.slice(0, SAPLING_NF_LEN));
+
+  return {
+    nf_raw: nfraw,
+    return_code: returnCode,
+    error_message: errorCodeToString(returnCode),
+  };
+}
 
 function processIVKResponse(response) {
   let partialResponse = response;
@@ -422,6 +437,14 @@ export default class ZCashApp {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
     return this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(processOVKResponse, processErrorResponse);
+  }
+
+  async getnullifier(path, pos, cm) {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport
+      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, pos, cm]), [0x9000])
+      .then(processNullifierResponse, processErrorResponse);
   }
 
   async extractspendsig() {

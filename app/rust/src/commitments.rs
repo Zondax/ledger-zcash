@@ -6,7 +6,7 @@ use crate::bolos::c_zemu_log_stack;
 use crate::pedersen::*;
 use crate::redjubjub::*;
 use crate::zeccrypto::prf_ock;
-use crate::zip32::{group_hash_from_div, nsk_to_nk};
+use crate::zip32::{group_hash_from_div, nsk_to_nk,zip32_nsk_from_seed};
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -247,6 +247,7 @@ pub fn mixed_pedersen(e: &ExtendedPoint, scalar: Fr) -> [u8; 32] {
 
 #[inline(never)]
 pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
+    // BLAKE2s Personalization for PRF^nf = BLAKE2s(nk | rho)
     pub const CRH_NF: &[u8; 8] = b"Zcash_nf";
     let h = Blake2sParams::new()
         .hash_length(32)
@@ -262,7 +263,6 @@ pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
 #[inline(never)]
 pub fn bytes_to_extended(m: [u8; 32]) -> ExtendedPoint {
     c_zemu_log_stack(b"bytes_to_extended\x00".as_ref());
-
     ExtendedPoint::from(AffinePoint::from_bytes(m).unwrap())
 }
 
@@ -367,10 +367,15 @@ mod tests {
     #[test]
     fn test_ncm_c() {
         let v = 100000;
-        let gd = [0u8; 32];
+        let mut gd = [0u8; 32];
+        let div_ptr = [0u8; 11];
         let pkd = [0u8; 32];
         let rcm = [0u8; 32];
         let output = [0u8; 32];
+
+        let div = &div_ptr ;
+
+        group_hash_from_div(div, &mut gd);
 
         prepare_and_hash_input_commitment(
             v,
@@ -383,15 +388,15 @@ mod tests {
             output.as_ptr() as *mut [u8; 32],
             rcm.as_ptr() as *const [u8; 32],
             v,
-            gd.as_ptr() as *const [u8; 32],
+            div.as_ptr() as *const [u8; 11],
             pkd.as_ptr() as *const [u8; 32]
         );
 
         assert_eq!(
             output,
             [
-                165, 197, 253, 70, 246, 15, 187, 28, 233, 185, 93, 193, 245, 183, 205, 177, 241,
-                34, 74, 220, 244, 74, 212, 154, 122, 25, 239, 191, 124, 168, 202, 59
+                51, 107, 65, 49, 174, 10, 181, 105, 255, 123, 174, 149, 217, 191, 95,
+                76, 7, 90, 151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
             ]
         );
     }
@@ -506,6 +511,34 @@ mod tests {
             0x62, 0x4a, 0x18, 0xc5, 0xf4, 0xa5, 0xe5, 0x0c, 0x93, 0x8f, 0x2f, 0x24, 0x11, 0x19,
             0x88, 0x5e, 0x39, 0xb1,
         ];
+        assert_eq!(nf, nftest);
+    }
+
+    #[test]
+    fn test_get_nf() {
+        let pos: u64 = 2578461368;
+
+        let seed: [u8; 32] = [
+            176,142,61,152,218,67,28,239,69,102,161,60,27,179,72,185,
+            130,247,216,231,67,180,59,182,37,87,186,81,153,75,18,87,
+        ];
+
+        let cm: [u8; 32] = [
+            0x21, 0xc9, 0x46, 0x98, 0xca, 0x32, 0x4b, 0x4c, 0xba, 0xce, 0x29, 0x1d, 0x27, 0xab,
+            0xb6, 0x8a, 0xa, 0xaf, 0x27, 0x37, 0xdc, 0x45, 0x56, 0x54, 0x1c, 0x7f, 0xcd, 0xe8,
+            0xce, 0x11, 0xdd, 0xe8];
+
+        let mut nsk = [0u8; 32];
+        zip32_nsk_from_seed(&seed,&mut nsk);
+
+        let mut nf = [0u8; 32];
+        compute_nullifier(&cm, pos, &nsk,&mut nf);
+
+
+        let nftest: [u8; 32] = [
+            0x25,0xf1,0xf2,0xcf,0x5e,0x2c,0x2b,0xc3,0x1d,0x7,0xb6,0x6f,
+            0x4d,0x54,0xf0,0x90,0xad,0x89,0xb1,0x98,0x89,0x3f,0x12,0xad,
+            0xae,0x44,0x7d,0xdf,0x84,0xe2,0x14,0x5a];
         assert_eq!(nf, nftest);
     }
 

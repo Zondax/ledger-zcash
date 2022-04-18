@@ -13,6 +13,7 @@ export const INS = {
   SIGN_SAPLING: 0x12,
   GET_IVK_SAPLING: 0xf0,
   GET_OVK_SAPLING: 0xf1,
+  GET_NF_SAPLING: 0xf2,
 
   INIT_TX: 0xa0,
   KEY_EXCHANGE: 0xaa,
@@ -42,6 +43,7 @@ export const PKLEN = 33;
 export const SAPLING_ADDR_LEN = 43;
 export const SAPLING_IVK_LEN = 32;
 export const SAPLING_OVK_LEN = 32;
+export const SAPLING_NF_LEN = 32;
 export const SAPLING_PGK_LEN = 64;
 export const SAPLING_SPENDDATA_LEN = 128;
 export const SAPLING_OUTPUTDATA_LEN = 96;
@@ -135,7 +137,7 @@ export function processErrorResponse(response) {
 }
 
 export async function getVersion(transport) {
-  return transport.send(CLA, INS.GET_VERSION, 0, 0).then(response => {
+  return transport.send(CLA, INS.GET_VERSION, 0, 0).then((response) => {
     const errorCodeData = response.slice(-2);
     const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 

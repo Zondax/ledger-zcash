@@ -178,6 +178,7 @@ const bagl_element_t *view_prepro_idle(const bagl_element_t *element) {
 }
 
 void h_review_update() {
+    zemu_log_stack("h_review_update");
     zxerr_t err = h_review_update_data();
     switch(err) {
         case zxerr_ok:
@@ -216,6 +217,7 @@ void splitValueField() {
     }
 }
 void splitValueAddress() {
+    zemu_log_stack("splitValueAddress");
     uint8_t len = MAX_CHARS_PER_VALUE_LINE;
     bool exceeding_max = exceed_pixel_in_display(len);
     while(exceeding_max && len--) {
@@ -283,6 +285,7 @@ void view_message_impl(char *title, char *message) {
 }
 
 void view_error_show_impl() {
+    zemu_log_stack("view_error_show_impl");
     UX_DISPLAY(view_error, view_prepro);
 }
 

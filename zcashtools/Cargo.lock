@@ -589,6 +589,7 @@ dependencies = [
 [[package]]
 name = "neon-serde"
 version = "0.10.0"
+source = "git+https://github.com/Zondax/neon-serde#deb7260622a4d791714f343ab84dc8ae35850c50"
 dependencies = [
  "neon",
  "num",

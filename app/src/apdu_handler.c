@@ -170,6 +170,9 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     *flags |= IO_ASYNCH_REPLY;
 }
 
+// Transmitted notes are stored on the blockchain in encrypted form.
+// If the note was sent to Alice, she uses her incoming viewing key (IVK)
+// to decrypt the note (so that she can subsequently send it).
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetKeyIVK]\n");
@@ -216,6 +219,8 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     *flags |= IO_ASYNCH_REPLY;
 }
 
+// If Bob sends a note to Alice (stored on the blockchain in encrypted form),
+// he can decrypt using his outgoing viewing key (OVK).
 __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetKeyOVK]\n");
@@ -240,7 +245,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     }
 
     uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK,
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_OVK,
                                                 &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
@@ -261,6 +266,81 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     view_review_show();
     *flags |= IO_ASYNCH_REPLY;
 }
+
+// Computing the note nullifier nf is required in order to spend the note.
+// Computing nf requires the associated (private) nullifier deriving key nk
+// and the note position pos.
+// (nk is part of the full viewing key fvk = (ak, nk, ovk) )
+__Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
+                                volatile uint32_t *tx, uint32_t rx) {
+    zemu_log("----[handleGetNullifier]\n");
+
+    *tx = 0;
+    if (rx < APDU_MIN_LENGTH) {
+        zemu_log("Too short!\n");
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF) {
+        ZEMU_LOGF(100, "rx is %d\n", rx);
+        zemu_log("Wrong length!\n");
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF) {
+        zemu_log("Wrong offset data length!\n");
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    if (!requireConfirmation) {
+        zemu_log("Confirmation required!\n");
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    uint32_t zip32path = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_NF,
+                                                &zip32path);
+    if (prserr != parser_ok) {
+        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+        *tx = 0;
+        zemu_log("Failed to get seed!\n");
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    // get note position from payload
+    uint64_t notepos = 0;
+    memcpy(&notepos, G_io_apdu_buffer + OFFSET_DATA + ZIP32_PATH_SIZE,
+                                   NOTE_POSITION_SIZE);
+
+    // get note commitment from payload
+    uint8_t cm[NOTE_COMMITMENT_SIZE];
+    memcpy(cm, G_io_apdu_buffer + OFFSET_DATA + ZIP32_PATH_SIZE + NOTE_POSITION_SIZE,
+                                   NOTE_COMMITMENT_SIZE);
+
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+
+    key_state.kind = nf;
+    uint16_t replyLen = 0;
+
+    // this needs to get Full viewing key = (ak, nk, ovk) and note position, to then compute nullifier
+    // G_io_apdu_buffer contains zip32path, note position, note commitment
+    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, notepos,
+                                           cm, &replyLen);
+    if (err != zxerr_ok) {
+        zemu_log("Failed to get nullifier!\n");
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.len = replyLen;
+
+    view_review_init(key_getItem, key_getNumItems, app_reply_key);
+    view_review_show();
+    *flags |= IO_ASYNCH_REPLY;
+}
+
+
 
 __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
                                    volatile uint32_t *tx, uint32_t rx) {
@@ -331,14 +411,12 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
 
     // /!\ the valuebalance is different to the total value
     err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
-
     if(err != zxerr_ok){
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
         THROW(APDU_CODE_BAD_VALUEBALANCE);
     }
-
 
     err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok) {
@@ -433,14 +511,17 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
+        zemu_log_stack("too short");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV) {
+        zemu_log_stack("wrong length");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV) {
+        zemu_log_stack("wrong value at OFFSET_DATA_LEN");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -498,7 +579,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
 
     uint16_t replyLen = 0;
 
-    zemu_log_stack("handleGetAddrSapling_divlist");
+    zemu_log_stack("handleGetDiversifierList");
 
     parser_addr_div_t parser_addr;
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
@@ -645,6 +726,11 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_GET_OVK: {
                     handleGetKeyOVK(flags, tx, rx);
+                    break;
+                }
+
+                case INS_GET_NF: {
+                    handleGetNullifier(flags, tx, rx);
                     break;
                 }
 

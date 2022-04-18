@@ -219,6 +219,32 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 
 ---
 
+### INS_GET_NF_SAPLING
+
+Returns a sapling nullifier.TODO: Forced user confirmation (So P1 needs to be 0x01).
+
+#### Command
+
+| Field      | Type     | Content                    | Expected          |
+|------------| -------- |----------------------------|-------------------|
+| CLA        | byte (1) | Application Identifier     | 0x85              |
+| INS        | byte (1) | Instruction ID             | 0xf2              |
+| P1         | byte (1) | Request User confirmation  | 1                 |
+| P2         | byte (1) | Parameter 2                | ignored           |
+| L          | byte (1) | Bytes in payload           | (depends)         |
+| ZIP32-path | byte (4) | Derivation Path Data       | u32 Little-Endian |
+| POSITION   | byte (8) | Note position              | uint64            |
+| CM         | byte(32) | Note commitment Data       | 32-bytes          | 
+
+#### Response
+
+| Field   | Type      | Content     | Note                     |
+|---------| --------- |-------------| ------------------------ |
+| NF_RAW  | byte (32) | Raw NF      |                          |
+| SW1-SW2 | byte (2)  | Return code | see list of return codes |
+
+---
+
 ### INS_INIT_TX_SAPLING
 
 Initiates a transaction for sapling. The init_message should have the following format:
