@@ -523,7 +523,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_c
         constants::DK_AK_NK => {
             result[0..32].copy_from_slice(&divkey);
             result[32..64].copy_from_slice(&ak);
-            result[64..92].copy_from_slice(&nk.to_bytes());
+            result[64..96].copy_from_slice(&nk.to_bytes());
         }
         _ => {
             c_zemu_log_stack(b"Unrecognized keys requested\x00\n".as_ref());
