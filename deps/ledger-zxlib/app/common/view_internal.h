@@ -120,13 +120,13 @@ bool h_paging_can_decrease();
 
 void h_paging_decrease();
 
-void view_review_show_impl();
+void view_review_show_impl(unsigned int requireAPDUreply);
 
 void h_approve(unsigned int _);
 
-void h_reject(unsigned int _);
+void h_reject(unsigned int requireAPDUreply);
 
-void h_review_action();
+void h_review_action(unsigned int requireAPDUreply);
 
 void h_review_update();
 

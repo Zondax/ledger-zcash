@@ -53,5 +53,6 @@ zxerr_t bech32EncodeFromBytes(char *out,
     if (err == 0) {
         return zxerr_encoding_failed;
     }
+
     return zxerr_ok;
 }

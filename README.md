@@ -14,9 +14,9 @@ _Please visit our website at [zondax.ch](https://www.zondax.ch)_
 
 **This app is still work in progress!**
 
-This project contains the Zcash app for Ledger Nano S and X.
+This project contains the Zcash app for Ledger Nano S, S+ and X.
 
-- Ledger Nano S/X BOLOS app
+- Ledger BOLOS app
 - Specs / Documentation
 - C++ unit tests
 - Rust unit tests
@@ -32,7 +32,7 @@ Please:
 
 Tip:
 
-- In releases, you will find a precompiled test app. If you are just curious, you can run `zxtool.sh` and avoid building.
+- In releases, you will find a precompiled test app. If you are just curious, you can run `installer_s.sh` and avoid building.
 
 ## Download and install
 
@@ -43,13 +43,13 @@ Download a release from here (https://github.com/Zondax/ledger-zcash/releases). 
 
 If the file is not executable, run
 ```sh
-chmod +x ./zxtool.sh
+chmod +x ./installer_s.sh
 ```
 
 then run:
 
 ```sh
-./zxtool.sh load
+./installer_s.sh load
 ```
 
 # Development
@@ -71,7 +71,7 @@ then run:
   libssl-dev libgmp-dev autoconf libtool
    ```
 
-- Install `node > v13.0`. We typically recommend using `n`
+- Install `node > v16.0`. We typically recommend using `n`
 
 - You will need python 3 and then run
     - `make deps`
@@ -141,70 +141,6 @@ make zemu_test
 To run a single specific test:
 
 > At the moment, the recommendation is to run from the IDE. Remember to run `make` if you change the app.
-
-## How to debug a ledger app?
-
-You can use vscode or clion to debug the app. We recommend using CLion but we provide a vscode (unsupported) configuration too.
-
-### Preconditions
-
-If you are using CLion, you need to a configuration file in your home directory: `$HOME/.gdbinit` with the following content:
-
-```
-set auto-load local-gdbinit on
-add-auto-load-safe-path /
-```
-
-### Warnings
-
-There are a few things to take into account when enabling Ledger App debugging:
-
-- Once you enable the local .gdbinit that is located in your project workspace. You **will break** local Rust debugging in your host. The reason is that debugging unit tests will use the same `.gdbinit` configuration that sets the environment to ARM. We are looking at some possible fixes. For now, if you want to debug unit tests instead of the ledger app, you need to comment out the lines in `.gdbinit`
-
-### Debugging
-
-1. Build your app
-
-    ```bash
-    make
-    ```
-
-2. Define your debug scenario
-
-    Open `tests/zemu/tools/debug.mjs` and look for the line:
-
-    ```bash
-    /// TIP you can use zemu commands here to take the app ...
-    ```
-
-    You can adjust this code to get the emulator to trigger a breakpoint in your app:
-    - send clicks
-    - send APDUs, etc
-
-3. Launch the emulator in debug mode
-
-    > If you didn't install Zemu yet (previous section), then run `make zemu_install`
-
-    ```bash
-    make zemu_debug
-    ```
-
-    The emulator will launch and immediately stop. You should see a black window
-
-4. Configure Clion debugger
-
-    Your configuration should look similar to this:
-
-     ![image](docs/img/clion_debugging.png)
-
-    Check that the path mappings are correct
-
-5. Start CLion debugger
-
-    You will hit a breakpoint in main.
-    Add breakpoints in other places and continue.
-
-    Enjoy :)
 
 ## Using a real device
 

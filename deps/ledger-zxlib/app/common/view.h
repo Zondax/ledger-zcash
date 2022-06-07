@@ -59,4 +59,4 @@ void view_review_init(viewfunc_getItem_t viewfuncGetItem,
                       viewfunc_getNumItems_t viewfuncGetNumItems,
                       viewfunc_accept_t viewfuncAccept);
 
-void view_review_show();
+void view_review_show(unsigned int requireAPDUreply);

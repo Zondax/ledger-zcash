@@ -18,6 +18,7 @@
 
 typedef struct {
     uint8_t expert;
+    uint8_t account;
 } app_mode_persistent_t;
 
 typedef struct {
@@ -42,9 +43,21 @@ bool app_mode_expert() {
     return N_appmode.expert;
 }
 
+bool app_mode_account() {
+    return N_appmode.account;
+}
+
 void app_mode_set_expert(uint8_t val) {
     app_mode_persistent_t mode;
     mode.expert = val;
+    mode.account = N_appmode.account;
+    MEMCPY_NV( (void*) PIC(&N_appmode_impl), (void*) &mode, sizeof(app_mode_persistent_t));
+}
+
+void app_mode_set_account(uint8_t val) {
+    app_mode_persistent_t mode;
+    mode.expert = N_appmode.expert;
+    mode.account = val;
     MEMCPY_NV( (void*) PIC(&N_appmode_impl), (void*) &mode, sizeof(app_mode_persistent_t));
 }
 
@@ -58,6 +71,7 @@ app_mode_persistent_t app_mode;
 
 void app_mode_reset() {
     app_mode.expert = 0;
+    app_mode.account = 0;
     app_mode_temporary.secret = 0;
 }
 
@@ -65,8 +79,16 @@ bool app_mode_expert() {
     return app_mode.expert;
 }
 
+bool app_mode_account() {
+    return app_mode.account;
+}
+
 void app_mode_set_expert(uint8_t val) {
     app_mode.expert = val;
+}
+
+void app_mode_set_account(uint8_t val) {
+    app_mode.account = val;
 }
 
 //////////////////////////////////////////////////////////////

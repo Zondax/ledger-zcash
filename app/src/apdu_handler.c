@@ -166,7 +166,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 
     view_review_init(tx_getItem, tx_getNumItems, app_reply_hash);
 
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -216,7 +216,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -264,7 +264,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -337,7 +337,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -497,7 +497,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -553,7 +553,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -656,7 +656,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018, 2019 Zondax GmbH
+*   (c) 2018 - 2022 Zondax GmbH
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,25 +30,34 @@
 #include "secret.h"
 #endif
 
+
 #include <string.h>
 #include <stdio.h>
 
 #if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
 
-void h_expert_toggle();
-void h_expert_update();
-void h_review_loop_start();
-void h_review_loop_inside();
-void h_review_loop_end();
+void account_enabled();
+
+static void h_expert_toggle();
+static void h_expert_update();
+static void h_review_loop_start();
+static void h_review_loop_inside();
+static void h_review_loop_end();
+
+#ifdef APP_ACCOUNT_MODE_ENABLED
+static void h_account_toggle();
+static void h_account_update();
+#endif
 
 #ifdef APP_SECRET_MODE_ENABLED
-void h_secret_click();
+static void h_secret_click();
 #endif
 
 #include "ux.h"
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
 uint8_t flow_inside_loop;
+static unsigned int mustReply = 0;
 
 
 UX_STEP_NOCB(ux_idle_flow_1_step, pbb, { &C_icon_app, MENU_MAIN_APP_LINE1, viewdata.key,});
@@ -64,9 +73,16 @@ UX_STEP_NOCB(ux_idle_flow_4_step, bn, { "Developed by:", "Zondax.ch", });
 UX_STEP_NOCB(ux_idle_flow_5_step, bn, { "License:", "Apache 2.0", });
 UX_STEP_CB(ux_idle_flow_6_step, pb, os_sched_exit(-1), { &C_icon_dashboard, "Quit",});
 
+#ifdef APP_ACCOUNT_MODE_ENABLED
+UX_STEP_CB_INIT(ux_idle_flow_7_step, bn,  h_account_update(), h_account_toggle(), { "Account:", viewdata.value, });
+#endif
+
 const ux_flow_step_t *const ux_idle_flow [] = {
   &ux_idle_flow_1_step,
   &ux_idle_flow_2_step,
+#ifdef APP_ACCOUNT_MODE_ENABLED
+  &ux_idle_flow_7_step,
+#endif
   &ux_idle_flow_3_step,
   &ux_idle_flow_4_step,
   &ux_idle_flow_5_step,
@@ -101,7 +117,7 @@ UX_STEP_INIT(ux_review_flow_2_start_step, NULL, NULL, { h_review_loop_start(); }
 UX_STEP_NOCB_INIT(ux_review_flow_2_step, bnnn_paging, { h_review_loop_inside(); }, { .title = viewdata.key, .text = viewdata.value, });
 UX_STEP_INIT(ux_review_flow_2_end_step, NULL, NULL, { h_review_loop_end(); });
 UX_STEP_VALID(ux_review_flow_3_step, pb, h_approve(0), { &C_icon_validate_14, APPROVE_LABEL });
-UX_STEP_VALID(ux_review_flow_4_step, pb, h_reject(0), { &C_icon_crossmark, REJECT_LABEL });
+UX_STEP_VALID(ux_review_flow_4_step, pb, h_reject(mustReply), { &C_icon_crossmark, REJECT_LABEL });
 
 const ux_flow_step_t *const ux_review_flow[] = {
   &ux_review_flow_1_review_title,
@@ -215,6 +231,23 @@ void h_expert_update() {
     }
 }
 
+#ifdef APP_ACCOUNT_MODE_ENABLED
+void h_account_toggle() {
+    if(app_mode_expert()) {
+        account_enabled();
+    } else {
+        ux_flow_init(0, ux_idle_flow, &ux_idle_flow_7_step);
+    }
+}
+
+void h_account_update() {
+    snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, ACCOUNT_DEFAULT);
+    if (app_mode_account()) {
+        snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, ACCOUNT_SECONDARY);
+    }
+}
+#endif
+
 #ifdef APP_SECRET_MODE_ENABLED
 void h_secret_click() {
     if (COIN_SECRET_REQUIRED_CLICKS == 0) {
@@ -261,7 +294,8 @@ void view_idle_show_impl(__Z_UNUSED uint8_t item_idx, char *statusString) {
     ux_flow_init(0, ux_idle_flow, NULL);
 }
 
-void view_review_show_impl(){
+void view_review_show_impl(unsigned int requireAPDUreply){
+    mustReply = requireAPDUreply;
     h_paging_init();
     h_paging_decrease();
     ////
