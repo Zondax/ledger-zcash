@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018, 2019 Zondax GmbH
+*   (c) 2018 -2022 Zondax AG
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -208,7 +208,7 @@ void h_review_update() {
     zxerr_t err = h_review_update_data();
     switch(err) {
         case zxerr_ok:
-            UX_DISPLAY(view_review, view_prepro);
+            UX_DISPLAY(view_review, view_prepro)
             break;
         default:
             view_error_show();
@@ -266,11 +266,11 @@ void view_idle_show_impl(uint8_t item_idx, char *statusString) {
 void view_message_impl(char *title, char *message) {
     snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", title);
     snprintf(viewdata.value, MAX_CHARS_PER_VALUE_LINE, "%s", message);
-    UX_DISPLAY(view_message, view_prepro_idle);
+    UX_DISPLAY(view_message, view_prepro_idle)
 }
 
 void view_error_show_impl() {
-    UX_DISPLAY(view_error, view_prepro);
+    UX_DISPLAY(view_error, view_prepro)
 }
 
 void h_expert_toggle() {
@@ -331,7 +331,7 @@ void view_review_show_impl(unsigned int requireAPDUreply) {
     zxerr_t err = h_review_update_data();
     switch(err) {
         case zxerr_ok:
-            UX_DISPLAY(view_review, view_prepro);
+            UX_DISPLAY(view_review, view_prepro)
             break;
         default:
             view_error_show();
