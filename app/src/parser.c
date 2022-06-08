@@ -192,7 +192,7 @@ parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
         return parser_unexpected_error;
     }
 
-    ZEMU_LOGF(50, "addr size %d\n", outLen);
+    ZEMU_LOGF(50, "addr size %d\n", outLen)
 
     pageString(outVal, outValLen, (char *) tmpBuffer, pageIdx, pageCount);
     return parser_ok;
@@ -260,7 +260,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
                               char *outKey, uint16_t outKeyLen,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount) {
-    ZEMU_LOGF(50, "[tx_getItem] %d/%d\n", displayIdx, pageIdx);
+    ZEMU_LOGF(50, "[tx_getItem] %d/%d\n", displayIdx, pageIdx)
 
     MEMZERO(outKey, outKeyLen);
     MEMZERO(outVal, outValLen);
