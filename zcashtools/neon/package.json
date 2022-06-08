@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
-  "author": "Zondax GmbH <hello@zondax.ch>",
+  "author": "Zondax AG <hello@zondax.ch>",
   "license": "Apache-2.0",
   "dependencies": {
     "neon-cli": "^0.9.1"

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2019 Zondax GmbH
+*   (c) 2018 -2022 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -876,6 +876,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     for(uint8_t i = 0; i < outputlist_len(); i++){
+        // retrieve info on list of outputs stored in flash
         const output_item_t *item = outputlist_retrieve_item(i);
         if (item == NULL){
             MEMZERO(out, bufferLen);

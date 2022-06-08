@@ -1,5 +1,5 @@
 [package]
-authors = ["Zondax GmbH <info@zondax.ch>"]
+authors = ["Zondax AG <info@zondax.ch>"]
 name = "rslib"
 version = "0.1.0"
 edition = "2018"

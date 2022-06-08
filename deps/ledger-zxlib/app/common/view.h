@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018-2020 Zondax GmbH
+*   (c) 2018-2020 Zondax AG
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,4 +59,4 @@ void view_review_init(viewfunc_getItem_t viewfuncGetItem,
                       viewfunc_getNumItems_t viewfuncGetNumItems,
                       viewfunc_accept_t viewfuncAccept);
 
-void view_review_show();
+void view_review_show(unsigned int requireAPDUreply);

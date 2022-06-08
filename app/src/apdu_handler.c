@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018, 2019 Zondax GmbH
+*   (c) 2018 -2022 Zondax AG
 *   (c) 2016 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -166,7 +166,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 
     view_review_init(tx_getItem, tx_getNumItems, app_reply_hash);
 
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -183,6 +183,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK) {
+        zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -215,7 +216,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -263,7 +264,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -336,7 +337,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show();
+    view_review_show(1);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -496,7 +497,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -552,7 +553,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -609,20 +610,32 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
+        ZEMU_LOGF(100, "rx is %d\n", rx);
+        zemu_log("Missing data!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_SAPLING) {
+    ZEMU_LOGF(100, "rx is %d\n", rx);
+    ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH);
+    if ( rx != (uint32_t)(DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
+        ZEMU_LOGF(100, "rx is %d\n", rx);
+        ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH);
+
+        if ( rx == (DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
+            ZEMU_LOGF(100, "APDU_MIN_LENGTH is %d\n", APDU_MIN_LENGTH);
+            ZEMU_LOGF(100, "DATA_LENGTH_GET_ADDR_SAPLING is %d\n", DATA_LENGTH_GET_ADDR_SAPLING);
+        }
+        zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING) {
+        ZEMU_LOGF(100, "rx is %d\n", rx);
+        zemu_log("Wrong offset data length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-
-    zemu_log_stack("handleGetAddrSapling");
 
     uint32_t zip32path = 0;
     parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING,
@@ -643,7 +656,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show();
+        view_review_show(1);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -715,70 +728,112 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_ADDR_SECP256K1: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetAddrSecp256K1(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_IVK: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetKeyIVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_OVK: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetKeyOVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_NF: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetNullifier(flags, tx, rx);
                     break;
                 }
 
                 case INS_INIT_TX: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleInitTX(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPEND: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleExtractSpendData(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_OUTPUT: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleExtractOutputData(flags, tx, rx);
                     break;
                 }
 
                 case INS_CHECKANDSIGN: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleCheckandSign(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPENDSIG: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleExtractSpendSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_TRANSSIG: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleExtractTransparentSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetAddrSapling(flags, tx, rx);
                     break;
                 }
                 case INS_GET_DIV_LIST: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetDiversifierList(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING_DIV: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleGetAddrSaplingDiv(flags, tx, rx);
                     break;
                 }
 
                 case INS_SIGN_SAPLING: {
+                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
+                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+                    }
                     handleSignSapling(flags, tx, rx);
                     break;
                 }

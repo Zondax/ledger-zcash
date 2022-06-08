@@ -1,5 +1,5 @@
 /** ******************************************************************************
- *  (c) 2020 Zondax GmbH
+ *  (c) 2020 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -193,6 +193,7 @@ describe('Zcashtool tests', function () {
       const { zcashtools } = addon
       console.log(SPEND_PATH)
 
+      // here 1000 represents the fee
       const builder = new zcashtools(1000)
 
       /*
@@ -480,7 +481,6 @@ describe('Zcashtool tests', function () {
       await sim.close()
     }
   })
-
 
   test.each(models)('make a tx with 1 transparent input 1 spend 2 shielded outputs', async function (m) {
     const sim = new Zemu(m.path)
@@ -774,7 +774,6 @@ describe('Zcashtool tests', function () {
     }
   })
 
-
   test.each(models)('Get nullifier', async function (m) {
 
     const sim = new Zemu(m.path)
@@ -812,8 +811,6 @@ describe('Zcashtool tests', function () {
       await sim.close()
     }
   })
-
-
 
   test.each(models)('make a tx with 1 transparent output 1 spend 2 shielded outputs', async function (m) {
     const sim = new Zemu(m.path)
@@ -1096,7 +1093,6 @@ describe('Zcashtool tests', function () {
     }
   })
 
-
   test.each(models)('make a transaction with 1 transparent input 1 transparent output 1 spend 2 shielded outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
@@ -1207,7 +1203,7 @@ describe('Zcashtool tests', function () {
       /*
 
       /*
-      To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      To add transparent inputs to the builder, we don't need fresh information from the ledger.
       The builder does need the secp256k1 public key belonging to the address.
        The builder also need outpoint from the blockchain.
        */
@@ -1385,7 +1381,7 @@ describe('Zcashtool tests', function () {
 
       /*
       At this point we gathered all signatures.
-      We now add these signaturs to the builder.
+      We now add these signatures to the builder.
       Note that for this transaction, we do not have any transparent signatures.
        */
 
@@ -1816,7 +1812,7 @@ describe('Zcashtool tests', function () {
       /*
 
       /*
-      To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      To add transparent inputs to the builder, we don't need fresh information from the ledger.
       The builder does need the secp256k1 public key belonging to the address.
        The builder also need outpoint from the blockchain.
        */

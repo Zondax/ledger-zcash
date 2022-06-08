@@ -1,6 +1,6 @@
 /*******************************************************************************
 *   (c) 2016 Ledger
-*   (c) 2018 Zondax GmbH
+*   (c) 2018 -2022 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -27,6 +27,10 @@ void app_mode_reset();
 bool app_mode_expert();
 
 void app_mode_set_expert(uint8_t val);
+
+bool app_mode_account();
+
+void app_mode_set_account(uint8_t val);
 
 bool app_mode_secret();
 
