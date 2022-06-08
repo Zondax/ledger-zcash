@@ -283,7 +283,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF) {
-        ZEMU_LOGF(100, "rx is %d\n", rx);
+        ZEMU_LOGF(100, "rx is %d\n", rx)
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -610,27 +610,27 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
-        ZEMU_LOGF(100, "rx is %d\n", rx);
+        ZEMU_LOGF(100, "rx is %d\n", rx)
         zemu_log("Missing data!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    ZEMU_LOGF(100, "rx is %d\n", rx);
-    ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH);
+    ZEMU_LOGF(100, "rx is %d\n", rx)
+    ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)
     if ( rx != (uint32_t)(DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
-        ZEMU_LOGF(100, "rx is %d\n", rx);
-        ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH);
+        ZEMU_LOGF(100, "rx is %d\n", rx)
+        ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)
 
         if ( rx == (DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
-            ZEMU_LOGF(100, "APDU_MIN_LENGTH is %d\n", APDU_MIN_LENGTH);
-            ZEMU_LOGF(100, "DATA_LENGTH_GET_ADDR_SAPLING is %d\n", DATA_LENGTH_GET_ADDR_SAPLING);
+            ZEMU_LOGF(100, "APDU_MIN_LENGTH is %d\n", APDU_MIN_LENGTH)
+            ZEMU_LOGF(100, "DATA_LENGTH_GET_ADDR_SAPLING is %d\n", DATA_LENGTH_GET_ADDR_SAPLING)
         }
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING) {
-        ZEMU_LOGF(100, "rx is %d\n", rx);
+        ZEMU_LOGF(100, "rx is %d\n", rx)
         zemu_log("Wrong offset data length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
