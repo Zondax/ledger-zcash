@@ -169,18 +169,7 @@ zxerr_t get_next_spend_signature(uint8_t *result) {
 }
 
 void transaction_reset() {
-    // TODO: change this to a memzero?
-    transaction_header.t_in_len = 0;
-    transaction_header.t_out_len = 0;
-    transaction_header.t_sign_index = 0;
-    transaction_header.total_value = 0;
-    transaction_header.sapling_value = 0;
-    transaction_header.state = 0;
-    transaction_header.spenddata_extract_index = 0;
-    transaction_header.spendlist_len = 0;
-    transaction_header.spends_sign_index = 0;
-    transaction_header.outputlist_len = 0;
-    transaction_header.outputdata_extract_index = 0;
+    MEMZERO(&transaction_header, sizeof(transaction_header_t));
     zeroize_flashstorage();
 }
 

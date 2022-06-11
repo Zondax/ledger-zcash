@@ -299,7 +299,6 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
     result
 }
 
-// FIXME: Can we send this to the SDK?
 #[inline(never)]
 pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
     pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"Zcash_gd";

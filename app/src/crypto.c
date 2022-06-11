@@ -94,7 +94,7 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     MEMZERO(buffer, buffer_len);
     answer_t *const answer = (answer_t *) buffer;
 
-    crypto_extractPublicKey(hdPath, answer->publicKey, sizeof_field(answer_t, publicKey));
+    CHECK_ZXERR(crypto_extractPublicKey(hdPath, answer->publicKey, sizeof_field(answer_t, publicKey)));
 
     address_temp_t address_temp;
 
@@ -119,15 +119,16 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     return zxerr_ok;
 }
 
-void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {
+zxerr_t crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {
     cx_ecfp_public_key_t cx_publicKey;
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[SK_SECP256K1_SIZE];
 
     if (pubKeyLen < PK_LEN_SECP256K1) {
-        return;
+        return zxerr_invalid_crypto_settings;
     }
 
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY {
@@ -141,8 +142,7 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
             cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
         }
         CATCH_OTHER(e) {
-            CLOSE_TRY;
-            return;
+            error = zxerr_ledger_api_error;
         }
         FINALLY {
             MEMZERO(&cx_privateKey, sizeof(cx_privateKey));
@@ -150,6 +150,10 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
         }
     }
     END_TRY;
+
+    if (error != zxerr_ok) {
+        return error;
+    }
 
     // Format pubkey
     for (int i = 0; i < PUB_KEY_SIZE; i++) {
@@ -161,13 +165,15 @@ void crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *p
     }
 
     memcpy(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
+    return zxerr_ok;
 }
 
-void crypto_fillSaplingSeed(uint8_t *sk) {
+zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
     zemu_log_stack("crypto_fillSaplingSeed");
+
     // Get seed from Ed25519
-    MEMZERO(sk, ED25519_SK_SIZE);
-    //fixme: make sure this path is not used somewhere else for signing
+    zxerr_t error = zxerr_ok;
+
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
             0x8000002c,
@@ -177,11 +183,27 @@ void crypto_fillSaplingSeed(uint8_t *sk) {
             MASK_HARDENED,
     };
 
-    os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519,
-                                        path, HDPATH_LEN_DEFAULT,
-                                        sk,
-                                        NULL,
-                                        NULL, 0);
+    BEGIN_TRY
+    {
+        TRY {
+            MEMZERO(sk, ED25519_SK_SIZE);
+
+            os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519,
+                                                path, HDPATH_LEN_DEFAULT,
+                                                sk,
+                                                NULL,
+                                                NULL, 0);
+        }
+        CATCH_OTHER(e) {
+            error = zxerr_ledger_api_error;
+            MEMZERO(sk, ED25519_SK_SIZE);
+        }
+        FINALLY {
+        }
+    }
+    END_TRY;
+
+    return error;
 }
 
 // handleInitTX step 1/2

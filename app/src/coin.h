@@ -44,7 +44,6 @@ extern "C" {
 //ak, nsk
 #define LEN_PGK                     64u
 
-
 #define ENABLE_SDK_MULT             0
 
 typedef enum {
