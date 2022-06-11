@@ -728,112 +728,85 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_ADDR_SECP256K1: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetAddrSecp256K1(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_IVK: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetKeyIVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_OVK: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetKeyOVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_NF: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetNullifier(flags, tx, rx);
                     break;
                 }
 
                 case INS_INIT_TX: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleInitTX(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPEND: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleExtractSpendData(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_OUTPUT: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleExtractOutputData(flags, tx, rx);
                     break;
                 }
 
                 case INS_CHECKANDSIGN: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleCheckandSign(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPENDSIG: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleExtractSpendSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_TRANSSIG: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleExtractTransparentSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetAddrSapling(flags, tx, rx);
                     break;
                 }
+
                 case INS_GET_DIV_LIST: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetDiversifierList(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING_DIV: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleGetAddrSaplingDiv(flags, tx, rx);
                     break;
                 }
 
                 case INS_SIGN_SAPLING: {
-                    if( os_global_pin_is_validated() != BOLOS_UX_OK ) {
-                        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-                    }
+                    CHECK_PIN_VALIDATED();
                     handleSignSapling(flags, tx, rx);
                     break;
                 }
@@ -854,8 +827,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }
         }
-        CATCH(EXCEPTION_IO_RESET)
-        {
+        CATCH(EXCEPTION_IO_RESET) {
             THROW(EXCEPTION_IO_RESET);
         }
         CATCH_OTHER(e)
