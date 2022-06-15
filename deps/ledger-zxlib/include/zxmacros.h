@@ -88,6 +88,11 @@ void handle_stack_overflow();
 
 void zemu_log_stack(const char *ctx);
 
+#define CHECK_PIN_VALIDATED() \
+if( os_global_pin_is_validated() != BOLOS_UX_OK ) { \
+    THROW(APDU_CODE_COMMAND_NOT_ALLOWED); \
+}
+
 #if (defined (TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2))
 #if defined(ZEMU_LOGGING)
 __Z_INLINE void zemu_log(const char *buf)
