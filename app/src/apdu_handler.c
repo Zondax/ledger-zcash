@@ -150,7 +150,8 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (err != zxerr_ok) {
         transaction_reset();
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        *tx = 0;
+        G_io_apdu_buffer[0] = err;
+        *tx = 1;
         THROW(APDU_CODE_EXTRACT_TRANSACTION_FAIL);
     }
 
@@ -158,7 +159,8 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
     if (err != zxerr_ok) {
         transaction_reset();
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        *tx = 0;
+        G_io_apdu_buffer[0] = err;
+        *tx = 1;
         THROW(APDU_CODE_HASH_MSG_BUF_FAIL);
     }
 

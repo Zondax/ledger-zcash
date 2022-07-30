@@ -211,74 +211,76 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
     zemu_log_stack("crypto_extracttxdata_sapling");
     MEMZERO(buffer, bufferLen);
     uint8_t t_in_len = *txdata;
-    uint8_t t_out_len = *(txdata+1);
-    uint8_t spend_len = *(txdata+2);
-    uint8_t output_len = *(txdata+3);
+    uint8_t t_out_len = *(txdata + 1);
+    uint8_t spend_len = *(txdata + 2);
+    uint8_t output_len = *(txdata + 3);
 
     transaction_reset();
 
-    if((spend_len > 0 && output_len < 2) || (spend_len == 0 && output_len == 1)){
-        return zxerr_unknown;
+    if ((spend_len > 0 && output_len < 2) || (spend_len == 0 && output_len == 1)) {
+        return 0xE0;
     }
 
-    if(txdatalen < 4 || txdatalen - 4 != t_in_len * T_IN_INPUT_LEN + t_out_len * T_OUT_INPUT_LEN + spend_len * SPEND_INPUT_LEN + output_len * OUTPUT_INPUT_LEN){
-        return zxerr_unknown;
+    if (txdatalen < 4 || txdatalen - 4 !=
+                         t_in_len * T_IN_INPUT_LEN + t_out_len * T_OUT_INPUT_LEN + spend_len * SPEND_INPUT_LEN +
+                         output_len * OUTPUT_INPUT_LEN) {
+        return 0xE1;
     }
 
-    if (t_in_len == 0 && t_out_len == 0 && spend_len == 0 && output_len == 0){
-        return zxerr_unknown;
+    if (t_in_len == 0 && t_out_len == 0 && spend_len == 0 && output_len == 0) {
+        return 0xE2;
     }
 
-    uint8_t *start = (uint8_t *)txdata;
+    uint8_t *start = (uint8_t *) txdata;
     start += 4;
 
     parser_context_t pars_ctx;
     parser_error_t pars_err;
 
-    for(int i = 0; i < t_in_len; i++){
-        uint32_t *path = (uint32_t *)(start + INDEX_INPUT_TIN_PATH);
-        uint8_t *script = (uint8_t *)(start + INDEX_INPUT_TIN_SCRIPT);
+    for (int i = 0; i < t_in_len; i++) {
+        uint32_t *path = (uint32_t * )(start + INDEX_INPUT_TIN_PATH);
+        uint8_t *script = (uint8_t * )(start + INDEX_INPUT_TIN_SCRIPT);
 
         pars_ctx.offset = 0;
         pars_ctx.buffer = start + INDEX_INPUT_TIN_VALUE;
         pars_ctx.bufferLen = 8;
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
-        if (pars_err != parser_ok){
-            return zxerr_unknown;
+        if (pars_err != parser_ok) {
+            return 0xE3;
         }
         zxerr_t err = t_inlist_append_item(path, script, v);
-        if (err != zxerr_ok){
-            return zxerr_unknown;
+        if (err != zxerr_ok) {
+            return 0xE4;
         }
         start += T_IN_INPUT_LEN;
     }
 
-    for(int i = 0; i < t_out_len; i++){
-        uint8_t *addr = (uint8_t *)(start + INDEX_INPUT_TOUT_ADDR);
+    for (int i = 0; i < t_out_len; i++) {
+        uint8_t *addr = (uint8_t * )(start + INDEX_INPUT_TOUT_ADDR);
         pars_ctx.offset = 0;
         pars_ctx.buffer = start + INDEX_INPUT_TOUT_VALUE;
         pars_ctx.bufferLen = 8;
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
-        if (pars_err != parser_ok){
-            return zxerr_unknown;
+        if (pars_err != parser_ok) {
+            return 0xE5;
         }
         zxerr_t err = t_outlist_append_item(addr, v);
-        if (err != zxerr_ok){
-            return zxerr_unknown;
+        if (err != zxerr_ok) {
+            return 0xE6;
         }
         start += T_OUT_INPUT_LEN;
     }
 
-    for(int i = 0; i < spend_len; i++){
+    for (int i = 0; i < spend_len; i++) {
         pars_ctx.offset = 0;
         pars_ctx.buffer = start + INDEX_INPUT_SPENDPOS;
         pars_ctx.bufferLen = 4;
         uint32_t p = 0;
         pars_err = _readUInt32(&pars_ctx, &p);
-        if (pars_err != parser_ok){
-            return zxerr_unknown;
+        if (pars_err != parser_ok) {
+            return 0xE7;
         }
 
         pars_ctx.offset = 0;
@@ -286,8 +288,8 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         pars_ctx.bufferLen = 8;
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
-        if (pars_err != parser_ok){
-            return zxerr_unknown;
+        if (pars_err != parser_ok) {
+            return 0xE8;
         }
 
         uint8_t *div = start + INDEX_INPUT_INPUTDIV;
@@ -297,13 +299,14 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         random_fr(rnd1);
         random_fr(rnd2);
 
-        zxerr_t err = spendlist_append_item(p,v,div, pkd, rnd1,rnd2);
-        if (err != zxerr_ok){
-            return zxerr_unknown;
+        zxerr_t err = spendlist_append_item(p, v, div, pkd, rnd1, rnd2);
+        if (err != zxerr_ok) {
+            return 0xE9;
         }
         start += SPEND_INPUT_LEN;
     }
-    for(int i = 0; i < output_len; i++){
+
+    for (int i = 0; i < output_len; i++) {
         uint8_t *div = start + INDEX_INPUT_OUTPUTDIV;
         uint8_t *pkd = start + INDEX_INPUT_OUTPUTPKD;
 
@@ -312,19 +315,19 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         pars_ctx.bufferLen = 8;
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
-        if (pars_err != parser_ok){
-            return zxerr_unknown;
+        if (pars_err != parser_ok) {
+            return 0xEA;
         }
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
-        if(ovk[0] != 0x00 && ovk[0] != 0x01){
+        if (ovk[0] != 0x00 && ovk[0] != 0x01) {
             zemu_log_stack("invalid OVK SET");
-            return zxerr_unknown;
+            return 0xEB;
         }
         uint8_t hash_seed[OVK_SET_SIZE];
-        if(ovk[0] == 0x00){
-            MEMZERO(hash_seed,OVK_SET_SIZE);
+        if (ovk[0] == 0x00) {
+            MEMZERO(hash_seed, OVK_SET_SIZE);
             cx_rng(hash_seed + 1, OVK_SIZE);
             ovk = hash_seed;
         }
@@ -334,22 +337,22 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         random_fr(rnd1);
         cx_rng(rnd2, RND_SIZE);
         zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
-        if (err != zxerr_ok){
-            return zxerr_unknown;
+        if (err != zxerr_ok) {
+            return 0xEC;
         }
         start += OUTPUT_INPUT_LEN;
     }
 
     uint64_t value_flash = get_totalvalue();
-    if (value_flash != 1000){
-        return zxerr_unknown;
+    if (value_flash != 1000) {
+        return 0xED;
     }
 
-    if (spend_len > 0){
+    if (spend_len > 0) {
         set_state(STATE_PROCESSED_INPUTS); //need both spend info and output info (as spend > 0 => output >= 2)
-    }else if (output_len > 0){
+    } else if (output_len > 0) {
         set_state(STATE_PROCESSED_SPEND_EXTRACTIONS); //we can have shielded outputs only
-    }else{
+    } else {
         set_state(STATE_PROCESSED_ALL_EXTRACTIONS); //We can have transparent inputs/outputs only
     }
 
