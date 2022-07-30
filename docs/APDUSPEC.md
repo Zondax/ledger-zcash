@@ -7,8 +7,8 @@
 The general structure of commands and responses is as follows:
 
 | Field   | Type     | Content                | Note |
-| :------ | :------- | :--------------------- | ---- |
-| CLA     | byte (1) | Application Identifier | 0xE0 | # TODO: Confirm this value |
+| ------  | -------  | ---------------------  |------|
+| CLA     | byte (1) | Application Identifier | 0x85 |
 | INS     | byte (1) | Instruction ID         |      |
 | P1      | byte (1) | Parameter 1            |      |
 | P2      | byte (1) | Parameter 2            |      |
@@ -105,7 +105,6 @@ Returns or shows a shielded address with default diversifier (z-address)
 | L       | byte (1) | Bytes in payload          | (depends)  |
 | ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
 
-
 #### Response
 
 | Field       | Type            | Content                    | Note                     |
@@ -147,7 +146,6 @@ Returns a shielded address using a specific diversifier
 On input of a 11-byte starting index, get all valid diversifiers in the 20 indexes after (including starting index). If
 a diversifier was not valid, zero-bytes are returned (so always 220 bytes are returned).
 
-
 #### Command
 
 | Field   | Type     | Content                   | Expected   |
@@ -184,7 +182,6 @@ Returns a sapling incoming viewing key. Forced user confirmation (So P1 needs to
 | L       | byte (1) | Bytes in payload          | (depends)  |
 | ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
 
-
 #### Response
 
 | Field   | Type      | Content     | Note                     |
@@ -209,7 +206,6 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 | L       | byte (1) | Bytes in payload          | (depends)  |
 | ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
 
-
 #### Response
 
 | Field   | Type      | Content     | Note                     |
@@ -221,7 +217,7 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 
 ### INS_GET_NF_SAPLING
 
-Returns a sapling nullifier.TODO: Forced user confirmation (So P1 needs to be 0x01).
+Returns a sapling nullifier. TODO: Forced user confirmation (So P1 needs to be 0x01).
 
 #### Command
 
@@ -234,7 +230,7 @@ Returns a sapling nullifier.TODO: Forced user confirmation (So P1 needs to be 0x
 | L          | byte (1) | Bytes in payload           | (depends)         |
 | ZIP32-path | byte (4) | Derivation Path Data       | u32 Little-Endian |
 | POSITION   | byte (8) | Note position              | uint64            |
-| CM         | byte(32) | Note commitment Data       | 32-bytes          | 
+| CM         | byte(32) | Note commitment Data       | 32-bytes          |
 
 #### Response
 
@@ -338,8 +334,10 @@ Data is defined as:
 
 ### INS_GET_SPENDINFO
 
-Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend. This command requires you
-already called the INS_INITTX_SAPLING. This command requires that it is needed to extract spendinfo.
+Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend.
+
+- This command requires you already called the INS_INIT_TX_SAPLING.
+- This command requires that it is needed to extract spendinfo.
 
 #### Command
 
@@ -364,9 +362,11 @@ already called the INS_INITTX_SAPLING. This command requires that it is needed t
 
 ### INS_GET_OUTPUTINFO
 
-Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a sapling output. This command requires you already called the
-INS_INITTX_SAPLING. This command requires you already called the correct number of INS_GET_SPENDINFO. This command
-requires that it is needed to extract outputinfo.
+Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a sapling output.
+
+- This command requires you already called the INS_INIT_TX_SAPLING.
+- This command requires you already called the correct number of INS_GET_SPENDINFO.
+- This command requires that it is needed to extract outputinfo.
 
 #### Command
 
@@ -391,9 +391,11 @@ requires that it is needed to extract outputinfo.
 
 ### INS_CHECKANDSIGN_TX_SAPLING
 
-Checks the transaction data and signs if it is correct with the corresponding keys. This command requires you already
-called the INS_INITTX_SAPLING. This command requires you already called the correct number of INS_GET_SPENDINFO. This
-command requires you already called the correct number of INS_GET_OUTPUTINFO.
+Checks the transaction data and signs if it is correct with the corresponding keys.
+
+- This command requires you already called the INS_INIT_TX_SAPLING.
+- This command requires you already called the correct number of INS_GET_SPENDINFO.
+- This command requires you already called the correct number of INS_GET_OUTPUTINFO.
 
 The transaction_blob should have the following format:
 
@@ -489,10 +491,12 @@ Data is defined as:
 
 ### INS_GET_TRANSPARENT_SIGNATURE
 
-Returns a SECP256K1 signature for a sapling transparent input. This command requires that you already called
-INS_CHECKANDSIGN_SAPLING. It gives the signatures in order of the transaction. 
-Returns error if all signatures are retrieved.
+Returns a SECP256K1 signature for a sapling transparent input.
 
+- This command requires that you already called INS_CHECKANDSIGN_SAPLING.
+
+It gives the signatures in order of the transaction.
+Returns error if all signatures are retrieved.
 
 #### Command
 
@@ -515,8 +519,9 @@ Returns error if all signatures are retrieved.
 
 ### INS_GET_SPEND_SIGNATURE
 
-Returns a spend signature for a sapling shielded spend input. This command requires that you already called
-INS_CHECKANDSIGN_SAPLING.
+Returns a spend signature for a sapling shielded spend input.
+
+- This command requires that you already called INS_CHECKANDSIGN_SAPLING.
 
 #### Command
 
@@ -538,100 +543,11 @@ INS_CHECKANDSIGN_SAPLING.
 ---
 
 ### INS_SIGN_SECP256K1
-### OLD COMMAND: NOT SUPPORTED
 
-#### Command
-
-| Field | Type     | Content                | Expected  |
-| ----- | -------- | ---------------------- | --------- |
-| CLA   | byte (1) | Application Identifier | 0xE0      |
-| INS   | byte (1) | Instruction ID         | 0x02      |
-| P1    | byte (1) | Payload desc           | 0 = init  |
-|       |          |                        | 1 = add   |
-|       |          |                        | 2 = last  |
-| P2    | byte (1) | ----                   | not used  |
-| L     | byte (1) | Bytes in payload       | (depends) |
-
-The first packet/chunk includes only the derivation path
-
-All other packets/chunks contain data chunks that are described below
-
-_First Packet_
-
-| Field   | Type     | Content              | Expected   |
-| ------- | -------- | -------------------- | ---------- |
-| Path[0] | byte (4) | Derivation Path Data | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data | ?          |
-| Path[3] | byte (4) | Derivation Path Data | ?          |
-| Path[4] | byte (4) | Derivation Path Data | ?          |
-
-_Other Chunks/Packets_
-
-| Field | Type     | Content | Expected |
-| ----- | -------- | ------- | -------- |
-| Data  | bytes... | Message |          |
-
-Data is defined as:
-
-| Field   | Type    | Content      | Expected |
-| ------- | ------- | ------------ | -------- |
-| Message | bytes.. | Data to sign |          |
-
-#### Response
-
-| Field       | Type            | Content     | Note                     |
-| ----------- | --------------- | ----------- | ------------------------ |
-| secp256k1 R | byte (32)       | Signature   |                          |
-| secp256k1 S | byte (32)       | Signature   |                          |
-| secp256k1 V | byte (1)        | Signature   |                          |
-| SIG         | byte (variable) | Signature   | DER format               |
-| SW1-SW2     | byte (2)        | Return code | see list of return codes |
+**THIS COMMAND HAS BEEN DEPRECATED**
 
 ---
 
 ### INS_SIGN_SAPLING
-### OLD COMMAND: NOT SUPPORTED
 
-| Field | Type     | Content                | Expected  |
-| ----- | -------- | ---------------------- | --------- |
-| CLA   | byte (1) | Application Identifier | 0xE0      |
-| INS   | byte (1) | Instruction ID         | 0x12      |
-| P1    | byte (1) | Payload desc           | 0 = init  |
-|       |          |                        | 1 = add   |
-|       |          |                        | 2 = last  |
-| P2    | byte (1) | ----                   | not used  |
-| L     | byte (1) | Bytes in payload       | (depends) |
-
-The first packet/chunk includes only the derivation path
-
-All other packets/chunks contain data chunks that are described below
-
-_First Packet_
-
-| Field   | Type     | Content              | Expected   |
-| ------- | -------- | -------------------- | ---------- |
-| Path[0] | byte (4) | Derivation Path Data | 0x8000002c |
-| Path[1] | byte (4) | Derivation Path Data | 0x80000085 |
-| Path[2] | byte (4) | Derivation Path Data | ?          |
-| Path[3] | byte (4) | Derivation Path Data | ?          |
-| Path[4] | byte (4) | Derivation Path Data | ?          |
-
-_Other Chunks/Packets_
-
-| Field | Type     | Content | Expected |
-| ----- | -------- | ------- | -------- |
-| Data  | bytes... | Message |          |
-
-Data is defined as:
-
-| Field   | Type    | Content      | Expected |
-| ------- | ------- | ------------ | -------- |
-| Message | bytes.. | Data to sign |          |
-
-#### Response
-
-| Field   | Type     | Content     | Note                     |
-| ------- | -------- | ----------- | ------------------------ |
-| ??      | byte (?) | Signature   |                          |
-| SW1-SW2 | byte (2) | Return code | see list of return codes |
+**THIS COMMAND HAS BEEN DEPRECATED**
