@@ -38,12 +38,14 @@ const uint8_t CONSENSUS_BRANCH_ID_ORCHARD[4] = {0xB4, 0xD0, 0xD6, 0xC2};       /
 
 void prevouts_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
-    if (n == 0) {
-        MEMZERO(output, HASH_SIZE);
-        return;
-    }
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) ZCASH_PREVOUTS_HASH_PERSONALIZATION, 16);
+
+    if (n == 0) {
+        cx_hash(&ctx.header, CX_LAST, 0, 0, output, HASH_SIZE);
+        return;
+    }
+
     const uint8_t *data = input + INDEX_TIN_PREVOUT;
     for (uint8_t i = 0; i < n - 1; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 36, NULL, 0);
@@ -53,12 +55,15 @@ void prevouts_hash(const uint8_t *input, uint8_t *output) {
 
 void sequence_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
-    if (n == 0) {
-        MEMZERO(output, HASH_SIZE);
-        return;
-    }
+
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) ZCASH_SEQUENCE_HASH_PERSONALIZATION, 16);
+
+    if (n == 0) {
+        cx_hash(&ctx.header, CX_LAST, 0, 0, output, HASH_SIZE);
+        return;
+    }
+
     const uint8_t *data = input + INDEX_TIN_SEQ;
     for (uint8_t i = 0; i < n - 1; i++, data += T_IN_TX_LEN) {
         cx_hash(&ctx.header, 0, data, 4, NULL, 0);
@@ -68,12 +73,15 @@ void sequence_hash(const uint8_t *input, uint8_t *output) {
 
 void outputs_hash(uint8_t *output) {
     const uint8_t n = t_outlist_len();
-    if (n == 0) {
-        MEMZERO(output, HASH_SIZE);
-        return;
-    }
+
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) ZCASH_OUTPUTS_HASH_PERSONALIZATION, 16);
+
+    if (n == 0) {
+        cx_hash(&ctx.header, CX_LAST, 0, 0, output, HASH_SIZE);
+        return;
+    }
+
     uint8_t data[34];
     uint8_t i = 0;
     for (; i < n - 1; i++) {
@@ -86,7 +94,6 @@ void outputs_hash(uint8_t *output) {
     MEMCPY(data, (uint8_t * ) & (item->value), 8);
     MEMCPY(data + 8, item->address, SCRIPT_SIZE);
     cx_hash(&ctx.header, CX_LAST, data, sizeof(data), output, HASH_SIZE);
-
 }
 
 /* NOT SUPPORTED
