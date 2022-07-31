@@ -1546,7 +1546,7 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('test extracting output without extracting spend data', async function (m) {
+  test.each(models)('extracting output without extracting spend data', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -1619,7 +1619,7 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('test extracting signatures without checkandsign', async function (m) {
+  test.each(models)('extracting signatures without checkandsign', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -1716,7 +1716,7 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('test extracting more signatures than needed for tx', async function (m) {
+  test.each(models)('extracting more signatures than needed for tx', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -1998,7 +1998,7 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('test not using ledger randomness for tx', async function (m) {
+  test.each(models)('not using ledger randomness for tx', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -2256,7 +2256,7 @@ describe('Zcashtool tests', function () {
     }
   })
 
-  test.each(models)('test use other address in builder than in inittx', async function (m) {
+  test.each(models)('use other address in builder than in inittx', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
