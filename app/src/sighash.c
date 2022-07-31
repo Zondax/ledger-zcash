@@ -34,10 +34,7 @@
 void prevouts_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
     if (n == 0) {
-        const uint8_t emptyhash[HASH_SIZE] = {213, 58, 99, 59, 190, 207, 130, 254, 158, 148, 132,
-                                              216, 160, 231, 39, 199, 59, 185, 230, 140, 150, 231,
-                                              45, 236, 48, 20, 79, 106, 132, 175, 161, 54};
-        MEMCPY(output, emptyhash, HASH_SIZE);
+        MEMZERO(output, HASH_SIZE);
         return;
     }
     cx_blake2b_t ctx;
@@ -52,10 +49,7 @@ void prevouts_hash(const uint8_t *input, uint8_t *output) {
 void sequence_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
     if (n == 0) {
-        const uint8_t emptyhash[HASH_SIZE] = {165, 242, 95, 1, 149, 147, 97, 238, 110, 181, 106,
-                                              116, 1, 33, 14, 226, 104, 34, 111, 108, 231, 100,
-                                              164, 241, 11, 127, 41, 229, 77, 179, 114, 114};
-        MEMCPY(output, emptyhash, HASH_SIZE);
+        MEMZERO(output, HASH_SIZE);
         return;
     }
     cx_blake2b_t ctx;
@@ -70,10 +64,7 @@ void sequence_hash(const uint8_t *input, uint8_t *output) {
 void outputs_hash(uint8_t *output) {
     const uint8_t n = t_outlist_len();
     if (n == 0) {
-        const uint8_t emptyhash[HASH_SIZE] = {134, 158, 218, 132, 238, 207, 114, 87, 249, 151,
-                                              154, 72, 72, 187, 245, 47, 73, 105, 165, 115,
-                                              101, 148, 171, 123, 164, 20, 82, 231, 187, 144, 104, 36};
-        MEMCPY(output, emptyhash, HASH_SIZE);
+        MEMZERO(output, HASH_SIZE);
         return;
     }
     cx_blake2b_t ctx;
