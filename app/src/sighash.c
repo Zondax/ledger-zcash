@@ -30,6 +30,11 @@
 #define CTX_ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION "ZcashSSpendsHash"
 #define CTX_ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION "ZcashSOutputHash"
 
+//const uint8_t CONSENSUS_BRANCH_ID_SAPLING[4] = {0x76, 0xb8, 0x09, 0xBB};       // sapling
+//const uint8_t CONSENSUS_BRANCH_ID_ORCHARD[4] = {0xC2, 0xD6, 0xD0, 0xB4};       // orchard
+//
+const uint8_t CONSENSUS_BRANCH_ID_SAPLING[4] = {0xBB, 0x09, 0xB8, 0x76};       // sapling
+const uint8_t CONSENSUS_BRANCH_ID_ORCHARD[4] = {0xB4, 0xD0, 0xD6, 0xC2};       // orchard
 
 void prevouts_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
@@ -111,19 +116,21 @@ void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
 }
 
 void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
-    const uint8_t CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION[] = {90, 99, 97, 115, 104, 83, 105, 103, 72, 97,
-                                                                         115, 104, 187, 9, 184, 118};
     cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION, 16);
+
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) PIC("ZcashSigHash"), 12);
+    cx_hash(&ctx.header, 0, PIC(CONSENSUS_BRANCH_ID_ORCHARD), 4, NULL, 0);
+
     cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
 }
 
 void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
-    const uint8_t CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION[] = {90, 99, 97, 115, 104, 83, 105, 103, 72, 97,
-                                                                         115, 104, 187, 9, 184, 118};
     cx_blake2b_t ctx;
-    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) CTX_ZCASH_SHIELDED_SIGNATURE_HASH_PERSONALIZATION, 16);
+
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) PIC("ZcashSigHash"), 12);
+    cx_hash(&ctx.header, 0, PIC(CONSENSUS_BRANCH_ID_ORCHARD), 4, NULL, 0);
     cx_hash(&ctx.header, 0, input, inputlen, NULL, 0);
+
     cx_hash(&ctx.header, CX_LAST, script, scriptlen, output, HASH_SIZE);
 }
 
