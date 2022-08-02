@@ -1184,12 +1184,12 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     uint8_t *start_signdata = (uint8_t *)(txdata + start_sighashdata());
 
-    uint8_t sighash[HASH_SIZE];
+    uint8_t message[HASH_SIZE + 32];
 
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    signature_hash(start_signdata,LENGTH_HASH_DATA,sighash);
+    signature_hash(start_signdata,LENGTH_HASH_DATA,message + 32);
 
     tmp_sign_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sign_s));
@@ -1210,7 +1210,9 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 }
                 // combining these causes a stack overflow
                 randomized_secret_from_seed(tmp.step1.zip32_seed,item->path, (uint8_t *)item->alpha, tmp.step3.rsk);
-                sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)sighash, (uint8_t *)out);
+				rsk_to_rk((uint8_t *)tmp.step3.rsk, message);
+
+                sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)message, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);
                 if(zxerr != zxerr_ok){
                     CLOSE_TRY;
