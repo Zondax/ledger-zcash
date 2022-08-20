@@ -329,7 +329,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
 
     // this needs to get Full viewing key = (ak, nk, ovk) and note position, to then compute nullifier
     // G_io_apdu_buffer contains zip32path, note position, note commitment
-    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, notepos,
+    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, notepos,
                                            cm, &replyLen);
     if (err != zxerr_ok) {
         zemu_log("Failed to get nullifier!\n");

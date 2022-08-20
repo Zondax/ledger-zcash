@@ -1359,7 +1359,7 @@ typedef struct {
 } tmp_sapling_nullifier;
 
 // handleGetNullifier
-zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint64_t notepos, uint8_t *cm,
+zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint64_t notepos, uint8_t *cm,
                                  uint16_t *replyLen){
     MEMZERO(buffer, bufferLen);
 
@@ -1381,7 +1381,7 @@ zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p
             // nk can be computed from nsk which itself can be computed from the seed.
             zip32_nsk_from_seed(tmp.zip32_seed,tmp.nsk);
 
-            compute_nullifier(cm, notepos, tmp.nsk,nf_out);
+            compute_nullifier(cm, notepos, tmp.nsk, nf_out);
 
             MEMZERO(&tmp,sizeof(tmp));
             CHECK_APP_CANARY();
