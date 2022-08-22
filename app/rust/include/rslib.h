@@ -25,6 +25,8 @@ void get_diversifier_list_withstartindex(const uint8_t *seed_ptr, const uint32_t
 
 void get_default_diversifier_list_withstartindex(const uint8_t *seed_ptr, const uint32_t pos, uint8_t *startindex, uint8_t *diversifier_list);
 
+void get_default_diversifier_without_start_index(const uint8_t *see_ptr, const uint32_t pos, uint8_t *default_diversifier);
+
 void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);

@@ -28,6 +28,7 @@ import {
   PKLEN,
   processErrorResponse,
   SAPLING_ADDR_LEN,
+  SAPLING_DIV_LEN,
   SAPLING_IVK_LEN,
   SAPLING_OVK_LEN,
   SAPLING_NF_LEN,
@@ -102,9 +103,14 @@ function processIVKResponse(response) {
   const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
   const ivkraw = Buffer.from(partialResponse.slice(0, SAPLING_IVK_LEN));
+  // "advance" buffer
+
+  partialResponse = partialResponse.slice(SAPLING_IVK_LEN);
+  const defaultdiv = Buffer.from(partialResponse.slice(0,SAPLING_DIV_LEN));
 
   return {
     ivk_raw: ivkraw,
+    default_div: defaultdiv,
     return_code: returnCode,
     error_message: errorCodeToString(returnCode),
   };

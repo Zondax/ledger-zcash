@@ -15,6 +15,13 @@ use itertools::zip;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use crate::commitments::bytes_to_extended;
+use crate::constants::{AK_NK, AK_NSK, ASK_NSK,
+                       COIN_TYPE,
+                       CRH_IVK_PERSONALIZATION,
+                       DIV_SIZE, DIV_DEFAULT_LIST_LEN,
+                       DK,DK_AK_NK,
+                       FIRSTVALUE,
+                       PROVING_KEY_BASE};
 use crate::pedersen::extended_to_bytes;
 use crate::{bolos, c_check_app_canary, constants};
 
@@ -59,7 +66,7 @@ pub fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sapling_nsk_to_nk(nsk: &[u8; 32]) -> [u8; 32] {
-    let nk = constants::PROVING_KEY_BASE.multiply_bits(&nsk);
+    let nk = PROVING_KEY_BASE.multiply_bits(&nsk);
     AffinePoint::from(nk).to_bytes()
 }
 
@@ -69,7 +76,7 @@ pub fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
 
     let h = Blake2sParams::new()
         .hash_length(32)
-        .personal(constants::CRH_IVK_PERSONALIZATION)
+        .personal(CRH_IVK_PERSONALIZATION)
         .to_state()
         .update(ak)
         .update(nk)
@@ -500,27 +507,27 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_c
 
 
     // Get nk from nsk = k[64..96]
-    let nk_tmp = constants::PROVING_KEY_BASE.multiply_bits(&nsk.to_bytes());
+    let nk_tmp = PROVING_KEY_BASE.multiply_bits(&nsk.to_bytes());
     let nk = AffinePoint::from(nk_tmp);//.to_bytes();
 
     let mut result = [0u8; 96];
     match child_components{
-        constants::AK_NK => {
+        AK_NK => {
             result[0..32].copy_from_slice(&ak);
             result[32..64].copy_from_slice(&nk.to_bytes());
         }
-        constants::DK => {
+        DK => {
             result[0..32].copy_from_slice(&divkey);
         }
-        constants::AK_NSK => {
+        AK_NSK => {
             result[0..32].copy_from_slice(&ak);
             result[32..64].copy_from_slice(&nsk.to_bytes());
         }
-        constants::ASK_NSK => {
+        ASK_NSK => {
             result[0..32].copy_from_slice(&ask.to_bytes());
             result[32..64].copy_from_slice(&nsk.to_bytes());
         }
-        constants::DK_AK_NK => {
+        DK_AK_NK => {
             result[0..32].copy_from_slice(&divkey);
             result[32..64].copy_from_slice(&ak);
             result[64..96].copy_from_slice(&nk.to_bytes());
@@ -552,8 +559,9 @@ pub fn get_dk(
 
     const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
     const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
-    let k = derive_zip32_child_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos],
-                                               constants::DK); //consistent with zecwallet
+    let k = derive_zip32_child_fromseedandpath(seed,
+                                               &[FIRSTVALUE, COIN_TYPE, pos],
+                                               DK); //consistent with zecwallet
 
     // k = dk || ...
     dk.copy_from_slice(&k[0..32]);
@@ -580,8 +588,8 @@ pub extern "C" fn zip32_ivk(
     let ivk = unsafe { &mut *ivk_ptr };
 
     let k = derive_zip32_child_fromseedandpath(seed,
-                                               &[constants::FIRSTVALUE, constants::COIN_TYPE, pos],
-                                               constants::AK_NK); //consistent with zecwallet
+                                               &[FIRSTVALUE, COIN_TYPE, pos],
+                                               AK_NK); //consistent with zecwallet
 
     // k =  ak || nk
     // ak = k[0..32]
@@ -591,6 +599,40 @@ pub extern "C" fn zip32_ivk(
                               &k[32..64].try_into().unwrap());
     ivk.copy_from_slice(&tmp_ivk)
 }
+
+#[no_mangle]
+pub extern "C" fn get_default_diversifier_without_start_index(
+    seed_ptr: *const [u8; 32],
+    pos: u32,
+    diversifier_ptr: *mut [u8; 11])
+{
+    c_zemu_log_stack(b"get_pkd_from_seed\x00\n".as_ref());
+    let seed = unsafe { &*seed_ptr };
+    let mut start = [0u8;11];
+    let div = unsafe {&mut *diversifier_ptr};
+
+    let mut div_list = [0u8;DIV_SIZE*DIV_DEFAULT_LIST_LEN];
+
+    let dk = derive_zip32_child_fromseedandpath(&seed,
+                                                &[FIRSTVALUE, COIN_TYPE, pos], 
+                                                DK_AK_NK);
+
+    let mut found = false;
+
+    while !found {
+        ff1aes_list_with_startingindex_default(&dk[0..32].try_into().unwrap(),
+        &mut start, &mut div_list);
+        for i in 0..DIV_DEFAULT_LIST_LEN
+            {
+            if !found && is_valid_diversifier(
+            &div_list[i*DIV_SIZE..(i+1)*DIV_SIZE].try_into().unwrap())
+                {
+                    found = true;
+                    div.copy_from_slice(&div_list[i*DIV_SIZE..(i+1)*DIV_SIZE]);
+                }
+            }
+        }
+    }
 
 #[no_mangle]
 pub extern "C" fn zip32_master(
@@ -635,7 +677,7 @@ pub extern "C" fn zip32_child_proof_key(
     const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
     let k = derive_zip32_child_fromseedandpath(seed,
                                                &[FIRSTVALUE, COIN_TYPE, pos],
-                                               constants::AK_NSK); //consistent with zecwallet
+                                               AK_NSK); //consistent with zecwallet
 
     // k = ak || nsk
     ak.copy_from_slice(&k[0..32]);
@@ -654,8 +696,8 @@ pub extern "C" fn zip32_child_ask_nsk(
     let nsk = unsafe { &mut *nsk_ptr };
 
     let k = derive_zip32_child_fromseedandpath(seed,
-                                               &[constants::FIRSTVALUE, constants::COIN_TYPE, pos],
-                                               constants::ASK_NSK); //consistent with zecwallet;
+                                               &[FIRSTVALUE, COIN_TYPE, pos],
+                                               ASK_NSK); //consistent with zecwallet;
     ask.copy_from_slice(&k[0..32]);
     nsk.copy_from_slice(&k[32..64]);
 }
@@ -727,25 +769,25 @@ pub extern "C" fn get_pkd_from_seed(
     let start = unsafe { &mut *start_index };
     let div = unsafe {&mut *diversifier_ptr};
 
-    let mut div_list = [0u8;constants::DIV_SIZE*constants::DIV_DEFAULT_LIST_LEN];
+    let mut div_list = [0u8;DIV_SIZE*DIV_DEFAULT_LIST_LEN];
 
     let dk_ak_nk = derive_zip32_child_fromseedandpath(&seed,
-                                                  &[constants::FIRSTVALUE,
-                                                      constants::COIN_TYPE, pos],
-                                                      constants::DK_AK_NK);
+                                                  &[FIRSTVALUE,
+                                                      COIN_TYPE, pos],
+                                                      DK_AK_NK);
 
     let mut found = false;
 
     while !found {
         ff1aes_list_with_startingindex_default(&mut dk_ak_nk[0..32].try_into().unwrap(),
                                                start, &mut div_list);
-        for i in 0..constants::DIV_DEFAULT_LIST_LEN
+        for i in 0..DIV_DEFAULT_LIST_LEN
         {
             if !found && is_valid_diversifier(
-                &div_list[i*constants::DIV_SIZE..(i+1)*constants::DIV_SIZE].try_into().unwrap())
+                &div_list[i*DIV_SIZE..(i+1)*DIV_SIZE].try_into().unwrap())
             {
                 found = true;
-                div.copy_from_slice(&div_list[i*constants::DIV_SIZE..(i+1)*constants::DIV_SIZE]);
+                div.copy_from_slice(&div_list[i*DIV_SIZE..(i+1)*DIV_SIZE]);
             }
         }
     }
@@ -837,9 +879,9 @@ mod tests {
 
         let p: u32 = 0x8000_0001;
         let dk_ak_nk = derive_zip32_child_fromseedandpath(&seed, &[p],
-                                                          constants::DK_AK_NK);
+                                                          DK_AK_NK);
         let ask_nsk = derive_zip32_child_fromseedandpath(&seed, &[p],
-                                                          constants::ASK_NSK);
+                                                          ASK_NSK);
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 
@@ -914,9 +956,9 @@ mod tests {
         let p: u32 = 1000 | 0x8000_0000;
 
         let dk_ak_nk = derive_zip32_child_fromseedandpath(&seed, &[p],
-                                                          constants::DK_AK_NK);
+                                                          DK_AK_NK);
         let ask_nsk = derive_zip32_child_fromseedandpath(&seed, &[p],
-                                                         constants::ASK_NSK);
+                                                         ASK_NSK);
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 

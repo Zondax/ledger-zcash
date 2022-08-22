@@ -169,7 +169,9 @@ a diversifier was not valid, zero-bytes are returned (so always 220 bytes are re
 
 ### INS_GET_IVK_SAPLING
 
-Returns a sapling incoming viewing key. Forced user confirmation (So P1 needs to be 0x01).
+Returns a sapling incoming viewing key. 
+Forced user confirmation (So P1 needs to be 0x01).
+Also returns the default diversifier (starting from index 0).
 
 #### Command
 
@@ -184,10 +186,11 @@ Returns a sapling incoming viewing key. Forced user confirmation (So P1 needs to
 
 #### Response
 
-| Field   | Type      | Content     | Note                     |
-|---------|-----------|-------------|--------------------------|
-| IVK_RAW | byte (32) | Raw IVK     |                          |
-| SW1-SW2 | byte (2)  | Return code | see list of return codes |
+| Field   | Type      | Content              | Note                     |
+|---------|-----------|----------------------|--------------------------|
+| IVK_RAW | byte (32) | Raw IVK              |                          |
+| DIV     | byte (11) | Default diversifier  |                          |
+| SW1-SW2 | byte (2)  | Return code          | see list of return codes |
 
 ---
 
