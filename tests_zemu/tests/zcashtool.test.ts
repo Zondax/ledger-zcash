@@ -65,8 +65,14 @@ describe('Get keys', function () {
       expect(ivk.return_code).toEqual(0x9000)
 
       const expected_ivk_raw = '6dfadf175921e6fbfa093c8f7c704a0bdb07328474f56c833dfcfa5301082d03'
+      const expected_div = 'c69e979c6763c1b09238dc'
+
       const ivk_raw = ivk.ivk_raw.toString('hex')
+      const default_div = ivk.default_div.toString('hex')
+
       expect(ivk_raw).toEqual(expected_ivk_raw)
+      expect(default_div).toEqual(expected_div)
+
     } finally {
       await sim.close()
     }

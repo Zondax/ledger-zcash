@@ -1283,13 +1283,18 @@ typedef struct {
             uint8_t dummy; // Removing this causes a segfault... strange...
 } tmp_sapling_addr_s;
 
-// handleGetKeyIVK
+typedef struct {
+    uint8_t ivk[IVK_SIZE];
+    uint8_t default_div[DIV_SIZE]; // Removing this causes a segfault... strange...
+} tmp_sapling_ivk_and_default_div;
+
+// handleGetKeyIVK: return the incoming viewing key for a given path and the default diversifier
 zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ivk_sapling");
 
-    uint8_t *out = buffer;
+    tmp_sapling_ivk_and_default_div *out = (tmp_sapling_ivk_and_default_div *) buffer;
     MEMZERO(out, bufferLen);
 
     tmp_sapling_addr_s tmp;
@@ -1303,8 +1308,11 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
             // Temporarily get sk from Ed25519
             crypto_fillSaplingSeed(tmp.zip32_seed);
             CHECK_APP_CANARY();
-            zip32_ivk(tmp.zip32_seed, out, p);
+            // get incomming viewing key
+            zip32_ivk(tmp.zip32_seed, out->ivk, p);
             CHECK_APP_CANARY();
+            // get default diversifier for start index 0
+            get_default_diversifier_without_start_index(tmp.zip32_seed, p, out->default_div);
             MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
         FINALLY
@@ -1315,7 +1323,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     }
     END_TRY;
     CHECK_APP_CANARY();
-    *replyLen = IVK_SIZE;
+    *replyLen = IVK_SIZE + DIV_SIZE;
     return zxerr_ok;
 }
 
@@ -1359,7 +1367,7 @@ typedef struct {
 } tmp_sapling_nullifier;
 
 // handleGetNullifier
-zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint64_t notepos, uint8_t *cm,
+zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint64_t notepos, uint8_t *cm,
                                  uint16_t *replyLen){
     MEMZERO(buffer, bufferLen);
 
@@ -1381,7 +1389,7 @@ zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p
             // nk can be computed from nsk which itself can be computed from the seed.
             zip32_nsk_from_seed(tmp.zip32_seed,tmp.nsk);
 
-            compute_nullifier(cm, notepos, tmp.nsk,nf_out);
+            compute_nullifier(cm, notepos, tmp.nsk, nf_out);
 
             MEMZERO(&tmp,sizeof(tmp));
             CHECK_APP_CANARY();

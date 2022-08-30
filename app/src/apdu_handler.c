@@ -175,6 +175,7 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)
 // to decrypt the note (so that she can subsequently send it).
+// This function also returns the default diversifier to reduce interactions between host and device
 __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
                                 volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetKeyIVK]\n");
@@ -329,7 +330,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
 
     // this needs to get Full viewing key = (ak, nk, ovk) and note position, to then compute nullifier
     // G_io_apdu_buffer contains zip32path, note position, note commitment
-    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, notepos,
+    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, notepos,
                                            cm, &replyLen);
     if (err != zxerr_ok) {
         zemu_log("Failed to get nullifier!\n");
@@ -617,22 +618,13 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    ZEMU_LOGF(100, "rx is %d\n", rx)
-    ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)
-    if ( rx != (uint32_t)(DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
-        ZEMU_LOGF(100, "rx is %d\n", rx)
-        ZEMU_LOGF(100, "sum is %d\n", DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)
 
-        if ( rx == (DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
-            ZEMU_LOGF(100, "APDU_MIN_LENGTH is %d\n", APDU_MIN_LENGTH)
-            ZEMU_LOGF(100, "DATA_LENGTH_GET_ADDR_SAPLING is %d\n", DATA_LENGTH_GET_ADDR_SAPLING)
-        }
+    if ( rx != (uint32_t)(DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING) {
-        ZEMU_LOGF(100, "rx is %d\n", rx)
         zemu_log("Wrong offset data length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }

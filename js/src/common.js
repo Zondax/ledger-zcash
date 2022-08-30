@@ -41,6 +41,7 @@ export const ERROR_CODE = {
 
 export const PKLEN = 33;
 export const SAPLING_ADDR_LEN = 43;
+export const SAPLING_DIV_LEN = 11;
 export const SAPLING_IVK_LEN = 32;
 export const SAPLING_OVK_LEN = 32;
 export const SAPLING_NF_LEN = 32;
