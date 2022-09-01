@@ -34,6 +34,8 @@ import {
   SAPLING_NF_LEN,
   SAPLING_PGK_LEN,
   SAPLING_RND_LEN,
+  SAPLING_AK_LEN,
+  SAPLING_NK_LEN,
 } from "./common";
 
 function processGetUnshieldedAddrResponse(response) {
@@ -125,6 +127,30 @@ function processOVKResponse(response) {
   const ovkraw = Buffer.from(partialResponse.slice(0, SAPLING_OVK_LEN));
 
   return {
+    ovk_raw: ovkraw,
+    return_code: returnCode,
+    error_message: errorCodeToString(returnCode),
+  };
+}
+
+function processFVKResponse(response) {
+  let partialResponse = response;
+
+  const errorCodeData = partialResponse.slice(-2);
+  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+  const akraw = Buffer.from(partialResponse.slice(0, SAPLING_AK_LEN));
+  partialResponse = partialResponse.slice(SAPLING_AK_LEN);
+
+  const nkraw = Buffer.from(partialResponse.slice(0, SAPLING_NK_LEN));
+  partialResponse = partialResponse.slice(SAPLING_NK_LEN);
+
+  const ovkraw = Buffer.from(partialResponse.slice(0, SAPLING_OVK_LEN));
+  partialResponse = partialResponse.slice(SAPLING_OVK_LEN);
+
+  return {
+    ak_raw: akraw,
+    nk_raw: nkraw,
     ovk_raw: ovkraw,
     return_code: returnCode,
     error_message: errorCodeToString(returnCode),
@@ -449,8 +475,18 @@ export default class ZCashApp {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
     return this.transport
-      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, pos, cm]), [0x9000])
+      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, pos, cm]), [
+        0x9000,
+      ])
       .then(processNullifierResponse, processErrorResponse);
+  }
+
+  async getfvk(path) {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(path, 0);
+    return this.transport
+      .send(CLA, INS.GET_FVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
+      .then(processFVKResponse, processErrorResponse);
   }
 
   async extractspendsig() {

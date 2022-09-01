@@ -48,13 +48,28 @@ zxerr_t key_getItem(int8_t displayIdx,
             switch (key_state.kind) {
                 case key_ovk:
                     snprintf(outKey, outKeyLen, "Send OVK?");
+                    // todo print path instead of ovk
                     array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
                     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                     return zxerr_ok;
                 case key_ivk:
                     snprintf(outKey, outKeyLen, "Send IVK?");
+                    // todo print path instead of ivk
                     array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
                     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                    return zxerr_ok;
+                case key_fvk:
+                    // zip32 path is 32' (purpose)/ coin type  / account
+                    //  m/32'/133'/k' on mainnet
+                    // todo: get the real zip32 path, at the moment, it displays m/0'/0'/0'
+                    // coin type = ZEC = 133
+                    //  k = account
+                    zemu_log_stack("case key_fvk");
+                    snprintf(outKey, outKeyLen, "Send FVK for path:\n");
+                    char buffer[300];
+                    bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
+                    pageString(outVal, outValLen, buffer, pageIdx, pageCount);
+                    snprintf(outKey, outKeyLen, "?");
                     return zxerr_ok;
                 case nf:
                     zemu_log_stack("Send NF?");

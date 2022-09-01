@@ -37,6 +37,8 @@ void zip32_ivk(const uint8_t *ak_ptr, uint8_t *ivk_ptr, const uint32_t pos);
 
 void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);
 
+void zip32_fvk(const uint8_t *seed_ptr, uint8_t *fvk, const uint32_t pos);
+
 void zip32_child_proof_key(const uint8_t *seed_ptr, uint8_t *ak_ptr, uint8_t *nsk_ptr, const uint32_t pos);
 
 //Rseed

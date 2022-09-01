@@ -1285,7 +1285,7 @@ typedef struct {
 
 typedef struct {
     uint8_t ivk[IVK_SIZE];
-    uint8_t default_div[DIV_SIZE]; // Removing this causes a segfault... strange...
+    uint8_t default_div[DIV_SIZE];
 } tmp_sapling_ivk_and_default_div;
 
 // handleGetKeyIVK: return the incoming viewing key for a given path and the default diversifier
@@ -1358,6 +1358,48 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     END_TRY;
     CHECK_APP_CANARY();
     *replyLen = OVK_SIZE;
+    return zxerr_ok;
+}
+
+typedef struct {
+    uint8_t fvk[AK_SIZE + NK_SIZE + OVK_SIZE];
+} tmp_sapling_fvk;
+
+// handleGetKeyFVK: return the full viewing key for a given path
+zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
+    MEMZERO(buffer, bufferLen);
+
+    zemu_log_stack("crypto_fvk_sapling");
+
+    tmp_sapling_fvk *out = (tmp_sapling_fvk *) buffer;
+    MEMZERO(out, bufferLen);
+
+    tmp_sapling_addr_s tmp;
+    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+
+    //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
+    BEGIN_TRY
+    {
+        TRY
+        {
+            // Temporarily get sk from Ed25519
+            crypto_fillSaplingSeed(tmp.zip32_seed);
+            zemu_log_stack("FVK got sapling seed");
+            CHECK_APP_CANARY();
+            // get full viewing key
+            zip32_fvk(tmp.zip32_seed, out->fvk, p);
+            CHECK_APP_CANARY();
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+        }
+        FINALLY
+        {
+            // Not necessary, but just in case
+            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+        }
+    }
+    END_TRY;
+    CHECK_APP_CANARY();
+    *replyLen = AK_SIZE + NK_SIZE + OVK_SIZE;
     return zxerr_ok;
 }
 

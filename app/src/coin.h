@@ -55,7 +55,8 @@ typedef enum {
 typedef enum {
     key_ivk = 0,
     key_ovk = 1,
-    nf = 2
+    key_fvk = 2,
+    nf = 3
 } key_type_e;
 
 #define VIEW_ADDRESS_OFFSET_SECP256K1       PK_LEN_SECP256K1

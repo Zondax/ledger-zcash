@@ -55,7 +55,7 @@ describe('Get keys', function () {
 
       const ivkreq = app.getivk(1000)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
       const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getivk`, clickSchedule)
@@ -86,7 +86,7 @@ describe('Get keys', function () {
 
       const ovkreq = app.getovk(1000)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
       const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getovk`, clickSchedule)
@@ -109,33 +109,30 @@ describe('Get keys', function () {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
-
-      const cm = Buffer.from(
-          [33, 201, 70, 152, 202, 50, 75, 76, 186, 206, 41, 29,
-            39, 171, 182, 138, 10, 175, 39, 55, 220, 69, 86, 84, 28,
-            127, 205, 232, 206, 17, 221, 232])
-
-      //const pos = Uint8Array.from([2578461368])
-      const pos = Uint8Array.from([184,50,176,153,0,0,0,0])
-      const nfreq = app.getnullifier(1000, pos,cm)
+      const fvkreq = app.getfvk(1000)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
 
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-nullifier`, clickSchedule)
+      const clickSchedule = m.name == 'nanos' ? [2, 0] : [2, 0]
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-fvk`, clickSchedule)
 
-      const nf = await nfreq
+      const fvk = await fvkreq
 
-      console.log(nf)
-      expect(nf.return_code).toEqual(0x9000)
+      console.log(fvk)
+      expect(fvk.return_code).toEqual(0x9000)
 
-      const expected_nf = Buffer.from(
-          [37, 241, 242, 207, 94, 44, 43, 195, 29, 7, 182, 111,
-            77, 84, 240, 144, 173, 137, 177, 152, 137, 63, 18, 173,
-            174, 68, 125, 223, 132, 226, 20, 90])
+      const expected_ak_raw = '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a'
+      const ak_raw = fvk.ak_raw.toString('hex')
+      expect(ak_raw).toEqual(expected_ak_raw)
 
-      const nfRaw = nf.nf_raw
-      expect(expected_nf).toEqual(nfRaw)
+      const expected_nk_raw = 'a93349ed31a96abd9b07fb04daaad69a51de16e4ac8dbcc7e001779668d08dc7'
+      const nk_raw = fvk.nk_raw.toString('hex')
+      expect(nk_raw).toEqual(expected_nk_raw)
+
+      const expected_ovk_raw = '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca'
+      const ovk_raw = fvk.ovk_raw.toString('hex')
+      expect(ovk_raw).toEqual(expected_ovk_raw)
+
     } finally {
       await sim.close()
     }
@@ -158,7 +155,7 @@ describe('Get keys', function () {
       const pos = Uint8Array.from([184,50,176,153,0,0,0,0])
       const nfreq = app.getnullifier(1000, pos,cm)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
       const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-nullifier`, clickSchedule)
@@ -218,7 +215,7 @@ describe('Addresses and diversifiers', function () {
       const div = Buffer.from('c69e979c6763c1b09238dc', 'hex')
 
       const addrreq = app.showaddrdiv(path, div)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
       const clickSchedule = m.name == 'nanos' ? [3, 0] : [3, 0]
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-show-shielded-addr`, clickSchedule)
 

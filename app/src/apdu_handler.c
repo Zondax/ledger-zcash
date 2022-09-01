@@ -271,6 +271,55 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     *flags |= IO_ASYNCH_REPLY;
 }
 
+
+// Get the sapling full viewing key (ak, nk, ovk)
+__Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags,
+                                volatile uint32_t *tx, uint32_t rx) {
+    zemu_log("----[handleGetKeyFVK]\n");
+
+    *tx = 0;
+    if (rx < APDU_MIN_LENGTH) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_FVK) {
+        zemu_log("Wrong length!\n");
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
+
+    if (!requireConfirmation) {
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    uint32_t zip32path = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_FVK,
+                                                &zip32path);
+    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+    if (prserr != parser_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.kind = key_fvk;
+    uint16_t replyLen = 0;
+
+    zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    if (err != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.len = replyLen;
+
+    view_review_init(key_getItem, key_getNumItems, app_reply_key);
+    view_review_show(1);
+    *flags |= IO_ASYNCH_REPLY;
+}
+
 // Computing the note nullifier nf is required in order to spend the note.
 // Computing nf requires the associated (private) nullifier deriving key nk
 // and the note position pos.
@@ -432,6 +481,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
 
     err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok) {
+        zemu_log("----[crypto_checkoutput_sapling failed]\n");
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
         transaction_reset();
@@ -742,6 +792,13 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 case INS_GET_NF: {
                     CHECK_PIN_VALIDATED();
                     handleGetNullifier(flags, tx, rx);
+                    break;
+                }
+
+                case INS_GET_FVK: {
+                    zemu_log("----[INS_GET_FVK]\n");
+                    CHECK_PIN_VALIDATED();
+                    handleGetKeyFVK(flags, tx, rx);
                     break;
                 }
 

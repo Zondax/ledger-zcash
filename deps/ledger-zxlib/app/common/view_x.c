@@ -295,6 +295,7 @@ void view_idle_show_impl(__Z_UNUSED uint8_t item_idx, char *statusString) {
 }
 
 void view_review_show_impl(unsigned int requireAPDUreply){
+    zemu_log_stack("view_review_show_impl");
     mustReply = requireAPDUreply;
     h_paging_init();
     h_paging_decrease();
