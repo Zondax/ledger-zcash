@@ -3,8 +3,19 @@ use neon::prelude::*;
 use std::path::Path;
 
 use neon_serde::ResultExt;
+use rand_core::OsRng;
 use zcash_hsmbuilder::errors::Error;
-use zcash_hsmbuilder::*;
+use zcash_hsmbuilder as ZcashBuilder;
+use zcash_hsmbuilder::data::{HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures, TransparentInputBuilderInfo, TransparentOutputBuilderInfo};
+use zcash_hsmbuilder::{hsmauth, txprover};
+use zcash_primitives;
+use ledger_zcash::zcash::primitives::consensus::TestNetwork;
+use ledger_zcash::zcash::primitives::{consensus,
+                                      transaction::
+                                      {components::{transparent, sapling}
+                                      }};
+use zcash_hsmbuilder::txbuilder::hsmauth::MixedAuthorization;
+use zcash_primitives::transaction::components::TxOut;
 
 // reference
 // https://neon-bindings.com/docs/primitives
@@ -17,49 +28,70 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
     let output = arg0_value.to_hsm_bytes();
     let js_value;
-    if output.is_ok() {
-        js_value = neon_serde::to_value(&mut cx, &output.unwrap()).throw(&mut cx)?;
-        Ok(js_value)
-    } else {
-        cx.throw_error(output.err().unwrap().to_string())
-    }
+    js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
+    Ok(js_value)
 }
 
-pub struct ZcashBuilderBridge {
-    zcashbuilder: ZcashBuilder,
+pub struct ZcashBuilderBridge  {
+    unauth_zcashbuilder: ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng,hsmauth::Unauthorized>,
+    auth_zcashbuilder: Option<ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, MixedAuthorization<transparent::Authorized, sapling::Authorized> >> ,
 }
 
 impl ZcashBuilderBridge {
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
-        self.zcashbuilder.add_transparent_input(t)
+        self.unauth_zcashbuilder.add_transparent_input(t.pk, t.outp, TxOut {
+            value: t.value,
+            script_pubkey: t.address
+        })
     }
 
     pub fn add_transparent_output(
         &mut self,
         input: TransparentOutputBuilderInfo,
     ) -> Result<(), Error> {
-        self.zcashbuilder.add_transparent_output(input)
+        self.unauth_zcashbuilder.add_transparent_output(input.address, input.value)
     }
 
     pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
-        self.zcashbuilder.add_sapling_spend(input)
+        let div = *input.address.diversifier();
+        let pk_d = *input.address.pk_d();
+        let note = ledger_zcash::zcash::primitives::sapling::Note {
+            value: u64::from(input.value),
+            g_d: div.g_d().unwrap(),
+            pk_d,
+            rseed: input.rseed,
+        };
+        self.unauth_zcashbuilder.add_sapling_spend(div, note, input.witness, input.alpha, input.proofkey, input.rcv)
     }
 
     pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
-        self.zcashbuilder.add_sapling_output(input)
+        self.unauth_zcashbuilder.add_sapling_output(input.ovk, input.address, input.value, input.memo, input.rcv, input.rseed, input.hash_seed)
     }
 
-    pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<Vec<u8>, Error> {
+    pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<HsmTxData, Error> {
         let mut prover = txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-        self.zcashbuilder.build(&mut prover)
+        self.unauth_zcashbuilder.build(consensus::BranchId::Sapling, &mut prover)
     }
 
-    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
-        self.zcashbuilder.add_signatures(input)
+    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result< (), Error> {
+        let builder_authorize_z = self.unauth_zcashbuilder.add_signatures_spend(input.spend_sigs);
+        if builder_authorize_z.is_err() {
+            return Err(builder_authorize_z.err().unwrap())
+        }
+        let builder_authorize_t = builder_authorize_z.unwrap().add_signatures_transparent(input.transparent_sigs);
+        if builder_authorize_t.is_err() {
+            return Err(builder_authorize_t.err().unwrap())
+        }
+
+        self.auth_zcashbuilder = Some(builder_authorize_t.unwrap());
+        Ok(())
     }
 
     pub fn finalize(&mut self) -> Result<Vec<u8>, Error> {
-        self.zcashbuilder.finalize_js()
+        if self.auth_zcashbuilder.is_none(){
+            return Err(Error::Finalization)
+        }
+        self.auth_zcashbuilder.as_ref().unwrap().finalize_js()
     }
 }
 
@@ -67,9 +99,10 @@ declare_types! {
     pub class JsZcashBuilder for ZcashBuilderBridge {
         init(mut cx) {
             let f = cx.argument::<JsNumber>(0)?.value();
-            let b = ZcashBuilder::new(f as u64);
+            let unauth_zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
             Ok(ZcashBuilderBridge {
-                zcashbuilder: b,
+                unauth_zcashbuilder,
+                auth_zcashbuilder: None,
             })
         }
 
@@ -162,7 +195,7 @@ declare_types! {
             value = thishandler.build(&spendpath, &outputpath);
             }
             if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap()).throw(&mut cx)?;
+                let js_value = neon_serde::to_value(&mut cx, &value.unwrap().to_hsm_bytes().unwrap()).throw(&mut cx)?;
                 Ok(js_value)
             }else{
                 cx.throw_error(value.err().unwrap().to_string())

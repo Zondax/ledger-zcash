@@ -113,7 +113,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
 
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [2, 0]
+      const clickSchedule = [2, 0]
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-fvk`, clickSchedule)
 
       const fvk = await fvkreq
