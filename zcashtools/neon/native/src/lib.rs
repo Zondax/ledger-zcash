@@ -2,19 +2,22 @@ use neon::prelude::*;
 
 use std::path::Path;
 
+use ledger_zcash::zcash::primitives::consensus::TestNetwork;
+use ledger_zcash::zcash::primitives::{
+    consensus, transaction,
+    transaction::components::{sapling as sapling_ledger, transparent as transparent_ledger},
+};
 use neon_serde::ResultExt;
 use rand_core::OsRng;
-use zcash_hsmbuilder::errors::Error;
 use zcash_hsmbuilder as ZcashBuilder;
-use zcash_hsmbuilder::data::{HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures, TransparentInputBuilderInfo, TransparentOutputBuilderInfo};
+use zcash_hsmbuilder::data::{
+    HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures,
+    TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
+};
+use zcash_hsmbuilder::errors::Error;
+use zcash_hsmbuilder::txbuilder::hsmauth::MixedAuthorization;
 use zcash_hsmbuilder::{hsmauth, txprover};
 use zcash_primitives;
-use ledger_zcash::zcash::primitives::consensus::TestNetwork;
-use ledger_zcash::zcash::primitives::{consensus,
-                                      transaction::
-                                      {components::{transparent, sapling}
-                                      }};
-use zcash_hsmbuilder::txbuilder::hsmauth::MixedAuthorization;
 use zcash_primitives::transaction::components::TxOut;
 
 // reference
@@ -32,77 +35,227 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     Ok(js_value)
 }
 
-pub struct ZcashBuilderBridge  {
-    unauth_zcashbuilder: ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng,hsmauth::Unauthorized>,
-    auth_zcashbuilder: Option<ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, MixedAuthorization<transparent::Authorized, sapling::Authorized> >> ,
+pub struct ZcashBuilderBridge {
+    unauth_zcashbuilder:
+        ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>,
+    auth_zcashbuilder: Option<
+        ZcashBuilder::txbuilder::Builder<
+            TestNetwork,
+            OsRng,
+            MixedAuthorization<transparent_ledger::Authorized, sapling_ledger::Authorized>,
+        >,
+    >,
 }
 
-impl ZcashBuilderBridge {
+pub enum AuthorisationStatus {
+    Unauthorized(ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>),
+    TransparentAuthorized(
+        ZcashBuilder::txbuilder::Builder<
+            TestNetwork,
+            OsRng,
+            hsmauth::MixedAuthorization<transparent_ledger::Authorized, hsmauth::sapling::Unauthorized>,
+        >,
+    ),
+    SaplingAuthorized(
+        ZcashBuilder::txbuilder::Builder<
+            TestNetwork,
+            OsRng,
+            hsmauth::MixedAuthorization<hsmauth::transparent::Unauthorized, sapling_ledger::Authorized>,
+        >,
+    ),
+    Authorized(
+        ZcashBuilder::txbuilder::Builder<
+            TestNetwork,
+            OsRng,
+            hsmauth::MixedAuthorization<transparent_ledger::Authorized, sapling_ledger::Authorized>,
+        >,
+    ),
+}
+
+pub struct BuilderBridge<'a> {
+    zcashbuilder: &'a mut AuthorisationStatus,
+}
+
+impl<'a> BuilderBridge<'a> {
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
-        self.unauth_zcashbuilder.add_transparent_input(t.pk, t.outp, TxOut {
-            value: t.value,
-            script_pubkey: t.address
-        })
+        let res : Result<(), Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized(builder) => {
+                res = builder.add_transparent_input(
+                    t.pk,
+                    t.outp,
+                    TxOut {
+                        value: t.value,
+                        script_pubkey: t.address,
+                    },
+                )
+            }
+            AuthorisationStatus::Authorized { .. } => return Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            _ => res = Err(Error::UnknownAuthorization),
+        }
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
     pub fn add_transparent_output(
         &mut self,
         input: TransparentOutputBuilderInfo,
     ) -> Result<(), Error> {
-        self.unauth_zcashbuilder.add_transparent_output(input.address, input.value)
+        let res: Result<(), Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized(builder) => {
+                res = builder
+                    .add_transparent_output(input.address, input.value);
+            }
+            AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
+        }
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
     pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
-        let div = *input.address.diversifier();
-        let pk_d = *input.address.pk_d();
-        let note = ledger_zcash::zcash::primitives::sapling::Note {
-            value: u64::from(input.value),
-            g_d: div.g_d().unwrap(),
-            pk_d,
-            rseed: input.rseed,
-        };
-        self.unauth_zcashbuilder.add_sapling_spend(div, note, input.witness, input.alpha, input.proofkey, input.rcv)
+        let res: Result<(), Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized { .. } => {
+                let div = *input.address.diversifier();
+                let pk_d = *input.address.pk_d();
+                let note = ledger_zcash::zcash::primitives::sapling::Note {
+                    value: u64::from(input.value),
+                    g_d: div.g_d().unwrap(),
+                    pk_d,
+                    rseed: input.rseed,
+                };
+                res = self.zcashbuilder.add_sapling_spend(
+                    div,
+                    note,
+                    input.witness,
+                    input.alpha,
+                    input.proofkey,
+                    input.rcv,
+                )
+            }
+            AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
+        }
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
     pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
-        self.unauth_zcashbuilder.add_sapling_output(input.ovk, input.address, input.value, input.memo, input.rcv, input.rseed, input.hash_seed)
+        let res: Result<(), Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized { .. } => {
+                res = self.zcashbuilder.add_sapling_output(
+                    input.ovk,
+                    input.address,
+                    input.value,
+                    input.memo,
+                    input.rcv,
+                    input.rseed,
+                    input.hash_seed,
+                );
+            }
+            AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
+        }
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
     pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<HsmTxData, Error> {
-        let mut prover = txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-        self.unauth_zcashbuilder.build(consensus::BranchId::Sapling, &mut prover)
+        let res: Result<HsmTxData, Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized { .. } => {
+                let mut prover =
+                    txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
+                res = self
+                    .zcashbuilder
+                    .build(consensus::BranchId::Sapling, &mut prover);
+            }
+            AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
+        }
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
-    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result< (), Error> {
-        let builder_authorize_z = self.unauth_zcashbuilder.add_signatures_spend(input.spend_sigs);
-        if builder_authorize_z.is_err() {
-            return Err(builder_authorize_z.err().unwrap())
+    pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
+        let res: Result<(), Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Unauthorized { .. } => {
+                let builder_authorize_z = self.zcashbuilder.add_signatures_spend(input.spend_sigs);
+                if builder_authorize_z.is_err() {
+                    return Err(builder_authorize_z.err().unwrap());
+                }
+                let builder_authorize_t = builder_authorize_z
+                    .unwrap()
+                    .add_signatures_transparent(input.transparent_sigs);
+                if builder_authorize_t.is_err() {
+                    return Err(builder_authorize_t.err().unwrap());
+                }
+                self.zcashbuilder = builder_authorize_t;
+                res = Ok(())
+            }
+            AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => {
+                res = Err(Error::AlreadyAuthorized)
+            }
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
         }
-        let builder_authorize_t = builder_authorize_z.unwrap().add_signatures_transparent(input.transparent_sigs);
-        if builder_authorize_t.is_err() {
-            return Err(builder_authorize_t.err().unwrap())
-        }
-
-        self.auth_zcashbuilder = Some(builder_authorize_t.unwrap());
-        Ok(())
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 
     pub fn finalize(&mut self) -> Result<Vec<u8>, Error> {
-        if self.auth_zcashbuilder.is_none(){
-            return Err(Error::Finalization)
+        let res: Result<Vec<u8>, Error>;
+        match self.zcashbuilder {
+            AuthorisationStatus::Authorized { .. } => {
+                if self.zcashbuilder.is_none() {
+                    return Err(Error::Finalization);
+                }
+                res = self.zcashbuilder.as_ref().unwrap().finalize_js()
+            }
+            AuthorisationStatus::Unauthorized { .. } => res = Err(Error::UnAuthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => res = Err(Error::UnAuthorized),
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::UnAuthorized),
+            _ => res = Err(Error::UnknownAuthorization),
         }
-        self.auth_zcashbuilder.as_ref().unwrap().finalize_js()
+        .expect("Error: Unrecognized authorisation status");
+        res
     }
 }
 
 declare_types! {
-    pub class JsZcashBuilder for ZcashBuilderBridge {
+    pub class JsBuilder for BuilderBridge {
         init(mut cx) {
             let f = cx.argument::<JsNumber>(0)?.value();
-            let unauth_zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
-            Ok(ZcashBuilderBridge {
-                unauth_zcashbuilder,
-                auth_zcashbuilder: None,
+            let mut zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
+            Ok(BuilderBridge {
+                zcashbuilder: zcashbuilder,
             })
         }
 
@@ -241,7 +394,7 @@ declare_types! {
 }
 
 register_module!(mut m, {
-    m.export_class::<JsZcashBuilder>("zcashtools")?;
+    m.export_class::<JsBuilder>("zcashtools")?;
     m.export_function("get_inittx_data", get_inittx_data)?;
     Ok(())
 });
