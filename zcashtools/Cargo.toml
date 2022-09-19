@@ -9,4 +9,4 @@ opt-level = "s"
 overflow-checks = true
 
 [patch.crates-io]
-zcash-hsmbuilder = { git = "https://github.com/Zondax/ledger-zcash-rs" }
+zcash-hsmbuilder = { git = "https://github.com/Zondax/ledger-zcash-rs", branch = "cleanup" }

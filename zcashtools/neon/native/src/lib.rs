@@ -1,13 +1,13 @@
 use neon::prelude::*;
-
+use std::cell::RefCell;
 use std::path::Path;
+use std::borrow::BorrowMut;
 
 use ledger_zcash::zcash::primitives::consensus::TestNetwork;
 use ledger_zcash::zcash::primitives::{
-    consensus, transaction,
+    consensus,
     transaction::components::{sapling as sapling_ledger, transparent as transparent_ledger},
 };
-use neon_serde::ResultExt;
 use rand_core::OsRng;
 use zcash_hsmbuilder as ZcashBuilder;
 use zcash_hsmbuilder::data::{
@@ -15,7 +15,6 @@ use zcash_hsmbuilder::data::{
     TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
 };
 use zcash_hsmbuilder::errors::Error;
-use zcash_hsmbuilder::txbuilder::hsmauth::MixedAuthorization;
 use zcash_hsmbuilder::{hsmauth, txprover};
 use zcash_primitives;
 use zcash_primitives::transaction::components::TxOut;
@@ -28,24 +27,17 @@ use zcash_primitives::transaction::components::TxOut;
 fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     // First get call arguments
     let arg0 = cx.argument::<JsValue>(0)?;
-    let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
+    //let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
+    let arg0_value: InitData = neon_serde::from_value(&mut cx, arg0).expect("Error getting arg0_value");
     let output = arg0_value.to_hsm_bytes();
     let js_value;
-    js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
+    //js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
+    js_value = neon_serde::to_value(&mut cx, &output).expect("Error getting js_value");
     Ok(js_value)
 }
 
-pub struct ZcashBuilderBridge {
-    unauth_zcashbuilder:
-        ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>,
-    auth_zcashbuilder: Option<
-        ZcashBuilder::txbuilder::Builder<
-            TestNetwork,
-            OsRng,
-            MixedAuthorization<transparent_ledger::Authorized, sapling_ledger::Authorized>,
-        >,
-    >,
-}
+
+type BoxedBuilder = JsBox<RefCell<ZcashBuilderBridge>>;
 
 pub enum AuthorisationStatus {
     Unauthorized(ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>),
@@ -72,15 +64,18 @@ pub enum AuthorisationStatus {
     ),
 }
 
-pub struct BuilderBridge<'a> {
-    zcashbuilder: &'a mut AuthorisationStatus,
+pub struct ZcashBuilderBridge {
+    zcashbuilder: AuthorisationStatus,
 }
 
-impl<'a> BuilderBridge<'a> {
+impl Finalize for ZcashBuilderBridge{}
+
+// Internal implementation
+impl ZcashBuilderBridge {
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
         let res : Result<(), Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized(builder) => {
+            AuthorisationStatus::Unauthorized(mut builder) => {
                 res = builder.add_transparent_input(
                     t.pk,
                     t.outp,
@@ -98,8 +93,7 @@ impl<'a> BuilderBridge<'a> {
                 res = Err(Error::AlreadyAuthorized)
             }
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
@@ -109,7 +103,7 @@ impl<'a> BuilderBridge<'a> {
     ) -> Result<(), Error> {
         let res: Result<(), Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized(builder) => {
+            AuthorisationStatus::Unauthorized(mut builder) => {
                 res = builder
                     .add_transparent_output(input.address, input.value);
             }
@@ -119,15 +113,14 @@ impl<'a> BuilderBridge<'a> {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
     pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
         let res: Result<(), Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized { .. } => {
+            AuthorisationStatus::Unauthorized(mut builder)=> {
                 let div = *input.address.diversifier();
                 let pk_d = *input.address.pk_d();
                 let note = ledger_zcash::zcash::primitives::sapling::Note {
@@ -136,7 +129,7 @@ impl<'a> BuilderBridge<'a> {
                     pk_d,
                     rseed: input.rseed,
                 };
-                res = self.zcashbuilder.add_sapling_spend(
+                res = builder.add_sapling_spend(
                     div,
                     note,
                     input.witness,
@@ -151,16 +144,15 @@ impl<'a> BuilderBridge<'a> {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
     pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
         let res: Result<(), Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized { .. } => {
-                res = self.zcashbuilder.add_sapling_output(
+            AuthorisationStatus::Unauthorized (mut builder) => {
+                res = builder.add_sapling_output(
                     input.ovk,
                     input.address,
                     input.value,
@@ -176,20 +168,17 @@ impl<'a> BuilderBridge<'a> {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
     pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<HsmTxData, Error> {
         let res: Result<HsmTxData, Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized { .. } => {
+            AuthorisationStatus::Unauthorized(mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-                res = self
-                    .zcashbuilder
-                    .build(consensus::BranchId::Sapling, &mut prover);
+                res = builder.build(consensus::BranchId::Sapling, &mut prover);
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
@@ -197,26 +186,25 @@ impl<'a> BuilderBridge<'a> {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
     pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
         let res: Result<(), Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Unauthorized { .. } => {
-                let builder_authorize_z = self.zcashbuilder.add_signatures_spend(input.spend_sigs);
+            AuthorisationStatus::Unauthorized (mut builder) => {
+                let builder_authorize_z = builder.add_signatures_spend(input.spend_sigs);
                 if builder_authorize_z.is_err() {
                     return Err(builder_authorize_z.err().unwrap());
                 }
                 let builder_authorize_t = builder_authorize_z
                     .unwrap()
                     .add_signatures_transparent(input.transparent_sigs);
-                if builder_authorize_t.is_err() {
-                    return Err(builder_authorize_t.err().unwrap());
-                }
-                self.zcashbuilder = builder_authorize_t;
+                match builder_authorize_t {
+                    Ok(builder) => self.zcashbuilder = AuthorisationStatus::Authorized(builder_authorize_t.unwrap()),
+                    Err(err) => return Err(builder_authorize_t.err().unwrap()),
+                };
                 res = Ok(())
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
@@ -225,176 +213,190 @@ impl<'a> BuilderBridge<'a> {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 
-    pub fn finalize(&mut self) -> Result<Vec<u8>, Error> {
+    pub fn finalize_builder(&mut self) -> Result<Vec<u8>, Error> {
         let res: Result<Vec<u8>, Error>;
         match self.zcashbuilder {
-            AuthorisationStatus::Authorized { .. } => {
-                if self.zcashbuilder.is_none() {
-                    return Err(Error::Finalization);
-                }
-                res = self.zcashbuilder.as_ref().unwrap().finalize_js()
+            AuthorisationStatus::Authorized (mut builder) => {
+                res = builder.finalize_js()
             }
-            AuthorisationStatus::Unauthorized { .. } => res = Err(Error::UnAuthorized),
-            AuthorisationStatus::TransparentAuthorized { .. } => res = Err(Error::UnAuthorized),
-            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::UnAuthorized),
+            AuthorisationStatus::Unauthorized { .. } => res = Err(Error::Unauthorized),
+            AuthorisationStatus::TransparentAuthorized { .. } => res = Err(Error::Unauthorized),
+            AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::Unauthorized),
             _ => res = Err(Error::UnknownAuthorization),
-        }
-        .expect("Error: Unrecognized authorisation status");
+        };
         res
     }
 }
 
-declare_types! {
-    pub class JsBuilder for BuilderBridge {
-        init(mut cx) {
-            let f = cx.argument::<JsNumber>(0)?.value();
-            let mut zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
-            Ok(BuilderBridge {
-                zcashbuilder: zcashbuilder,
-            })
-        }
+// Methods exposed to javascript
+impl ZcashBuilderBridge {
+    fn js_create_builder(mut cx: FunctionContext) -> JsResult<JsBox<ZcashBuilderBridge>> {
+        let f = cx.argument::<JsNumber>(0)?.value(&mut cx);
+        let zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
+        let zcashbuilder = AuthorisationStatus::Unauthorized(zcashbuilder);
+        Ok(
+            cx.boxed(
+                ZcashBuilderBridge {
+                    zcashbuilder,
+                }))
+    }
 
-        method add_transparent_input(mut cx) {
-            let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+    fn js_add_transparent_input(mut cx: FunctionContext) -> JsResult<JsBoolean> {
+        let arg0 = cx.argument::<JsValue>(0)?;
+        let arg0_value: TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
+            .expect("Failled to get arg0_value for transparent builder");
+        let value;
+        {
+            // let mut this = cx.this();
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.add_transparent_input(arg0_value);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
+        if value.is_ok() {
+            Ok(cx.boolean(true))
+        } else {
+            cx.throw_error(value.err().unwrap().to_string())
+        }
+    }
 
-        method add_transparent_output(mut cx) {
-            let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+    fn js_add_transparent_output(mut cx: FunctionContext)->JsResult<JsBoolean>{
+        let arg0 = cx.argument::<JsValue>(0)?;
+        let arg0_value :TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
+            .expect("Failled to get arg0_value for transparent output builder");
+
+        let value;
+        {
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.add_transparent_output(arg0_value);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
-
-        method add_sapling_spend(mut cx) {
-            let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+        if value.is_ok(){
+            Ok(cx.boolean(true))
+        }else{
+            cx.throw_error(value.err().unwrap().to_string())
+        }
+    }
+    fn js_add_sapling_spend(mut cx: FunctionContext)->JsResult<JsBoolean>{
+        let arg0 = cx.argument::<JsValue>(0)?;
+        let arg0_value :SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0)
+            .expect("Failled to get arg0_value for sapling spend");
+        let value;
+        {
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.add_sapling_spend(arg0_value);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
+        if value.is_ok(){
+            Ok(cx.boolean(true))
+        }else{
+            cx.throw_error(value.err().unwrap().to_string())
+        }
+    }
 
-        method add_sapling_output(mut cx) {
-            let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+    fn js_add_sapling_output(mut cx: FunctionContext)->JsResult<JsBoolean>{
+        let arg0 = cx.argument::<JsValue>(0)?;
+        let arg0_value :OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
+            .expect("Failled to get arg0_value for sapling output");
+
+        let value;
+        {
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.add_sapling_output(arg0_value);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
-
-        method build(mut cx){
-            let spendpath: String = cx.argument::<JsString>(0)?.value();
-            let outputpath: String = cx.argument::<JsString>(1)?.value();
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+        if value.is_ok(){
+            Ok(cx.boolean(true))
+        }else{
+            cx.throw_error(value.err().unwrap().to_string())
+        }
+    }
+    fn js_build(mut cx: FunctionContext)->JsResult<JsValue>{
+        let spendpath: String = cx.argument::<JsString>(0)?.value(&mut cx);
+        let outputpath: String = cx.argument::<JsString>(1)?.value(&mut cx);
+        let value;
+        {
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.build(&spendpath, &outputpath);
-            }
-            if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap().to_hsm_bytes().unwrap()).throw(&mut cx)?;
-                Ok(js_value)
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
+        if value.is_ok(){
+            let js_value = neon_serde::to_value(&mut cx, &value.unwrap().to_hsm_bytes().unwrap())
+                .expect("Failed to get js_value for js_build");
 
-        method add_signatures(mut cx) {
-            let arg0 = cx.argument::<JsValue>(0)?;
-            let arg0_value :TransactionSignatures = neon_serde::from_value(&mut cx, arg0).throw(&mut cx)?;
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
+            Ok(js_value)
+        }else{
+            cx.throw_error(value.err().unwrap().to_string())
+        }
+    }
+
+    fn js_add_signatures(mut cx: FunctionContext)->JsResult<JsBoolean>{
+        let arg0 = cx.argument::<JsValue>(0)?;
+        let arg0_value :TransactionSignatures = neon_serde::from_value(&mut cx, arg0)
+            .expect("Failed to get js_value for js_add_signatures");
+
+        let value;
+        {
+            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+            let mut thishandler = this.borrow_mut();//(&guard);
 
             //grab input
             value = thishandler.add_signatures(arg0_value);
-            }
-            if value.is_ok(){
-                Ok(cx.boolean(true).upcast())
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
         }
-
-        method finalize(mut cx) {
-            let value;
-            {
-            let mut this = cx.this();
-            let guard = cx.lock();
-            let mut thishandler = this.borrow_mut(&guard);
-            //grab input
-            value = thishandler.finalize();
-            }
-            if value.is_ok(){
-                let js_value = neon_serde::to_value(&mut cx, &value.unwrap()).throw(&mut cx)?;
-                Ok(js_value)
-            }else{
-                cx.throw_error(value.err().unwrap().to_string())
-            }
+        if value.is_ok(){
+            Ok(cx.boolean(true))
+        }else{
+            cx.throw_error(value.err().unwrap().to_string())
         }
     }
-}
+    fn js_finalize(mut cx: FunctionContext)->JsResult<JsValue>{
+        let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let guard = cx.lock();
+        let mut thishandler = this.borrow_mut();//(&guard);
+            //grab input
+        let value = thishandler.finalize_builder();
 
-register_module!(mut m, {
-    m.export_class::<JsBuilder>("zcashtools")?;
-    m.export_function("get_inittx_data", get_inittx_data)?;
+        match value {
+            Ok(val) => {
+                let js_value = neon_serde::to_value(&mut cx, &val)
+                    .expect("Failed to get js_value for js_afinalize");
+                Ok(js_value)
+            },
+            Err(err)=> cx.throw_error(err.to_string())
+        }
+    }
+    }
+
+#[neon::main]
+fn main(mut cx: ModuleContext) -> NeonResult<()> {
+    //cx.export_class::<ZcashBuilderBridge>("zcashtools")?;
+    cx.export_function("builderNew", ZcashBuilderBridge::js_create_builder)?;
+    cx.export_function("builderAddTransparentInput", ZcashBuilderBridge::js_add_transparent_input)?;
+    cx.export_function("builderAddTransparentOutput", ZcashBuilderBridge::js_add_transparent_output)?;
+    cx.export_function("builderAddSaplingSpend", ZcashBuilderBridge::js_add_sapling_spend)?;
+    cx.export_function("builderAddSaplingOutput", ZcashBuilderBridge::js_add_sapling_output)?;
+    cx.export_function("builderBuild", ZcashBuilderBridge::js_build)?;
+    cx.export_function("builderAddSignatures", ZcashBuilderBridge::js_add_signatures)?;
+    cx.export_function("builderFinalize", ZcashBuilderBridge::js_finalize)?;
+
     Ok(())
-});
+}

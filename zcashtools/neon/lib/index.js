@@ -17,6 +17,12 @@ const {zcashtools} = addon;
 
 var builder = new zcashtools(10000);
 
+class ZcashBuilderBridge{
+    constructor() {
+        this.boxed = addon.create_builder()
+    }
+}
+
 
 /*
 const Resolve = require("path").resolve;
