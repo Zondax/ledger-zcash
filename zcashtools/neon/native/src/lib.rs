@@ -62,6 +62,7 @@ pub enum AuthorisationStatus {
             hsmauth::MixedAuthorization<transparent_ledger::Authorized, sapling_ledger::Authorized>,
         >,
     ),
+    Taken(),
 }
 
 pub struct ZcashBuilderBridge {
@@ -74,7 +75,7 @@ impl Finalize for ZcashBuilderBridge{}
 impl ZcashBuilderBridge {
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
         let res : Result<(), Error>;
-        match self.zcashbuilder {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 res = builder.add_transparent_input(
                     t.pk,
@@ -83,7 +84,11 @@ impl ZcashBuilderBridge {
                         value: t.value,
                         script_pubkey: t.address,
                     },
-                )
+                );
+                match res {
+                    Ok(()) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
+                    Err(_) => ()
+                }
             }
             AuthorisationStatus::Authorized { .. } => return Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
@@ -91,6 +96,9 @@ impl ZcashBuilderBridge {
             }
             AuthorisationStatus::SaplingAuthorized { .. } => {
                 res = Err(Error::AlreadyAuthorized)
+            },
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
             },
         };
         res
@@ -101,23 +109,30 @@ impl ZcashBuilderBridge {
         input: TransparentOutputBuilderInfo,
     ) -> Result<(), Error> {
         let res: Result<(), Error>;
-        match &self.zcashbuilder {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 res = builder
                     .add_transparent_output(input.address, input.value);
+                match res {
+                    Ok(()) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
+                    Err(_) => ()
+                }
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
                 res = Err(Error::AlreadyAuthorized)
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
 
     pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
         let res: Result<(), Error>;
-        match &self.zcashbuilder {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
             AuthorisationStatus::Unauthorized(mut builder)=> {
                 let div = *input.address.diversifier();
                 let pk_d = *input.address.pk_d();
@@ -134,20 +149,27 @@ impl ZcashBuilderBridge {
                     input.alpha,
                     input.proofkey,
                     input.rcv,
-                )
+                );
+                match res {
+                    Ok(()) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
+                    Err(_) => ()
+                }
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
                 res = Err(Error::AlreadyAuthorized)
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
 
     pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
         let res: Result<(), Error>;
-        match &self.zcashbuilder {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
             AuthorisationStatus::Unauthorized (mut builder) => {
                 res = builder.add_sapling_output(
                     input.ovk,
@@ -158,38 +180,53 @@ impl ZcashBuilderBridge {
                     input.rseed,
                     input.hash_seed,
                 );
+                match res {
+                    Ok(()) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
+                    Err(_) => ()
+                }
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
                 res = Err(Error::AlreadyAuthorized)
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
 
     pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<HsmTxData, Error> {
         let res: Result<HsmTxData, Error>;
-        match &self.zcashbuilder {
-            AuthorisationStatus::Unauthorized(mut builder) => {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
+            AuthorisationStatus::Unauthorized( mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
                 res = builder.build(consensus::BranchId::Sapling, &mut prover);
+                match res {
+                    Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
+                    Err(_) => ()
+                }
             }
             AuthorisationStatus::Authorized { .. } => res = Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => {
                 res = Err(Error::AlreadyAuthorized)
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
 
     pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
         let res: Result<(), Error>;
-        match &self.zcashbuilder {
-            AuthorisationStatus::Unauthorized (mut builder) => {
-                let builder_authorize_z = builder.add_signatures_spend(input.spend_sigs);
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
+            AuthorisationStatus::Unauthorized (builder) => {
+                let builder_authorize_z =
+                    builder.add_signatures_spend(input.spend_sigs);
                 if builder_authorize_z.is_err() {
                     return Err(builder_authorize_z.err().unwrap());
                 }
@@ -197,7 +234,7 @@ impl ZcashBuilderBridge {
                     .unwrap()
                     .add_signatures_transparent(input.transparent_sigs);
                 match builder_authorize_t {
-                    Ok(builder) => self.zcashbuilder = AuthorisationStatus::Authorized(builder),
+                    Ok(b) => self.zcashbuilder = AuthorisationStatus::Authorized(b),
                     Err(err) => return Err(err),
                 };
                 res = Ok(())
@@ -207,19 +244,25 @@ impl ZcashBuilderBridge {
                 res = Err(Error::AlreadyAuthorized)
             }
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
 
     pub fn finalize_builder(&mut self) -> Result<Vec<u8>, Error> {
         let res: Result<Vec<u8>, Error>;
-        match &self.zcashbuilder {
+        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken()) {
             AuthorisationStatus::Authorized (mut builder) => {
                 res = builder.finalize_js()
             }
             AuthorisationStatus::Unauthorized { .. } => res = Err(Error::Unauthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => res = Err(Error::Unauthorized),
             AuthorisationStatus::SaplingAuthorized { .. } => res = Err(Error::Unauthorized),
+            AuthorisationStatus::Taken { .. } => {
+                res = Err(Error::UnknownAuthorization)
+            },
         };
         res
     }
@@ -247,10 +290,10 @@ impl ZcashBuilderBridge {
             // let mut this = cx.this();
             let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.add_transparent_input(arg0_value);
+            value = this_handler.add_transparent_input(arg0_value);
         }
         if value.is_ok() {
             Ok(cx.boolean(true))
