@@ -17,6 +17,7 @@
 import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
+import {ZcashBuilderBridge} from '@zondax/zcashtools'
 
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
@@ -264,11 +265,11 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      //const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       // here 1000 represents the fee
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
        In this test, Alice wants to send 55000 ZEC to Bob.
@@ -562,10 +563,10 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      //const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -854,10 +855,10 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1135,10 +1136,10 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1446,10 +1447,10 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
@@ -1588,10 +1589,10 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, we try to extract signatures without having done the checks and signing.
@@ -1703,10 +1704,10 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, we try to extract signatures without having done the checks and signing.
@@ -1776,10 +1777,10 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -2058,10 +2059,10 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -2316,10 +2317,10 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -2649,10 +2650,10 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { zcashtools } = addon
+      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
-      const builder = new zcashtools(1000)
+      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob.

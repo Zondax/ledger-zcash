@@ -1,7 +1,6 @@
 use neon::prelude::*;
 use std::cell::RefCell;
 use std::path::Path;
-use std::borrow::BorrowMut;
 
 use ledger_zcash::zcash::primitives::consensus::TestNetwork;
 use ledger_zcash::zcash::primitives::{
@@ -270,15 +269,14 @@ impl ZcashBuilderBridge {
 
 // Methods exposed to javascript
 impl ZcashBuilderBridge {
-    fn js_create_builder(mut cx: FunctionContext) -> JsResult<JsBox<ZcashBuilderBridge>> {
+    fn js_create_builder(mut cx: FunctionContext) -> JsResult<BoxedBuilder> {
         let f = cx.argument::<JsNumber>(0)?.value(&mut cx);
         let zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
         let zcashbuilder = AuthorisationStatus::Unauthorized(zcashbuilder);
-        Ok(
-            cx.boxed(
-                ZcashBuilderBridge {
-                    zcashbuilder,
-                }))
+        let boxed_builder = RefCell::new(ZcashBuilderBridge {
+            zcashbuilder,
+        });
+        Ok(cx.boxed(boxed_builder))
     }
 
     fn js_add_transparent_input(mut cx: FunctionContext) -> JsResult<JsBoolean> {
@@ -288,8 +286,10 @@ impl ZcashBuilderBridge {
         let value;
         {
             // let mut this = cx.this();
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
+            let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
@@ -309,12 +309,16 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            //let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            //let mut thishandler = this.borrow_mut();//(&guard);
+            let this = cx.argument::<BoxedBuilder>(0)?;
+            //let guard = cx.lock();
+            let this = &*(*this);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.add_transparent_output(arg0_value);
+            value = this_handler.add_transparent_output(arg0_value);
         }
         if value.is_ok(){
             Ok(cx.boolean(true))
@@ -328,12 +332,13 @@ impl ZcashBuilderBridge {
             .expect("Failled to get arg0_value for sapling spend");
         let value;
         {
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            let this = &*(*this);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.add_sapling_spend(arg0_value);
+            value = this_handler.add_sapling_spend(arg0_value);
         }
         if value.is_ok(){
             Ok(cx.boolean(true))
@@ -349,12 +354,13 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            let this = &*(*this);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.add_sapling_output(arg0_value);
+            value = this_handler.add_sapling_output(arg0_value);
         }
         if value.is_ok(){
             Ok(cx.boolean(true))
@@ -367,12 +373,13 @@ impl ZcashBuilderBridge {
         let outputpath: String = cx.argument::<JsString>(1)?.value(&mut cx);
         let value;
         {
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            let this = &*(*this);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.build(&spendpath, &outputpath);
+            value = this_handler.build(&spendpath, &outputpath);
         }
         if value.is_ok(){
             let js_value = neon_serde::to_value(&mut cx, &value.unwrap().to_hsm_bytes().unwrap())
@@ -391,12 +398,13 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
-            let mut thishandler = this.borrow_mut();//(&guard);
+            let this = &*(*this);
+            let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = thishandler.add_signatures(arg0_value);
+            value = this_handler.add_signatures(arg0_value);
         }
         if value.is_ok(){
             Ok(cx.boolean(true))
@@ -405,11 +413,13 @@ impl ZcashBuilderBridge {
         }
     }
     fn js_finalize(mut cx: FunctionContext)->JsResult<JsValue>{
-        let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
-            //let guard = cx.lock();
-        let mut thishandler = this.borrow_mut();//(&guard);
-            //grab input
-        let value = thishandler.finalize_builder();
+        let this = cx.argument::<BoxedBuilder>(0)?;
+        //let guard = cx.lock();
+        let this = &*(*this);
+        let mut this_handler = this.borrow_mut();//(&guard);
+
+        //grab input
+        let value = this_handler.finalize_builder();
 
         match value {
             Ok(val) => {
@@ -425,6 +435,7 @@ impl ZcashBuilderBridge {
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
     //cx.export_class::<ZcashBuilderBridge>("zcashtools")?;
+    cx.export_function("get_inittx_data", get_inittx_data)?;
     cx.export_function("builderNew", ZcashBuilderBridge::js_create_builder)?;
     cx.export_function("builderAddTransparentInput", ZcashBuilderBridge::js_add_transparent_input)?;
     cx.export_function("builderAddTransparentOutput", ZcashBuilderBridge::js_add_transparent_output)?;

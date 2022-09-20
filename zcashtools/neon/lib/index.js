@@ -1,4 +1,7 @@
 var addon = require('../native');
+const { get_inittx_data, builderNew, builderAddTransparentInput, builderAddTransparentOutput,
+        builderAddSaplingSpend, builderAddSaplingOutput, builderBuild, builderAddSignatures,
+        builderFinalize} = require("../native/index.node");
 
 // Here we can write some simple tests for play around
 console.log("--------------------------------------")
@@ -13,17 +16,38 @@ function addr_to_script(addr) {
     return x;
 }
 
-const {zcashtools} = addon;
-
-var builder = new zcashtools(10000);
-
 class ZcashBuilderBridge{
-    constructor() {
-        this.boxed = addon.create_builder()
+    constructor(fee) {
+        this.boxed = builderNew(fee)
     }
+    // Wrap each method with a delegate to `this.db`
+    // This could be done in several other ways, for example binding assignment
+    // in the constructor
+    add_transparent_input(t_input){
+        return builderAddTransparentInput.call(this.boxed, t_input);
+    }
+    add_transparent_output(t_output){
+        return builderAddTransparentOutput.call(this.boxed, t_output);
+    }
+    add_sapling_spend(z_spend){
+        return builderAddSaplingSpend.call(this.boxed, z_spend);
+    }
+    add_sapling_output(z_output){
+        return builderAddSaplingOutput.call(this.boxed, z_output);
+    }
+    build(spend_path, output_path){
+        return builderBuild.call(this.boxed, spend_path, output_path);
+    }
+    add_signatures(signatures){
+        return builderAddSignatures.call(this.boxed, signatures);
+    }
+
+    finalize(signatures){
+        return builderFinalize.call(this.boxed);
+    }
+
 }
-
-
+module.exports = {ZcashBuilderBridge,get_inittx_data}
 /*
 const Resolve = require("path").resolve;
 const SPEND_PATH = Resolve("../zcashtools/src/sapling-spend.params");
