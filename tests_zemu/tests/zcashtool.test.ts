@@ -835,6 +835,8 @@ describe('End to end transactions', function () {
         spend_sigs: [req7.sig_raw],
       }
 
+      console.log(signatures)
+
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
 

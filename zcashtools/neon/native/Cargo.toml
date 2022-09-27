@@ -11,14 +11,15 @@ name = "zcashtool"
 crate-type = ["cdylib"]
 
 [dependencies]
-neon = {version = "0.9.1", default-features = false, features =["napi-6"]}
+neon = {version = "0.10.1", default-features = false, features =["napi-6"]}
 rand_core = "0.6"
 zcash-hsmbuilder = { path = "/Users/idatucker/Documents/Zondax/GitHub_projects/ledger-zcash-rs/zcash-hsmbuilder" }
 ledger-zcash = { path = "/Users/idatucker/Documents/Zondax/GitHub_projects/ledger-zcash-rs/ledger-zcash" }
-neon-serde = { path = "/Users/idatucker/Documents/Zondax/GitHub_projects/neon-serde" }
+neon-serde = { path = "/Users/idatucker/Documents/Zondax/GitHub_projects/neon-serde" , default-features = false, features =["napi-6"]}
 serde_derive = "1.0.136"
 serde = "1"
 zcash_primitives = "0.6.0"
+log = "0.4.17"
 
 #activate snafu backtraces
 snafu = { version = "0.7", features = ["backtraces"] }

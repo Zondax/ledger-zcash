@@ -17,6 +17,7 @@
 #include "crypto.h"
 #include "constants.h"
 #include "coin.h"
+#include "zxformat.h"
 #include "zxmacros.h"
 #include "base58.h"
 #include "rslib.h"
@@ -322,7 +323,6 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
         if (ovk[0] != 0x00 && ovk[0] != 0x01) {
-            zemu_log_stack("invalid OVK SET");
             return 0xEB;
         }
         uint8_t hash_seed[OVK_SET_SIZE];
@@ -554,10 +554,6 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
     int64_t valuebalance = get_valuebalance();
     int64_t *value_flash = (int64_t *)&valuebalance;
     if(MEMCMP(&v, value_flash, 8) != 0){
-        zemu_log("The value balance in the transaction is: ");
-        zemu_log_stack_int64(v);
-        zemu_log("The value balance in flash is: ");
-        zemu_log_stack_int64(*value_flash);
         return zxerr_unknown;
     }
     return zxerr_ok;
@@ -689,7 +685,6 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step4.nsk, tmp_buf->nf);
                 if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0){
                     //maybe spendlist_reset();
-                    zemu_log_stack("Nullifier is bad\n");
                     MEMZERO(out, bufferLen);
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
                     CLOSE_TRY;
@@ -935,7 +930,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
         // if an ovk was provided
         if(item->ovk[0] != 0x00){
-            zemu_log_stack("OVK SET");
             // copy ovk, the value commitment and note-commitment from flash memory and transaction to
             // local tmp structure so as to hash
             MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
@@ -966,7 +960,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
         // if no ovk was provided
         }else{
-            zemu_log_stack("OVK NOT SET");
             // copy the contents of flash memory for ovk, and hash it. This hash will be the encryption key
             MEMCPY(tmp->step3b.hashseed, item->ovk, OVK_SET_SIZE);
             cx_hash_sha256(tmp->step3b.hashseed, OVK_SET_SIZE, tmp->step3b.outkey, CX_SHA256_SIZE);
@@ -1186,10 +1179,28 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     uint8_t message[HASH_SIZE + 32];
 
+    char message_string[4*(HASH_SIZE + 32)+1];
+
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
+    zemu_log_stack("Message to hash to get sighash is:");
+
+    array_to_hexstr(message_string,2*HASH_SIZE+1,start_signdata,HASH_SIZE);
+    zemu_log_stack(message_string);
+    array_to_hexstr(message_string,2*HASH_SIZE+1,start_signdata+18,HASH_SIZE);
+    zemu_log_stack(message_string);
+    zemu_log("\n");
+
     signature_hash(start_signdata,LENGTH_HASH_DATA,message + 32);
+
+    zemu_log_stack("Sighash is:");
+
+    array_to_hexstr(message_string,2*HASH_SIZE+1,message+32,HASH_SIZE);
+    zemu_log_stack(message_string);
+    array_to_hexstr(message_string,2*HASH_SIZE+1,message+32+18,HASH_SIZE);
+    zemu_log_stack(message_string);
+    zemu_log("\n");
 
     tmp_sign_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sign_s));
@@ -1212,6 +1223,23 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 randomized_secret_from_seed(tmp.step1.zip32_seed,item->path, (uint8_t *)item->alpha, tmp.step3.rsk);
 				rsk_to_rk((uint8_t *)tmp.step3.rsk, message);
 
+                zemu_log_stack("The message to sign is:");
+
+                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message,HASH_SIZE + 32);
+                zemu_log_stack(message_string);
+                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message+18,HASH_SIZE + 32);
+                zemu_log_stack(message_string);
+                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message+36,HASH_SIZE + 32);
+                zemu_log_stack(message_string);
+                zemu_log("\n");
+
+                /*
+                zemu_log_stack("The message to sign is:");
+                for (int i = 0; i < 64; i++) {
+                    sprintf(message_string + 2*i, "%02x", message[i]);
+                }
+                zemu_log(message_string);
+                 */
                 sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)message, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);
                 if(zxerr != zxerr_ok){

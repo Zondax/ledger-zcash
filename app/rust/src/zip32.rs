@@ -267,7 +267,6 @@ pub fn multwithgd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn mul_by_cof(p: &mut ExtendedPoint) {
-    c_zemu_log_stack(b"mul_by_cof\x00\n".as_ref());
     *p = p.mul_by_cofactor();
 }
 
@@ -281,12 +280,10 @@ pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let h = bolos::blake2s_diversification(d);
     c_zemu_log_stack(b"default_pkd\x00\n".as_ref());
     let mut y = bytes_to_extended(h);
-    c_zemu_log_stack(b"finished bytes_to_extended\x00".as_ref());
     mul_by_cof(&mut y);
 
     niels_multbits(&mut y, ivk);
     let tmp = extended_to_bytes(&y);
-    c_zemu_log_stack(b"finished extended_to_bytes\x00".as_ref());
     tmp
 }
 
@@ -517,7 +514,7 @@ pub fn master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
 #[inline(never)]
 pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_components: u8) -> [u8; 96] {
     //ASSERT: len(path) == len(harden)
-    c_zemu_log_stack(b"derive_zip32_child start\x00\n".as_ref());
+    c_zemu_log_stack(b"derive_zip32_child\x00\n".as_ref());
     let mut tmp = master_spending_key_zip32(seed); //64
 
     // master secret key sk = tmp[..32]

@@ -285,10 +285,7 @@ impl ZcashBuilderBridge {
             .expect("Failled to get arg0_value for transparent builder");
         let value;
         {
-            // let mut this = cx.this();
-            //let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
-            let this = cx.argument::<BoxedBuilder>(0)?;
-            //let guard = cx.lock();
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
 
@@ -309,10 +306,10 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            //let mut this = cx.this().downcast_or_throw::<JsBox<ZcashBuilderBridge>, _>(&mut cx)?;
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             //let guard = cx.lock();
             //let mut thishandler = this.borrow_mut();//(&guard);
-            let this = cx.argument::<BoxedBuilder>(0)?;
+            //let this = cx.argument::<BoxedBuilder>(0)?;
             //let guard = cx.lock();
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
@@ -332,7 +329,7 @@ impl ZcashBuilderBridge {
             .expect("Failled to get arg0_value for sapling spend");
         let value;
         {
-            let this = cx.argument::<BoxedBuilder>(0)?;
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             //let guard = cx.lock();
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
@@ -354,7 +351,7 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            let this = cx.argument::<BoxedBuilder>(0)?;
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             //let guard = cx.lock();
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
@@ -373,7 +370,7 @@ impl ZcashBuilderBridge {
         let outputpath: String = cx.argument::<JsString>(1)?.value(&mut cx);
         let value;
         {
-            let this = cx.argument::<BoxedBuilder>(0)?;
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             //let guard = cx.lock();
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
@@ -398,7 +395,7 @@ impl ZcashBuilderBridge {
 
         let value;
         {
-            let this = cx.argument::<BoxedBuilder>(0)?;
+            let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
             //let guard = cx.lock();
             let this = &*(*this);
             let mut this_handler = this.borrow_mut();//(&guard);
@@ -413,7 +410,7 @@ impl ZcashBuilderBridge {
         }
     }
     fn js_finalize(mut cx: FunctionContext)->JsResult<JsValue>{
-        let this = cx.argument::<BoxedBuilder>(0)?;
+        let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
         //let guard = cx.lock();
         let this = &*(*this);
         let mut this_handler = this.borrow_mut();//(&guard);

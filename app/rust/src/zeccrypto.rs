@@ -101,7 +101,6 @@ pub extern "C" fn sessionkey_agree(
     point_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"inside_katokey\x00".as_ref());
     let scalar = unsafe { &*scalar_ptr }; //ovk, cv, cmu, epk
     let point = unsafe { &*point_ptr };
 

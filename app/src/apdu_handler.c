@@ -185,10 +185,13 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
+
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
+
+
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);

@@ -38,7 +38,6 @@
 view_t viewdata;
 
 void h_approve(__Z_UNUSED unsigned int _) {
-    zemu_log_stack("h_approve");
 
     view_idle_show(0, NULL);
     UX_WAIT();
@@ -48,7 +47,6 @@ void h_approve(__Z_UNUSED unsigned int _) {
 }
 
 void h_reject(unsigned int requireAPDUreply) {
-    zemu_log_stack("h_reject");
 
     view_idle_show(0, NULL);
     UX_WAIT();
@@ -72,7 +70,6 @@ void h_initialize(__Z_UNUSED unsigned int _) {
 // Paging related
 
 void h_paging_init() {
-    zemu_log_stack("h_paging_init");
 
     viewdata.itemIdx = 0;
     viewdata.pageIdx = 0;
@@ -82,22 +79,18 @@ void h_paging_init() {
 
 bool h_paging_can_increase() {
     if (viewdata.pageIdx + 1 < viewdata.pageCount) {
-        zemu_log_stack("h_paging_can_increase");
         return true;
     }
 
     // passed page count, go to next index
     if (viewdata.itemCount > 0 && viewdata.itemIdx < (viewdata.itemCount - 1 + INCLUDE_ACTIONS_COUNT)) {
-        zemu_log_stack("h_paging_can_increase");
         return true;
     }
 
-    zemu_log_stack("h_paging_can_increase NO");
     return false;
 }
 
 void h_paging_increase() {
-    zemu_log_stack("h_paging_increase");
 
     if (viewdata.pageIdx + 1 < viewdata.pageCount) {
         // increase page
@@ -114,16 +107,13 @@ void h_paging_increase() {
 
 bool h_paging_can_decrease() {
     if (viewdata.pageIdx != 0) {
-        zemu_log_stack("h_paging_can_decrease");
         return true;
     }
 
     if (viewdata.itemIdx > 0) {
-        zemu_log_stack("h_paging_can_decrease");
         return true;
     }
 
-    zemu_log_stack("h_paging_can_decrease NO");
     return false;
 }
 

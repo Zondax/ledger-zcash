@@ -64,7 +64,6 @@ zxerr_t key_getItem(int8_t displayIdx,
                     // todo: get the real zip32 path, at the moment, it displays m/0'/0'/0'
                     // coin type = ZEC = 133
                     //  k = account
-                    zemu_log_stack("case key_fvk");
                     snprintf(outKey, outKeyLen, "Send FVK for path:\n");
                     char buffer[300];
                     bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
