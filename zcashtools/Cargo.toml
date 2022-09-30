@@ -10,3 +10,5 @@ overflow-checks = true
 
 [patch.crates-io]
 zcash-hsmbuilder = { git = "https://github.com/Zondax/ledger-zcash-rs", branch = "cleanup" }
+ledger-zcash = { git = "https://github.com/Zondax/ledger-zcash-rs", branch = "cleanup" }
+neon-serde = { git = "https://github.com/Zondax/neon-serde" , branch = "refactor/napi", default-features = false, features =["napi-6"]}
