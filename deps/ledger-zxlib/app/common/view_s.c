@@ -218,19 +218,16 @@ void h_review_update() {
 }
 
 void h_review_button_left() {
-    zemu_log_stack("h_review_button_left");
     h_paging_decrease();
     h_review_update();
 }
 
 void h_review_button_right() {
-    zemu_log_stack("h_review_button_right");
     h_paging_increase();
     h_review_update();
 }
 
 void h_review_button_both() {
-    zemu_log_stack("h_review_button_both");
     h_review_action(mustReply);
 }
 
