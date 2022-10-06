@@ -58,8 +58,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getivk`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk`)
 
       const ivk = await ivkreq
       console.log(ivk)
@@ -89,8 +88,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-getovk`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
 
       const ovk = await ovkreq
       console.log(ovk)
@@ -114,8 +112,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
 
-      const clickSchedule = [2, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-fvk`, clickSchedule)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-fvk`)
 
       const fvk = await fvkreq
 
@@ -158,9 +155,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
-      const clickSchedule = m.name == 'nanos' ? [2, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-get-nullifier`, clickSchedule)
-
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-nullifier`)
       const nf = await nfreq
 
       console.log(nf)
@@ -217,9 +212,7 @@ describe('Addresses and diversifiers', function () {
 
       const addrreq = app.showaddrdiv(path, div)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
-      const clickSchedule = m.name == 'nanos' ? [3, 0] : [3, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-show-shielded-addr`, clickSchedule)
-
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show-shielded-addr`)
       const addr = await addrreq
 
       console.log(addr)
@@ -331,14 +324,7 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      // we have to click several times...
-      //for (let i = 1; i < 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset; i += 1) {
-      //await sim.clickRight();
-      //}
-      const clicksS = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1
-      const clicksX = 2 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst + clicksOVKset
-      const clickSchedule = m.name == 'nanos' ? [22, 0] : [19, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-2-spend-2-out`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-spend-2-out`)
 
       const req = await reqinit
 
@@ -635,8 +621,7 @@ describe('End to end transactions', function () {
 
 
       const clicks = 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-      const clickSchedule = m.name == 'nanos' ? [21, 0] : [18, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -925,15 +910,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      //we have to click several times...
-      // for (let i = 1; i < 1 * clicksTIN_S + 1 * clicksTOUT_S + 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksOVKset + clicksConst; i += 1) { // 25
-      //   await sim.clickRight();
-      // }
-      // await sim.clickBoth();
 
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-      const clickSchedule = m.name == 'nanos' ? [21, 0] : [18, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -1219,8 +1198,7 @@ describe('End to end transactions', function () {
       // await sim.clickBoth();
 
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-      const clickSchedule = m.name == 'nanos' ? [24, 0] : [20, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -1495,8 +1473,7 @@ describe('End to end transactions', function () {
 
       const clicksS = 2 * clicksTIN_S + 2 * clicksTOUT_S + clicksConst - 1 // 13
       const clicksT = 2 * clicksTIN_X + 2 * clicksTOUT_X + clicksConst // 9
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`, clickSchedule)
+       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1640,10 +1617,7 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const clicksS = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst - 1 //
-      const clicksT = 2 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst //
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`, clickSchedule)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1755,10 +1729,7 @@ describe('Failing transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const clicksS = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst - 1
-      const clicksT = 2 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-ext-output-without-ext-spend-data`, clickSchedule)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-output-without-ext-spend-data`)
 
       const req = await reqinit
 
@@ -1853,12 +1824,7 @@ describe('Failing transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksS = 1 * clicksTIN_S + 1 * clicksTOUT_S + 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst - 1
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksT = 1 * clicksTIN_X + 1 * clicksTOUT_X + 1 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`, clickSchedule)
+     await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -2142,13 +2108,7 @@ describe('Failing transactions', function () {
         expect(element['text'].includes('ERROR')).toBeFalsy()
       })
 
-      // we have to click several times...
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksS = 1 * clicksTIN_S + 1 * clicksTOUT_S + 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst - 1
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksT = 1 * clicksTIN_X + 1 * clicksTOUT_X + 1 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`, clickSchedule)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -2393,13 +2353,7 @@ describe('Failing transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      //we have to click several times...
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksS = 1 * clicksTIN_S + 1 * clicksTOUT_S + 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst - 1 //
-      // noinspection PointlessArithmeticExpressionJS
-      const clicksT = 1 * clicksTIN_X + 1 * clicksTOUT_X + 1 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst //
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksT, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-builder-addr-diff-to-inittx-addr`, clickSchedule)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-builder-addr-diff-to-inittx-addr`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -2717,11 +2671,7 @@ describe('Failing transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      // we have to click several times...
-      const clicksS = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst //
-      const clicksX = 2 * clicksSSPEND_X + 2 * clicksSOUT_X + clicksConst + 1 //
-      const clickSchedule = m.name == 'nanos' ? [clicksS, 0] : [clicksX, 0]
-      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`, clickSchedule)
+      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`,'REJECT')
 
       const req = await reqinit
 
