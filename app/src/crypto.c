@@ -1179,28 +1179,10 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
 
     uint8_t message[HASH_SIZE + 32];
 
-    char message_string[4*(HASH_SIZE + 32)+1];
-
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    zemu_log_stack("Message to hash to get sighash is:");
-
-    array_to_hexstr(message_string,2*HASH_SIZE+1,start_signdata,HASH_SIZE);
-    zemu_log_stack(message_string);
-    array_to_hexstr(message_string,2*HASH_SIZE+1,start_signdata+18,HASH_SIZE);
-    zemu_log_stack(message_string);
-    zemu_log("\n");
-
     signature_hash(start_signdata,LENGTH_HASH_DATA,message + 32);
-
-    zemu_log_stack("Sighash is:");
-
-    array_to_hexstr(message_string,2*HASH_SIZE+1,message+32,HASH_SIZE);
-    zemu_log_stack(message_string);
-    array_to_hexstr(message_string,2*HASH_SIZE+1,message+32+18,HASH_SIZE);
-    zemu_log_stack(message_string);
-    zemu_log("\n");
 
     tmp_sign_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sign_s));
@@ -1223,23 +1205,6 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 randomized_secret_from_seed(tmp.step1.zip32_seed,item->path, (uint8_t *)item->alpha, tmp.step3.rsk);
 				rsk_to_rk((uint8_t *)tmp.step3.rsk, message);
 
-                zemu_log_stack("The message to sign is:");
-
-                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message,HASH_SIZE + 32);
-                zemu_log_stack(message_string);
-                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message+18,HASH_SIZE + 32);
-                zemu_log_stack(message_string);
-                array_to_hexstr(message_string,2*(HASH_SIZE + 32)+1,message+36,HASH_SIZE + 32);
-                zemu_log_stack(message_string);
-                zemu_log("\n");
-
-                /*
-                zemu_log_stack("The message to sign is:");
-                for (int i = 0; i < 64; i++) {
-                    sprintf(message_string + 2*i, "%02x", message[i]);
-                }
-                zemu_log(message_string);
-                 */
                 sign_redjubjub((uint8_t *)tmp.step3.rsk, (uint8_t *)message, (uint8_t *)out);
                 zxerr_t zxerr = spend_signatures_append(out);
                 if(zxerr != zxerr_ok){
