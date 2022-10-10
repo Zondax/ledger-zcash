@@ -30,6 +30,7 @@
 #include "coin.h"
 #include "zxmacros.h"
 #include "app_mode.h"
+#include "apdu_customcodes.h"
 
 #include "key.h"
 #include "parser.h"
