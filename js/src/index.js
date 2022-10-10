@@ -15,28 +15,26 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import { checkspendsSendChunkv1, saplingSendChunkv1, serializePathv1, signSendChunkv1 } from "./helperV1";
 import {
   APP_KEY,
   CHUNK_SIZE,
   CLA,
-  ERROR_CODE,
   errorCodeToString,
+  ERROR_CODE,
   getVersion,
   INS,
   P1_VALUES,
   PKLEN,
   processErrorResponse,
   SAPLING_ADDR_LEN,
+  SAPLING_AK_LEN,
   SAPLING_DIV_LEN,
   SAPLING_IVK_LEN,
-  SAPLING_OVK_LEN,
   SAPLING_NF_LEN,
-  SAPLING_PGK_LEN,
-  SAPLING_RND_LEN,
-  SAPLING_AK_LEN,
   SAPLING_NK_LEN,
+  SAPLING_OVK_LEN,
 } from "./common";
+import { saplingSendChunkv1, serializePathv1, signSendChunkv1 } from "./helperV1";
 
 function processGetUnshieldedAddrResponse(response) {
   let partialResponse = response;
@@ -68,9 +66,9 @@ function processDivListResponse(response) {
   if (response.length > 2) {
     let i;
     let div;
-    for (i = 0; i < 20; i++) {
+    for (i = 0; i < 20; i += 1) {
       div = data.slice(i * 11, (i + 1) * 11).toString("hex");
-      if (div != "0000000000000000000000") {
+      if (div !== "0000000000000000000000") {
         divlist.push(div);
       }
     }
@@ -157,21 +155,6 @@ function processFVKResponse(response) {
   };
 }
 
-function processRNDResponse(response) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const rndraw = Buffer.from(partialResponse.slice(0, 1 * SAPLING_RND_LEN)); // fixme
-
-  return {
-    rnd_raw: rndraw,
-    return_code: returnCode,
-    error_message: errorCodeToString(returnCode),
-  };
-}
-
 function processOutputResponse(response) {
   const partialResponse = response;
 
@@ -181,7 +164,7 @@ function processOutputResponse(response) {
   const rcv = Buffer.from(partialResponse.slice(0, 32));
   const rseed = Buffer.from(partialResponse.slice(32, 64));
   let hashseed;
-  if (partialResponse.byteLength == 96 + 2) {
+  if (partialResponse.byteLength === 96 + 2) {
     hashseed = Buffer.from(partialResponse.slice(64, 96)).toString("hex");
   } else {
     hashseed = null;
@@ -210,21 +193,6 @@ function processSpendResponse(response) {
     key_raw: keyraw.toString("hex"),
     rcv_raw: rcv.toString("hex"),
     alpha_raw: alpha.toString("hex"),
-    return_code: returnCode,
-    error_message: errorCodeToString(returnCode),
-  };
-}
-
-function processPGKResponse(response) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const pgkraw = Buffer.from(partialResponse.slice(0, SAPLING_PGK_LEN));
-
-  return {
-    pgk_raw: pgkraw,
     return_code: returnCode,
     error_message: errorCodeToString(returnCode),
   };
@@ -448,7 +416,6 @@ export default class ZCashApp {
         .then(processGetShieldedAddrResponse, processErrorResponse);
     }
     const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
     return this.transport
       .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
       .then(processGetUnshieldedAddrResponse, processErrorResponse);
@@ -507,7 +474,6 @@ export default class ZCashApp {
   }
 
   async extractspenddata() {
-    console.log("in extract spend");
     return this.transport
       .send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
       .then(processSpendResponse, processErrorResponse);
@@ -548,8 +514,6 @@ export default class ZCashApp {
         .then(processGetShieldedAddrResponse, processErrorResponse);
     }
     const serializedPath = serializePathv1(path);
-    console.log(serializedPath);
-    console.log(unshielded);
     return this.transport
       .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
       .then(processGetUnshieldedAddrResponse, processErrorResponse);
@@ -569,10 +533,6 @@ export default class ZCashApp {
 
   async saplingSendChunk(version, chunkIdx, chunkNum, chunk) {
     return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk);
-  }
-
-  async checkspendsSendChunk(version, chunkIdx, chunkNum, chunk) {
-    return checkspendsSendChunkv1(this, version, chunkIdx, chunkNum, chunk);
   }
 
   async checkandsign(message) {

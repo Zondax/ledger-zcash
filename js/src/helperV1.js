@@ -1,4 +1,4 @@
-import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse, SAPLING_ADDR_LEN } from "./common";
+import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from "./common";
 
 const HARDENED = 0x80000000;
 
@@ -136,4 +136,5 @@ export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk
         };
       }, processErrorResponse);
   }
+  return undefined;
 }
