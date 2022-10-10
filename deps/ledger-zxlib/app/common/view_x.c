@@ -26,6 +26,10 @@
 #include "view_templates.h"
 #include "tx.h"
 
+#ifdef APP_SECRET_MODE_ENABLED
+#include "secret.h"
+#endif
+
 
 #include <string.h>
 #include <stdio.h>
@@ -45,6 +49,10 @@ static void h_account_toggle();
 static void h_account_update();
 #endif
 
+#ifdef APP_SECRET_MODE_ENABLED
+static void h_secret_click();
+#endif
+
 #include "ux.h"
 ux_state_t G_ux;
 bolos_ux_params_t G_ux_params;
@@ -56,8 +64,11 @@ UX_STEP_NOCB(ux_idle_flow_1_step, pbb, { &C_icon_app, MENU_MAIN_APP_LINE1, viewd
 UX_STEP_CB_INIT(ux_idle_flow_2_step, bn,  h_expert_update(), h_expert_toggle(), { "Expert mode:", viewdata.value, });
 UX_STEP_NOCB(ux_idle_flow_3_step, bn, { APPVERSION_LINE1, APPVERSION_LINE2, });
 
+#ifdef APP_SECRET_MODE_ENABLED
+UX_STEP_CB(ux_idle_flow_4_step, bn, h_secret_click(), { "Developed by:", "Zondax.ch", });
+#else
 UX_STEP_NOCB(ux_idle_flow_4_step, bn, { "Developed by:", "Zondax.ch", });
-
+#endif
 
 UX_STEP_NOCB(ux_idle_flow_5_step, bn, { "License:", "Apache 2.0", });
 UX_STEP_CB(ux_idle_flow_6_step, pb, os_sched_exit(-1), { &C_icon_dashboard, "Quit",});
@@ -234,6 +245,29 @@ void h_account_update() {
     if (app_mode_account()) {
         snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, ACCOUNT_SECONDARY);
     }
+}
+#endif
+
+#ifdef APP_SECRET_MODE_ENABLED
+void h_secret_click() {
+    if (COIN_SECRET_REQUIRED_CLICKS == 0) {
+        // There is no secret mode
+        return;
+    }
+
+    viewdata.secret_click_count++;
+
+    char buffer[50];
+    snprintf(buffer, sizeof(buffer), "secret click %d\n", viewdata.secret_click_count);
+    zemu_log(buffer);
+
+    if (viewdata.secret_click_count >= COIN_SECRET_REQUIRED_CLICKS) {
+        secret_enabled();
+        viewdata.secret_click_count = 0;
+        return;
+    }
+
+    ux_flow_init(0, ux_idle_flow, &ux_idle_flow_4_step);
 }
 #endif
 

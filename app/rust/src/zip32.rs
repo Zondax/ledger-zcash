@@ -963,10 +963,10 @@ mod tests {
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 
         let mut ak_derived = [0u8; 32];
-        ak_derived.copy_from_slice(&keys[32..64]);
+        ak_derived.copy_from_slice(&dk_ak_nk[32..64]);
 
         let mut nk_derived = [0u8; 32];
-        nk_derived.copy_from_slice(&keys[64..96]);
+        nk_derived.copy_from_slice(&dk_ak_nk[64..96]);
 
         let mut ask = [0u8; 32];
         ask.copy_from_slice(&ask_nsk[0..32]);
@@ -1040,10 +1040,10 @@ mod tests {
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 
         let mut ak_derived = [0u8; 32];
-        ak_derived.copy_from_slice(&keys[32..64]);
+        ak_derived.copy_from_slice(&dk_ak_nk[32..64]);
 
         let mut nk_derived = [0u8; 32];
-        nk_derived.copy_from_slice(&keys[64..96]);
+        nk_derived.copy_from_slice(&dk_ak_nk[64..96]);
 
         let mut ask = [0u8; 32];
         ask.copy_from_slice(&ask_nsk[0..32]);
@@ -1052,11 +1052,11 @@ mod tests {
         nsk.copy_from_slice(&ask_nsk[32..64]);
 
 
-        let ivk = aknk_to_ivk(&ak, &nk);
+        let ivk = aknk_to_ivk(&ak_derived, &nk_derived);
 
         let mut ivk_ledger = [0u8; 32];
         hex::decode_to_slice(
-            "6dfadf175921e6fbfa093c8f7c704a0bdb07328474f56c833dfcfa5301082d03",
+            "2ed10dec7ea979feeddc9bf6e6368f4036706c2e3a82838d65bb4f070253bc01",
             &mut ivk_ledger,
         )
             .expect("dec");
@@ -1070,14 +1070,13 @@ mod tests {
 
         assert_eq!(
             default_d,
-            [198, 158, 151, 156, 103, 99, 193, 176, 146, 56, 220]
+            [171, 155, 76, 160, 252, 235, 12, 121, 206, 247, 150]
         );
         assert_eq!(
             pk_d,
-            [
-                107, 213, 220, 191, 53, 54, 13, 249, 93, 202, 223, 140, 15, 162, 93, 203, 237, 170,
-                246, 5, 117, 56, 184, 18, 208, 102, 86, 114, 110, 162, 118, 103
-            ]
+            [109, 255, 96, 20, 93, 103, 87, 237, 184, 196, 67,
+                152, 20, 153, 76, 170, 233, 83, 16, 159, 77, 168,
+                66, 205, 173, 118, 107, 251, 202, 197, 255, 27]
         );
     }
 

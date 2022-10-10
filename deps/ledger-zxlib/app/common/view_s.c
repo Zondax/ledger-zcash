@@ -41,6 +41,9 @@ static void h_review_button_left();
 static void h_review_button_right();
 static void h_review_button_both();
 
+#ifdef APP_SECRET_MODE_ENABLED
+static void h_secret_click();
+#endif
 
 #ifdef APP_ACCOUNT_MODE_ENABLED
 static void h_account_toggle();
@@ -66,7 +69,13 @@ const ux_menu_entry_t menu_main[] = {
 
     {NULL, NULL, 0, &C_icon_app, APPVERSION_LINE1, APPVERSION_LINE2, 33, 12},
 
-    {NULL,NULL,0, &C_icon_app, "Developed by:", "Zondax.ch", 33, 12},
+    {NULL,
+#ifdef APP_SECRET_MODE_ENABLED
+     h_secret_click,
+#else
+     NULL,
+#endif
+     0, &C_icon_app, "Developed by:", "Zondax.ch", 33, 12},
 
     {NULL, NULL, 0, &C_icon_app, "License: ", "Apache 2.0", 33, 12},
     {NULL, os_exit, 0, &C_icon_dashboard, "Quit", NULL, 50, 29},
@@ -240,6 +249,11 @@ void view_initialize_show_impl(uint8_t item_idx, char *statusString) {
 void view_idle_show_impl(uint8_t item_idx, char *statusString) {
     if (statusString == NULL ) {
         snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", MENU_MAIN_APP_LINE2);
+#ifdef APP_SECRET_MODE_ENABLED
+        if (app_mode_secret()) {
+            snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", MENU_MAIN_APP_LINE2_SECRET);
+        }
+#endif
     } else {
         snprintf(viewdata.key, MAX_CHARS_PER_VALUE_LINE, "%s", statusString);
     }
@@ -281,6 +295,26 @@ void h_account_update() {
     snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, ACCOUNT_DEFAULT);
     if (app_mode_account()) {
         snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, ACCOUNT_SECONDARY);
+    }
+}
+#endif
+
+#ifdef APP_SECRET_MODE_ENABLED
+void h_secret_click() {
+    if (COIN_SECRET_REQUIRED_CLICKS == 0) {
+        // There is no secret mode
+        return;
+    }
+
+    viewdata.secret_click_count++;
+
+    char buffer[50];
+    snprintf(buffer, sizeof(buffer), "secret click %d\n", viewdata.secret_click_count);
+    zemu_log(buffer);
+
+    if (viewdata.secret_click_count >= COIN_SECRET_REQUIRED_CLICKS) {
+        secret_enabled();
+        viewdata.secret_click_count = 0;
     }
 }
 #endif
