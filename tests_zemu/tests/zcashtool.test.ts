@@ -620,7 +620,6 @@ describe('End to end transactions', function () {
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
 
-      const clicks = 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`)
 
       const req = await reqinit
