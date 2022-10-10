@@ -17,7 +17,7 @@
 import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
-import {ZcashBuilderBridge} from '@zondax/zcashtools'
+import { ZcashBuilderBridge } from '@zondax/zcashtools'
 
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
@@ -58,7 +58,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk`)
 
       const ivk = await ivkreq
       console.log(ivk)
@@ -72,7 +72,6 @@ describe('Get keys', function () {
 
       expect(ivk_raw).toEqual(expected_ivk_raw)
       expect(default_div).toEqual(expected_div)
-
     } finally {
       await sim.close()
     }
@@ -88,7 +87,7 @@ describe('Get keys', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
 
       const ovk = await ovkreq
       console.log(ovk)
@@ -103,14 +102,13 @@ describe('Get keys', function () {
   })
 
   test.each(models)('Get full viewing key', async function (m) {
-
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
       const fvkreq = app.getfvk(1000)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-fvk`)
 
@@ -130,28 +128,25 @@ describe('Get keys', function () {
       const expected_ovk_raw = '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca'
       const ovk_raw = fvk.ovk_raw.toString('hex')
       expect(ovk_raw).toEqual(expected_ovk_raw)
-
     } finally {
       await sim.close()
     }
   })
 
-
   test.each(models)('Get nullifier', async function (m) {
-
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const cm = Buffer.from(
-          [33, 201, 70, 152, 202, 50, 75, 76, 186, 206, 41, 29,
-            39, 171, 182, 138, 10, 175, 39, 55, 220, 69, 86, 84, 28,
-            127, 205, 232, 206, 17, 221, 232])
+      const cm = Buffer.from([
+        33, 201, 70, 152, 202, 50, 75, 76, 186, 206, 41, 29, 39, 171, 182, 138, 10, 175, 39, 55, 220, 69, 86, 84, 28, 127, 205, 232, 206,
+        17, 221, 232,
+      ])
 
       //const pos = Uint8Array.from([2578461368])
-      const pos = Uint8Array.from([184,50,176,153,0,0,0,0])
-      const nfreq = app.getnullifier(1000, pos,cm)
+      const pos = Uint8Array.from([184, 50, 176, 153, 0, 0, 0, 0])
+      const nfreq = app.getnullifier(1000, pos, cm)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
@@ -161,10 +156,10 @@ describe('Get keys', function () {
       console.log(nf)
       expect(nf.return_code).toEqual(0x9000)
 
-      const expected_nf = Buffer.from(
-          [37, 241, 242, 207, 94, 44, 43, 195, 29, 7, 182, 111,
-            77, 84, 240, 144, 173, 137, 177, 152, 137, 63, 18, 173,
-            174, 68, 125, 223, 132, 226, 20, 90])
+      const expected_nf = Buffer.from([
+        37, 241, 242, 207, 94, 44, 43, 195, 29, 7, 182, 111, 77, 84, 240, 144, 173, 137, 177, 152, 137, 63, 18, 173, 174, 68, 125, 223, 132,
+        226, 20, 90,
+      ])
 
       const nfRaw = nf.nf_raw
       expect(expected_nf).toEqual(nfRaw)
@@ -172,11 +167,9 @@ describe('Get keys', function () {
       await sim.close()
     }
   })
-
 })
 
 describe('Addresses and diversifiers', function () {
-
   test.each(models)('get shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
@@ -247,11 +240,9 @@ describe('Addresses and diversifiers', function () {
       await sim.close()
     }
   })
-
 })
 
 describe('End to end transactions', function () {
-
   test.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
@@ -324,7 +315,7 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-spend-2-out`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-spend-2-out`)
 
       const req = await reqinit
 
@@ -357,7 +348,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -571,7 +562,6 @@ describe('End to end transactions', function () {
         value: 60000,
       }
 
-
       const s_spend1 = {
         path: 1000,
         address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
@@ -619,8 +609,7 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -657,7 +646,6 @@ describe('End to end transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-
       /*
      To add a shielded spend to the builder, we need:
          - the proof generation key belonging to the spend address (proofkey)
@@ -671,7 +659,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -909,9 +897,8 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -956,7 +943,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -1197,7 +1184,7 @@ describe('End to end transactions', function () {
       // await sim.clickBoth();
 
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`)
 
       const req = await reqinit
 
@@ -1258,7 +1245,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -1472,7 +1459,7 @@ describe('End to end transactions', function () {
 
       const clicksS = 2 * clicksTIN_S + 2 * clicksTOUT_S + clicksConst - 1 // 13
       const clicksT = 2 * clicksTIN_X + 2 * clicksTOUT_X + clicksConst // 9
-       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1626,7 +1613,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -1654,11 +1641,9 @@ describe('End to end transactions', function () {
       await sim.close()
     }
   })
-
 })
 
 describe('Failing transactions', function () {
-
   test.each(models)('try to extract spend data without calling inittx', async function (m) {
     const sim = new Zemu(m.path)
     try {
@@ -1823,7 +1808,7 @@ describe('Failing transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-     await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1869,7 +1854,7 @@ describe('Failing transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -2153,7 +2138,7 @@ describe('Failing transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -2398,7 +2383,7 @@ describe('Failing transactions', function () {
       console.log(req2)
       expect(req2.return_code).toEqual(0x9000)
       const expected_proofkey_raw =
-          '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
       expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
 
@@ -2670,7 +2655,7 @@ describe('Failing transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`,'REJECT')
+      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`, 'REJECT')
 
       const req = await reqinit
 
@@ -2693,4 +2678,3 @@ describe('Failing transactions', function () {
     }
   })
 })
-

@@ -51,7 +51,7 @@ export const SAPLING_NK_LEN = 32;
 export const SAPLING_PGK_LEN = 64;
 export const SAPLING_SPENDDATA_LEN = 128;
 export const SAPLING_OUTPUTDATA_LEN = 96;
-export const SAPLING_RND_LEN = 192;//fixme
+export const SAPLING_RND_LEN = 192; // fixme
 export const SAPLING_SIGN_LEN = 64;
 
 const ERROR_DESCRIPTION = {

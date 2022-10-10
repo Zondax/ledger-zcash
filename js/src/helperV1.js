@@ -1,4 +1,4 @@
-import {CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse, SAPLING_ADDR_LEN} from "./common";
+import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse, SAPLING_ADDR_LEN } from "./common";
 
 const HARDENED = 0x80000000;
 
@@ -102,16 +102,17 @@ export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk
 
         let txdata = null;
         if (response.length > 2) {
-          txdata = response.slice(0, 32); //fixme?
+          txdata = response.slice(0, 32); // fixme?
         }
 
         return {
-          txdata: txdata,
+          txdata,
           return_code: returnCode,
           error_message: errorMessage,
         };
       }, processErrorResponse);
-  } else if (version === INS.CHECKANDSIGN) {
+  }
+  if (version === INS.CHECKANDSIGN) {
     return app.transport
       .send(CLA, INS.CHECKANDSIGN, payloadType, 0, chunk, [0x9000, 0x6984, 0x6a80])
       .then((response) => {
@@ -125,11 +126,11 @@ export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk
 
         let signdata = null;
         if (response.length > 2) {
-          signdata = response.slice(0, 32); //fixme?
+          signdata = response.slice(0, 32); // fixme?
         }
 
         return {
-          signdata: signdata,
+          signdata,
           return_code: returnCode,
           error_message: errorMessage,
         };
