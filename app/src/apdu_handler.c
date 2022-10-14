@@ -74,6 +74,7 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
         *tx = 64;
         THROW(APDU_CODE_OK);
     } else {
+        view_idle_show(0, NULL);
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
