@@ -51,7 +51,7 @@ export const SAPLING_NK_LEN = 32;
 export const SAPLING_PGK_LEN = 64;
 export const SAPLING_SPENDDATA_LEN = 128;
 export const SAPLING_OUTPUTDATA_LEN = 96;
-export const SAPLING_RND_LEN = 192;//fixme
+export const SAPLING_RND_LEN = 192; // fixme
 export const SAPLING_SIGN_LEN = 64;
 
 const ERROR_DESCRIPTION = {
@@ -88,7 +88,7 @@ const ERROR_DESCRIPTION = {
   0x6a80: "Bad key handle",
   0x6b00: "Invalid P1/P2",
   0x6d00: "Instruction not supported",
-  0x6e00: "App does not seem to be open",
+  0x6e01: "App does not seem to be open",
   0x6f00: "Unknown error",
   0x6f01: "Sign/verify error",
   0x6f10: "check spends error",
