@@ -47,6 +47,13 @@ beforeAll(async () => {
   await Zemu.checkAndPullImage()
 })
 
+async function takeLastSnapshot(testname: string, index: number, sim: any) {
+  await sim.waitForText('DO NOT USE', 30000)
+  await sim.takeSnapshotAndOverwrite('.', testname, index)
+  await sim.compareSnapshots('.', testname, index)
+}
+
+
 describe('Get keys', function () {
   test.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
@@ -315,7 +322,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-spend-2-out`)
+      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
 
@@ -510,18 +519,20 @@ describe('End to end transactions', function () {
       expect(req8.return_code).toEqual(0x9000)
 
       /*
-       At this point we gathered all signatures.
-       We now add these signaturs to the builder.
-       Note that for this transaction, we do not have any transparent signatures.
-        */
+      At this point we gathered all signatures.
+      We now add these signaturs to the builder.
+      Note that for this transaction, we do not have any transparent signatures.
+      */
 
-      const signatures = {
-        transparent_sigs: [],
-        spend_sigs: [req7.sig_raw, req8.sig_raw],
+     const signatures = {
+       transparent_sigs: [],
+       spend_sigs: [req7.sig_raw, req8.sig_raw],
       }
 
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
+
+      await takeLastSnapshot(testname, last_index, sim)
 
       /*
        The builder is now done and the transaction is complete.
@@ -608,8 +619,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`)
+      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
 
@@ -812,6 +824,7 @@ describe('End to end transactions', function () {
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
 
+      await takeLastSnapshot(testname, last_index, sim)
       /*
       The builder is now done and the transaction is complete.
        */
@@ -898,7 +911,9 @@ describe('End to end transactions', function () {
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`)
+      const testname =  `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1086,6 +1101,8 @@ describe('End to end transactions', function () {
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
 
+      await takeLastSnapshot(testname, last_index, sim)
+
       /*
       The builder is now done and the transaction is complete.
        */
@@ -1184,7 +1201,9 @@ describe('End to end transactions', function () {
       // await sim.clickBoth();
 
       const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`)
+      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1396,6 +1415,7 @@ describe('End to end transactions', function () {
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
 
+      await takeLastSnapshot(testname, last_index, sim)
       /*
       The builder is now done and the transaction is complete.
        */
@@ -1459,7 +1479,9 @@ describe('End to end transactions', function () {
 
       const clicksS = 2 * clicksTIN_S + 2 * clicksTOUT_S + clicksConst - 1 // 13
       const clicksT = 2 * clicksTIN_X + 2 * clicksTOUT_X + clicksConst // 9
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`)
+      const testname =  `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1537,6 +1559,8 @@ describe('End to end transactions', function () {
       const b5 = builder.add_signatures(signatures)
       console.log(b5)
 
+      await takeLastSnapshot(testname, last_index, sim)
+
       /*
       The builder is now done and the transaction is complete.
        */
@@ -1602,8 +1626,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`)
+      const testname =  `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1637,6 +1662,8 @@ describe('End to end transactions', function () {
       const req8 = await app.extracttranssig()
       console.log(req8)
       expect(req8.return_code).not.toEqual(0x9000)
+
+      await takeLastSnapshot(testname, last_index, sim)
     } finally {
       await sim.close()
     }
