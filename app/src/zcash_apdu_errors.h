@@ -16,18 +16,18 @@
 
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
-
-void sequence_hash(const uint8_t *input, uint8_t *output);
-
-void outputs_hash(uint8_t *output);
-
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+// Specific APDU error codes for ZCash
+#define APDU_CODE_DATA_TOO_LONG             0x6988
+#define APDU_CODE_EXTRACT_TRANSACTION_FAIL  0x6989
+#define APDU_CODE_HASH_MSG_BUF_FAIL         0x6990
+#define APDU_CODE_UNPROCESSED_TX            0x6991
+#define APDU_CODE_PREVOUT_INVALID           0x6992
+#define APDU_CODE_SEQUENCE_INVALID          0x6993
+#define APDU_CODE_OUTPUTS_INVALID           0x6994
+#define APDU_CODE_JOINSPLIT_INVALID         0x6995
+#define APDU_CODE_SPEND_INVALID             0x6996
+#define APDU_CODE_OUTPUT_CONTENT_INVALID    0x6997
+#define APDU_CODE_ENCRYPTION_INVALID        0x6998
+#define APDU_CODE_CHECK_SIGN_TR_FAIL        0x6999
+#define APDU_SIGN_SPEND_FAIL                0x69A0
+#define APDU_CODE_BAD_VALUEBALANCE          0x69A1

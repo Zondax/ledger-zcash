@@ -1,5 +1,6 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2016 Ledger
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,21 +14,32 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
+#include "zxmacros.h"
+#include "stdbool.h"
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+void app_mode_reset();
 
-void outputs_hash(uint8_t *output);
+bool app_mode_expert();
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+void app_mode_set_expert(uint8_t val);
 
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+bool app_mode_account();
 
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+void app_mode_set_account(uint8_t val);
 
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+bool app_mode_secret();
 
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+void app_mode_set_secret(uint8_t val);
+
+bool app_mode_shortcut();
+
+void app_mode_set_shortcut(uint8_t val);
+
+#ifdef __cplusplus
+}
+#endif

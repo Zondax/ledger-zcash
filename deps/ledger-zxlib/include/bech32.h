@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2019 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,21 +13,27 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+#include "zxerror.h"
 
-void outputs_hash(uint8_t *output);
+#define MAX_INPUT_SIZE 64
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+// the following function encodes directly from bytes
+// it will internally convert from 8 to 5 bits and return a
+// zero-terminated string in output
 
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+zxerr_t bech32EncodeFromBytes(char *out,
+                              size_t out_len,
+                              const char *hrp,
+                              const uint8_t *in,
+                              size_t in_len,
+                              uint8_t pad);
 
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#ifdef __cplusplus
+}
+#endif

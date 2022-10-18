@@ -39,6 +39,23 @@ bool isTestnet() {
            hdPath[1] == HDPATH_1_TESTNET;
 }
 
+typedef enum {
+    EXTRACT_SAPLING_E0 = 0xE0,
+    EXTRACT_SAPLING_E1 = 0xE1,
+    EXTRACT_SAPLING_E2 = 0xE2,
+    EXTRACT_SAPLING_E3 = 0xE3,
+    EXTRACT_SAPLING_E4 = 0xE4,
+    EXTRACT_SAPLING_E5 = 0xE5,
+    EXTRACT_SAPLING_E6 = 0xE6,
+    EXTRACT_SAPLING_E7 = 0xE7,
+    EXTRACT_SAPLING_E8 = 0xE8,
+    EXTRACT_SAPLING_E9 = 0xE9,
+    EXTRACT_SAPLING_EA = 0xEA,
+    EXTRACT_SAPLING_EB = 0xEB,
+    EXTRACT_SAPLING_EC = 0xEC,
+    EXTRACT_SAPLING_ED = 0xED,
+} extract_sapling_e;
+
 #include "cx.h"
 
 typedef struct {
@@ -219,17 +236,17 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
     transaction_reset();
 
     if ((spend_len > 0 && output_len < 2) || (spend_len == 0 && output_len == 1)) {
-        return 0xE0;
+        return (zxerr_t) EXTRACT_SAPLING_E0;
     }
 
     if (txdatalen < 4 || txdatalen - 4 !=
                          t_in_len * T_IN_INPUT_LEN + t_out_len * T_OUT_INPUT_LEN + spend_len * SPEND_INPUT_LEN +
                          output_len * OUTPUT_INPUT_LEN) {
-        return 0xE1;
+        return (zxerr_t) EXTRACT_SAPLING_E1;
     }
 
     if (t_in_len == 0 && t_out_len == 0 && spend_len == 0 && output_len == 0) {
-        return 0xE2;
+        return (zxerr_t) EXTRACT_SAPLING_E2;
     }
 
     uint8_t *start = (uint8_t *) txdata;
@@ -248,11 +265,11 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok) {
-            return 0xE3;
+            return (zxerr_t) EXTRACT_SAPLING_E3;
         }
         zxerr_t err = t_inlist_append_item(path, script, v);
         if (err != zxerr_ok) {
-            return 0xE4;
+            return (zxerr_t) EXTRACT_SAPLING_E4;
         }
         start += T_IN_INPUT_LEN;
     }
@@ -265,11 +282,11 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok) {
-            return 0xE5;
+            return (zxerr_t) EXTRACT_SAPLING_E5;
         }
         zxerr_t err = t_outlist_append_item(addr, v);
         if (err != zxerr_ok) {
-            return 0xE6;
+            return (zxerr_t) EXTRACT_SAPLING_E6;
         }
         start += T_OUT_INPUT_LEN;
     }
@@ -281,7 +298,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint32_t p = 0;
         pars_err = _readUInt32(&pars_ctx, &p);
         if (pars_err != parser_ok) {
-            return 0xE7;
+            return (zxerr_t) EXTRACT_SAPLING_E7;
         }
 
         pars_ctx.offset = 0;
@@ -290,7 +307,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok) {
-            return 0xE8;
+            return (zxerr_t) EXTRACT_SAPLING_E8;
         }
 
         uint8_t *div = start + INDEX_INPUT_INPUTDIV;
@@ -302,7 +319,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 
         zxerr_t err = spendlist_append_item(p, v, div, pkd, rnd1, rnd2);
         if (err != zxerr_ok) {
-            return 0xE9;
+            return (zxerr_t) EXTRACT_SAPLING_E9;
         }
         start += SPEND_INPUT_LEN;
     }
@@ -317,13 +334,13 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         uint64_t v = 0;
         pars_err = _readUInt64(&pars_ctx, &v);
         if (pars_err != parser_ok) {
-            return 0xEA;
+            return (zxerr_t) EXTRACT_SAPLING_EA;
         }
 
         uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
         uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
         if (ovk[0] != 0x00 && ovk[0] != 0x01) {
-            return 0xEB;
+            return (zxerr_t) EXTRACT_SAPLING_EB;
         }
         uint8_t hash_seed[OVK_SET_SIZE];
         if (ovk[0] == 0x00) {
@@ -338,14 +355,14 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         cx_rng(rnd2, RND_SIZE);
         zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
         if (err != zxerr_ok) {
-            return 0xEC;
+            return (zxerr_t) EXTRACT_SAPLING_EC;
         }
         start += OUTPUT_INPUT_LEN;
     }
 
     uint64_t value_flash = get_totalvalue();
     if (value_flash != 1000) {
-        return 0xED;
+        return (zxerr_t) EXTRACT_SAPLING_ED;
     }
 
     if (spend_len > 0) {
@@ -1290,8 +1307,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     tmp_sapling_ivk_and_default_div *out = (tmp_sapling_ivk_and_default_div *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     BEGIN_TRY
@@ -1299,19 +1315,17 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
             // get incomming viewing key
-            zip32_ivk(tmp.zip32_seed, out->ivk, p);
+            zip32_ivk(zip32_seed, out->ivk, p);
             CHECK_APP_CANARY();
             // get default diversifier for start index 0
-            get_default_diversifier_without_start_index(tmp.zip32_seed, p, out->default_div);
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            get_default_diversifier_without_start_index(zip32_seed, p, out->default_div);
         }
         FINALLY
         {
-            // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;

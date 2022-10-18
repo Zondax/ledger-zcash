@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2020 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -14,20 +14,28 @@
 *  limitations under the License.
 ********************************************************************************/
 
-#pragma once
+#include <stdint.h>
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+typedef enum {
+    no_error = 0,
+    invalid_derPrefix,
+    invalid_payloadLen,
+    invalid_rmaker,
+    invalid_rLen,
+    invalid_smarker,
+    invalid_sLen,
+} err_convert_e;
 
-void outputs_hash(uint8_t *output);
+err_convert_e convertDERtoRSV(const uint8_t *inSignatureDER,
+                              unsigned int inInfo,
+                              uint8_t *outR,
+                              uint8_t *outS,
+                              uint8_t *outV);
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#ifdef __cplusplus
+}
+#endif

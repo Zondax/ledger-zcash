@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2019 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+#include <zxmacros.h>
+#include <zxtypes.h>
 
-void outputs_hash(uint8_t *output);
+bool_t bignumLittleEndian_bcdprint(char *outBuffer, uint16_t outBufferLen, const uint8_t *inBCD, uint16_t inBCDLen);
+void bignumLittleEndian_to_bcd(uint8_t *bcdOut, uint16_t bcdOutLen, const uint8_t *binValue, uint16_t binValueLen);
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+bool_t bignumBigEndian_bcdprint(char *outBuffer, uint16_t outBufferLen, const uint8_t *bcdIn, uint16_t bcdInLen);
+void bignumBigEndian_to_bcd(uint8_t *bcdOut, uint16_t bcdOutLen, const uint8_t *binValue, uint16_t binValueLen);
 
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
 
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#ifdef __cplusplus
+}
+#endif

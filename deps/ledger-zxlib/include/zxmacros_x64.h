@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2018 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,21 +13,28 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#if !defined (TARGET_NANOS) && !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+// This macros are kept for backwards compatibility
+// the most recent SDK has unified implementations and deprecated the original os_***
+#define MEMMOVE memmove
+#define MEMSET memset
+#define MEMCPY memcpy
+#define MEMCMP memcmp
+#define MEMCPY_NV memcpy
 
-void outputs_hash(uint8_t *output);
+#define PIC(x) (x)
+#define CHECK_APP_CANARY() {}
+#define CX_ECCINFO_PARITY_ODD 1u
+#define CX_ECCINFO_xGTn 2u
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+#ifndef __APPLE__
+#define MEMZERO explicit_bzero
+#else
+__Z_INLINE void __memzero(void *buffer, size_t s) { memset(buffer, 0, s); }
+#define MEMZERO __memzero
+#endif
 
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#endif

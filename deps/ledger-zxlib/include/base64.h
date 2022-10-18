@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   (c) 2020 Zondax GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,21 +13,17 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+#include <inttypes.h>
+#include <stdint.h>
 
-void outputs_hash(uint8_t *output);
+uint16_t base64_encode(char *out, uint16_t outlen, const uint8_t *in, uint16_t inlen);
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#ifdef __cplusplus
+}
+#endif

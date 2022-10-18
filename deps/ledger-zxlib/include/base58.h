@@ -1,5 +1,7 @@
 /*******************************************************************************
-*   (c) 2018 -2022 Zondax AG
+*   Ledger App - Bitcoin Wallet
+*   (c) 2019 Zondax GmbH
+*   (c) 2016-2019 Ledger
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -16,18 +18,21 @@
 
 #pragma once
 
-void prevouts_hash(const uint8_t *input, uint8_t *output);
+#include <stdlib.h>
+#include <stdint.h>
 
-void sequence_hash(const uint8_t *input, uint8_t *output);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void outputs_hash(uint8_t *output);
+int decode_base58(const char *in, size_t length,
+                  unsigned char *out, size_t *outlen);
 
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+int encode_base58(const unsigned char *in, size_t length,
+                  unsigned char *out, size_t *outlen);
 
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+char encode_base58_clip(unsigned char v);
 
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
-
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+#ifdef __cplusplus
+}
+#endif

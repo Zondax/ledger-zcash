@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) 2020 Zondax AG
+*   (c) 2018 - 2022 Zondax AG
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -46,11 +46,13 @@ zxerr_t addr_getItem(int8_t displayIdx,
                     pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx,
                                pageCount);
                     return zxerr_ok;
+
                 case addr_sapling:
                     snprintf(outKey, outKeyLen, "Shielded");
                     pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
                                pageCount);
                     return zxerr_ok;
+
                 case addr_sapling_div:
                     snprintf(outKey, outKeyLen, "Shielded with div");
                     pageString(outVal, outValLen, (char *) (G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
