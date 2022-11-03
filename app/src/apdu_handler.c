@@ -205,21 +205,10 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     zemu_log("----[handleGetKeyOVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-
-    if (!requireConfirmation) {
+    if (rx < APDU_MIN_LENGTH ||  rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK
+                             || G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK
+                             || G_io_apdu_buffer[OFFSET_P1] == 0) {
+        zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -242,7 +231,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(1);
+    view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -253,22 +242,10 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags,
     zemu_log("----[handleGetKeyFVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_FVK) {
+    if (rx < APDU_MIN_LENGTH ||  rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_FVK
+                             || G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK
+                             || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-
-    if (!requireConfirmation) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -291,7 +268,7 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(1);
+    view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -304,26 +281,10 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     zemu_log("----[handleGetNullifier]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH) {
-        zemu_log("Too short!\n");
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF) {
-        ZEMU_LOGF(100, "rx is %d\n", rx)
+    if (rx < APDU_MIN_LENGTH ||  rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF
+                             || G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF
+                             || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF) {
-        zemu_log("Wrong offset data length!\n");
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
-    uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
-
-    if (!requireConfirmation) {
-        zemu_log("Confirmation required!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -343,7 +304,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
                                    NOTE_POSITION_SIZE);
 
     // get note commitment from payload
-    uint8_t cm[NOTE_COMMITMENT_SIZE];
+    uint8_t cm[NOTE_COMMITMENT_SIZE] = {0};
     memcpy(cm, G_io_apdu_buffer + OFFSET_DATA + ZIP32_PATH_SIZE + NOTE_POSITION_SIZE,
                                    NOTE_COMMITMENT_SIZE);
 
@@ -364,11 +325,9 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     key_state.len = replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(1);
+    view_review_show(REVIEW_TXN);
     *flags |= IO_ASYNCH_REPLY;
 }
-
-
 
 __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
                                    volatile uint32_t *tx, uint32_t rx) {
@@ -379,17 +338,8 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
 
     zemu_log("----[handleCheckandSign]\n");
 
-//    zxerr_t err = check_and_sign_tx();
-//
-//    if (err != zxerr_ok) {
-//        *tx = 0;
-//        view_idle_show(0, NULL);
-//        transaction_reset();
-//        THROW(APDU_CODE_DATA_INVALID);
-//    }
     const uint8_t *message = tx_get_buffer();
     const uint16_t messageLength = tx_get_buffer_length();
-    zxerr_t err;
 
     if (get_state() != STATE_PROCESSED_ALL_EXTRACTIONS) {
         zemu_log("[handleCheckandSign] not STATE_PROCESSED_ALL_EXTRACTIONS\n");
@@ -405,7 +355,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     set_state(STATE_CHECKING_ALL_TXDATA);
     view_tx_state();
 
-    err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    zxerr_t err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);

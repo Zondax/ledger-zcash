@@ -14,7 +14,7 @@ jobs:
     name: SonarQube analyze
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder@sha256:877adc3ff619222aaf03a490d546ea9001f02faa0c6ac7c06c876c99584f9cdb
     env:
       SONAR_SCANNER_VERSION: 4.7.0.2747
       SONAR_SERVER_URL: "https://sonarcloud.io"

@@ -33,12 +33,6 @@
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
 
-// is this ever used?
-bool isTestnet() {
-    return hdPath[0] == HDPATH_0_TESTNET &&
-           hdPath[1] == HDPATH_1_TESTNET;
-}
-
 typedef enum {
     EXTRACT_SAPLING_E0 = 0xE0,
     EXTRACT_SAPLING_E1 = 0xE1,
@@ -486,8 +480,8 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
         return zxerr_unknown;
     }
 
-    uint8_t hash[HASH_SIZE];
-    prevouts_hash(txdata,hash);
+    uint8_t hash[HASH_SIZE] = {0};
+    prevouts_hash(txdata, hash);
 
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_PREVOUTSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
@@ -504,7 +498,7 @@ zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t
         return zxerr_unknown;
     }
 
-    uint8_t hash[HASH_SIZE];
+    uint8_t hash[HASH_SIZE] = {0};
     sequence_hash(txdata, hash);
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_SEQUENCEHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
@@ -524,7 +518,7 @@ zxerr_t crypto_check_outputs(uint8_t *buffer, uint16_t bufferLen, const uint8_t 
     }
 
     MEMZERO(buffer, bufferLen);
-    uint8_t hash[HASH_SIZE];
+    uint8_t hash[HASH_SIZE] = {0};
     outputs_hash(hash);
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_OUTPUTSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
@@ -540,8 +534,7 @@ zxerr_t crypto_check_joinsplits(uint8_t *buffer, uint16_t bufferLen, const uint8
     if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
-    uint8_t hash[HASH_SIZE];
-    MEMZERO(hash,sizeof(hash));
+    uint8_t hash[HASH_SIZE] = {0};
     if(MEMCMP(hash, txdata + start_sighashdata() + INDEX_HASH_JOINSPLITSHASH, HASH_SIZE) != 0){
         return zxerr_unknown;
     }
@@ -624,6 +617,7 @@ typedef struct {
 
 // handleCheckandSign step 6/11
 zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
+    zemu_log_stack("crypto_checkspend_sapling");
     MEMZERO(buffer, bufferLen);
 
     if(length_t_in_data() + length_spenddata() + length_outputdata() + LENGTH_HASH_DATA != txdatalen){
@@ -634,12 +628,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         return zxerr_unknown;
     }
 
-    zemu_log_stack("crypto_checkspend_sapling");
-
     uint8_t *out = buffer;
-
     tmp_buf_checkspend *const tmp_buf = (tmp_buf_checkspend *) buffer;
-    MEMZERO(tmp_buf, bufferLen);
 
     uint8_t *start_spenddata = (uint8_t *)(txdata + length_t_in_data() + length_spend_old_data());
     uint8_t *start_spendolddata = (uint8_t *)(txdata + length_t_in_data());
@@ -678,7 +668,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 compute_value_commitment(item->value,item->rcmvalue,tmp.step4.cv);
                 if (MEMCMP(tmp.step4.cv, start_spenddata + INDEX_SPEND_VALUECMT + i *SPEND_TX_LEN,VALUE_COMMITMENT_SIZE) != 0){
                     MEMZERO(&tmp, sizeof(tmp_checkspend));
-                    MEMZERO(out,bufferLen);
+                    MEMZERO(out, bufferLen);
                     CLOSE_TRY;
                     return zxerr_unknown;
                 }
@@ -712,19 +702,15 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 MEMZERO(&tmp, sizeof(tmp_checkspend));
 
             }
-
-            MEMZERO(&tmp, sizeof(tmp_checkspend));
         }
         FINALLY
         {
-            // Not necessary, but just in case
             MEMZERO(out, bufferLen);
             MEMZERO(&tmp, sizeof(tmp_checkspend));
         }
     }
     END_TRY;
 
-    MEMZERO(out, bufferLen);
     if (spendlist_len() > 0){
         shielded_spend_hash(start_spenddata, length_spend_new_data(), tmp_buf->spend_hash);
     }
@@ -899,15 +885,11 @@ typedef struct {
 
 // handleCheckandSign step 8/11
 zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
+    zemu_log_stack("crypto_checkencryptions_sapling");
     MEMZERO(buffer, bufferLen);
-
-    uint8_t *out = (uint8_t *) buffer;
-    MEMZERO(out, bufferLen);
 
     tmp_enc *tmp = (tmp_enc *)buffer;
     MEMZERO(tmp, sizeof(tmp_enc));
-
-    zemu_log_stack("crypto_checkencryptions_sapling");
 
     uint8_t *start_outputdata = (uint8_t *)(txdata + length_t_in_data() + length_spenddata());
 
@@ -916,7 +898,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         // retrieve info on list of outputs stored in flash
         const output_item_t *item = outputlist_retrieve_item(i);
         if (item == NULL){
-            MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
         // compute random ephemeral private and public keys (esk,epk) from seed and diversifier
@@ -925,7 +906,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
         // compare the computed epk to that provided in the transaction data
         if (MEMCMP(tmp->step1.epk, start_outputdata + INDEX_OUTPUT_EPK + i * OUTPUT_TX_LEN, EPK_SIZE) != 0){
-            MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
@@ -941,7 +921,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         CHECK_APP_CANARY();
         // check that the computed encryption is the same as that provided in the transaction data
         if (MEMCMP(tmp->step2.compactout, start_outputdata + INDEX_OUTPUT_ENC + i * OUTPUT_TX_LEN, COMPACT_OUT_SIZE) != 0){
-            MEMZERO(out, bufferLen);
             return zxerr_unknown;
         }
 
@@ -971,7 +950,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
             // check that the computed encryption is the same as that provided in the transaction data
             if (MEMCMP(tmp->step6.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
-                MEMZERO(out, bufferLen);
                 return zxerr_unknown;
             }
 
@@ -993,15 +971,14 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             // encrypt and compare computed encryption to that provided in the transaction data
             chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,1);
             if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0){
-                MEMZERO(out, bufferLen);
                 return zxerr_unknown;
             }
         }
         CHECK_APP_CANARY();
-        MEMZERO(out, bufferLen);
+        MEMZERO(buffer, bufferLen);
     }
 
-    MEMZERO(out, bufferLen);
+    MEMZERO(buffer, bufferLen);
     return zxerr_ok; //or some code for ok
 }
 
@@ -1289,11 +1266,6 @@ zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uin
 }
 
 typedef struct {
-            uint8_t zip32_seed[ZIP32_SEED_SIZE];
-            uint8_t dummy; // Removing this causes a segfault... strange...
-} tmp_sapling_addr_s;
-
-typedef struct {
     uint8_t ivk[IVK_SIZE];
     uint8_t default_div[DIV_SIZE];
 } tmp_sapling_ivk_and_default_div;
@@ -1307,15 +1279,16 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     tmp_sapling_ivk_and_default_div *out = (tmp_sapling_ivk_and_default_div *) buffer;
     MEMZERO(out, bufferLen);
 
+    //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
-    //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
             // get incomming viewing key
             zip32_ivk(zip32_seed, out->ivk, p);
@@ -1330,8 +1303,14 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     }
     END_TRY;
     CHECK_APP_CANARY();
+    if(error != zxerr_ok){
+        MEMZERO(buffer, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
     *replyLen = IVK_SIZE + DIV_SIZE;
-    return zxerr_ok;
+    return error;
 }
 
 // handleGetKeyOVK
@@ -1339,33 +1318,35 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_ovk_sapling");
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
-    uint8_t *out = (uint8_t *) buffer;
-    MEMZERO(out, bufferLen);
-
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
-
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
-            zip32_ovk(tmp.zip32_seed,out,p);
-            MEMZERO(&tmp,sizeof(tmp));
+
+            zip32_ovk(zip32_seed, buffer, p);
             CHECK_APP_CANARY();
         }
         FINALLY
         {
-            MEMZERO(&tmp,sizeof(tmp));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;
     CHECK_APP_CANARY();
+    if(error != zxerr_ok){
+        MEMZERO(buffer, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
     *replyLen = OVK_SIZE;
-    return zxerr_ok;
+    return error;
 }
 
 typedef struct {
@@ -1374,122 +1355,119 @@ typedef struct {
 
 // handleGetKeyFVK: return the full viewing key for a given path
 zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
-    MEMZERO(buffer, bufferLen);
 
     zemu_log_stack("crypto_fvk_sapling");
 
+    MEMZERO(buffer, bufferLen);
     tmp_sapling_fvk *out = (tmp_sapling_fvk *) buffer;
-    MEMZERO(out, bufferLen);
-
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
+
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             zemu_log_stack("FVK got sapling seed");
             CHECK_APP_CANARY();
+
             // get full viewing key
-            zip32_fvk(tmp.zip32_seed, out->fvk, p);
+            zip32_fvk(zip32_seed, out->fvk, p);
             CHECK_APP_CANARY();
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         }
         FINALLY
         {
-            // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;
     CHECK_APP_CANARY();
+    if(error != zxerr_ok){
+        MEMZERO(buffer, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
     *replyLen = AK_SIZE + NK_SIZE + OVK_SIZE;
     return zxerr_ok;
 }
 
-typedef struct {
-    uint8_t zip32_seed[ZIP32_SEED_SIZE];
-    uint8_t nsk[NSK_SIZE];
-} tmp_sapling_nullifier;
-
 // handleGetNullifier
 zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint64_t notepos, uint8_t *cm,
                                  uint16_t *replyLen){
-    MEMZERO(buffer, bufferLen);
-
     zemu_log_stack("crypto_nullifier_sapling");
 
-    uint8_t *nf_out = (uint8_t *) buffer;
-    MEMZERO(nf_out, bufferLen);
+    MEMZERO(buffer, bufferLen);
 
-    tmp_sapling_nullifier tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_nullifier));
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
+    uint8_t nsk[NSK_SIZE] = {0};
 
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
 
             // nk can be computed from nsk which itself can be computed from the seed.
-            zip32_nsk_from_seed(tmp.zip32_seed,tmp.nsk);
+            zip32_nsk_from_seed(zip32_seed, nsk);
 
-            compute_nullifier(cm, notepos, tmp.nsk, nf_out);
-
-            MEMZERO(&tmp,sizeof(tmp));
+            compute_nullifier(cm, notepos, nsk, buffer);
             CHECK_APP_CANARY();
         }
         FINALLY
         {
-            MEMZERO(&tmp,sizeof(tmp));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
+            MEMZERO(nsk, sizeof(nsk));
         }
     }
     END_TRY;
     CHECK_APP_CANARY();
+    if(error != zxerr_ok) {
+        MEMZERO(buffer, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
     *replyLen = NULLIFIER_SIZE;
     return zxerr_ok;
 }
-
 
 // handleGetDiversifierList
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
-
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
 
-            get_diversifier_list_withstartindex(tmp.zip32_seed,p,startindex,buffer);
+            get_diversifier_list_withstartindex(zip32_seed, p, startindex, buffer);
             for(int i = 0; i < DIV_LIST_LENGTH; i++){
-                if (!is_valid_diversifier(buffer+i*DIV_SIZE)){
-                    MEMZERO(buffer+i*DIV_SIZE,DIV_SIZE);
+                if (!is_valid_diversifier(buffer + i * DIV_SIZE)){
+                    MEMZERO(buffer + i * DIV_SIZE, DIV_SIZE);
                 }
             }
-
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
-
         }
         FINALLY
         {
-            // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;
+
     *replylen = DIV_LIST_LENGTH * DIV_SIZE;
-    return zxerr_ok;
+    return error;
 }
 
 typedef struct {
@@ -1522,35 +1500,39 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
     MEMCPY(out->diversifier, div, DIV_SIZE);
     if (!is_valid_diversifier(out->diversifier)){
         return zxerr_unknown;
     }
 
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
 
-            get_pkd(tmp.zip32_seed, p, out->diversifier, out->pkd);
-
+            get_pkd(zip32_seed, p, out->diversifier, out->pkd);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.zip32_seed, sizeof_field(tmp_sapling_addr_s, zip32_seed));
         }
         FINALLY
         {
-            // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;
-    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
+
+    if(error != zxerr_ok) {
+        MEMZERO(buffer, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
+    error = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
@@ -1558,11 +1540,10 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     CHECK_APP_CANARY();
     zemu_log_stack("Returned ok");
 
-    if(berr != zxerr_ok){
+    if(error != zxerr_ok){
         MEMZERO(out, bufferLen);
-        MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         *replyLen = 0;
-        return berr;
+        return error;
     }
     CHECK_APP_CANARY();
     zemu_log_stack("About to get length");
@@ -1570,7 +1551,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
     *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) + strlen((const char *) out->address_bech32);
     zemu_log_stack("Got length");
 
-    return zxerr_ok;
+    return error;
 }
 
 // handleGetAddrSapling
@@ -1586,48 +1567,52 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *) buffer;
     MEMZERO(out, bufferLen);
 
-    tmp_sapling_addr_s tmp;
-    MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
+
+    zxerr_t error = zxerr_ok;
     BEGIN_TRY
     {
         TRY
         {
             // Temporarily get sk from Ed25519
-            crypto_fillSaplingSeed(tmp.zip32_seed);
+            error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY();
 
-            get_pkd_from_seed(tmp.zip32_seed, p, out->startindex, out->diversifier, out->pkd);
+            get_pkd_from_seed(zip32_seed, p, out->startindex, out->diversifier, out->pkd);
 
             MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
             CHECK_APP_CANARY();
-            MEMZERO(tmp.zip32_seed, sizeof_field(tmp_sapling_addr_s, zip32_seed));
         }
         FINALLY
         {
-            // Not necessary, but just in case
-            MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
+            MEMZERO(zip32_seed, sizeof(zip32_seed));
         }
     }
     END_TRY;
     zemu_log_stack("Got raw address");
     CHECK_APP_CANARY();
 
-    zxerr_t berr = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
+    if(error != zxerr_ok){
+        MEMZERO(out, bufferLen);
+        *replyLen = 0;
+        return error;
+    }
+
+    error = bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32),
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
                           1);
-    if(berr != zxerr_ok){
+    if(error != zxerr_ok){
         zemu_log_stack("Error getting BECH32 address");
         MEMZERO(out, bufferLen);
-        MEMZERO(&tmp, sizeof(tmp_sapling_addr_s));
         *replyLen = 0;
-        return berr;
+        return error;
     }
 
     CHECK_APP_CANARY();
 
     *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) + strlen((const char *) out->address_bech32);
-    return zxerr_ok;
+    return error;
 }
