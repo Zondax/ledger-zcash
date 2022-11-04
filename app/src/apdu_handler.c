@@ -30,7 +30,7 @@
 #include "coin.h"
 #include "zxmacros.h"
 #include "app_mode.h"
-#include "apdu_customcodes.h"
+#include "zcash_apdu_errors.h"
 
 #include "key.h"
 #include "parser.h"
@@ -191,7 +191,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    key_state.len = replyLen;
+    key_state.len = (uint8_t) replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show(REVIEW_TXN);
@@ -228,7 +228,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    key_state.len = replyLen;
+    key_state.len = (uint8_t) replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show(REVIEW_TXN);
@@ -265,7 +265,7 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    key_state.len = replyLen;
+    key_state.len = (uint8_t) replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show(REVIEW_TXN);
@@ -322,7 +322,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    key_state.len = replyLen;
+    key_state.len = (uint8_t) replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
     view_review_show(REVIEW_TXN);
@@ -697,92 +697,92 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_ADDR_SECP256K1: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetAddrSecp256K1(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_IVK: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetKeyIVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_OVK: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetKeyOVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_NF: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetNullifier(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_FVK: {
                     zemu_log("----[INS_GET_FVK]\n");
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetKeyFVK(flags, tx, rx);
                     break;
                 }
 
                 case INS_INIT_TX: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleInitTX(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPEND: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleExtractSpendData(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_OUTPUT: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleExtractOutputData(flags, tx, rx);
                     break;
                 }
 
                 case INS_CHECKANDSIGN: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleCheckandSign(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPENDSIG: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleExtractSpendSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_TRANSSIG: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleExtractTransparentSignature(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetAddrSapling(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_DIV_LIST: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetDiversifierList(flags, tx, rx);
                     break;
                 }
 
                 case INS_GET_ADDR_SAPLING_DIV: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleGetAddrSaplingDiv(flags, tx, rx);
                     break;
                 }
 
                 case INS_SIGN_SAPLING: {
-                    CHECK_PIN_VALIDATED();
+                    CHECK_PIN_VALIDATED()
                     handleSignSapling(flags, tx, rx);
                     break;
                 }

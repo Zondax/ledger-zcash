@@ -144,7 +144,6 @@ function processFVKResponse(response) {
   partialResponse = partialResponse.slice(SAPLING_NK_LEN);
 
   const ovkraw = Buffer.from(partialResponse.slice(0, SAPLING_OVK_LEN));
-  partialResponse = partialResponse.slice(SAPLING_OVK_LEN);
 
   return {
     ak_raw: akraw,

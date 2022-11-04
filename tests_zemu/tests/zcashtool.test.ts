@@ -22,18 +22,6 @@ import { ZcashBuilderBridge } from '@zondax/zcashtools'
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
 
-const clicksTIN_S = 3
-const clicksTOUT_S = 3
-const clicksSSPEND_S = 4
-const clicksSOUT_S = 6
-const clicksOVKset = 1
-const clicksConst = 2
-
-const clicksTIN_X = 2
-const clicksTOUT_X = 2
-const clicksSSPEND_X = 3
-const clicksSOUT_X = 5
-
 const defaultOptions = {
   ...DEFAULT_START_OPTIONS,
   logging: true,
@@ -256,7 +244,6 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      //const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       // here 1000 represents the fee
@@ -551,7 +538,6 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      //const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -910,7 +896,6 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
       const testname =  `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
       const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
       sim.deleteEvents()
@@ -1194,13 +1179,6 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      //we have to click several times...
-      // for (let i = 1; i < 1 * clicksTIN_S + 1 * clicksTOUT_S + 1 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksOVKset + clicksConst; i += 1) { // 25
-      //   await sim.clickRight();
-      // }
-      // await sim.clickBoth();
-
-      const clicks = 2 * clicksSSPEND_S + 2 * clicksSOUT_S + clicksConst + clicksOVKset - 1 // 23
       const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
       const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
       sim.deleteEvents()
@@ -1477,8 +1455,6 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const clicksS = 2 * clicksTIN_S + 2 * clicksTOUT_S + clicksConst - 1 // 13
-      const clicksT = 2 * clicksTIN_X + 2 * clicksTOUT_X + clicksConst // 9
       const testname =  `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
       const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
       sim.deleteEvents()
@@ -1578,10 +1554,7 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, we try to extract signatures without having done the checks and signing.
@@ -1691,10 +1664,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, we try to extract signatures without having done the checks and signing.
@@ -2617,10 +2587,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob.
