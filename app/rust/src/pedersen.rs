@@ -119,20 +119,17 @@ static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
 
 #[inline(never)]
 fn mult_bits(index: usize, bits: &[u8; 32]) -> ExtendedPoint {
-    c_zemu_log_stack(b"multbits_begin\x00".as_ref());
     let q = NIELSPOINTS[index];
     q.multiply_bits(bits)
 }
 
 #[inline(never)]
 pub fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
-    c_zemu_log_stack(b"addtopoint_begin\x00".as_ref());
     *point += p;
 }
 
 #[inline(never)]
 fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
-    c_zemu_log_stack(b"addpoint_begin\x00".as_ref());
     let p = mult_bits(index, acc);
     add_to_point(point, &p);
 }
@@ -149,7 +146,6 @@ pub fn extended_to_u_bytes(point: &ExtendedPoint) -> [u8; 32] {
 
 #[inline(never)]
 pub fn extended_to_bytes(point: &ExtendedPoint) -> [u8; 32] {
-    c_zemu_log_stack(b"tobytes\x00".as_ref());
     AffinePoint::from(*point).to_bytes()
 }
 
@@ -208,7 +204,6 @@ impl<'a> Iterator for Bitstreamer<'a> {
 
 #[inline(never)]
 pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
-    c_zemu_log_stack(b"pedersen_hash\x00".as_ref());
     const MAXCOUNTER: u8 = 63;
 
     let mut counter: u8 = 0;
@@ -247,7 +242,6 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
             }
         }
     }
-    c_zemu_log_stack(b"pedersen_hash_beforeadd\x00".as_ref());
     if counter > 0 {
         add_point(&mut result_point, &acc.to_bytes(), pointcounter);
     }

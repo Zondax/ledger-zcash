@@ -72,7 +72,9 @@ describe('Standard', function () {
       await sim.close()
     }
   })
+})
 
+describe('Addresses', function () {
   test.each(models)('get unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {

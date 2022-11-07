@@ -14,7 +14,6 @@ use crate::zip32::{default_pkd, group_hash_from_div, multwithgd, pkd_group_hash}
 
 #[no_mangle]
 pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"inside_blake2bprfock\x00".as_ref());
     let input = unsafe { &*input_ptr }; //ovk, cv, cmu, epk
     pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
     let hash = blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, input);
@@ -28,7 +27,6 @@ pub fn get_epk(
     d_ptr: *const [u8; 11],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"inside_getepk\x00".as_ref());
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let d = unsafe { &*d_ptr };
     let output = unsafe { &mut *output_ptr };
@@ -59,7 +57,6 @@ pub extern "C" fn ka_to_key(
     epk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"inside_katokey\x00".as_ref());
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let pkd = unsafe { &*pkd_ptr };
     let epk = unsafe { &*epk_ptr };
@@ -77,7 +74,6 @@ pub extern "C" fn prepare_enccompact_input(
     memotype: u8,
     output_ptr: *mut [u8; COMPACT_NOTE_SIZE + 1],
 ) {
-    c_zemu_log_stack(b"inside enccompactinput\x00".as_ref());
     let d = unsafe { &*d_ptr };
     let rcm = unsafe { &*rcm_ptr };
 
@@ -93,7 +89,6 @@ pub extern "C" fn prepare_enccompact_input(
     input[12..20].copy_from_slice(&vbytes);
     input[20..COMPACT_NOTE_SIZE].copy_from_slice(rcm);
     input[COMPACT_NOTE_SIZE] = memotype;
-    c_zemu_log_stack(b"before copy\x00".as_ref());
     output.copy_from_slice(&input);
 }
 

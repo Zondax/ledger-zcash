@@ -19,6 +19,7 @@
 #include "crypto.h"
 #include "tx.h"
 #include "apdu_codes.h"
+#include "zcash_apdu_errors.h"
 #include <os_io_seproxyhal.h>
 #include "coin.h"
 #include "app_main.h"

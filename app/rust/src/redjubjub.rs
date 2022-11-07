@@ -43,21 +43,18 @@ pub fn sign_generate_r(msg: &[u8]) -> Fr {
 
 #[inline(never)]
 pub fn sign_compute_rbar(r: &[u8; 32]) -> [u8; 32] {
-    c_zemu_log_stack(b"signcomputerbar\x00".as_ref());
     let r_g = SPENDING_KEY_BASE.multiply_bits(r);
     AffinePoint::from(r_g).to_bytes()
 }
 
 #[inline(never)]
 pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] {
-    c_zemu_log_stack(b"signcomputesbar\x00".as_ref());
     let s = r + h_star(&rbar, msg) * sfr;
     s.to_bytes()
 }
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
-    c_zemu_log_stack(b"signcomplete\x00".as_ref());
     let r = sign_generate_r(&msg);
     let rbar = sign_compute_rbar(&r.to_bytes());
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
@@ -76,11 +73,15 @@ pub fn random_scalar() -> Fr {
 
 #[inline(never)]
 pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"sk_to_pk\x00".as_ref());
     let sk = unsafe { &*sk_ptr };
     let pk = unsafe { &mut *pk_ptr };
     let pubkey = jubjub_sk_to_pk(sk);
     pk.copy_from_slice(&pubkey);
+}
+
+#[no_mangle]
+pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
+    sk_to_pk(rsk_ptr, rk_ptr)
 }
 
 #[inline(never)]
@@ -89,7 +90,6 @@ pub fn randomized_secret(
     alpha_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"random_sk\x00".as_ref());
     let alpha = unsafe { &*alpha_ptr };
     let sk = unsafe { &*sk_ptr };
     let output = unsafe { &mut *output_ptr };
@@ -102,7 +102,7 @@ pub fn randomized_secret(
 #[no_mangle]
 pub extern "C" fn sign_redjubjub(
     key_ptr: *const [u8; 32],
-    msg_ptr: *const [u8; 32],
+    msg_ptr: *const [u8; 64],
     out_ptr: *mut [u8; 64],
 ) {
     c_zemu_log_stack(b"sign_redjubjub\x00".as_ref());
@@ -115,7 +115,6 @@ pub extern "C" fn sign_redjubjub(
 
 #[no_mangle]
 pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"random_fr\x00".as_ref());
     let alpha = unsafe { &mut *alpha_ptr };
     let fr = random_scalar();
     alpha.copy_from_slice(&fr.to_bytes());
@@ -128,7 +127,6 @@ pub extern "C" fn randomized_secret_from_seed(
     alpha_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"random_sk\x00".as_ref());
     let mut ask = [0u8;32];
     let mut nsk = [0u8;32];
     let alpha = unsafe { &*alpha_ptr };
@@ -148,7 +146,6 @@ pub extern "C" fn get_rk(
     alpha_ptr: *const [u8; 32],
     rk_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"random_sk\x00".as_ref());
     let alpha = unsafe { &*alpha_ptr };
     let ask = unsafe { &*ask_ptr };
     let rk = unsafe { &mut *rk_ptr };
@@ -159,7 +156,6 @@ pub extern "C" fn get_rk(
 
 #[no_mangle]
 pub extern "C" fn randomize_pk(alpha_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    c_zemu_log_stack(b"random_pk\x00".as_ref());
     let alpha = unsafe { *alpha_ptr };
     let pk = unsafe { &mut *pk_ptr };
     let mut pubkey = bytes_to_extended(*pk);

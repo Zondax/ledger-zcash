@@ -134,7 +134,6 @@ pub fn multiply_with_pedersenbase(val: &[u8; 32]) -> ExtendedPoint {
 
 #[inline(never)]
 pub fn shiftsixbits(input: &mut [u8; 73]) {
-    c_zemu_log_stack(b"shiftbits\x00".as_ref());
     let mut i: usize = 72;
     while i > 0 {
         input[i] ^= (input[i - 1] & 0x3F) << 2;
@@ -183,7 +182,6 @@ pub fn prepare_and_hash_input_commitment(
     pkd_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 )  {
-    c_zemu_log_stack(b"prepare_and_hash_intput_for_notecommit\x00".as_ref());
     let gd = unsafe { &*g_d_ptr };
     let pkd = unsafe { &*pkd_ptr };
 
@@ -207,20 +205,17 @@ pub fn prepare_and_hash_input_commitment(
 
 #[inline(never)]
 pub fn value_commitment_step1(value: u64) -> ExtendedPoint {
-    c_zemu_log_stack(b"insidevaluecommitment\x00".as_ref());
     let scalar = u64_to_bytes(value);
     VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar)
 }
 
 #[inline(never)]
 pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
-    c_zemu_log_stack(b"insidevaluecommitment\x00".as_ref());
     VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm)
 }
 
 #[inline(never)]
 pub fn value_commitment(value: u64, rcm: &[u8; 32]) -> [u8; 32] {
-    c_zemu_log_stack(b"insidevaluecommitment\x00".as_ref());
     let scalar = u64_to_bytes(value);
     let mut x = VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar);
     x += VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm);
@@ -262,7 +257,6 @@ pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn bytes_to_extended(m: [u8; 32]) -> ExtendedPoint {
-    c_zemu_log_stack(b"bytes_to_extended\x00".as_ref());
     ExtendedPoint::from(AffinePoint::from_bytes(m).unwrap())
 }
 
@@ -291,7 +285,6 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
                                           value: u64,
                                           diversifier_ptr: *const [u8; 11],
                                           pkd_ptr: *const [u8; 32]) {
-    c_zemu_log_stack(b"entry_preparenotecommit\x00".as_ref());
 
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
@@ -300,7 +293,6 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
-    c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
@@ -317,7 +309,6 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     value: u64,
     diversifier_ptr: *const [u8; 11],
     pkd_ptr: *const [u8; 32]) {
-    c_zemu_log_stack(b"entry_preparenotecommit_full\x00".as_ref());
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
 
@@ -326,7 +317,6 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
-    c_zemu_log_stack(b"inside_notecmt\x00".as_ref());
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
@@ -341,7 +331,6 @@ pub extern "C" fn compute_value_commitment(
     rcm_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    c_zemu_log_stack(b"start_valuecmt\x00".as_ref());
 
     let rc = unsafe { &*rcm_ptr };
     let output_msg = unsafe { &mut *output_ptr };
