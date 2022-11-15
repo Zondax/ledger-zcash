@@ -106,29 +106,49 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     MEMZERO(buffer, buffer_len);
     answer_t *const answer = (answer_t *) buffer;
 
-    CHECK_ZXERR(crypto_extractPublicKey(hdPath, answer->publicKey, sizeof_field(answer_t, publicKey)));
-
-    address_temp_t address_temp;
-
-    // extended-ripemd-160 = [version][ripemd-160(sha256(pk))]
-    address_temp.version[0] = VERSION_P2PKH >> 8;
-    address_temp.version[1] = VERSION_P2PKH & 0xFF;
-    cx_hash_sha256(answer->publicKey, PK_LEN_SECP256K1, address_temp.sha256_pk, CX_SHA256_SIZE);      // SHA256
-    ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk);         // RIPEMD-160
-
-    // checksum = sha256(sha256(extended-ripe))
-    cx_hash_sha256(address_temp.extended_ripe, CX_RIPEMD160_SIZE + VERSION_SIZE, address_temp.sha256_extended_ripe, CX_SHA256_SIZE);
-    cx_hash_sha256(address_temp.sha256_extended_ripe, CX_SHA256_SIZE, address_temp.sha256_checksum, CX_SHA256_SIZE);
-
-    // 7. 25 bytes BTC address = [extended ripemd-160][checksum]
-    // Encode as base58
+    zxerr_t error = zxerr_ok;
+    int err = 0;
     size_t outLen = sizeof_field(answer_t, address);
-    int err = encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
+
+    BEGIN_TRY
+    {
+        TRY
+        {
+            error = crypto_extractPublicKey(hdPath, answer->publicKey, sizeof_field(answer_t, publicKey));
+
+            address_temp_t address_temp;
+
+            // extended-ripemd-160 = [version][ripemd-160(sha256(pk))]
+            address_temp.version[0] = VERSION_P2PKH >> 8;
+            address_temp.version[1] = VERSION_P2PKH & 0xFF;
+            cx_hash_sha256(answer->publicKey, PK_LEN_SECP256K1, address_temp.sha256_pk, CX_SHA256_SIZE);      // SHA256
+            ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE, address_temp.ripe_sha256_pk);         // RIPEMD-160
+
+            // checksum = sha256(sha256(extended-ripe))
+            cx_hash_sha256(address_temp.extended_ripe, CX_RIPEMD160_SIZE + VERSION_SIZE, address_temp.sha256_extended_ripe, CX_SHA256_SIZE);
+            cx_hash_sha256(address_temp.sha256_extended_ripe, CX_SHA256_SIZE, address_temp.sha256_checksum, CX_SHA256_SIZE);
+
+            // 7. 25 bytes BTC address = [extended ripemd-160][checksum]
+            // Encode as base58
+            err = encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
+        }
+        FINALLY
+        {
+        }
+    }
+    END_TRY;
+    if(error != zxerr_ok) {
+           MEMZERO(buffer, buffer_len);
+            *replyLen = 0;
+            return error;
+        }
+
     if(err != 0){
         return zxerr_unknown;
     }
     *replyLen = PK_LEN_SECP256K1 + outLen;
-    return zxerr_ok;
+
+    return error;
 }
 
 zxerr_t crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t *pubKey, uint16_t pubKeyLen) {

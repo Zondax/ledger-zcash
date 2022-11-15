@@ -518,7 +518,7 @@ Data is defined as:
 
 ---
 
-### INS_GET_TRANSPARENT_SIGNATURE
+### INS_EXTRACT_TRANSSIG
 
 Returns a SECP256K1 signature for a sapling transparent input.
 
@@ -546,7 +546,7 @@ Returns error if all signatures are retrieved.
 
 ---
 
-### INS_GET_SPEND_SIGNATURE
+### INS_EXTRACT_SPENDSIG
 
 Returns a spend signature for a sapling shielded spend input.
 
