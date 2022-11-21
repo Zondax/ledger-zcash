@@ -152,6 +152,16 @@ zxerr_t crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t
             cx_ecfp_init_private_key(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey);
             cx_ecfp_init_public_key(CX_CURVE_256K1, NULL, 0, &cx_publicKey);
             cx_ecfp_generate_pair(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1);
+
+            // Format pubkey
+            for (int i = 0; i < PUB_KEY_SIZE; i++) {
+                pubKey[i] = cx_publicKey.W[64 - i];
+            }
+            cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
+            if ((cx_publicKey.W[PUB_KEY_SIZE] & 1) != 0) {
+                pubKey[PUB_KEY_SIZE - 1] |= 0x80;
+            }
+            MEMCPY(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
         }
         CATCH_OTHER(e) {
             error = zxerr_ledger_api_error;
@@ -163,21 +173,7 @@ zxerr_t crypto_extractPublicKey(const uint32_t path[HDPATH_LEN_DEFAULT], uint8_t
     }
     END_TRY;
 
-    if (error != zxerr_ok) {
-        return error;
-    }
-
-    // Format pubkey
-    for (int i = 0; i < PUB_KEY_SIZE; i++) {
-        pubKey[i] = cx_publicKey.W[64 - i];
-    }
-    cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
-    if ((cx_publicKey.W[PUB_KEY_SIZE] & 1) != 0) {
-        pubKey[PUB_KEY_SIZE - 1] |= 0x80;
-    }
-
-    memcpy(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
-    return zxerr_ok;
+    return error;
 }
 
 zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
