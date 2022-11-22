@@ -69,8 +69,9 @@ typedef enum {
 
 #define MENU_MAIN_APP_LINE2_SECRET         "?"
 #define COIN_SECRET_REQUIRED_CLICKS         0
+#define COIN_TICKER "ZEC "
 
-#define COIN_AMOUNT_DECIMAL_PLACES  18      // FIXME: Check this
+#define COIN_AMOUNT_DECIMAL_PLACES  8
 #define CRYPTO_BLOB_SKIP_BYTES      0
 
 #ifdef __cplusplus
