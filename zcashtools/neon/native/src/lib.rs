@@ -273,7 +273,7 @@ impl ZcashBuilderBridge {
     fn js_add_transparent_input(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value: TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for transparent builder");
+            .expect("Failed to get arg0_value for transparent builder");
         let value;
         {
             let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
@@ -293,7 +293,7 @@ impl ZcashBuilderBridge {
     fn js_add_transparent_output(mut cx: FunctionContext)->JsResult<JsBoolean>{
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value :TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for transparent output builder");
+            .expect("Failed to get arg0_value for transparent output builder");
 
         let value;
         {
@@ -317,7 +317,7 @@ impl ZcashBuilderBridge {
     fn js_add_sapling_spend(mut cx: FunctionContext)->JsResult<JsBoolean>{
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value :SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for sapling spend");
+            .expect("Failed to get arg0_value for sapling spend");
         let value;
         {
             let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
@@ -338,7 +338,7 @@ impl ZcashBuilderBridge {
     fn js_add_sapling_output(mut cx: FunctionContext)->JsResult<JsBoolean>{
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value :OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for sapling output");
+            .expect("Failed to get arg0_value for sapling output");
 
         let value;
         {

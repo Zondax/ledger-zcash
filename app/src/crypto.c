@@ -1290,7 +1290,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
             // Temporarily get sk from Ed25519
             error = crypto_fillSaplingSeed(zip32_seed);
             CHECK_APP_CANARY()
-            // get incomming viewing key
+            // get incoming viewing key
             zip32_ivk(zip32_seed, out->ivk, p);
             CHECK_APP_CANARY()
             // get default diversifier for start index 0
