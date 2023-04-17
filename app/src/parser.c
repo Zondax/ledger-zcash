@@ -205,7 +205,7 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
                           BECH32_HRP,
                           address,
                           sizeof(address),
-                          1);
+                          1, BECH32_ENCODING_BECH32M);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }

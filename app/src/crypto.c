@@ -1536,7 +1536,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
-                          1);
+                          1, BECH32_ENCODING_BECH32M);
     CHECK_APP_CANARY()
     zemu_log_stack("Returned ok");
 
@@ -1603,7 +1603,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                           BECH32_HRP,
                           out->address_raw,
                           sizeof_field(tmp_buf_addr_s, address_raw),
-                          1);
+                          1, BECH32_ENCODING_BECH32M);
     if(error != zxerr_ok){
         zemu_log_stack("Error getting BECH32 address");
         MEMZERO(out, bufferLen);
