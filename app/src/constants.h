@@ -33,6 +33,7 @@
 #define ZIP32_PATH_SIZE         4
 #define RND_SIZE                32
 #define NULLIFIER_SIZE          32
+#define RK_SIZE                 32
 
 #define ESK_SIZE                32
 #define EPK_SIZE                32
@@ -46,6 +47,11 @@
 #define OUT_KEY_SIZE            32
 #define ENC_CIPHER_SIZE         64
 #define ENC_CIPHER_HALVE_SIZE   32
+
+#define OUTPUT_ENC_MEMO_SIZE        564-52
+#define OUTPUT_ENC_AEAD_TAG_SIZE    580-564
+#define OUTPUT_OUT_SIZE         80  // OutputDescription, field out_ciphertext: [u8; 80],
+
 #define COMPACT_OUT_SIZE        53
 #define PRF_INPUT_SIZE          128
 #define MAX_SIZE                161
@@ -72,6 +78,10 @@
 #define SPEND_LIST_SIZE         5
 #define OUTPUT_LIST_SIZE        5
 
+#define PREVOUT_SIZE            36
+#define SEQUENCE_SIZE           4
+#define T_OUTPUT_SIZE           34 // script size (26) + value size (uint64_t -> 8)
+
 #define PKD_SIZE                32
 #define RCM_SIZE                32
 #define ALPHA_SIZE              32
@@ -92,3 +102,6 @@
 #define PATH_SIZE               5
 
 #define SIGNATURE_SIZE          SIG_R_SIZE + SIG_S_SIZE
+
+#define TX_VERSION_SAPLING      4
+#define TX_VERSION_NU5          5

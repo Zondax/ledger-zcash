@@ -341,6 +341,12 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     const uint8_t *message = tx_get_buffer();
     const uint16_t messageLength = tx_get_buffer_length();
 
+    const uint8_t txVersion = G_io_apdu_buffer[OFFSET_P2];
+
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "Tx Version is %d", txVersion);
+    zemu_log_stack(buffer);
+
     if (get_state() != STATE_PROCESSED_ALL_EXTRACTIONS) {
         zemu_log("[handleCheckandSign] not STATE_PROCESSED_ALL_EXTRACTIONS\n");
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
@@ -349,13 +355,10 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_UNPROCESSED_TX);
     }
 
-    // TODO: check this
-    // tx_reset_state();
-
     set_state(STATE_CHECKING_ALL_TXDATA);
     view_tx_state();
 
-    zxerr_t err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    zxerr_t err = crypto_check_prevouts(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -363,7 +366,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_PREVOUT_INVALID);
     }
 
-    err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -371,7 +374,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_SEQUENCE_INVALID);
     }
 
-    err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_check_outputs(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -379,7 +382,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_OUTPUTS_INVALID);
     }
 
-    err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -388,7 +391,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     }
 
     // /!\ the valuebalance is different to the total value
-    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if(err != zxerr_ok){
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -396,7 +399,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_BAD_VALUEBALANCE);
     }
 
-    err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_checkspend_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -404,7 +407,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_SPEND_INVALID);
     }
 
-    err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_checkoutput_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         zemu_log("----[crypto_checkoutput_sapling failed]\n");
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
@@ -692,7 +695,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
             switch (G_io_apdu_buffer[OFFSET_INS]) {
                 case INS_GET_VERSION: {
-                    handle_getversion(flags, tx, rx);
+                    handle_getversion(tx);
                     break;
                 }
 

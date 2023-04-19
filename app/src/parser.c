@@ -162,7 +162,6 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
 parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount) {
-    ZEMU_LOGF(50, "[parser_sapling_display_address_t]\n")
     MEMZERO(outVal, outValLen);
 
     uint8_t address[VERSION_SIZE + CX_RIPEMD160_SIZE + CX_SHA256_SIZE];
@@ -183,7 +182,6 @@ parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
 
     int err = encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
     if (err != 0) {
-        ZEMU_LOGF(50, "[parser_sapling_display_address_t] ERR %d\n", err)
         return parser_unexpected_error;
     }
 
@@ -265,7 +263,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
     CHECK_APP_CANARY()
 
-    ZEMU_LOGF(50, "[tx_getItem] items: %d\n", numItems)
 
     if (displayIdx < 0 || displayIdx >= numItems) {
         return parser_no_data;
@@ -279,8 +276,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
 
     switch (prs.type) {
         case type_tin : {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_tin\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_TIN;
             t_input_item_t *item = t_inlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
@@ -298,8 +293,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_tout : {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_tout\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_TOUT;
             t_output_item_t *item = t_outlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
@@ -315,8 +308,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
             }
         }
         case type_sspend: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_sspend\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_SSPEND;
             spend_item_t *item = spendlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
@@ -334,7 +325,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_sout: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_sout\n")
 
             uint8_t itemnum = prs.index / NUM_ITEMS_SOUT;
             output_item_t *item = outputlist_retrieve_item(itemnum);
@@ -377,8 +367,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_txfee: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_txfee\n")
-
             snprintf(outKey, outKeyLen, "Fee");
             return parser_sapling_display_value(get_totalvalue(), outVal, outValLen, pageIdx, pageCount);
         }

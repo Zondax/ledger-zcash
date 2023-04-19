@@ -169,7 +169,7 @@ a diversifier was not valid, zero-bytes are returned (so always 220 bytes are re
 
 ### INS_GET_IVK_SAPLING
 
-Returns a sapling incoming viewing key. 
+Returns a sapling incoming viewing key.
 Forced user confirmation (So P1 needs to be 0x01).
 Also returns the default diversifier (starting from index 0).
 
@@ -428,12 +428,13 @@ Checks the transaction data and signs if it is correct with the corresponding ke
 
 The transaction_blob should have the following format:
 
-| Type            | Content                       | Expected               |
-|-----------------|-------------------------------|------------------------|
-| byte (variable) | transparent data to check     | t_in_len \* 74 bytes   |
-| byte (variable) | previous spend data to check  | s_in_len\* 40 bytes    |
-| byte (variable) | new spend data to check       | s_in_len \* 320 bytes  |
-| byte (variable) | shielded output data to check | s_out_len \* 948 bytes |
+| Type             | Content                       | Expected               |
+|------------------|-------------------------------|------------------------|
+| byte (variable)  | transparent data to check     | t_in_len \* 74 bytes   |
+| byte (variable)  | previous spend data to check  | s_in_len\* 40 bytes    |
+| byte (variable)  | new spend data to check       | s_in_len \* 320 bytes  |
+| byte (variable)  | shielded output data to check | s_out_len \* 948 bytes |
+| byte (220)       | sighash                       | 220 bytes              |
 
 where
 
@@ -478,15 +479,16 @@ shielded output data to check:
 
 #### Command
 
-| Field | Type     | Content                | Expected  |
-|-------|----------|------------------------|-----------|
-| CLA   | byte (1) | Application Identifier | 0xE0      |
-| INS   | byte (1) | Instruction ID         | 0xa3      |
-| P1    | byte (1) | Payload desc           | 0 = init  |
-|       |          |                        | 1 = add   |
-|       |          |                        | 2 = last  |
-| P2    | byte (1) | ----                   | not used  |
-| L     | byte (1) | Bytes in payload       | (depends) |
+| Field | Type     | Content                | Expected                |
+|-------|----------|------------------------|-------------------------|
+| CLA   | byte (1) | Application Identifier | 0xE0                    |
+| INS   | byte (1) | Instruction ID         | 0xa3                    |
+| P1    | byte (1) | Payload desc           | 0 = init                |
+|       |          |                        | 1 = add                 |
+|       |          |                        | 2 = last                |
+| P2    | byte (1) | TxVersion              | 4 = Sapling|
+|     | |               | 5 = NU5 |
+| L     | byte (1) | Bytes in payload       | (depends)               |
 
 The first packet/chunk includes only the derivation path
 

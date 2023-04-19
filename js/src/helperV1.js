@@ -1,4 +1,4 @@
-import { CLA, errorCodeToString, INS, PAYLOAD_TYPE, processErrorResponse } from "./common";
+import {CLA, errorCodeToString, INS, P2_VALUES, PAYLOAD_TYPE, processErrorResponse} from "./common";
 
 const HARDENED = 0x80000000;
 
@@ -80,13 +80,20 @@ export async function signSendChunkv1(app, chunkIdx, chunkNum, chunk) {
     }, processErrorResponse);
 }
 
-export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk) {
+export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk, p2) {
   let payloadType = PAYLOAD_TYPE.ADD;
   if (chunkIdx === 1) {
     payloadType = PAYLOAD_TYPE.INIT;
   }
   if (chunkIdx === chunkNum) {
     payloadType = PAYLOAD_TYPE.LAST;
+  }
+  let transactionVersion = 0x00;
+  if (p2 === 4) {
+    transactionVersion = P2_VALUES.TX_VERSION_SAPLING;
+  }
+  if (p2 === 5) {
+    transactionVersion = P2_VALUES.TX_VERSION_NU5;
   }
   if (version === INS.INIT_TX) {
     return app.transport
@@ -114,7 +121,7 @@ export async function saplingSendChunkv1(app, version, chunkIdx, chunkNum, chunk
   }
   if (version === INS.CHECKANDSIGN) {
     return app.transport
-      .send(CLA, INS.CHECKANDSIGN, payloadType, 0, chunk, [0x9000, 0x6984, 0x6a80])
+      .send(CLA, INS.CHECKANDSIGN, payloadType, transactionVersion, chunk, [0x9000, 0x6984, 0x6a80])
       .then((response) => {
         const errorCodeData = response.slice(-2);
         const returnCode = errorCodeData[0] * 256 + errorCodeData[1];

@@ -128,7 +128,6 @@ pub fn add_points(a: ExtendedPoint, b: ExtendedPoint) -> ExtendedPoint {
 
 #[inline(never)]
 pub fn multiply_with_pedersenbase(val: &[u8; 32]) -> ExtendedPoint {
-    c_zemu_log_stack(b"mult_pedersen\x00".as_ref());
     PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }
 

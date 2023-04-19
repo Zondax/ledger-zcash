@@ -6,6 +6,7 @@ use ledger_zcash::zcash::primitives::consensus::TestNetwork;
 use ledger_zcash::zcash::primitives::{
     consensus,
     transaction::components::{sapling as sapling_ledger, transparent as transparent_ledger},
+transaction::TxVersion,
 };
 use rand_core::OsRng;
 use zcash_hsmbuilder as ZcashBuilder;
@@ -197,7 +198,7 @@ impl ZcashBuilderBridge {
             AuthorisationStatus::Unauthorized( mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-                let res = builder.build(consensus::BranchId::Nu5, &mut prover);
+                let res = builder.build(consensus::BranchId::Nu5, Some(TxVersion::Sapling),&mut prover);
                 match res {
                     Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
                     Err(_) => ()

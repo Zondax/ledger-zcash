@@ -36,6 +36,11 @@ export const P1_VALUES = {
   SHOW_ADDRESS_IN_DEVICE: 0x01,
 };
 
+export const P2_VALUES = {
+  TX_VERSION_SAPLING: 0x04,
+  TX_VERSION_NU5: 0x05,
+};
+
 export const ERROR_CODE = {
   NoError: 0x9000,
 };

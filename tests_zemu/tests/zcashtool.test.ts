@@ -21,6 +21,7 @@ import { ZcashBuilderBridge } from '@zondax/zcashtools'
 
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
+const tx_version = 0x04
 
 const defaultOptions = {
   ...DEFAULT_START_OPTIONS,
@@ -292,14 +293,14 @@ describe('End to end transactions', function () {
 
       /*
        The inputs to the get_inittx_data function are the inputs to the transaction.
-       The output is a blob that can be send to the ledger device.
+       The output is a blob that can be sent to the ledger device.
        */
 
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       /*
-  //     The output of the get_inittx_data can be send to the ledger.
+  //     The output of the get_inittx_data can be sent to the ledger.
   //     The ledger will check this data and show the inputs on screen for verification.
   //     If confirmed, the ledger also computes the randomness needed for :
   //         - The shielded spends
@@ -478,7 +479,7 @@ describe('End to end transactions', function () {
        If all checks are ok, the ledger signs the transaction.
         */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata,tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -763,7 +764,7 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -1049,7 +1050,7 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -1348,7 +1349,7 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -1504,7 +1505,7 @@ describe('End to end transactions', function () {
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -1958,7 +1959,7 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -2246,7 +2247,7 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).not.toEqual(0x9000)
     } finally {
@@ -2491,7 +2492,7 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).not.toEqual(0x9000)
     } finally {

@@ -113,9 +113,11 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
 bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
-    if (G_io_apdu_buffer[OFFSET_P2] != 0) {
+    /*
+    if (G_io_apdu_buffer[OFFSET_P2] != 0 && G_io_apdu_buffer[OFFSET_P2] != 4 && G_io_apdu_buffer[OFFSET_P2] != 5 ) {
         THROW(APDU_CODE_INVALIDP1P2);
     }
+     */
 
     if (rx < OFFSET_DATA) {
         THROW(APDU_CODE_WRONG_LENGTH);
