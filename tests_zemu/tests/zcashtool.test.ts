@@ -21,7 +21,7 @@ import { ZcashBuilderBridge } from '@zondax/zcashtools'
 
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
-const tx_version = 0x04
+const tx_version = 0x05
 
 const defaultOptions = {
   ...DEFAULT_START_OPTIONS,

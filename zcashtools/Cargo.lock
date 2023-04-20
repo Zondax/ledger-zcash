@@ -2239,3 +2239,13 @@ dependencies = [
  "byteorder",
  "thiserror",
 ]
+
+[[patch.unused]]
+name = "ledger-zcash"
+version = "0.6.0"
+source = "git+https://github.com/Zondax/ledger-zcash-rs?branch=ledger-v5#ef3405f28f55082c2fc1785f0c89750a438002d9"
+
+[[patch.unused]]
+name = "zcash-hsmbuilder"
+version = "0.4.0"
+source = "git+https://github.com/Zondax/ledger-zcash-rs?branch=ledger-v5#ef3405f28f55082c2fc1785f0c89750a438002d9"
