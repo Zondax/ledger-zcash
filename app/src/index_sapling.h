@@ -42,9 +42,9 @@
 #define SPEND_EXTRACT_LEN           128
 #define OUTPUT_EXTRACT_LEN          64
 
-#define T_IN_TX_LEN                 74
+#define T_IN_TX_LEN                 74  // size of tx_in encoded as in bitcoin. The same across all tx versions
 #define SPEND_OLD_TX_LEN            40
-#define SPEND_TX_LEN                320
+#define SPEND_TX_LEN        320 // cv (32) + anchor (32) + nullifier (32) + rk (32) + zkproof (192)
 #define OUTPUT_TX_LEN               948
 
 #define INDEX_TIN_PREVOUT           0
@@ -65,7 +65,7 @@
 #define INDEX_OUTPUT_EPK            64
 #define INDEX_OUTPUT_ENC            96
 #define INDEX_OUTPUT_ENC_MEMO       96 + 52 // contents of the encrypted memo field
-#define INDEX_OUTPUT_ENC_AEAD_TAG   96 + 52 // contents of the encrypted memo field
+#define INDEX_OUTPUT_ENC_AEAD_TAG   96 + 564 // contents of the encrypted memo field
 #define INDEX_OUTPUT_OUT            676
 
 #define SAPLING_LENGTH_HASH_DATA                220

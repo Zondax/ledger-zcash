@@ -26,8 +26,10 @@ void nu5_hash_sapling_spends(uint8_t *input, uint8_t *output);
 
 void nu5_hash_sapling_outputs(uint8_t *input, uint8_t *output);
 
-//void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+void hash_header_txid_data(uint8_t *input, uint8_t *output);
 
-//void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output);
+void hash_transparent_txid_data(uint8_t *input, uint8_t *output);
 
-//void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output);
+void hash_sapling_txid_data(uint8_t *input, uint8_t *output);
+
+void hash_empty_orchard_txid_data(uint8_t *output);

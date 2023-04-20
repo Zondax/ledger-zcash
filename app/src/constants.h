@@ -40,6 +40,7 @@
 #define NOTE_POSITION_SIZE      8
 #define NOTE_COMMITMENT_SIZE    32
 #define VALUE_COMMITMENT_SIZE   32
+#define ANCHOR_SIZE             32
 #define HASH_SIZE               32
 #define SESSION_KEY_SIZE        32
 #define GD_SIZE                 32

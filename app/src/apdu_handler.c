@@ -366,7 +366,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_PREVOUT_INVALID);
     }
 
-    err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
+    err = crypto_check_sequence(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -382,7 +382,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_OUTPUTS_INVALID);
     }
 
-    err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
+    err = crypto_check_joinsplits(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -391,7 +391,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     }
 
     // /!\ the valuebalance is different to the total value
-    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
+    err = crypto_check_valuebalance(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, txVersion);
     if(err != zxerr_ok){
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -416,7 +416,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_OUTPUT_CONTENT_INVALID);
     }
 
-    err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_checkencryptions_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -435,7 +435,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
         THROW(APDU_CODE_CHECK_SIGN_TR_FAIL);
     }
 
-    err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_signspends_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -573,8 +573,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, parser_addr.path,
-                                                     parser_addr.div, &replyLen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, parser_addr.path, parser_addr.div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;
