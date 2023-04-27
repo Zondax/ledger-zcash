@@ -124,6 +124,7 @@ void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
 }
 
 void signature_hash_v4(uint8_t *input, uint16_t inputlen, uint8_t *output) {
+    zemu_log_stack("signature_hash_v4");
     cx_blake2b_t ctx;
 
     uint8_t personalization[16] = {0};
@@ -135,7 +136,7 @@ void signature_hash_v4(uint8_t *input, uint16_t inputlen, uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
 }
 
-void signature_hash_v5(uint8_t *input, uint16_t inputlen, uint8_t *output) {
+void signature_hash_v5(const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type, uint8_t *output) {
     zemu_log_stack("signature_hash_v5");
     cx_blake2b_t ctx;
 
@@ -149,36 +150,28 @@ void signature_hash_v5(uint8_t *input, uint16_t inputlen, uint8_t *output) {
     uint8_t sapling_digest[32] = {0};
     uint8_t orchard_digest[32] = {0};
 
-    hash_header_txid_data(input, &header_digest);
-    hash_transparent_txid_data(input, &transparent_digest);
-    hash_sapling_txid_data(input, &sapling_digest);
-    hash_empty_orchard_txid_data(&orchard_digest);
-
-/*    ZEMU_LOGF(100,"first byte of hash_header_txid_data %02x \n", header_digest[0]);
-    ZEMU_LOGF(100,"first byte of transparent_digest %02x \n", transparent_digest[0]);
-    ZEMU_LOGF(100,"first byte of sapling_digest %02x \n", sapling_digest[0]);
-    ZEMU_LOGF(100,"first byte of orchard_digest %02x \n", orchard_digest[0]);
-*/
+    hash_header_txid_data(start_signdata, header_digest);
+    transparent_sig_digest(input, start_signdata, index, type, transparent_digest);
+    hash_sapling_txid_data(start_signdata, sapling_digest);
+    hash_empty_orchard_txid_data(orchard_digest);
 
     cx_hash(&ctx.header, 0, header_digest, HASH_SIZE, NULL, 0);
     cx_hash(&ctx.header, 0, transparent_digest, HASH_SIZE, NULL, 0);
     cx_hash(&ctx.header, 0, sapling_digest, HASH_SIZE, NULL, 0);
-    cx_hash(&ctx.header, 0, orchard_digest, HASH_SIZE, NULL, 0);
-
-    cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
+    cx_hash(&ctx.header, CX_LAST, orchard_digest, HASH_SIZE, output, HASH_SIZE);
 }
 
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output, const uint8_t tx_version){
-    if (tx_version==TX_VERSION_SAPLING) {
-        signature_hash_v4(input, inputlen, output);
+void signature_hash(const uint8_t *txdata, uint8_t *start_signdata, uint16_t inputlen, const uint8_t tx_version, uint8_t *output){
+    if (tx_version == TX_VERSION_SAPLING) {
+        signature_hash_v4(start_signdata, inputlen, output);
     }
-    else // (tx_version == TX_VERSION_NU5)
+    else if (tx_version == TX_VERSION_NU5)
     {
-        signature_hash_v5(input, inputlen, output);
+        signature_hash_v5(txdata, start_signdata, 0, shielded, output);
     }
 }
 
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
+void signature_script_hash_v4(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
     cx_blake2b_t ctx;
 
 	uint8_t personalization[16] = {0};
@@ -189,5 +182,15 @@ void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, u
     cx_hash(&ctx.header, 0, input, inputlen, NULL, 0);
 
     cx_hash(&ctx.header, CX_LAST, script, scriptlen, output, HASH_SIZE);
+}
+
+void signature_script_hash(uint8_t *input, uint8_t *start_signdata, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t index, const uint8_t tx_version, uint8_t *output) {
+    if (tx_version==TX_VERSION_SAPLING) {
+        signature_script_hash_v4(start_signdata, inputlen, script, scriptlen, output);
+    }
+    else if (tx_version == TX_VERSION_NU5)
+    {
+        signature_hash_v5(input, start_signdata, index, transparent, output);
+    }
 }
 

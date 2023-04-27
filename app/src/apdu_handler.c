@@ -38,8 +38,7 @@
 
 #include "view_internal.h"
 
-__Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
-                                            volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleExtractSpendSignature(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleExtractSpendSignature]\n");
 
     *tx = 0;
@@ -58,8 +57,7 @@ __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *flags,
     }
 }
 
-__Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
-                                                  volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleExtractTransparentSignature]\n");
 
     *tx = 0;
@@ -79,8 +77,7 @@ __Z_INLINE void handleExtractTransparentSignature(volatile uint32_t *flags,
     }
 }
 
-__Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
-                                       volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleExtractSpendData(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleExtractSpendData]\n");
 
     *tx = 0;
@@ -100,8 +97,7 @@ __Z_INLINE void handleExtractSpendData(volatile uint32_t *flags,
 
 }
 
-__Z_INLINE void handleExtractOutputData(volatile uint32_t *flags,
-                                        volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleExtractOutputData(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleExtractOutputData]\n");
 
     *tx = 0;
@@ -329,8 +325,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
     *flags |= IO_ASYNCH_REPLY;
 }
 
-__Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
-                                   volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleCheckandSign(volatile uint32_t *tx, uint32_t rx) {
     if (!process_chunk(tx, rx)) {
         THROW(APDU_CODE_OK);
     }
@@ -427,7 +422,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *flags,
     set_state(STATE_VERIFIED_ALL_TXDATA);
     view_tx_state();
 
-    err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
+    err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -493,17 +488,14 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
-        zemu_log_stack("too short");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV) {
-        zemu_log_stack("wrong length");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV) {
-        zemu_log_stack("wrong value at OFFSET_DATA_LEN");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -542,8 +534,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
     THROW(APDU_CODE_OK);
 }
 
-__Z_INLINE void handleGetDiversifierList(volatile uint32_t *flags,
-                                         volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetDiversifierList]\n");
 
     *tx = 0;
@@ -590,7 +581,6 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
-        ZEMU_LOGF(100, "rx is %d\n", rx)
         zemu_log("Missing data!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -636,8 +626,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
     THROW(APDU_CODE_OK);
 }
 
-__Z_INLINE void handleSignSapling(volatile uint32_t *flags,
-                                  volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleSignSapling() {
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
 }
 
@@ -647,7 +636,7 @@ __Z_INLINE void handleSignSapling(volatile uint32_t *flags,
 #include "rslib.h"
 #include "jubjub.h"
 
-void handleTest(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+void handleTest(volatile uint32_t *tx) {
 
     uint8_t point[32] = {    48, 181, 242, 170, 173, 50, 86, 48, 188, 221, 219, 206, 77, 103, 101, 109, 5, 253, 28, 194,
     208, 55, 187, 83, 117, 182, 233, 109, 158, 1, 161, 215};
@@ -737,31 +726,31 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_EXTRACT_SPEND: {
                     CHECK_PIN_VALIDATED()
-                    handleExtractSpendData(flags, tx, rx);
+                    handleExtractSpendData(tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_OUTPUT: {
                     CHECK_PIN_VALIDATED()
-                    handleExtractOutputData(flags, tx, rx);
+                    handleExtractOutputData(tx, rx);
                     break;
                 }
 
                 case INS_CHECKANDSIGN: {
                     CHECK_PIN_VALIDATED()
-                    handleCheckandSign(flags, tx, rx);
+                    handleCheckandSign(tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_SPENDSIG: {
                     CHECK_PIN_VALIDATED()
-                    handleExtractSpendSignature(flags, tx, rx);
+                    handleExtractSpendSignature(tx, rx);
                     break;
                 }
 
                 case INS_EXTRACT_TRANSSIG: {
                     CHECK_PIN_VALIDATED()
-                    handleExtractTransparentSignature(flags, tx, rx);
+                    handleExtractTransparentSignature(tx, rx);
                     break;
                 }
 
@@ -773,7 +762,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_GET_DIV_LIST: {
                     CHECK_PIN_VALIDATED()
-                    handleGetDiversifierList(flags, tx, rx);
+                    handleGetDiversifierList(tx, rx);
                     break;
                 }
 
@@ -785,13 +774,13 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_SIGN_SAPLING: {
                     CHECK_PIN_VALIDATED()
-                    handleSignSapling(flags, tx, rx);
+                    handleSignSapling();
                     break;
                 }
 
 #if defined(APP_TESTING)
                     case INS_TEST: {
-                        handleTest(flags, tx, rx);
+                        handleTest(tx);
                         /*
                         G_io_apdu_buffer[0] = 0xCA;
                         G_io_apdu_buffer[1] = 0xFE;

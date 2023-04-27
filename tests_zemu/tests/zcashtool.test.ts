@@ -471,15 +471,16 @@ describe('End to end transactions', function () {
        The ledger needs this blob to validate the correctness of the tx.
         */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
        Now the ledger will validate the txdata blob.
        For this, it uses the input from inittx to verify.
        If all checks are ok, the ledger signs the transaction.
         */
+//      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
-      const req6 = await app.checkandsign(ledgerblob_txdata,tx_version)
+      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.return_code).toEqual(0x9000)
 
@@ -756,7 +757,7 @@ describe('End to end transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.
@@ -1042,7 +1043,7 @@ describe('End to end transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.
@@ -1341,7 +1342,7 @@ describe('End to end transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.
@@ -1503,7 +1504,7 @@ describe('End to end transactions', function () {
       const bt2 = builder.add_transparent_output(tout2)
       console.log(bt2)
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
@@ -1951,7 +1952,7 @@ describe('Failing transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.
@@ -2239,7 +2240,7 @@ describe('Failing transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.
@@ -2484,7 +2485,7 @@ describe('Failing transactions', function () {
       The ledger needs this blob to validate the correctness of the tx.
        */
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH)
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
       /*
       Now the ledger will validate the txdata blob.

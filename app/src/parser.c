@@ -33,13 +33,6 @@
 
 #define DEFAULT_MEMOTYPE        0xf6
 
-#if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
-// For some reason NanoX requires this function
-void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function){
-    while(1) {};
-}
-#endif
-
 typedef enum {
     type_tin = 0,
     type_tout = 1,
@@ -94,27 +87,27 @@ void view_tx_state() {
     switch (state) {
         case STATE_PROCESSED_INPUTS:
         case STATE_PROCESSED_SPEND_EXTRACTIONS: {
-            view_message_show("Zcash", "Step [1/5]");
+            view_message_show((char*)"Zcash", (char*)"Step [1/5]");
             break;
         }
 
         case STATE_PROCESSED_ALL_EXTRACTIONS: {
-            view_message_show("Zcash", "Step [2/5]");
+            view_message_show((char*)"Zcash", (char*)"Step [2/5]");
             break;
         }
 
         case STATE_CHECKING_ALL_TXDATA: {
-            view_message_show("Zcash", "Step [3/5]");
+            view_message_show((char*)"Zcash", (char*)"Step [3/5]");
             break;
         }
 
         case STATE_VERIFIED_ALL_TXDATA: {
-            view_message_show("Zcash", "Step [4/5]");
+            view_message_show((char*)"Zcash", (char*)"Step [4/5]");
             break;
         }
 
         case STATE_SIGNED_TX: {
-            view_message_show("Zcash", "Step [5/5]");
+            view_message_show((char*)"Zcash", (char*)"Step [5/5]");
             break;
         }
 
@@ -126,7 +119,7 @@ void view_tx_state() {
     return;
 }
 
-parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
+parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen) {
     CHECK_PARSER_ERR(parser_init(ctx, data, dataLen))
 
 
@@ -134,17 +127,17 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t d
     return parser_ok;
 }
 
-parser_error_t parser_validate(const parser_context_t *ctx) {
+parser_error_t parser_validate() {
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
-    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
+    CHECK_PARSER_ERR(parser_getNumItems(&numItems))
 
     char tmpKey[30];
     char tmpVal[30];
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount = 0;
-        CHECK_PARSER_ERR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
+        CHECK_PARSER_ERR(parser_getItem( idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
 
     return parser_ok;
@@ -184,8 +177,6 @@ parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
     if (err != 0) {
         return parser_unexpected_error;
     }
-
-    ZEMU_LOGF(50, "addr size %d\n", outLen)
 
     pageString(outVal, outValLen, (char *) tmpBuffer, pageIdx, pageCount);
     return parser_ok;
@@ -238,7 +229,7 @@ parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
+parser_error_t parser_getNumItems(uint8_t *num_items) {
     *num_items = t_inlist_len() * NUM_ITEMS_TIN +
                  t_outlist_len() * NUM_ITEMS_TOUT +
                  spendlist_len() * NUM_ITEMS_SSPEND +
@@ -248,8 +239,7 @@ parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_item
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_context_t *ctx,
-                              uint8_t displayIdx,
+parser_error_t parser_getItem(uint8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount) {
@@ -260,7 +250,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     *pageCount = 1;
 
     uint8_t numItems;
-    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
+    CHECK_PARSER_ERR(parser_getNumItems(&numItems))
     CHECK_APP_CANARY()
 
 

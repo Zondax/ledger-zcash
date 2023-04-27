@@ -222,7 +222,7 @@ zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
 
 // handleInitTX step 1/2
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
-    zemu_log_stack("crypto_extracttxdata_sapling");
+    zemu_log_stack("crypto_extracttx_sapling");
     MEMZERO(buffer, bufferLen);
     uint8_t t_in_len = *txdata;
     uint8_t t_out_len = *(txdata + 1);
@@ -567,7 +567,7 @@ zxerr_t crypto_check_outputs(uint8_t *buffer, uint16_t bufferLen, const uint8_t 
 // handleCheckandSign step 4/11
 zxerr_t crypto_check_joinsplits(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint8_t tx_version){
     if (tx_version == TX_VERSION_SAPLING){
-        zemu_log_stack("crypto_checkjoinsplits_sapling");
+        zemu_log_stack("crypto_check_joinsplits");
         MEMZERO(buffer, bufferLen);
 
         if(get_state() != STATE_CHECKING_ALL_TXDATA){
@@ -674,7 +674,6 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     size_t length_hash_data = (tx_version==TX_VERSION_SAPLING)?SAPLING_LENGTH_HASH_DATA:NU5_LENGTH_HASH_DATA;
 
     if(length_t_in_data() + length_spenddata() + length_outputdata() +  length_hash_data != txdatalen){
-        zemu_log_stack("Bad tx data length");
         return zxerr_unknown;
     }
 
@@ -773,9 +772,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
                 sapling_spend_offset = SAPLING_INDEX_HASH_SHIELDEDSPENDHASH;
         }
         else if (tx_version == TX_VERSION_NU5) {
-            if (spendlist_len() > 0) {
-                nu5_hash_sapling_spends(start_spenddata, tmp_buf->spend_hash);
-            }
+            nu5_hash_sapling_spends(start_spenddata, tmp_buf->spend_hash);
             sapling_spend_offset = NU5_INDEX_HASH_SHIELDEDSPENDHASH;
         }
         else {
@@ -783,7 +780,6 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
         }
 
     if(MEMCMP(tmp_buf->spend_hash, txdata + start_sighashdata() +  sapling_spend_offset, HASH_SIZE) != 0){
-        zemu_log_stack("value of spend_hash differs");
         return zxerr_unknown;
     }
     MEMZERO(out,bufferLen);
@@ -892,10 +888,8 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
             sapling_output_offset = SAPLING_INDEX_HASH_SHIELDEDOUTPUTHASH;
         }
         else if (tx_version == TX_VERSION_NU5)
-        {    if (outputlist_len() > 0) {
-
-                nu5_hash_sapling_outputs(start_outputdata, tmp_buf->shielded_output_hash);
-            }
+        {
+            nu5_hash_sapling_outputs(start_outputdata, tmp_buf->shielded_output_hash);
             sapling_output_offset = NU5_INDEX_HASH_SHIELDEDOUTPUTHASH;
         }
         else
@@ -1106,8 +1100,8 @@ typedef struct {
 } __attribute__((packed)) signature_tr;
 
 // handleCheckandSign step 9/11
-zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
-    zemu_log_stack("crypto_signchecktransparent_sapling");
+zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen, const uint8_t tx_version) {
+    zemu_log_stack("crypto_sign_and_check_transparent");
     if(t_inlist_len() == 0){
         return zxerr_ok;
     }
@@ -1190,10 +1184,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                 if(value != item->value){
                     return zxerr_unknown;
                 }
-                signature_script_hash(start_signdata,  SAPLING_LENGTH_HASH_DATA, start_tindata + i * T_IN_TX_LEN, T_IN_TX_LEN, message_digest);
-                ZEMU_LOGF(100,"The transparent message_digest's 1st byte is %02x \n", *message_digest);
-                ZEMU_LOGF(100,"The transparent message_digest's 2nd byte is %02x \n", *(message_digest+1));
-                ZEMU_LOGF(100,"The transparent message_digest's 3rd byte is %02x \n", *(message_digest+2));
+                signature_script_hash(start_tindata, start_signdata, SAPLING_LENGTH_HASH_DATA, start_tindata + i * T_IN_TX_LEN, T_IN_TX_LEN, i, tx_version, message_digest);
                 cx_ecdsa_sign(&cx_privateKey,
                               CX_RND_RFC6979 | CX_LAST,
                               CX_SHA256,
@@ -1269,10 +1260,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen, const uin
     uint8_t *out = (uint8_t *) buffer;
     MEMZERO(out, bufferLen);
 
-    signature_hash(start_signdata,SAPLING_LENGTH_HASH_DATA,message + 32, tx_version);
-    ZEMU_LOGF(100, "The sapling spend message_digest's 1st byte is %02x \n", message[32]);
-    ZEMU_LOGF(100, "The sapling spend message_digest's 2nd byte is %02x \n", message[33]);
-    ZEMU_LOGF(100, "The sapling spend message_digest's 3rd byte is %02x \n", message[34]);
+    signature_hash(txdata, start_signdata,SAPLING_LENGTH_HASH_DATA, tx_version, message + 32);
     tmp_sign_s tmp;
     MEMZERO(&tmp, sizeof(tmp_sign_s));
 
@@ -1695,7 +1683,6 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
                           sizeof_field(tmp_buf_addr_s, address_raw),
                           1, BECH32_ENCODING_BECH32);
     if(error != zxerr_ok){
-        zemu_log_stack("Error getting BECH32 address");
         MEMZERO(out, bufferLen);
         *replyLen = 0;
         return error;

@@ -30,6 +30,8 @@ void hash_header_txid_data(uint8_t *input, uint8_t *output);
 
 void hash_transparent_txid_data(uint8_t *input, uint8_t *output);
 
+void transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata, uint8_t index,signable_input type, uint8_t *output);
+
 void hash_sapling_txid_data(uint8_t *input, uint8_t *output);
 
 void hash_empty_orchard_txid_data(uint8_t *output);

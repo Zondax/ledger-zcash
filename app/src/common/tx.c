@@ -68,14 +68,13 @@ const char *tx_parse() {
     uint8_t err = parser_parse(
             &ctx_parsed_tx,
             tx_get_buffer(),
-            tx_get_buffer_length(),
-            &tx_obj);
+            tx_get_buffer_length());
 
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
     }
 
-    err = parser_validate(&ctx_parsed_tx);
+    err = parser_validate();
     CHECK_APP_CANARY()
 
     if (err != parser_ok) {
@@ -86,7 +85,7 @@ const char *tx_parse() {
 }
 
 zxerr_t tx_getNumItems(uint8_t *num_items) {
-    parser_error_t err = parser_getNumItems(&ctx_parsed_tx, num_items);
+    parser_error_t err = parser_getNumItems(num_items);
 
     if (err != parser_ok) {
         return zxerr_no_data;
@@ -107,8 +106,7 @@ zxerr_t tx_getItem(int8_t displayIdx,
         return zxerr_no_data;
     }
 
-    parser_error_t err = parser_getItem(&ctx_parsed_tx,
-                                        displayIdx,
+    parser_error_t err = parser_getItem(displayIdx,
                                         outKey, outKeyLen,
                                         outVal, outValLen,
                                         pageIdx, pageCount);

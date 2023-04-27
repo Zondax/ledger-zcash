@@ -31,3 +31,6 @@
 #define NU5_INDEX_HASH_SHIELDEDOUTPUTHASH   148 // 32 bytes
 #define NU5_INDEX_HASH_VALUEBALANCE         180 // 64 bit
 #define NU5_INDEX_HASH_ORCHARDHASH          188 // of length 32
+
+
+#define NU5_VALUEBALANCE_SIZE               8 // 64 bit

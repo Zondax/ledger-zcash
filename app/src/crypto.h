@@ -82,7 +82,7 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen, const uin
 
 void address_to_script(uint8_t *address, uint8_t *output);
 zxerr_t
-crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen);
+crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen, const uint8_t tx_version);
 zxerr_t crypto_extract_transparent_signature(uint8_t *buffer, uint16_t bufferLen);
 #ifdef __cplusplus
 }

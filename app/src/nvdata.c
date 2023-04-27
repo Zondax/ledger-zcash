@@ -106,6 +106,15 @@ uint8_t t_inlist_len() {
     return transaction_header.t_in_len;
 }
 
+// Returns the list of all transparent input amounts.
+uint64_t t_inlist_retrieve_item_amount(uint8_t i){
+    return N_t_inlist.items[i].value;
+}
+
+void t_inlist_retrieve_item_script(uint8_t i, uint8_t *output){
+    MEMCPY(output, (const void *) N_t_inlist.items[i].script, SCRIPT_SIZE);
+}
+
 uint8_t t_outlist_len() {
     return transaction_header.t_out_len;
 }

@@ -35,8 +35,8 @@ class ZcashBuilderBridge{
     add_sapling_output(z_output){
         return builderAddSaplingOutput.call(this.boxed, z_output);
     }
-    build(spend_path, output_path){
-        return builderBuild.call(this.boxed, spend_path, output_path);
+    build(spend_path, output_path, tx_version){
+        return builderBuild.call(this.boxed, spend_path, output_path, tx_version);
     }
     add_signatures(signatures){
         return builderAddSignatures.call(this.boxed, signatures);
