@@ -26,7 +26,7 @@
 #include "sighash.h"
 #include "txid.h"
 #include "index_sapling.h"
-#include "index_nu5.h"
+#include "index_NU5.h"
 #include "parser_impl.h"
 #include "parser_common.h"
 #include "chacha.h"
