@@ -2673,4 +2673,199 @@ describe('Failing transactions', function () {
       await sim.close()
     }
   })
+
+  test.each(models)('make a transaction unsupported transaction version', async function (m) {
+    const sim = new Zemu(m.path)
+    const bad_tx_version = 7
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      console.log(SPEND_PATH)
+
+      // here 1000 represents the fee
+      const builder = new ZcashBuilderBridge(1000)
+
+      const s_spend1 = {
+        path: 1000,
+        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+        value: 50000,
+      }
+
+      const s_spend2 = {
+        path: 1000,
+        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+        value: 50000,
+      }
+
+      const s_out1 = {
+        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
+        value: 55000,
+        memo_type: 0xf6,
+        ovk: null,
+      }
+      // CHANGE ADDRESS:
+      const s_out2 = {
+        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+        value: 100000 - 1000 - 55000,
+        memo_type: 0xf6,
+        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
+      }
+
+      const tx_input_data = {
+        t_in: [],
+        t_out: [],
+        s_spend: [s_spend1, s_spend2],
+        s_output: [s_out1, s_out2],
+      }
+
+
+      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      console.log(Buffer.from(ledgerblob_initdata).byteLength)
+
+      const reqinit = app.inittx(ledgerblob_initdata)
+
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
+      sim.deleteEvents()
+
+      const req = await reqinit
+
+      console.log(req)
+      expect(req.return_code).toEqual(0x9000)
+      expect(req.txdata.byteLength).toEqual(32)
+
+      let hash = crypto.createHash('sha256')
+      hash.update(Buffer.from(ledgerblob_initdata))
+      let h = hash.digest('hex')
+      expect(req.txdata.toString('hex')).toEqual(h)
+
+
+      const req2 = await app.extractspenddata()
+      console.log(req2)
+      expect(req2.return_code).toEqual(0x9000)
+      const expected_proofkey_raw =
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+      expect(req2.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
+      expect(req2.rcv_raw).not.toEqual(req2.alpha_raw)
+
+      const spendj1 = {
+        proofkey: req2.key_raw,
+        rcv: req2.rcv_raw,
+        alpha: req2.alpha_raw,
+        address: s_spend1.address,
+        value: s_spend1.value,
+        witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
+        rseed: '0000000000000000000000000000000000000000000000000000000000000000',
+      }
+
+      /*
+       The builder adds the spend to its state.
+        */
+
+      const b1 = builder.add_sapling_spend(spendj1)
+      console.log(b1)
+
+      /*
+       We need to repeat the above process for the second spend.
+        */
+
+      const req3 = await app.extractspenddata()
+      console.log(req3)
+      expect(req3.return_code).toEqual(0x9000)
+      expect(req3.key_raw.toString('hex')).toEqual(expected_proofkey_raw)
+
+      const spendj2 = {
+        proofkey: req3.key_raw,
+        rcv: req3.rcv_raw,
+        alpha: req3.alpha_raw,
+        address: s_spend2.address,
+        value: s_spend2.value,
+        witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
+        rseed: '0000000000000000000000000000000000000000000000000000000000000000',
+      }
+
+      const b2 = builder.add_sapling_spend(spendj2)
+      console.log(b2)
+
+      /*
+       At this point we added all spends.
+       We cannot get more spend data from the ledger.
+       We now start the shielded output process.
+        */
+
+      /*
+      To add a shielded output to the builder, we need:
+          - the randomness needed for the value commitment (rcv)
+          - the randomness needed for the note commitment (rcm)
+          - the randomness needed for the random encryption key (esk)
+      All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      The ledger already knows how much data it needs to send after the inittx call.
+      */
+
+      const req4 = await app.extractoutputdata()
+      console.log(req4)
+      expect(req4.return_code).toEqual(0x9000)
+
+      /*
+       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+       It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+       It furthermore uses the output address, value and memo from the UI.
+       */
+
+      const outj1 = {
+        rcv: req4.rcv_raw,
+        rseed: req4.rseed_raw,
+        ovk: s_out1.ovk,
+        address: s_out1.address,
+        value: s_out1.value,
+        memo: '0000',
+        hash_seed: req4.hash_seed,
+      }
+
+      console.log(req4.hash_seed)
+      /*
+       The builder adds the shielded output to its state.
+        */
+
+      const b3 = builder.add_sapling_output(outj1)
+      console.log(b3)
+
+      /*
+       This process needs to be repeated for the second output.
+       Note that this output address belongs to Alice.
+       There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
+       The UI needs to take care of this before initializing a transaction to the ledger.
+        */
+
+      const req5 = await app.extractoutputdata()
+      console.log(req5)
+      expect(req5.return_code).toEqual(0x9000)
+
+      console.log(req5.hash_seed)
+
+      const outj2 = {
+        rcv: req5.rcv_raw,
+        rseed: req5.rseed_raw,
+        ovk: s_out2.ovk,
+        address: s_out2.address,
+        value: s_out2.value,
+        memo: '0000',
+        hash_seed: req5.hash_seed,
+      }
+
+      const b4 = builder.add_sapling_output(outj2)
+      console.log(b4)
+
+      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, bad_tx_version)
+
+      const req6 = await app.checkandsign(ledgerblob_txdata, bad_tx_version)
+      console.log(req6)
+      expect(req6.return_code).not.toEqual(0x9000)
+    } finally {
+      await sim.close()
+    }
+  })
+
 })

@@ -90,6 +90,7 @@ const ERROR_DESCRIPTION = {
   0x6999: "Check/sign transparent failed",
   0x69a0: "Failed to sign spends",
   0x69a1: "Bad value balance",
+  0x69a2: "Unhandled transaction version",
   0x6a80: "Bad key handle",
   0x6b00: "Invalid P1/P2",
   0x6d00: "Instruction not supported",

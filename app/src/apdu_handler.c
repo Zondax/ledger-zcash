@@ -342,6 +342,15 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *tx, uint32_t rx) {
     snprintf(buffer, sizeof(buffer), "Tx Version is %d", txVersion);
     zemu_log_stack(buffer);
 
+    if (!((txVersion == TX_VERSION_SAPLING) || (txVersion == TX_VERSION_NU5)))
+    {
+        zemu_log("Unhandled tx version\n");
+        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+        view_idle_show(0, NULL);
+        transaction_reset();
+        THROW(APDU_CODE_UNHANDLED_TX_VERSION);
+    }
+
     if (get_state() != STATE_PROCESSED_ALL_EXTRACTIONS) {
         zemu_log("[handleCheckandSign] not STATE_PROCESSED_ALL_EXTRACTIONS\n");
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);

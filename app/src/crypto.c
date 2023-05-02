@@ -484,7 +484,7 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
 
     uint8_t hash[HASH_SIZE] = {0};
     size_t prevouts_hash_offset = 0;
-    if (tx_version==TX_VERSION_SAPLING) {
+    if (tx_version == TX_VERSION_SAPLING) {
         sapling_transparent_prevouts_hash(txdata, hash);
         prevouts_hash_offset = SAPLING_INDEX_HASH_PREVOUTSHASH;
     } else if (tx_version == TX_VERSION_NU5){
