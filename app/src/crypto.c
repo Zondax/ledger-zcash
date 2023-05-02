@@ -817,8 +817,10 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen, const ui
     if(get_state() != STATE_CHECKING_ALL_TXDATA){
         return zxerr_unknown;
     }
-    //TODO: Probably need to change for v5 tx checks
-    if(length_t_in_data() + length_spenddata() + length_outputdata() +  SAPLING_LENGTH_HASH_DATA != txdatalen){
+
+    size_t length_hash_data = (tx_version == TX_VERSION_SAPLING) ? SAPLING_LENGTH_HASH_DATA : NU5_LENGTH_HASH_DATA;
+
+    if(length_t_in_data() + length_spenddata() + length_outputdata() +  length_hash_data != txdatalen){
         return zxerr_unknown;
     }
 
