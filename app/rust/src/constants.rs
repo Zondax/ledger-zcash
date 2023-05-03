@@ -1,5 +1,4 @@
-use group::Group;
-use jubjub::{AffineNielsPoint, AffinePoint, Fq, SubgroupPoint};
+use jubjub::{AffineNielsPoint, AffinePoint, Fq};
 
 pub const SPENDING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([

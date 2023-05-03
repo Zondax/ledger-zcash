@@ -9,8 +9,6 @@
  * ********************************************************************************/
 
 //ZIP32 functions
-void ask_to_ak(const uint8_t *ask_ptr, uint8_t *ak_ptr);
-
 void get_pkd(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void get_pkd_from_seed(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *start_index, uint8_t *diversifier_ptr, uint8_t *pkd);
@@ -54,8 +52,6 @@ void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,
 void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
 
 void compute_nullifier(uint8_t *ncmptr, uint64_t pos, const uint8_t *nsk_ptr, uint8_t *outputptr);
-
-void compute_valueBalance_commitment(const uint64_t u64, uint8_t *output);
 
 //Note encryption
 void blake2b_prf(uint8_t *inputptr, uint8_t *outptr);

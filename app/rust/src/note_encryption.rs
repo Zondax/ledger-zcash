@@ -1,5 +1,5 @@
 use aes::block_cipher_trait::generic_array::{GenericArray, GenericArrayImplEven};
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use byteorder::{ByteOrder, LittleEndian};
 use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
 
 use crate::bolos::{blake2b32_with_personalization, c_zemu_log_stack};

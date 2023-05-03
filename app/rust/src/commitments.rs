@@ -1,5 +1,5 @@
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use blake2s_simd::Params as Blake2sParams;
+use byteorder::LittleEndian;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use crate::bolos::c_zemu_log_stack;

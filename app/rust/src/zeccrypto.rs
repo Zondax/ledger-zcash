@@ -2,7 +2,7 @@ use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
 use core::mem;
 use group::{Group, GroupEncoding};
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr, SubgroupPoint};
+use jubjub::{AffinePoint, Fr};
 use rand::RngCore;
 
 use crate::bolos::{c_zemu_log_stack, Trng};

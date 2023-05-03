@@ -11,8 +11,7 @@ use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
 use core::mem;
-use itertools::zip;
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
 use crate::commitments::bytes_to_extended;
 use crate::constants::{AK_NK, AK_NSK, ASK_NSK,
@@ -673,7 +672,7 @@ pub extern "C" fn get_default_diversifier_without_start_index(
     let mut div_list = [0u8;DIV_SIZE*DIV_DEFAULT_LIST_LEN];
 
     let dk = derive_zip32_child_fromseedandpath(&seed,
-                                                &[FIRSTVALUE, COIN_TYPE, pos], 
+                                                &[FIRSTVALUE, COIN_TYPE, pos],
                                                 DK_AK_NK);
 
     let mut found = false;

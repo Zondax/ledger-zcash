@@ -13,7 +13,6 @@ use aes::{
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
-use cstr_core::CStr;
 #[cfg(test)]
 #[cfg(any(unix, windows))]
 use getrandom::getrandom;
