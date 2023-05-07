@@ -22,7 +22,6 @@ const defaultOptions = {
   ...DEFAULT_START_OPTIONS,
   logging: true,
   custom: `-s "${APP_SEED}"`,
-  startText: 'DO NOT USE!',
 }
 
 jest.setTimeout(600000)

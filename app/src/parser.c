@@ -87,27 +87,27 @@ void view_tx_state() {
     switch (state) {
         case STATE_PROCESSED_INPUTS:
         case STATE_PROCESSED_SPEND_EXTRACTIONS: {
-            view_message_show((char*)"Zcash", (char*)"Step [1/5]");
+            view_message_show("Zcash", "Step [1/5]");
             break;
         }
 
         case STATE_PROCESSED_ALL_EXTRACTIONS: {
-            view_message_show((char*)"Zcash", (char*)"Step [2/5]");
+            view_message_show("Zcash", "Step [2/5]");
             break;
         }
 
         case STATE_CHECKING_ALL_TXDATA: {
-            view_message_show((char*)"Zcash", (char*)"Step [3/5]");
+            view_message_show("Zcash", "Step [3/5]");
             break;
         }
 
         case STATE_VERIFIED_ALL_TXDATA: {
-            view_message_show((char*)"Zcash", (char*)"Step [4/5]");
+            view_message_show("Zcash", "Step [4/5]");
             break;
         }
 
         case STATE_SIGNED_TX: {
-            view_message_show((char*)"Zcash", (char*)"Step [5/5]");
+            view_message_show("Zcash", "Step [5/5]");
             break;
         }
 
@@ -152,7 +152,7 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
     return parser_ok;
 }
 
-parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
+parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount) {
     MEMZERO(outVal, outValLen);
@@ -267,7 +267,7 @@ parser_error_t parser_getItem(uint8_t displayIdx,
     switch (prs.type) {
         case type_tin : {
             uint8_t itemnum = prs.index / NUM_ITEMS_TIN;
-            t_input_item_t *item = t_inlist_retrieve_item(itemnum);
+            const t_input_item_t *item = t_inlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
 
             switch (itemtype) {

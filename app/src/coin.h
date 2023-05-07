@@ -63,7 +63,7 @@ typedef enum {
 #define VIEW_ADDRESS_OFFSET_SAPLING         ADDR_LEN_SAPLING
 
 #define MENU_MAIN_APP_LINE1                "Zcash"
-#define MENU_MAIN_APP_LINE2                "DO NOT USE!"
+#define MENU_MAIN_APP_LINE2                "Ready"
 #define APPVERSION_LINE1                   "Zcash"
 #define APPVERSION_LINE2                   ("v" APPVERSION)
 

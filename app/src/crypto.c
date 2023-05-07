@@ -1140,7 +1140,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
             // Temporarily get sk from Ed25519
             CHECK_APP_CANARY()
             for(uint8_t i = 0; i < t_inlist_len(); i++){
-                t_input_item_t *item = t_inlist_retrieve_item(i);
+                const t_input_item_t *item = t_inlist_retrieve_item(i);
 
                 os_perso_derive_node_bip32(CX_CURVE_256K1,
                                        item->path,
@@ -1522,7 +1522,7 @@ zxerr_t crypto_nullifier_sapling(uint8_t *buffer, uint16_t bufferLen, uint64_t n
 }
 
 // handleGetDiversifierList
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t p, uint8_t *startindex, uint16_t *replylen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t p, const uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
     //the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath

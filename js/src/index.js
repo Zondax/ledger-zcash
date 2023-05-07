@@ -24,7 +24,6 @@ import {
   getVersion,
   INS,
   P1_VALUES,
-  P2_VALUES,
   PKLEN,
   processErrorResponse,
   SAPLING_ADDR_LEN,

@@ -118,7 +118,7 @@ void nu5_transparent_outputs_hash(uint8_t *output) {
 /// * \[(cv, anchor, rk, zkproof)*\] - personalized with ZCASH_SAPLING_SPENDS_NONCOMPACT_HASH_PERSONALIZATION
 ///
 /// Then, hash these together personalized by ZCASH_SAPLING_SPENDS_HASH_PERSONALIZATION
-void nu5_hash_sapling_spends(uint8_t *input, uint8_t *output)
+void nu5_hash_sapling_spends(const uint8_t *input, uint8_t *output)
 {
     zemu_log_stack("nu5_hash_sapling_spends");
     const uint8_t n = spendlist_len();
@@ -180,7 +180,7 @@ void nu5_hash_sapling_spends(uint8_t *input, uint8_t *output)
 /// * \[(cv, enc_ciphertext\[564..\], out_ciphertext, zkproof)*\] personalized with ZCASH_SAPLING_OUTPUTS_NONCOMPACT_HASH_PERSONALIZATION
 ///
 /// Then, hash these together personalized with ZCASH_SAPLING_OUTPUTS_HASH_PERSONALIZATION
-void nu5_hash_sapling_outputs(uint8_t *input, uint8_t *output){
+void nu5_hash_sapling_outputs(const uint8_t *input, uint8_t *output){
     zemu_log_stack("nu5_hash_sapling_outputs");
     const uint8_t n = outputlist_len();
 
@@ -262,7 +262,7 @@ void nu5_hash_sapling_outputs(uint8_t *input, uint8_t *output){
 /// The txid commits to the hash of all transparent outputs. The
 /// prevout and sequence_hash components of txid
 
-void hash_header_txid_data(uint8_t *input, uint8_t *output){
+void hash_header_txid_data(const uint8_t *input, uint8_t *output){
     zemu_log_stack("hash_header_txid_data");
     cx_blake2b_t ctx;
     uint8_t personalization[16] = {0};
@@ -283,7 +283,7 @@ void hash_header_txid_data(uint8_t *input, uint8_t *output){
     cx_hash(&ctx.header, CX_LAST, expiry_height, 4, output, HASH_SIZE);
 }
 
-void hash_transparent_txid_data(uint8_t *input, uint8_t *output) {
+void hash_transparent_txid_data(const uint8_t *input, uint8_t *output) {
     zemu_log_stack("hash_transparent_txid_data");
     cx_blake2b_t ctx;
     uint8_t personalization[16] = {0};
@@ -353,7 +353,7 @@ void transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata, uint8
         MEMCPY(personalization, PIC(ZCASH_TRANSPARENT_INPUT_HASH_PERSONALIZATION), 16);
         cx_blake2b_init2(&ctx_txin_sig_digest, 256, NULL, 0, (uint8_t *) personalization, 16);
         if (type == transparent){
-            t_input_item_t *item = t_inlist_retrieve_item(index);
+            const t_input_item_t *item = t_inlist_retrieve_item(index);
 
             const uint8_t *prevout_data = input + index * T_IN_TX_LEN + INDEX_TIN_PREVOUT;
             cx_hash(&ctx_txin_sig_digest.header, 0, prevout_data, PREVOUT_SIZE, NULL, 0);
@@ -361,7 +361,7 @@ void transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata, uint8
             uint64_t value = item->value;
             cx_hash(&ctx_txin_sig_digest.header, 0, (uint8_t *) &value, sizeof(uint64_t), NULL, 0);
 
-            uint8_t *script = item-> script;
+            const uint8_t *script = item-> script;
             cx_hash(&ctx_txin_sig_digest.header, 0, script,  SCRIPT_SIZE, NULL, 0);
 
             const uint8_t *sequence_data = input + index * T_IN_TX_LEN + INDEX_TIN_SEQ;
@@ -386,7 +386,7 @@ void transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata, uint8
     }
 }
 
-void hash_sapling_txid_data(uint8_t *input, uint8_t *output) {
+void hash_sapling_txid_data(const uint8_t *input, uint8_t *output) {
     zemu_log_stack("hash_sapling_txid_data");
     cx_blake2b_t ctx;
     uint8_t personalization[16] = {0};
