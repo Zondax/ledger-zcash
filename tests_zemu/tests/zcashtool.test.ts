@@ -36,7 +36,7 @@ beforeAll(async () => {
 })
 
 async function takeLastSnapshot(testname: string, index: number, sim: any) {
-  await sim.waitForText('DO NOT USE', 30000)
+  await sim.waitForText('Ready', 30000)
   await sim.takeSnapshotAndOverwrite('.', testname, index)
   await sim.compareSnapshots('.', testname, index)
 }
