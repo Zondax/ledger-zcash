@@ -6,6 +6,7 @@ use ledger_zcash::zcash::primitives::consensus::TestNetwork;
 use ledger_zcash::zcash::primitives::{
     consensus,
     transaction::components::{sapling as sapling_ledger, transparent as transparent_ledger},
+    transaction::TxVersion,
 };
 use rand_core::OsRng;
 use zcash_hsmbuilder as ZcashBuilder;
@@ -192,12 +193,18 @@ impl ZcashBuilderBridge {
         }
     }
 
-    pub fn build(&mut self, spendpath: &String, outputpath: &String) -> Result<HsmTxData, Error> {
+    pub fn build(&mut self, spendpath: &String, outputpath: &String, tx_version: u8) -> Result<HsmTxData, Error> {
+        let tx_ver = match tx_version {
+            4 => Some(TxVersion::Sapling),
+            5 => Some(TxVersion::Zip225),
+            _ => None,
+        };
+        log::info!("tx_ver is {:#?}", tx_ver);
         match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized( mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-                let res = builder.build(consensus::BranchId::Nu5, &mut prover);
+                let res = builder.build(consensus::BranchId::Nu5, tx_ver,&mut prover);
                 match res {
                     Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
                     Err(_) => ()
@@ -359,6 +366,7 @@ impl ZcashBuilderBridge {
     fn js_build(mut cx: FunctionContext)->JsResult<JsValue>{
         let spendpath: String = cx.argument::<JsString>(0)?.value(&mut cx);
         let outputpath: String = cx.argument::<JsString>(1)?.value(&mut cx);
+        let tx_version = cx.argument::<JsNumber>(2)?.value(&mut cx);
         let value;
         {
             let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
@@ -367,7 +375,7 @@ impl ZcashBuilderBridge {
             let mut this_handler = this.borrow_mut();//(&guard);
 
             //grab input
-            value = this_handler.build(&spendpath, &outputpath);
+            value = this_handler.build(&spendpath, &outputpath, tx_version as u8);
         }
         if value.is_ok(){
             let js_value = neon_serde::to_value(&mut cx, &value.unwrap().to_hsm_bytes().unwrap())

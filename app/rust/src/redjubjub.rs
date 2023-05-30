@@ -1,4 +1,4 @@
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
 use crate::bolos::c_zemu_log_stack;

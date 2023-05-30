@@ -42,9 +42,9 @@
 #define SPEND_EXTRACT_LEN           128
 #define OUTPUT_EXTRACT_LEN          64
 
-#define T_IN_TX_LEN                 74
+#define T_IN_TX_LEN                 74  // size of tx_in encoded as in bitcoin. The same across all tx versions
 #define SPEND_OLD_TX_LEN            40
-#define SPEND_TX_LEN                320
+#define SPEND_TX_LEN        320 // cv (32) + anchor (32) + nullifier (32) + rk (32) + zkproof (192)
 #define OUTPUT_TX_LEN               948
 
 #define INDEX_TIN_PREVOUT           0
@@ -55,24 +55,27 @@
 #define INDEX_SPEND_OLD_RCM         0
 #define INDEX_SPEND_OLD_NOTEPOS     32
 
-#define INDEX_SPEND_RK              96
 #define INDEX_SPEND_VALUECMT        0
+#define INDEX_SPEND_ANCHOR          32
 #define INDEX_SPEND_NF              64
+#define INDEX_SPEND_RK              96
 
 #define INDEX_OUTPUT_VALUECMT       0
 #define INDEX_OUTPUT_NOTECMT        32
 #define INDEX_OUTPUT_EPK            64
 #define INDEX_OUTPUT_ENC            96
+#define INDEX_OUTPUT_ENC_MEMO       96 + 52 // contents of the encrypted memo field
+#define INDEX_OUTPUT_ENC_AEAD_TAG   96 + 564 // contents of the encrypted memo field
 #define INDEX_OUTPUT_OUT            676
 
-#define LENGTH_HASH_DATA                220
-#define INDEX_HASH_PREVOUTSHASH         8
-#define INDEX_HASH_SEQUENCEHASH         40
-#define INDEX_HASH_OUTPUTSHASH          72
-#define INDEX_HASH_JOINSPLITSHASH       104
-#define INDEX_HASH_SHIELDEDSPENDHASH    136
-#define INDEX_HASH_SHIELDEDOUTPUTHASH   168
-#define INDEX_HASH_VALUEBALANCE         208
+#define SAPLING_LENGTH_HASH_DATA                220
+#define SAPLING_INDEX_HASH_PREVOUTSHASH         8
+#define SAPLING_INDEX_HASH_SEQUENCEHASH         40
+#define SAPLING_INDEX_HASH_OUTPUTSHASH          72
+#define SAPLING_INDEX_HASH_JOINSPLITSHASH       104
+#define SAPLING_INDEX_HASH_SHIELDEDSPENDHASH    136
+#define SAPLING_INDEX_HASH_SHIELDEDOUTPUTHASH   168
+#define SAPLING_INDEX_HASH_VALUEBALANCE         208
 
 uint16_t length_t_in_data();
 

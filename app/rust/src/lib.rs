@@ -16,7 +16,7 @@ extern crate hex;
 extern crate std;
 
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
 use core::mem;
 #[cfg(not(test))]

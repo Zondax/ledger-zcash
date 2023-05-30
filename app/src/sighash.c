@@ -22,6 +22,7 @@
 #include "nvdata.h"
 #include "sighash.h"
 #include "index_sapling.h"
+#include "txid.h"
 
 #define  ZCASH_PREVOUTS_HASH_PERSONALIZATION "ZcashPrevoutHash"
 #define  ZCASH_SEQUENCE_HASH_PERSONALIZATION "ZcashSequencHash"
@@ -36,7 +37,7 @@
 const uint8_t CONSENSUS_BRANCH_ID_SAPLING[4] = {0xBB, 0x09, 0xB8, 0x76};       // sapling
 const uint8_t CONSENSUS_BRANCH_ID_ORCHARD[4] = {0xB4, 0xD0, 0xD6, 0xC2};       // orchard
 
-void prevouts_hash(const uint8_t *input, uint8_t *output) {
+void sapling_transparent_prevouts_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
     cx_blake2b_t ctx;
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) ZCASH_PREVOUTS_HASH_PERSONALIZATION, 16);
@@ -53,7 +54,7 @@ void prevouts_hash(const uint8_t *input, uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, data, 36, output, HASH_SIZE);
 }
 
-void sequence_hash(const uint8_t *input, uint8_t *output) {
+void sapling_transparent_sequence_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
 
     cx_blake2b_t ctx;
@@ -71,7 +72,7 @@ void sequence_hash(const uint8_t *input, uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, data, 4, output, HASH_SIZE);
 }
 
-void outputs_hash(uint8_t *output) {
+void v4_transparent_outputs_hash(uint8_t *output) {
     const uint8_t n = t_outlist_len();
 
     cx_blake2b_t ctx;
@@ -96,13 +97,8 @@ void outputs_hash(uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, data, sizeof(data), output, HASH_SIZE);
 }
 
-/* NOT SUPPORTED
-void joinsplits_hash(uint8_t *input, uint16_t inputlen, uint8_t *output){
 
-}
- */
-
-void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
+void shielded_output_hash(const uint8_t *input, uint16_t inputlen, uint8_t *output) {
     if (inputlen == 0) {
         MEMZERO(output, HASH_SIZE);
         return;
@@ -112,7 +108,7 @@ void shielded_output_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
 }
 
-void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
+void shielded_spend_hash(const uint8_t *input, uint16_t inputlen, uint8_t *output) {
     if (inputlen == 0) {
         MEMZERO(output, HASH_SIZE);
         return;
@@ -122,28 +118,74 @@ void shielded_spend_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
     cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
 }
 
-void signature_hash(uint8_t *input, uint16_t inputlen, uint8_t *output) {
+static void signature_hash_v4(const uint8_t *input, uint16_t inputlen, uint8_t *output) {
+    zemu_log_stack("signature_hash_v4");
     cx_blake2b_t ctx;
 
     uint8_t personalization[16] = {0};
-    MEMCPY(personalization, PIC("ZcashSigHash"), 12);
-    MEMCPY(personalization + 12, PIC(CONSENSUS_BRANCH_ID_ORCHARD), 4);
+    MEMCPY(personalization, "ZcashSigHash", 12);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
 
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) personalization, 16);
 
     cx_hash(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE);
 }
 
-void signature_script_hash(uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
+static void signature_hash_v5(const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type, uint8_t *output) {
+    zemu_log_stack("signature_hash_v5");
+    cx_blake2b_t ctx;
+
+    uint8_t personalization[16] = {0};
+    MEMCPY(personalization, "ZcashTxHash_", 12);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
+    cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) personalization, 16);
+
+    uint8_t header_digest[32] = {0};
+    uint8_t transparent_digest[32] = {0};
+    uint8_t sapling_digest[32] = {0};
+    uint8_t orchard_digest[32] = {0};
+
+    hash_header_txid_data(start_signdata, header_digest);
+    transparent_sig_digest(input, start_signdata, index, type, transparent_digest);
+    hash_sapling_txid_data(start_signdata, sapling_digest);
+    hash_empty_orchard_txid_data(orchard_digest);
+
+    cx_hash(&ctx.header, 0, header_digest, HASH_SIZE, NULL, 0);
+    cx_hash(&ctx.header, 0, transparent_digest, HASH_SIZE, NULL, 0);
+    cx_hash(&ctx.header, 0, sapling_digest, HASH_SIZE, NULL, 0);
+    cx_hash(&ctx.header, CX_LAST, orchard_digest, HASH_SIZE, output, HASH_SIZE);
+}
+
+void signature_hash(const uint8_t *txdata, uint8_t *start_signdata, uint16_t inputlen, const uint8_t tx_version, uint8_t *output){
+    if (tx_version == TX_VERSION_SAPLING) {
+        signature_hash_v4(start_signdata, inputlen, output);
+    }
+    else if (tx_version == TX_VERSION_NU5)
+    {
+        signature_hash_v5(txdata, start_signdata, 0, shielded, output);
+    }
+}
+
+static void signature_script_hash_v4(const uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
     cx_blake2b_t ctx;
 
 	uint8_t personalization[16] = {0};
-	MEMCPY(personalization, PIC("ZcashSigHash"), 12);
-	MEMCPY(personalization + 12, PIC(CONSENSUS_BRANCH_ID_ORCHARD), 4);
+    MEMCPY(personalization, "ZcashSigHash", 12);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
 
     cx_blake2b_init2(&ctx, 256, NULL, 0, (uint8_t *) personalization, 16);
     cx_hash(&ctx.header, 0, input, inputlen, NULL, 0);
 
     cx_hash(&ctx.header, CX_LAST, script, scriptlen, output, HASH_SIZE);
+}
+
+void signature_script_hash(const uint8_t *input, uint8_t *start_signdata, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t index, const uint8_t tx_version, uint8_t *output) {
+    if (tx_version==TX_VERSION_SAPLING) {
+        signature_script_hash_v4(start_signdata, inputlen, script, scriptlen, output);
+    }
+    else if (tx_version == TX_VERSION_NU5)
+    {
+        signature_hash_v5(input, start_signdata, index, transparent, output);
+    }
 }
 

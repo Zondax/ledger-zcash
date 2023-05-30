@@ -133,6 +133,9 @@ t_input_item_t *t_inlist_retrieve_item(uint8_t i);
 
 uint8_t t_inlist_len();
 
+uint64_t t_inlist_retrieve_item_amount(uint8_t i);
+
+void t_inlist_retrieve_item_script(uint8_t i, uint8_t *output);
 
 //transparent TXOUT API
 zxerr_t t_outlist_append_item(uint8_t *addr, uint64_t v);

@@ -36,6 +36,11 @@ export const P1_VALUES = {
   SHOW_ADDRESS_IN_DEVICE: 0x01,
 };
 
+export const P2_VALUES = {
+  TX_VERSION_SAPLING: 0x04,
+  TX_VERSION_NU5: 0x05,
+};
+
 export const ERROR_CODE = {
   NoError: 0x9000,
 };
@@ -85,6 +90,7 @@ const ERROR_DESCRIPTION = {
   0x6999: "Check/sign transparent failed",
   0x69a0: "Failed to sign spends",
   0x69a1: "Bad value balance",
+  0x69a2: "Unhandled transaction version",
   0x6a80: "Bad key handle",
   0x6b00: "Invalid P1/P2",
   0x6d00: "Instruction not supported",

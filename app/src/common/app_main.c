@@ -113,9 +113,11 @@ void extractHDPath(uint32_t rx, uint32_t offset) {
 bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
-    if (G_io_apdu_buffer[OFFSET_P2] != 0) {
+    /*
+    if (G_io_apdu_buffer[OFFSET_P2] != 0 && G_io_apdu_buffer[OFFSET_P2] != 4 && G_io_apdu_buffer[OFFSET_P2] != 5 ) {
         THROW(APDU_CODE_INVALIDP1P2);
     }
+     */
 
     if (rx < OFFSET_DATA) {
         THROW(APDU_CODE_WRONG_LENGTH);
@@ -144,7 +146,7 @@ bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     THROW(APDU_CODE_INVALIDP1P2);
 }
 
-void handle_generic_apdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+void handle_generic_apdu(volatile uint32_t *tx, uint32_t rx) {
     if (rx > 4 && MEMCMP(G_io_apdu_buffer, "\xE0\x01\x00\x00", 4) == 0) {
         // Respond to get device info command
         uint8_t *p = G_io_apdu_buffer;
@@ -219,7 +221,7 @@ void app_main() {
                     THROW(APDU_CODE_EMPTY_BUFFER);
 
                 // NOTE: Requested by Ledger
-//                handle_generic_apdu(&flags, &tx, rx);
+//                handle_generic_apdu(&tx, rx);
 //                CHECK_APP_CANARY()
 
                 handleApdu(&flags, &tx, rx);

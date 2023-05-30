@@ -13,7 +13,6 @@ use aes::{
 use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
 use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
 use core::convert::TryInto;
-use cstr_core::CStr;
 #[cfg(test)]
 #[cfg(any(unix, windows))]
 use getrandom::getrandom;
@@ -69,7 +68,6 @@ extern "C" {
 
 #[cfg(not(test))]
 pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
-    c_zemu_log_stack(b"scalarmult spending base in sdk\x00".as_ref());
     unsafe {
         c_jubjub_spending_base_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
         check_app_canary();
@@ -86,7 +84,6 @@ pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
 
 #[cfg(not(test))]
 pub fn sdk_jubjub_scalarmult(point: &mut [u8], scalar: &[u8]) {
-    c_zemu_log_stack(b"scalarmult in sdk\x00".as_ref());
     unsafe {
         c_jubjub_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
     }

@@ -530,43 +530,42 @@ export default class ZCashApp {
     return ZCashApp.prepareChunks(serializePathv1(path), message);
   }
 
-  async saplingSendChunk(version, chunkIdx, chunkNum, chunk) {
-    return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk);
+  async saplingSendChunk(version, chunkIdx, chunkNum, chunk, p2) {
+    return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk, p2);
   }
 
-  async checkandsign(message) {
+  async checkandsign(message, txVersion) {
     return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.CHECKANDSIGN, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(
-        async (response) => {
-          let result = {
-            return_code: response.return_code,
-            error_message: response.error_message,
-            signdata: null,
-          };
+      return this.saplingSendChunk(INS.CHECKANDSIGN, 1, chunks.length, chunks[0], txVersion, [
+        ERROR_CODE.NoError,
+      ]).then(async (response) => {
+        let result = {
+          return_code: response.return_code,
+          error_message: response.error_message,
+          signdata: null,
+        };
 
-          for (let i = 1; i < chunks.length; i += 1) {
-            // eslint-disable-next-line no-await-in-loop
-            result = await this.saplingSendChunk(INS.CHECKANDSIGN, 1 + i, chunks.length, chunks[i]);
-            if (result.return_code !== ERROR_CODE.NoError) {
-              break;
-            }
+        for (let i = 1; i < chunks.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          result = await this.saplingSendChunk(INS.CHECKANDSIGN, 1 + i, chunks.length, chunks[i], txVersion);
+          if (result.return_code !== ERROR_CODE.NoError) {
+            break;
           }
+        }
 
-          return {
-            return_code: result.return_code,
-            error_message: result.error_message,
-            // ///
-            signdata: result.signdata,
-          };
-        },
-        processErrorResponse,
-      );
+        return {
+          return_code: result.return_code,
+          error_message: result.error_message,
+          // ///
+          signdata: result.signdata,
+        };
+      }, processErrorResponse);
     }, processErrorResponse);
   }
 
   async inittx(message) {
     return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.INIT_TX, 1, chunks.length, chunks[0], [ERROR_CODE.NoError]).then(
+      return this.saplingSendChunk(INS.INIT_TX, 1, chunks.length, chunks[0], 0x00, [ERROR_CODE.NoError]).then(
         async (response) => {
           let result = {
             return_code: response.return_code,
@@ -576,7 +575,7 @@ export default class ZCashApp {
 
           for (let i = 1; i < chunks.length; i += 1) {
             // eslint-disable-next-line no-await-in-loop
-            result = await this.saplingSendChunk(INS.INIT_TX, 1 + i, chunks.length, chunks[i]);
+            result = await this.saplingSendChunk(INS.INIT_TX, 1 + i, chunks.length, chunks[i], 0x00);
             if (result.return_code !== ERROR_CODE.NoError) {
               break;
             }

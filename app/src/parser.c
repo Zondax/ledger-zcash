@@ -33,13 +33,6 @@
 
 #define DEFAULT_MEMOTYPE        0xf6
 
-#if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
-// For some reason NanoX requires this function
-void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function){
-    while(1) {};
-}
-#endif
-
 typedef enum {
     type_tin = 0,
     type_tout = 1,
@@ -126,7 +119,7 @@ void view_tx_state() {
     return;
 }
 
-parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
+parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen) {
     CHECK_PARSER_ERR(parser_init(ctx, data, dataLen))
 
 
@@ -134,17 +127,17 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t d
     return parser_ok;
 }
 
-parser_error_t parser_validate(const parser_context_t *ctx) {
+parser_error_t parser_validate() {
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
-    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
+    CHECK_PARSER_ERR(parser_getNumItems(&numItems))
 
     char tmpKey[30];
     char tmpVal[30];
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount = 0;
-        CHECK_PARSER_ERR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
+        CHECK_PARSER_ERR(parser_getItem( idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
 
     return parser_ok;
@@ -159,10 +152,9 @@ parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
     return parser_ok;
 }
 
-parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
+parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVal,
                                                 uint16_t outValLen, uint8_t pageIdx,
                                                 uint8_t *pageCount) {
-    ZEMU_LOGF(50, "[parser_sapling_display_address_t]\n")
     MEMZERO(outVal, outValLen);
 
     uint8_t address[VERSION_SIZE + CX_RIPEMD160_SIZE + CX_SHA256_SIZE];
@@ -183,11 +175,8 @@ parser_error_t parser_sapling_display_address_t(uint8_t *addr, char *outVal,
 
     int err = encode_base58(address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, tmpBuffer, &outLen);
     if (err != 0) {
-        ZEMU_LOGF(50, "[parser_sapling_display_address_t] ERR %d\n", err)
         return parser_unexpected_error;
     }
-
-    ZEMU_LOGF(50, "addr size %d\n", outLen)
 
     pageString(outVal, outValLen, (char *) tmpBuffer, pageIdx, pageCount);
     return parser_ok;
@@ -205,7 +194,7 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
                           BECH32_HRP,
                           address,
                           sizeof(address),
-                          1);
+                          1, BECH32_ENCODING_BECH32);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
@@ -240,7 +229,7 @@ parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
+parser_error_t parser_getNumItems(uint8_t *num_items) {
     *num_items = t_inlist_len() * NUM_ITEMS_TIN +
                  t_outlist_len() * NUM_ITEMS_TOUT +
                  spendlist_len() * NUM_ITEMS_SSPEND +
@@ -250,8 +239,7 @@ parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_item
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_context_t *ctx,
-                              uint8_t displayIdx,
+parser_error_t parser_getItem(uint8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
                               char *outVal, uint16_t outValLen,
                               uint8_t pageIdx, uint8_t *pageCount) {
@@ -262,10 +250,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     *pageCount = 1;
 
     uint8_t numItems;
-    CHECK_PARSER_ERR(parser_getNumItems(ctx, &numItems))
+    CHECK_PARSER_ERR(parser_getNumItems(&numItems))
     CHECK_APP_CANARY()
 
-    ZEMU_LOGF(50, "[tx_getItem] items: %d\n", numItems)
 
     if (displayIdx < 0 || displayIdx >= numItems) {
         return parser_no_data;
@@ -279,10 +266,8 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
 
     switch (prs.type) {
         case type_tin : {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_tin\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_TIN;
-            t_input_item_t *item = t_inlist_retrieve_item(itemnum);
+            const t_input_item_t *item = t_inlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TIN;
 
             switch (itemtype) {
@@ -298,8 +283,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_tout : {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_tout\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_TOUT;
             t_output_item_t *item = t_outlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_TOUT;
@@ -315,8 +298,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
             }
         }
         case type_sspend: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_sspend\n")
-
             uint8_t itemnum = prs.index / NUM_ITEMS_SSPEND;
             spend_item_t *item = spendlist_retrieve_item(itemnum);
             uint8_t itemtype = prs.index % NUM_ITEMS_SSPEND;
@@ -334,7 +315,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_sout: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_sout\n")
 
             uint8_t itemnum = prs.index / NUM_ITEMS_SOUT;
             output_item_t *item = outputlist_retrieve_item(itemnum);
@@ -377,8 +357,6 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         }
 
         case type_txfee: {
-            ZEMU_LOGF(50, "[tx_getItem] type: type_txfee\n")
-
             snprintf(outKey, outKeyLen, "Fee");
             return parser_sapling_display_value(get_totalvalue(), outVal, outValLen, pageIdx, pageCount);
         }
