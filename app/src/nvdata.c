@@ -58,7 +58,7 @@ zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
     transaction_header.total_value += v;
 
     t_input_item_t newitem;
-    MEMCPY(newitem.path, p, PATH_SIZE * sizeof(uint32_t));
+    MEMCPY(newitem.path, (uint8_t *)p, PATH_SIZE * sizeof(uint32_t));
     MEMCPY(newitem.script, script, SCRIPT_SIZE);
     newitem.value = v;
 
