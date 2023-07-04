@@ -30,7 +30,6 @@
 #include "parser_impl.h"
 #include "parser_common.h"
 #include "chacha.h"
-#include "common/app_main.h"
 #include "lcx_ripemd160.h"
 
 uint32_t hdPath[HDPATH_LEN_DEFAULT];
