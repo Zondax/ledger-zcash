@@ -20,7 +20,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#if defined (TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2)
+#if defined (TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX)
 #include "lcx_rng.h"
 unsigned char *bolos_cx_rng(uint8_t *buffer, size_t len) {
     cx_rng_no_throw(buffer, len);
