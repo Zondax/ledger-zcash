@@ -50,6 +50,7 @@ transaction_header_t transaction_header;
 //////////////////////////////////////////////////////////////
 
 zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
+    zemu_log_stack("let's append");
     if (transaction_header.t_in_len >= T_IN_LIST_SIZE) {
         return zxerr_unknown;
     }
@@ -65,6 +66,7 @@ zxerr_t t_inlist_append_item(uint32_t *p, uint8_t *script, uint64_t v) {
             &newitem, sizeof(t_input_item_t));
 
     transaction_header.t_in_len += 1;
+    zemu_log_stack("appended");
     return zxerr_ok;
 }
 

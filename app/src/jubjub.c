@@ -108,7 +108,7 @@ void u8_cmov(uint8_t *r, uint8_t a, uint8_t bit) {
 void jubjub_field_frombytes(jubjub_fq r, const uint8_t *s) {
     MEMZERO(r, sizeof(jubjub_fq));
     MEMCPY(r, s, sizeof(jubjub_fq));
-    cx_math_modm(r, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_modm_no_throw(r, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 int jubjub_field_iszero(const jubjub_fq r) {
@@ -130,35 +130,35 @@ void jubjub_field_copy(jubjub_fq r, const jubjub_fq a) {
 }
 
 void jubjub_field_mult(jubjub_fq r, const jubjub_fq a, const jubjub_fq b) {
-    cx_math_multm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_multm_no_throw(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_add(jubjub_fq r, const jubjub_fq a, const jubjub_fq b) {
-    cx_math_addm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_addm_no_throw(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_sub(jubjub_fq r, const jubjub_fq a, const jubjub_fq b) {
-    cx_math_subm(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_subm_no_throw(r, a, b, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_inverse(jubjub_fq r, jubjub_fq a) {
-    cx_math_invprimem(r, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_invprimem_no_throw(r, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_square(jubjub_fq r, jubjub_fq a) {
-    cx_math_multm(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_multm_no_throw(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_double(jubjub_fq r, jubjub_fq a) {
-    cx_math_addm(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_addm_no_throw(r, a, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_pow_t(jubjub_fq r, const jubjub_fq a) {
-    cx_math_powm(r, a, JUBJUB_FQ_SQRT_T, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_powm_no_throw(r, a, JUBJUB_FQ_SQRT_T, JUBJUB_FIELD_BYTES, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_negate(jubjub_fq r, const jubjub_fq a) {
-    cx_math_subm(r, JUBJUB_FQ_ZERO, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
+    cx_math_subm_no_throw(r, JUBJUB_FQ_ZERO, a, JUBJUB_FQ_MODULUS_BYTES, JUBJUB_FIELD_BYTES);
 }
 
 void jubjub_field_cmov(jubjub_fq r, const jubjub_fq a, uint8_t bit) {
