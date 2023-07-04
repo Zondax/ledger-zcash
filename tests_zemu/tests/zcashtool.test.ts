@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
 import { ZcashBuilderBridge } from '@zondax/zcashtools'
@@ -31,16 +31,11 @@ const defaultOptions = {
 
 jest.setTimeout(600000)
 
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
-async function takeLastSnapshot(testname: string, index: number, sim: any) {
-  await sim.waitForText('Ready', 30000)
+async function takeLastSnapshot(testname: string, index: number, sim: Zemu) {
+  await sim.waitUntilScreenIs(sim.getMainMenuSnapshot(), 30000)
   await sim.takeSnapshotAndOverwrite('.', testname, index)
-  await sim.compareSnapshots('.', testname, index)
+  sim.compareSnapshots('.', testname, index)
 }
-
 
 describe('Get keys', function () {
   test.each(models)('get ivk', async function (m) {
@@ -192,7 +187,12 @@ describe('Addresses and diversifiers', function () {
   test.each(models)('show shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new ZCashApp(sim.getTransport())
 
       const path = 1000
@@ -309,9 +309,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -477,7 +477,7 @@ describe('End to end transactions', function () {
        For this, it uses the input from inittx to verify.
        If all checks are ok, the ledger signs the transaction.
         */
-//      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
+      //      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
       const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
@@ -512,9 +512,9 @@ describe('End to end transactions', function () {
       Note that for this transaction, we do not have any transparent signatures.
       */
 
-     const signatures = {
-       transparent_sigs: [],
-       spend_sigs: [req7.sig_raw, req8.sig_raw],
+      const signatures = {
+        transparent_sigs: [],
+        spend_sigs: [req7.sig_raw, req8.sig_raw],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -606,9 +606,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -897,9 +897,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1180,9 +1180,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1456,9 +1456,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1600,9 +1600,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -2585,7 +2585,7 @@ describe('Failing transactions', function () {
   test.each(models)('extract data after tx reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({ ...defaultOptions, model: m.name, rejectKeyword: m.name === 'stax' ? 'Hold' : '' })
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -2650,7 +2650,7 @@ describe('Failing transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`, 'REJECT')
+      await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`)
 
       const req = await reqinit
 
@@ -2718,16 +2718,15 @@ describe('Failing transactions', function () {
         s_output: [s_out1, s_out2],
       }
 
-
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -2735,11 +2734,10 @@ describe('Failing transactions', function () {
       expect(req.return_code).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
-      let hash = crypto.createHash('sha256')
+      const hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
-      let h = hash.digest('hex')
+      const h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
-
 
       const req2 = await app.extractspenddata()
       console.log(req2)
@@ -2866,5 +2864,4 @@ describe('Failing transactions', function () {
       await sim.close()
     }
   })
-
 })
