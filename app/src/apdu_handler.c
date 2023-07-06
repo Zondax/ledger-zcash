@@ -23,6 +23,7 @@
 #include <ux.h>
 
 #include "view.h"
+#include "swap.h"
 #include "actions.h"
 #include "tx.h"
 #include "addr.h"
@@ -224,10 +225,24 @@ __Z_INLINE void handleInitTX(volatile uint32_t *flags,
 
 ////////////
 
-    view_review_init(tx_getItem, tx_getNumItems, app_reply_hash);
+    if (G_swap_state.called_from_swap) {
+        if (outputlist_len()  + spendlist_len() > 0) {
+            // swaps can only be transparent transactions
+            transaction_reset();
+            MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
+            G_io_apdu_buffer[0] = err;
+            *tx = 1;
+            THROW(APDU_CODE_EXTRACT_TRANSACTION_FAIL);
+        }
+        G_swap_state.should_exit = 1;
+        app_reply_hash();
+    } else {
+        view_review_init(tx_getItem, tx_getNumItems, app_reply_hash);
 
-    view_review_show(REVIEW_TXN);
-    *flags |= IO_ASYNCH_REPLY;
+        view_review_show(REVIEW_TXN);
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
 }
 
 // Transmitted notes are stored on the blockchain in encrypted form.

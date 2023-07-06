@@ -20,6 +20,7 @@
 #include "parser.h"
 #include <string.h>
 #include "zxmacros.h"
+#include "swap.h"
 
 // Ram
 uint8_t ram_buffer[RAM_BUFFER_SIZE];
@@ -79,6 +80,15 @@ const char *tx_parse() {
 
     if (err != parser_ok) {
         return parser_getErrorDescription(err);
+    }
+
+    // If in swap mode, compare swap tx parameters with stored info.
+    if (G_swap_state.called_from_swap) {
+        err = check_swap_conditions(&ctx_parsed_tx);
+        CHECK_APP_CANARY()
+        if (err != parser_ok) {
+            return parser_getErrorDescription(err);
+        }
     }
 
     return NULL;

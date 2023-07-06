@@ -58,6 +58,14 @@ parser_error_t parser_getItem(uint8_t displayIdx,
                               char *outValue, uint16_t outValueLen,
                               uint8_t pageIdx, uint8_t *pageCount);
 
+parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVal,
+                                                uint16_t outValLen, uint8_t pageIdx,
+                                                uint8_t *pageCount);
+
+parser_error_t parser_sapling_display_value(uint64_t value, char *outVal,
+                                            uint16_t outValLen, uint8_t pageIdx,
+                                            uint8_t *pageCount);
+
 void parser_resetState();
 
 #ifdef __cplusplus

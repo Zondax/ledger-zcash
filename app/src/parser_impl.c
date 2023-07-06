@@ -84,6 +84,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Max nested calls reached";
         case parser_tx_call_vec_too_large:
             return "Call vector exceeds limit";
+        case parser_swap_tx_wrong_dest_addr:
+            return "Swap destination addresses do not match";
+        case parser_swap_tx_wrong_amount:
+            return "Swap amounts do not match";
         default:
             return "Unrecognized error code";
     }

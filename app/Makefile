@@ -26,6 +26,8 @@ include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.installer_script
 
 include $(BOLOS_SDK)/Makefile.defines
 
+DEFINES += HAVE_SWAP
+
 $(info ************ TARGET_NAME  = [$(TARGET_NAME)])
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.app_testing
