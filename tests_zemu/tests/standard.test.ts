@@ -27,7 +27,7 @@ const defaultOptions = {
 jest.setTimeout(600000)
 
 describe('Standard', function () {
-  test.each(models)('can start and stop container', async function (m) {
+  test.concurrent.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -36,7 +36,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test.concurrent.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
       const mainmenuNavigation = zondaxMainmenuNavigation(m.name)
@@ -47,7 +47,7 @@ describe('Standard', function () {
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test.concurrent.each(models)('get app version', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -69,7 +69,7 @@ describe('Standard', function () {
 })
 
 describe('Addresses', function () {
-  test.each(models)('get unshielded address', async function (m) {
+  test.concurrent.each(models)('get unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -90,7 +90,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show unshielded address', async function (m) {
+  test.concurrent.each(models)('show unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -121,7 +121,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address', async function (m) {
+  test.concurrent.each(models)('get shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -143,7 +143,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show shielded address', async function (m) {
+  test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
