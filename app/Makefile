@@ -42,7 +42,7 @@ $(info COIN  = [$(COIN)])
 
 ifeq ($(COIN),ZEC)
 # Main app configuration
-APPNAME = "Zcash"
+APPNAME = "Zcash-new"
 APPPATH = "44'/133'"
 else
 define error_message

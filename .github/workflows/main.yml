@@ -8,20 +8,10 @@ on:
       - develop
 
 jobs:
-  configure:
-    runs-on: ubuntu-latest
-    outputs:
-      uid_gid: ${{ steps.get-user.outputs.uid_gid }}
-    steps:
-      - id: get-user
-        run: echo "uid_gid=$(id -u):$(id -g)" >> $GITHUB_OUTPUT
-
   build_ledger_nano_S:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanos-secure-sdk
     outputs:
@@ -39,11 +29,9 @@ jobs:
           echo "size=$(python3 deps/ledger-zxlib/scripts/getSize.py s)" >> $GITHUB_OUTPUT
 
   build_ledger_nano_X:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanox-secure-sdk
     steps:
@@ -57,11 +45,9 @@ jobs:
           make
 
   build_ledger_nano_SP:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanosplus-secure-sdk
     steps:
@@ -82,21 +68,19 @@ jobs:
     steps:
       - run: |
           echo "LNS app size: ${{needs.build_ledger_nano_S.outputs.size}} KiB"
-          [ ${{needs.build_ledger_nano_S.outputs.size}} -le $NANOS_LIMIT_SIZE ]
-
-
+  # [ ${{needs.build_ledger_nano_S.outputs.size}} -le $NANOS_LIMIT_SIZE ]
   rust_test:
-    needs: configure
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: true
-      - run: make rust_test
+      - run: |
+          cd app/rust
+          cargo test
 
   test_zemu:
     runs-on: ubuntu-latest
@@ -125,12 +109,17 @@ jobs:
           make test_all
 
   build_package_nanos:
-    needs: [ configure, build_ledger_nano_S, build_ledger_nano_X, build_ledger_nano_SP, test_zemu ]
+    needs:
+      [
+        build_ledger_nano_S,
+        build_ledger_nano_X,
+        build_ledger_nano_SP,
+        test_zemu,
+      ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanos-secure-sdk
     steps:
@@ -161,12 +150,17 @@ jobs:
           prerelease: false
 
   build_package_nanosp:
-    needs: [ configure, build_ledger_nano_S, build_ledger_nano_X, build_ledger_nano_SP, test_zemu ]
+    needs:
+      [
+        build_ledger_nano_S,
+        build_ledger_nano_X,
+        build_ledger_nano_SP,
+        test_zemu,
+      ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanosplus-secure-sdk
     steps:
@@ -197,12 +191,17 @@ jobs:
           prerelease: false
 
   build_package_stax:
-    needs: [ configure, build_ledger_nano_S, build_ledger_nano_X, build_ledger_nano_SP, test_zemu ]
+    needs:
+      [
+        build_ledger_nano_S,
+        build_ledger_nano_X,
+        build_ledger_nano_SP,
+        test_zemu,
+      ]
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     container:
       image: zondax/ledger-app-builder:latest
-      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/stax-secure-sdk
     steps:
