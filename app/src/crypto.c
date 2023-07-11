@@ -1113,8 +1113,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen, c
                                              &signatureLen,
                                              &info))
 
-        if (convertDERtoRSV(signature->step1.der_signature, info,  signature->step1.r, signature->step1.s, &signature->step1.v) != no_error ||
-            transparent_signatures_append(signature->step2.rs) != zxerr_ok) {
+        if (convertDERtoRSV(signature->step1.der_signature, info,  signature->step1.r, signature->step1.s, &signature->step1.v) != no_error) {
             goto catch_cx_error;
         }
         zxerr_t zxerr = transparent_signatures_append(signature->step2.rs);
