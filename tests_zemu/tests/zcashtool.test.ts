@@ -1182,9 +1182,9 @@ describe('End to end transactions', function () {
 
         await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-        const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
-        const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
-        await sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
         const req = await reqinit
 

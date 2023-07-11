@@ -7,7 +7,7 @@
   "author": "Zondax AG <hello@zondax.ch>",
   "license": "Apache-2.0",
   "dependencies": {
-    "neon-cli": "^0.9.1"
+    "neon-cli": "^0.10.1"
   },
   "scripts": {
     "install": "./node_modules/.bin/neon build",

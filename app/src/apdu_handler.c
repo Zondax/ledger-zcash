@@ -47,7 +47,8 @@ __Z_INLINE void handle_getversion(volatile uint32_t *tx) {
     G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
     G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
     G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
-    G_io_apdu_buffer[4] = !IS_UX_ALLOWED;
+    // SDK won't reply any APDU message if the device is locked --> Set device_locked = false
+    G_io_apdu_buffer[4] = 0;
 
     G_io_apdu_buffer[5] = (TARGET_ID >> 24) & 0xFF;
     G_io_apdu_buffer[6] = (TARGET_ID >> 16) & 0xFF;
@@ -557,7 +558,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -610,7 +611,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -701,7 +702,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
