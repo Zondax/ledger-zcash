@@ -22,7 +22,8 @@ TESTS_JS_PACKAGE = "@zondax/ledger-zcash"
 TESTS_JS_DIR = $(CURDIR)/js
 
 ifeq ($(BOLOS_SDK),)
-	include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
+ZXLIB_COMPILE_STAX ?= 1
+include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
 else
 default:
 	$(MAKE) -C app
@@ -38,3 +39,9 @@ zcashtools_test: zcashtools_build
 	cd zcashtools/neon && yarn test
 
 zemu_install: zcashtools_build
+
+test_all:
+	make zemu_install
+	make zcashtools_test
+	make
+	make zemu_test

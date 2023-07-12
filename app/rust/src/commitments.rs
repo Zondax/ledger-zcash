@@ -350,6 +350,8 @@ pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> b
 
 #[cfg(test)]
 mod tests {
+    use byteorder::ByteOrder;
+
     use super::*;
 
     #[test]

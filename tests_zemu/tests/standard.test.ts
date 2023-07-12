@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import Zemu, { ButtonKind, DEFAULT_START_OPTIONS, zondaxMainmenuNavigation } from '@zondax/zemu'
 import { APP_SEED, models } from './common'
 import ZCashApp from '@zondax/ledger-zcash'
 
@@ -26,33 +26,28 @@ const defaultOptions = {
 
 jest.setTimeout(600000)
 
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
 describe('Standard', function () {
-  // eslint-disable-next-line jest/expect-expect
-  test.each(models)('can start and stop container', async function (m) {
+  test.concurrent.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
-      await sim.dumpEvents()
     } finally {
       await sim.close()
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test.concurrent.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
+      const mainmenuNavigation = zondaxMainmenuNavigation(m.name)
       await sim.start({ ...defaultOptions, model: m.name })
-      expect(await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, [1, 0, 0, 4, -5])).toEqual(true)
+      await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, mainmenuNavigation.schedule)
     } finally {
       await sim.close()
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test.concurrent.each(models)('get app version', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -74,7 +69,7 @@ describe('Standard', function () {
 })
 
 describe('Addresses', function () {
-  test.each(models)('get unshielded address', async function (m) {
+  test.concurrent.each(models)('get unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -95,20 +90,21 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show unshielded address', async function (m) {
+  test.concurrent.each(models)('show unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new ZCashApp(sim.getTransport())
 
       const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0/1", true)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-
-      // TODO: capture screenshots
-      await sim.clickRight()
-      await sim.clickRight()
-      await sim.clickBoth()
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_address_unshielded`)
 
       const addr = await addrRequest
       console.log(addr)
@@ -125,7 +121,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address', async function (m) {
+  test.concurrent.each(models)('get shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -147,21 +143,21 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show shielded address', async function (m) {
+  test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new ZCashApp(sim.getTransport())
 
       const addrRequest = app.showAddressAndPubKey(1000)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
-
-      // TODO: capture screenshots
-      await sim.clickRight()
-      await sim.clickRight()
-      await sim.clickRight()
-      await sim.clickBoth()
+      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_address_shielded`)
 
       const addr = await addrRequest
       console.log(addr)

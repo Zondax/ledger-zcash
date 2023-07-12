@@ -38,6 +38,82 @@
 
 #include "view_internal.h"
 
+__Z_INLINE void handle_getversion(volatile uint32_t *tx) {
+#ifdef DEBUG
+    G_io_apdu_buffer[0] = 0xFF;
+#else
+    G_io_apdu_buffer[0] = 0;
+#endif
+    G_io_apdu_buffer[1] = LEDGER_MAJOR_VERSION;
+    G_io_apdu_buffer[2] = LEDGER_MINOR_VERSION;
+    G_io_apdu_buffer[3] = LEDGER_PATCH_VERSION;
+    // SDK won't reply any APDU message if the device is locked --> Set device_locked = false
+    G_io_apdu_buffer[4] = 0;
+
+    G_io_apdu_buffer[5] = (TARGET_ID >> 24) & 0xFF;
+    G_io_apdu_buffer[6] = (TARGET_ID >> 16) & 0xFF;
+    G_io_apdu_buffer[7] = (TARGET_ID >> 8) & 0xFF;
+    G_io_apdu_buffer[8] = (TARGET_ID >> 0) & 0xFF;
+
+    *tx += 9;
+    THROW(APDU_CODE_OK);
+}
+
+__Z_INLINE void extractHDPath(uint32_t rx, uint32_t offset) {
+    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_DEFAULT) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    MEMCPY(hdPath, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_DEFAULT);
+
+    const bool mainnet = hdPath[0] == HDPATH_0_DEFAULT &&
+                         hdPath[1] == HDPATH_1_DEFAULT;
+
+    const bool testnet = hdPath[0] == HDPATH_0_TESTNET &&
+                         hdPath[1] == HDPATH_1_TESTNET;
+
+    if (!mainnet && !testnet) {
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+}
+
+__Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
+    const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
+
+    /*
+    if (G_io_apdu_buffer[OFFSET_P2] != 0 && G_io_apdu_buffer[OFFSET_P2] != 4 && G_io_apdu_buffer[OFFSET_P2] != 5 ) {
+        THROW(APDU_CODE_INVALIDP1P2);
+    }
+     */
+
+    if (rx < OFFSET_DATA) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    uint32_t added;
+    switch (payloadType)
+    {
+        case 0:
+            tx_initialize();
+            tx_reset();
+            return false;
+        case 1:
+            added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);
+            if (added != rx - OFFSET_DATA) {
+                THROW(APDU_CODE_OUTPUT_BUFFER_TOO_SMALL);
+            }
+            return false;
+        case 2:
+            added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);
+            if (added != rx - OFFSET_DATA) {
+                THROW(APDU_CODE_OUTPUT_BUFFER_TOO_SMALL);
+            }
+            return true;
+    }
+    THROW(APDU_CODE_INVALIDP1P2);
+}
+
+
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleExtractSpendSignature]\n");
 
@@ -482,7 +558,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -535,7 +611,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
@@ -626,7 +702,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 
     if (requireConfirmation) {
         view_review_init(addr_getItem, addr_getNumItems, app_reply_address);
-        view_review_show(1);
+        view_review_show(REVIEW_ADDRESS);
         *flags |= IO_ASYNCH_REPLY;
         return;
     }
