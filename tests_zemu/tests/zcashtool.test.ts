@@ -18,6 +18,7 @@ import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
 import { ZcashBuilderBridge } from '@zondax/zcashtools'
+import { TX_INPUT_DATA } from './vectors'
 
 const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
@@ -257,38 +258,8 @@ describe('End to end transactions', function () {
        All this info is gathered from the UI and put in the correct jsons.
         */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-      // CHANGE ADDRESS:
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      }
+      const tx_input_data = TX_INPUT_DATA[0];
+      const { s_spend: [s_spend1, s_spend2], s_output: [s_out1, s_out2] } = tx_input_data;
 
       /*
        The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -554,38 +525,12 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 65000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[1];
+      const {
         t_in: [tin1],
-        t_out: [],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -845,37 +790,14 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
+      const tx_input_data = TX_INPUT_DATA[2];
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const {
         t_in: [],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1122,43 +1044,14 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
 
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3]
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data;
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1420,34 +1313,14 @@ describe('End to end transactions', function () {
       /*
       In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
        */
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 50000,
-      }
 
-      const tin2 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 50000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const tout2 = {
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 100000 - 1000 - 10000,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[4];
+      const {
         t_in: [tin1, tin2],
         t_out: [tout1, tout2],
         s_spend: [],
         s_output: [],
-      }
+      } = tx_input_data
 
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -1560,39 +1433,13 @@ describe('End to end transactions', function () {
       /*
       In this test, we try to extract signatures without having done the checks and signing.
        */
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[5]
+      const {
         t_in: [],
         t_out: [],
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -1671,38 +1518,13 @@ describe('Failing transactions', function () {
       In this test, we try to extract signatures without having done the checks and signing.
        */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[5]
+      const {
         t_in: [],
         t_out: [],
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -1748,43 +1570,13 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3];
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2025,43 +1817,14 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3];
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2277,43 +2040,44 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
+      // const tin1 = {
+      //   path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
+      //   address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
+      //   value: 60000,
+      // }
 
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
+      // const tout1 = {
+      //   address: '1976a914000000000000000000000000000000000000000088ac',
+      //   value: 10000,
+      // }
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
+      // const s_spend1 = {
+      //   path: 1000,
+      //   address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      //   value: 40000,
+      // }
 
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
+      // const s_out1 = {
+      //   address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
+      //   value: 55000,
+      //   memo_type: 0xf6,
+      //   ovk: null,
+      // }
 
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
+      // const s_out2 = {
+      //   address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      //   value: 100000 - 1000 - 55000 - 10000,
+      //   memo_type: 0xf6,
+      //   ovk: null,
+      // }
 
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3];
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2517,43 +2281,14 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 10000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3];
+      tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data;
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2598,38 +2333,13 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[5];
+      const {
         t_in: [],
         t_out: [],
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2685,38 +2395,13 @@ describe('Failing transactions', function () {
       // here 1000 represents the fee
       const builder = new ZcashBuilderBridge(1000)
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-      // CHANGE ADDRESS:
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[5];
+      const {
         t_in: [],
         t_out: [],
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
 
       const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
