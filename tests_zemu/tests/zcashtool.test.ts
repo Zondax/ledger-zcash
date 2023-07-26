@@ -1699,7 +1699,7 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
-        ovk: null,
+        ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
@@ -1725,7 +1725,7 @@ describe('Failing transactions', function () {
       const outj2 = {
         rcv: req5.rcv_raw,
         rseed: req5.rseed_raw,
-        ovk: null,
+        ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
@@ -2281,7 +2281,8 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[3];
+      //use stringify+parse for deep copy
+      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]));
       tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
       const {
         t_in: [tin1],
