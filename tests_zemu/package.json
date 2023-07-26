@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "clean": "ts-node tests/pullImageKillOld.ts",
-    "test": "yarn clean && jest --maxConcurrency 2"
+    "test": "yarn clean && jest --maxConcurrency 2",
+    "try": "ts-node try.ts"
   },
   "dependencies": {
     "@zondax/ledger-zcash": "link:../js",
@@ -22,6 +23,8 @@
     "@zondax/zemu": "^0.43.1"
   },
   "devDependencies": {
+    "@ledgerhq/hw-transport-node-hid": "^6.27.19",
+    "@ledgerhq/logs": "^6.10.1",
     "@types/jest": "^28.1.1",
     "@types/ledgerhq__hw-transport": "^4.21.4",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
