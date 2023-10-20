@@ -3,7 +3,7 @@
   "type": "commonjs",
   "version": "0.1.0",
   "description": "",
-  "main": "lib/index.js",
+  "main": "build/index.js",
   "author": "Zondax AG <hello@zondax.ch>",
   "license": "Apache-2.0",
   "dependencies": {
@@ -11,6 +11,11 @@
   },
   "scripts": {
     "install": "./node_modules/.bin/neon build",
+    "build": "tsc",
     "test": "node -e 'require(\"./\")'"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.7",
+    "typescript": "^5.2.2"
   }
 }
