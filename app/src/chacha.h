@@ -12,6 +12,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
+#pragma once
+
+#include <stddef.h>
+#include <stdint.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

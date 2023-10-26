@@ -20,8 +20,6 @@
 #include "cx.h"
 #include "os.h"
 #include "zxmacros.h"
-#include <stdint.h>
-#include <stdlib.h>
 
 #define U8TO32_LITTLE(p)                                                       \
   (((uint32_t)((p)[0])) | ((uint32_t)((p)[1]) << 8) |                          \

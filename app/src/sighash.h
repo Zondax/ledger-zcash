@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 typedef enum {
   transparent = 0,
   shielded = 1,

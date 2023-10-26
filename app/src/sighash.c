@@ -20,7 +20,6 @@
 #include "nvdata.h"
 #include "os.h"
 #include "txid.h"
-#include <inttypes.h>
 #include <zxformat.h>
 #include <zxmacros.h>
 
