@@ -1,6 +1,6 @@
 /// <reference types="node" />
 export interface TinData {
-    path: Uint32Array[];
+    path: Uint32Array;
     address: string;
     value: number;
 }
