@@ -6,6 +6,7 @@
   "main": "build/index.js",
   "author": "Zondax AG <hello@zondax.ch>",
   "license": "Apache-2.0",
+  "files": ["params/*"],
   "dependencies": {
     "neon-cli": "^0.10.1"
   },

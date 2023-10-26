@@ -2,6 +2,8 @@
 import { OutputInfo, SpendInfo, TransactionSignatures, TransparentInputInfo, TransparentOutputInfo } from './native';
 export type { InitData } from './native';
 export declare const get_inittx_data: (_: import("./native").InitData) => Buffer;
+export declare var SPEND_PATH: string;
+export declare var OUTPUT_PATH: string;
 export declare class ZcashBuilderBridge {
     private boxed;
     constructor(fee: number);

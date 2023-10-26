@@ -1,7 +1,12 @@
+import { resolve } from 'path'
+
 import addon, { OutputInfo, SpendInfo, TransactionSignatures, TransparentInputInfo, TransparentOutputInfo, ZcashBuilder } from './native';
 
 export type { InitData } from './native'
 export const get_inittx_data = addon.get_inittx_data;
+
+export var SPEND_PATH = resolve("../params/sapling-spend.params");
+export var OUTPUT_PATH = resolve("../params/sapling-output.params");
 
 export class ZcashBuilderBridge {
     private boxed: ZcashBuilder;
