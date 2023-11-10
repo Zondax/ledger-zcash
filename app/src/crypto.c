@@ -29,6 +29,7 @@
 #include "rslib.h"
 #include "sighash.h"
 #include "txid.h"
+#include "zip-0317.h"
 #include "zxformat.h"
 #include "zxmacros.h"
 
@@ -357,10 +358,16 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen,
     start += OUTPUT_INPUT_LEN;
   }
 
-  uint64_t value_flash = get_totalvalue();
-  if (value_flash != 1000) {
+  uint64_t tx_value__flash = get_totalvalue();
+#ifdef HAVE_ZIP0317
+  if (tx_value__flash != zip_0317(t_in_len, t_out_len, spend_len, output_len)) {
     return (zxerr_t)EXTRACT_SAPLING_ED;
   }
+#else
+  if (tx_value__flash != 1000) {
+    return (zxerr_t)EXTRACT_SAPLING_ED;
+  }
+#endif
 
   if (spend_len > 0) {
     set_state(STATE_PROCESSED_INPUTS); // need both spend info and output info
