@@ -12,6 +12,11 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
+#pragma once
+
+#include <stddef.h>
+#include <stdint.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -21,11 +26,9 @@ extern "C" {
 void CRYPTO_hchacha20(uint8_t out[32], const uint8_t key[32],
                       const uint8_t nonce[16]);
 
-
-void chacha(uint8_t *out, const uint8_t *in, size_t in_len,
-            const uint8_t *key, const uint8_t *nonce,
-            uint32_t counter);
+void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key,
+            const uint8_t *nonce, uint32_t counter);
 
 #if defined(__cplusplus)
-}  // extern C
-#endif  // OPENSSL_HEADER_CHACHA_INTERNAL
+} // extern C
+#endif // OPENSSL_HEADER_CHACHA_INTERNAL
