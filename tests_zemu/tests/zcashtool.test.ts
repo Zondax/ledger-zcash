@@ -16,11 +16,10 @@
 
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
-import { ZcashBuilderBridge } from '@zondax/zcashtools'
+import { APP_SEED, models } from './common'
+import addon, { ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
 import { TX_INPUT_DATA } from './vectors'
 
-const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
 const tx_version = 0x05
 
@@ -258,8 +257,11 @@ describe('End to end transactions', function () {
        All this info is gathered from the UI and put in the correct jsons.
         */
 
-      const tx_input_data = TX_INPUT_DATA[0];
-      const { s_spend: [s_spend1, s_spend2], s_output: [s_out1, s_out2] } = tx_input_data;
+      const tx_input_data = TX_INPUT_DATA[0]
+      const {
+        s_spend: [s_spend1, s_spend2],
+        s_output: [s_out1, s_out2],
+      } = tx_input_data
 
       /*
        The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -525,7 +527,7 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[1];
+      const tx_input_data = TX_INPUT_DATA[1]
       const {
         t_in: [tin1],
         s_spend: [s_spend1],
@@ -790,7 +792,7 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[2];
+      const tx_input_data = TX_INPUT_DATA[2]
 
       const {
         t_in: [],
@@ -1044,14 +1046,13 @@ describe('End to end transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-
       const tx_input_data = TX_INPUT_DATA[3]
       const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      } = tx_input_data;
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1314,7 +1315,7 @@ describe('End to end transactions', function () {
       In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
        */
 
-      const tx_input_data = TX_INPUT_DATA[4];
+      const tx_input_data = TX_INPUT_DATA[4]
       const {
         t_in: [tin1, tin2],
         t_out: [tout1, tout2],
@@ -1570,7 +1571,7 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[3];
+      const tx_input_data = TX_INPUT_DATA[3]
       const {
         t_in: [tin1],
         t_out: [tout1],
@@ -1817,14 +1818,13 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[3];
+      const tx_input_data = TX_INPUT_DATA[3]
       const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
-
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2071,7 +2071,7 @@ describe('Failing transactions', function () {
       //   ovk: null,
       // }
 
-      const tx_input_data = TX_INPUT_DATA[3];
+      const tx_input_data = TX_INPUT_DATA[3]
       const {
         t_in: [tin1],
         t_out: [tout1],
@@ -2282,14 +2282,14 @@ describe('Failing transactions', function () {
        */
 
       //use stringify+parse for deep copy
-      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]));
+      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
       tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
       const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      } = tx_input_data;
+      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2334,7 +2334,7 @@ describe('Failing transactions', function () {
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tx_input_data = TX_INPUT_DATA[5];
+      const tx_input_data = TX_INPUT_DATA[5]
       const {
         t_in: [],
         t_out: [],
@@ -2396,7 +2396,7 @@ describe('Failing transactions', function () {
       // here 1000 represents the fee
       const builder = new ZcashBuilderBridge(1000)
 
-      const tx_input_data = TX_INPUT_DATA[5];
+      const tx_input_data = TX_INPUT_DATA[5]
       const {
         t_in: [],
         t_out: [],

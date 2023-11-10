@@ -16,9 +16,6 @@ export const models: IDeviceModel[] = [
   { name: 'stax', prefix: 'ST', path: APP_PATH_ST },
 ]
 
-export const SPEND_PATH = Resolve('../zcashtools/params/sapling-spend.params')
-export const OUTPUT_PATH = Resolve('../zcashtools/params/sapling-output.params')
-
 export const TX_TESTS = {
   parser_unshielded_tests: [
     {
