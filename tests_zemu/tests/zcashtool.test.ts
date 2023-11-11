@@ -1954,7 +1954,6 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
-        ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
@@ -2200,7 +2199,6 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
-        ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
