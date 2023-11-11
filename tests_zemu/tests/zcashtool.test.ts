@@ -17,7 +17,7 @@
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models } from './common'
-import addon, { ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
+import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
 import { TX_INPUT_DATA } from './vectors'
 
 const crypto = require('crypto')
@@ -268,7 +268,7 @@ describe('End to end transactions', function () {
        The output is a blob that can be sent to the ledger device.
        */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       /*
@@ -539,7 +539,7 @@ describe('End to end transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -806,7 +806,7 @@ describe('End to end transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -1059,7 +1059,7 @@ describe('End to end transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -1323,7 +1323,7 @@ describe('End to end transactions', function () {
         s_output: [],
       } = tx_input_data
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
@@ -1442,7 +1442,7 @@ describe('End to end transactions', function () {
         s_output: [s_out1, s_out2],
       } = tx_input_data
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
@@ -1527,7 +1527,7 @@ describe('Failing transactions', function () {
         s_output: [s_out1, s_out2],
       } = tx_input_data
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
@@ -1584,7 +1584,7 @@ describe('Failing transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -1831,7 +1831,7 @@ describe('Failing transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).toString('hex'))
 
       /*
@@ -2083,7 +2083,7 @@ describe('Failing transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2294,7 +2294,7 @@ describe('Failing transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2345,7 +2345,7 @@ describe('Failing transactions', function () {
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2402,7 +2402,7 @@ describe('Failing transactions', function () {
         s_output: [s_out1, s_out2],
       } = tx_input_data
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       const reqinit = app.inittx(ledgerblob_initdata)
