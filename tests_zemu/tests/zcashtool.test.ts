@@ -2276,7 +2276,7 @@ describe('Failing transactions', function () {
        */
 
       //use stringify+parse for deep copy
-      const tx_input_data = TX_INPUT_DATA[3]
+      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
       tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
       const {
         t_in: [tin1],
