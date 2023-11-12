@@ -776,7 +776,6 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -1030,7 +1029,6 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -1306,7 +1304,6 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -1555,7 +1552,6 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -1802,7 +1798,6 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -1954,6 +1949,7 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
+        ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
@@ -2023,7 +2019,6 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
 
       const builder = new ZcashBuilderBridge(1000)
@@ -2199,6 +2194,7 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
+        ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
@@ -2280,7 +2276,7 @@ describe('Failing transactions', function () {
        */
 
       //use stringify+parse for deep copy
-      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
+      const tx_input_data = TX_INPUT_DATA[3]
       tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
       const {
         t_in: [tin1],

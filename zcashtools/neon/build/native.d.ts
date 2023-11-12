@@ -1,6 +1,8 @@
 /// <reference types="node" />
+type GrowToSize<T, N extends number, A extends T[]> = A['length'] extends N ? A : GrowToSize<T, N, [...A, T]>;
+export type FixedArray<T, N extends number> = GrowToSize<T, N, []>;
 export interface TinData {
-    path: Uint32Array;
+    path: FixedArray<number, 5>;
     address: string;
     value: number;
 }
@@ -17,7 +19,7 @@ export interface ShieldedOutputData {
     address: string;
     value: number;
     memo_type: number;
-    ovk?: string;
+    ovk: string | null;
 }
 export interface InitData {
     t_in: TinData[];
@@ -50,11 +52,11 @@ export interface SpendInfo {
 export interface OutputInfo {
     rcv: string;
     rseed: string;
-    ovk?: string;
+    ovk: string | null;
     address: string;
     value: number;
-    memo?: string;
-    hash_seed?: Uint8Array;
+    memo: string | null;
+    hash_seed: Uint8Array | null;
 }
 export interface TransactionSignatures {
     transparent_sigs: string[];
