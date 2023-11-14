@@ -11,8 +11,8 @@ function calculate_fee(n_tin = 0, n_tout = 0, n_spend = 0, n_sout = 0) {
     return native_1.default.calculate_zip317_fee(n_tin, n_tout, n_spend, n_sout);
 }
 exports.calculate_fee = calculate_fee;
-exports.SPEND_PATH = (0, path_1.resolve)("../params/sapling-spend.params");
-exports.OUTPUT_PATH = (0, path_1.resolve)("../params/sapling-output.params");
+exports.SPEND_PATH = (0, path_1.resolve)(__dirname, "..", "params/sapling-spend.params");
+exports.OUTPUT_PATH = (0, path_1.resolve)(__dirname, "..", "params/sapling-output.params");
 class ZcashBuilderBridge {
     constructor(fee) {
         this.boxed = native_1.default.builderNew(fee);

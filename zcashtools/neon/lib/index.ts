@@ -9,8 +9,8 @@ export function calculate_fee(n_tin = 0, n_tout = 0, n_spend = 0, n_sout = 0): n
     return addon.calculate_zip317_fee(n_tin, n_tout, n_spend, n_sout);
 }
 
-export var SPEND_PATH = resolve("../params/sapling-spend.params");
-export var OUTPUT_PATH = resolve("../params/sapling-output.params");
+export var SPEND_PATH = resolve(__dirname, "..", "params/sapling-spend.params");
+export var OUTPUT_PATH = resolve(__dirname, "..", "params/sapling-output.params");
 
 export class ZcashBuilderBridge {
     private boxed: ZcashBuilder;
