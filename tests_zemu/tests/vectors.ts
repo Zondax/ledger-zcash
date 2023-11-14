@@ -132,7 +132,7 @@ const three: TxInputData = {
     },
     {
       address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-      value: 60000 + 40000 - 55000,
+      value: 60000 + 40000 - 55000 - 10000,
       memo_type: 0xf6,
       ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
     },
