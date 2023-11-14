@@ -37,6 +37,20 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     Ok(js_value)
 }
 
+fn calculate_zip0317_fee(mut cx: FunctionContext) -> JsResult<JsNumber> {
+    let [n_tin, n_tout, n_spend, n_sout] = [
+        cx.argument::<JsNumber>(0)?.value(&mut cx) as usize,
+        cx.argument::<JsNumber>(1)?.value(&mut cx) as _,
+        cx.argument::<JsNumber>(2)?.value(&mut cx) as _,
+        cx.argument::<JsNumber>(3)?.value(&mut cx) as _,
+    ];
+
+    let fee: u64 =
+        ledger_zcash::builder::Builder::calculate_zip0317_fee(n_tin, n_tout, n_spend, n_sout)
+            .into();
+
+    Ok(cx.number(fee as f64))
+}
 
 type BoxedBuilder = JsBox<RefCell<ZcashBuilderBridge>>;
 
@@ -410,6 +424,8 @@ impl ZcashBuilderBridge {
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
     //cx.export_class::<ZcashBuilderBridge>("zcashtools")?;
     cx.export_function("get_inittx_data", get_inittx_data)?;
+    cx.export_function("calculate_zip317_fee", calculate_zip0317_fee)?;
+
     cx.export_function("builderNew", ZcashBuilderBridge::js_create_builder)?;
     cx.export_function(
         "builderAddTransparentInput",
