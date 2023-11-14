@@ -18,7 +18,7 @@ import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models } from './common'
 import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
-import { TX_INPUT_DATA } from './vectors'
+import { fee_for, TX_INPUT_DATA } from './vectors'
 
 const crypto = require('crypto')
 const tx_version = 0x05
@@ -246,14 +246,11 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      // here 1000 represents the fee
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
        In this test, Alice wants to send 55000 ZEC to Bob.
        For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
        The inputs to the initialization is therefore two spend notes and two output notes.
-       She takes a transaction fee of 1000.
+       She takes a transaction fee according to ZIP-0317.
        All this info is gathered from the UI and put in the correct jsons.
         */
 
@@ -262,6 +259,8 @@ describe('End to end transactions', function () {
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
        The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -514,8 +513,6 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -523,7 +520,7 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -533,6 +530,7 @@ describe('End to end transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -778,8 +776,6 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -787,7 +783,7 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -799,6 +795,7 @@ describe('End to end transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1031,8 +1028,6 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -1040,7 +1035,7 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -1051,6 +1046,7 @@ describe('End to end transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1306,8 +1302,6 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
        */
@@ -1319,6 +1313,7 @@ describe('End to end transactions', function () {
         s_spend: [],
         s_output: [],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -1554,8 +1549,6 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -1563,7 +1556,7 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -1574,6 +1567,7 @@ describe('Failing transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -1800,8 +1794,6 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -1809,7 +1801,7 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -1820,6 +1812,7 @@ describe('Failing transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2021,8 +2014,6 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -2030,40 +2021,9 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
-
-      // const tin1 = {
-      //   path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-      //   address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-      //   value: 60000,
-      // }
-
-      // const tout1 = {
-      //   address: '1976a914000000000000000000000000000000000000000088ac',
-      //   value: 10000,
-      // }
-
-      // const s_spend1 = {
-      //   path: 1000,
-      //   address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-      //   value: 40000,
-      // }
-
-      // const s_out1 = {
-      //   address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-      //   value: 55000,
-      //   memo_type: 0xf6,
-      //   ovk: null,
-      // }
-
-      // const s_out2 = {
-      //   address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-      //   value: 100000 - 1000 - 55000 - 10000,
-      //   memo_type: 0xf6,
-      //   ovk: null,
-      // }
 
       const tx_input_data = TX_INPUT_DATA[3]
       const {
@@ -2072,6 +2032,8 @@ describe('Failing transactions', function () {
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2258,26 +2220,16 @@ describe('Failing transactions', function () {
     }
   })
 
-  test.each(models)('try txfee of 10000', async function (m) {
+  test.each(models)('try non ZIP-0317 fee', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
-
       //use stringify+parse for deep copy
       const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
-      tx_input_data.s_output[1].value -= 9000 //extra fee over base 1000
+      tx_input_data.s_output[1].value -= 500 //change fee to something invalid
+
       const {
         t_in: [tin1],
         t_out: [tout1],
@@ -2324,7 +2276,6 @@ describe('Failing transactions', function () {
       In this test, Alice wants to send 55000 ZEC to Bob.
       For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
       The inputs to the initialization is therefore two spend notes and two output notes.
-      She takes a transaction fee of 1000.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
@@ -2387,9 +2338,6 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      // here 1000 represents the fee
-      const builder = new ZcashBuilderBridge(1000)
-
       const tx_input_data = TX_INPUT_DATA[5]
       const {
         t_in: [],
@@ -2397,6 +2345,7 @@ describe('Failing transactions', function () {
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
       } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
