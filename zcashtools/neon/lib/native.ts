@@ -78,6 +78,8 @@ export interface TransactionSignatures {
 interface NativeModule {
     get_inittx_data(_: InitData): Buffer;
 
+    calculate_zip317_fee(n_tin: number, n_tout: number, n_spend: number, n_sout: number): number
+
     builderNew(fee: number): ZcashBuilder;
 
     builderAddTransparentInput(this: ZcashBuilder, tin: TransparentInputInfo): boolean;
