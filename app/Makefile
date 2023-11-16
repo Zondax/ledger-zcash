@@ -63,7 +63,7 @@ endif
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
 
-DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512
+DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512 HAVE_ZIP0317
 APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 

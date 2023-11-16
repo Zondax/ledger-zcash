@@ -108,6 +108,18 @@ jobs:
         run: |
           make test_all
 
+      - name: Tar Zemu snapshots
+        if: always()
+        run: tar -cvf snapshots_tmp.tar ./tests_zemu/snapshots-tmp
+      - name: Upload tmp snapshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: snapshots-tmp
+          path: snapshots_tmp.tar
+          #we don't need these snapshots for very long
+          retention-days: 3
+
   build_package_nanos:
     needs:
       [
