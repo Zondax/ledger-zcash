@@ -758,13 +758,17 @@ void handleTest(volatile uint32_t *tx) {
 
   jubjub_extendedpoint p;
   jubjub_fq scal;
-  jubjub_field_frombytes(scal, scalar);
+  if (jubjub_field_frombytes(scal, scalar) != zxerr_ok) {
+    *tx = 0;
+    MEMZERO(point, sizeof(point));
+    THROW(APDU_CODE_OK);
+  }
 
   jubjub_extendedpoint_tobytes(point, JUBJUB_GEN);
-  zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
+  const zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
   if (err != zxerr_ok) {
     *tx = 0;
-    MEMZERO(point, 32);
+    MEMZERO(point, sizeof(point));
     THROW(APDU_CODE_OK);
   }
   // MEMCPY(&p, &JUBJUB_GEN, 32);
