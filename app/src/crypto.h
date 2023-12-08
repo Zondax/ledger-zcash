@@ -107,7 +107,6 @@ zxerr_t crypto_check_valuebalance(uint8_t *buffer, uint16_t bufferLen,
                                   const uint8_t *txdata,
                                   const uint8_t tx_version);
 
-void address_to_script(uint8_t *address, uint8_t *output);
 zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen,
                                           const uint8_t *txdata,
                                           const uint16_t txdatalen,

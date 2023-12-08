@@ -69,10 +69,16 @@ typedef struct {
   uint8_t address[50];
 } __attribute__((packed)) answer_t;
 
-void ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
+zxerr_t ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
+  if (in == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
   cx_ripemd160_t rip160;
   cx_ripemd160_init(&rip160);
-  cx_hash_no_throw(&rip160.header, CX_LAST, in, inLen, out, CX_RIPEMD160_SIZE);
+  const cx_err_t error = cx_hash_no_throw(&rip160.header, CX_LAST, in, inLen, out, CX_RIPEMD160_SIZE);
+
+  return error == CX_OK ? zxerr_ok : zxerr_invalid_crypto_settings;
 }
 
 // According to 5.6 Encodings of Addresses and Keys
@@ -172,8 +178,8 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len,
   address_temp.version[1] = VERSION_P2PKH & 0xFF;
   cx_hash_sha256(answer->publicKey, PK_LEN_SECP256K1, address_temp.sha256_pk,
                  CX_SHA256_SIZE); // SHA256
-  ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE,
-            address_temp.ripe_sha256_pk); // RIPEMD-160
+  CHECK_ZXERR(ripemd160(address_temp.sha256_pk, CX_SHA256_SIZE,
+                        address_temp.ripe_sha256_pk)); // RIPEMD-160
 
   // checksum = sha256(sha256(extended-ripe))
   cx_hash_sha256(address_temp.extended_ripe, CX_RIPEMD160_SIZE + VERSION_SIZE,
@@ -206,7 +212,7 @@ zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
   zxerr_t error = zxerr_unknown;
   CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519,
                                                    path, HDPATH_LEN_DEFAULT, sk,
-                                                   NULL, NULL, 0))
+                                                   NULL, NULL, 0));
   error = zxerr_ok;
 
 catch_cx_error:
@@ -1088,7 +1094,11 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen,
   return zxerr_ok; // or some code for ok
 }
 
-void address_to_script(uint8_t *address, uint8_t *output) {
+static zxerr_t address_to_script(uint8_t *address, uint8_t *output) {
+  if (address == NULL || output == NULL) {
+    return zxerr_no_data;
+  }
+
   uint8_t script[SCRIPT_SIZE] = {0};
   script[0] = 0x19;
   script[1] = 0x76;
@@ -1097,10 +1107,13 @@ void address_to_script(uint8_t *address, uint8_t *output) {
 
   uint8_t tmp[HASH_SIZE] = {0};
   cx_hash_sha256(address, PK_LEN_SECP256K1, tmp, CX_SHA256_SIZE);
-  ripemd160(tmp, CX_SHA256_SIZE, script + SCRIPT_CONSTS_SIZE);
+
+  CHECK_ZXERR(ripemd160(tmp, CX_SHA256_SIZE, script + SCRIPT_CONSTS_SIZE));
+
   script[24] = 0x88;
   script[25] = 0xac;
   MEMCPY(output, script, SCRIPT_SIZE);
+  return zxerr_ok;
 }
 
 typedef struct {
@@ -1167,13 +1180,13 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen,
     const t_input_item_t *item = t_inlist_retrieve_item(i);
 
     CATCH_CXERROR(os_derive_bip32_no_throw(
-        CX_CURVE_256K1, item->path, HDPATH_LEN_DEFAULT, privateKeyData, NULL))
+        CX_CURVE_256K1, item->path, HDPATH_LEN_DEFAULT, privateKeyData, NULL));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(
-        CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey))
+        CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0,
-                                                   &cx_publicKey))
+                                                   &cx_publicKey));
     CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey,
-                                                 &cx_privateKey, 1))
+                                                 &cx_privateKey, 1));
 
     for (int j = 0; j < PUB_KEY_SIZE; j++) {
       pubKey[j] = cx_publicKey.W[SIG_S_SIZE + SIG_R_SIZE - j];
