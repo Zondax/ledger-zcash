@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <zxformat.h>
 #include <zxmacros.h>
+#include "zcash_utils.h"
 
 #define CTX_REDJUBJUB "Zcash_RedJubjubH"
 #define CTX_REDJUBJUB_LEN 16
@@ -29,78 +30,103 @@ unsigned char *bolos_cx_rng(uint8_t *buffer, size_t len) {
 }
 #endif
 
-void c_blake2b32_withpersonal(const uint8_t *person, const uint8_t *a,
+zxerr_t c_blake2b32_withpersonal(const uint8_t *person, const uint8_t *a,
                               uint32_t a_len, uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)person, 16);
-  cx_hash_no_throw(&ctx.header, CX_LAST, a, a_len, out, 256);
+  if (person == NULL || a == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)person, 16));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, a, a_len, out, 256));
+  return zxerr_ok;
 };
 
-void c_blake2b64_withpersonal(const uint8_t *person, const uint8_t *a,
+zxerr_t c_blake2b64_withpersonal(const uint8_t *person, const uint8_t *a,
                               uint32_t a_len, uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 512, NULL, 0, (uint8_t *)person, 16);
-  cx_hash_no_throw(&ctx.header, CX_LAST, a, a_len, out, 512);
+  if (person == NULL || a == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 512, NULL, 0, (uint8_t *)person, 16));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, a, a_len, out, 512));
+  return zxerr_ok;
 };
 
-void c_zcash_blake2b_redjubjub(const uint8_t *a, uint32_t a_len,
+zxerr_t c_zcash_blake2b_redjubjub(const uint8_t *a, uint32_t a_len,
                                const uint8_t *b, uint32_t b_len, uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 8 * CTX_REDJUBJUB_HASH_LEN, NULL, 0,
-                            (uint8_t *)CTX_REDJUBJUB, CTX_REDJUBJUB_LEN);
-  cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, CX_LAST, b, b_len, out, CTX_REDJUBJUB_HASH_LEN);
+  if (a == NULL || b == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 8 * CTX_REDJUBJUB_HASH_LEN, NULL, 0,(uint8_t *)CTX_REDJUBJUB, CTX_REDJUBJUB_LEN));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, b, b_len, out, CTX_REDJUBJUB_HASH_LEN));
+  return zxerr_ok;
 }
 
-void c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
-                                 const uint8_t *b, uint32_t b_len,
-                                 uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0,
-                            (uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
-  cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, CX_LAST, b, b_len, out,
-                   CTX_EXPAND_SEED_HASH_LEN);
+zxerr_t c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len,
+                                 const uint8_t *b, uint32_t b_len, uint8_t *out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0,(uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, b, b_len, out,CTX_EXPAND_SEED_HASH_LEN));
+  return zxerr_ok;
 }
 
-void c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len,
+zxerr_t c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len,
                                     const uint8_t *b, uint32_t b_len,
                                     const uint8_t *c, uint32_t c_len,
                                     uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0,
-                            (uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
-  cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, 0, b, b_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, CX_LAST, c, c_len, out,
-                   CTX_EXPAND_SEED_HASH_LEN);
+  if (a == NULL || b == NULL || c == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, b, b_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, c, c_len, out, CTX_EXPAND_SEED_HASH_LEN));
+  return zxerr_ok;
 }
 
-void c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len,
+zxerr_t c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len,
                                      const uint8_t *b, uint32_t b_len,
                                      const uint8_t *c, uint32_t c_len,
                                      const uint8_t *d, uint32_t d_len,
                                      const uint8_t *e, uint32_t e_len,
                                      uint8_t *out) {
-  cx_blake2b_t ctx;
-  cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0,
-                            (uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN);
-  cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, 0, b, b_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, 0, c, c_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, 0, d, d_len, NULL, 0);
-  cx_hash_no_throw(&ctx.header, CX_LAST, e, e_len, out,
-                   CTX_EXPAND_SEED_HASH_LEN);
+  if (a == NULL || b == NULL || c == NULL || d == NULL || e == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t ctx = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 8 * CTX_EXPAND_SEED_HASH_LEN, NULL, 0, (uint8_t *)CTX_EXPAND_SEED, CTX_EXPAND_SEED_LEN));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, a, a_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, b, b_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, c, c_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, d, d_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, e, e_len, out, CTX_EXPAND_SEED_HASH_LEN));
+  return zxerr_ok;
 }
 
-void zcash_blake2b_hash_two(const uint8_t *perso, uint32_t perso_len,
+zxerr_t zcash_blake2b_hash_two(const uint8_t *perso, uint32_t perso_len,
                             const uint8_t *a, uint32_t a_len, const uint8_t *b,
                             uint32_t b_len, uint8_t *out, uint32_t out_len) {
-  cx_blake2b_t zcashHashBlake2b;
-  cx_blake2b_init2_no_throw(&zcashHashBlake2b, 8 * out_len, NULL, 0,
-                            (uint8_t *)perso, perso_len);
-  cx_hash_no_throw(&zcashHashBlake2b.header, 0, a, a_len, NULL, 0);
-  cx_hash_no_throw(&zcashHashBlake2b.header, CX_LAST, b, b_len, out, out_len);
+  if (perso == NULL || a == NULL || b == NULL || out == NULL) {
+    return zxerr_no_data;
+  }
+
+  cx_blake2b_t zcashHashBlake2b = {0};
+  CHECK_CX_OK(cx_blake2b_init2_no_throw(&zcashHashBlake2b, 8 * out_len, NULL, 0, (uint8_t *)perso, perso_len));
+  CHECK_CX_OK(cx_hash_no_throw(&zcashHashBlake2b.header, 0, a, a_len, NULL, 0));
+  CHECK_CX_OK(cx_hash_no_throw(&zcashHashBlake2b.header, CX_LAST, b, b_len, out, out_len));
+  return zxerr_ok;
 }
 
 uint16_t fp_uint64_to_str(char *out, uint16_t outLen, const uint64_t value,
@@ -128,13 +154,12 @@ void c_jubjub_scalarmult(uint8_t *point, const uint8_t *scalar) {
   MEMCPY(scal, scalar, JUBJUB_FIELD_BYTES);
   SWAP_ENDIAN_BYTES(scal);
 
-  zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
-  if (err != zxerr_ok) {
+  if (jubjub_extendedpoint_frombytes(&p, point) != zxerr_ok ||
+      jubjub_extendedpoint_scalarmult(&p, scal) != zxerr_ok ||
+      jubjub_extendedpoint_tobytes(point, &p) != zxerr_ok) {
+
     MEMZERO(point, JUBJUB_FIELD_BYTES);
-    return;
   }
-  jubjub_extendedpoint_scalarmult(&p, scal);
-  jubjub_extendedpoint_tobytes(point, p);
 }
 
 void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar) {
@@ -143,8 +168,11 @@ void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar) {
   MEMCPY(scal, scalar, JUBJUB_FIELD_BYTES);
   SWAP_ENDIAN_BYTES(scal);
   MEMCPY(&p, &JUBJUB_GEN, sizeof(jubjub_extendedpoint));
-  jubjub_extendedpoint_scalarmult(&p, scal);
-  jubjub_extendedpoint_tobytes(point, p);
+  if (jubjub_extendedpoint_scalarmult(&p, scal) != zxerr_ok ||
+      jubjub_extendedpoint_tobytes(point, &p) != zxerr_ok) {
+
+    MEMZERO(point, JUBJUB_FIELD_BYTES);
+  }
 }
 
 // Replace functions affected by non-constant time opcodes

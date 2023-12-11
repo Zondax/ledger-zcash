@@ -270,7 +270,7 @@ Returns a sapling full viewing key fvk = (ak, nk, ovk). Forced user confirmation
 
 ---
 
-### INS_INIT_TX_SAPLING
+### INS_INIT_TX
 
 Initiates a transaction for sapling. The init_message should have the following format:
 
@@ -323,7 +323,7 @@ s_output:
 
 | Field | Type     | Content                | Expected  |
 |-------|----------|------------------------|-----------|
-| CLA   | byte (1) | Application Identifier | 0xE0      |
+| CLA   | byte (1) | Application Identifier | 0x85      |
 | INS   | byte (1) | Instruction ID         | 0xa0      |
 | P1    | byte (1) | Payload desc           | 0 = init  |
 |       |          |                        | 1 = add   |
@@ -361,7 +361,7 @@ Data is defined as:
 
 ---
 
-### INS_GET_SPENDINFO
+### INS_EXTRACT_SPEND
 
 Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend.
 
@@ -389,7 +389,7 @@ Returns a proof generating key (PGK) and randomness (rcv and alpha) for a saplin
 
 ---
 
-### INS_GET_OUTPUTINFO
+### INS_EXTRACT_OUTPUT
 
 Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a sapling output.
 
@@ -410,7 +410,8 @@ Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a s
 #### Response
 
 | Field     | Type      | Content       | Note                                      |
-|-----------|-----------|---------------|-------------------------------------------|
+|-----------|-----------|---------------|------------------------------------------
+-|
 | rcv_RAW   | byte (32) | Raw rcv       |                                           |
 | rseed_RAW | byte (32) | Raw rseed     |                                           |
 | hash_seed | byte (32) | Raw hash_seed | Only returned if OVK=None for this output |
@@ -418,13 +419,13 @@ Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a s
 
 ---
 
-### INS_CHECKANDSIGN_TX_SAPLING
+### INS_CHECKANDSIGN
 
 Checks the transaction data and signs if it is correct with the corresponding keys.
 
-- This command requires you already called the INS_INIT_TX_SAPLING.
-- This command requires you already called the correct number of INS_GET_SPENDINFO.
-- This command requires you already called the correct number of INS_GET_OUTPUTINFO.
+- This command requires you already called the INS_INIT_TX
+- This command requires you already called the correct number of INS_EXTRACT_SPEND.
+- This command requires you already called the correct number of INS_EXTRACT_OUTPUT.
 
 The transaction_blob should have the following format:
 
@@ -481,7 +482,7 @@ shielded output data to check:
 
 | Field | Type     | Content                | Expected                |
 |-------|----------|------------------------|-------------------------|
-| CLA   | byte (1) | Application Identifier | 0xE0                    |
+| CLA   | byte (1) | Application Identifier | 0x85                    |
 | INS   | byte (1) | Instruction ID         | 0xa3                    |
 | P1    | byte (1) | Payload desc           | 0 = init                |
 |       |          |                        | 1 = add                 |
@@ -520,11 +521,11 @@ Data is defined as:
 
 ---
 
-### INS_GET_TRANSPARENT_SIGNATURE
+### INS_GET_EXTRACT_TRANSSSIG
 
 Returns a SECP256K1 signature for a sapling transparent input.
 
-- This command requires that you already called INS_CHECKANDSIGN_SAPLING.
+- This command requires that you already called INS_CHECKANDSIGN.
 
 It gives the signatures in order of the transaction.
 Returns error if all signatures are retrieved.
@@ -548,11 +549,11 @@ Returns error if all signatures are retrieved.
 
 ---
 
-### INS_GET_SPEND_SIGNATURE
+### INS_EXTRACT_SPENDSIG
 
 Returns a spend signature for a sapling shielded spend input.
 
-- This command requires that you already called INS_CHECKANDSIGN_SAPLING.
+- This command requires that you already called INS_CHECKANDSIGN.
 
 #### Command
 
