@@ -14,6 +14,7 @@
  *  limitations under the License.
  ********************************************************************************/
 #include <zxerror.h>
+#include <stdint.h>
 
 #define JUBJUB_SCALAR_BYTES 32
 #define JUBJUB_FIELD_BYTES 32

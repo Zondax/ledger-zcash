@@ -122,25 +122,12 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
   uint8_t privateKeyData[64] = {0};
 
   zxerr_t error = zxerr_unknown;
-  CATCH_CXERROR(os_derive_bip32_no_throw(
-      CX_CURVE_256K1, hdPath, HDPATH_LEN_DEFAULT, privateKeyData, NULL))
+  CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath, HDPATH_LEN_DEFAULT, privateKeyData, NULL));
+  CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
+  CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
+  CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1));
 
-  CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(
-      CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey))
-  CATCH_CXERROR(
-      cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey))
-  CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey,
-                                               &cx_privateKey, 1))
-
-  // Format pubkey
-  for (int i = 0; i < PUB_KEY_SIZE; i++) {
-    pubKey[i] = cx_publicKey.W[64 - i];
-  }
-  cx_publicKey.W[0] =
-      cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
-  if ((cx_publicKey.W[PUB_KEY_SIZE] & 1) != 0) {
-    pubKey[PUB_KEY_SIZE - 1] |= 0x80;
-  }
+  cx_publicKey.W[0] = cx_publicKey.W[64] & 1 ? 0x03 : 0x02; // "Compress" public key in place
   memcpy(pubKey, cx_publicKey.W, PK_LEN_SECP256K1);
   error = zxerr_ok;
 
@@ -1232,7 +1219,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen,
     size_t signatureLen = DER_MAX_SIZE;
     CATCH_CXERROR(cx_ecdsa_sign_no_throw(
         &cx_privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA256, message_digest,
-        CX_SHA256_SIZE, signature->step1.der_signature, &signatureLen, &info))
+        CX_SHA256_SIZE, signature->step1.der_signature, &signatureLen, &info));
 
     if (convertDERtoRSV(signature->step1.der_signature, info,
                         signature->step1.r, signature->step1.s,
@@ -1556,6 +1543,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer,
 
   uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
+  // Initialize diversifier
   MEMCPY(out->diversifier, div, DIV_SIZE);
   if (!is_valid_diversifier(out->diversifier)) {
     return zxerr_unknown;
@@ -1569,11 +1557,15 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer,
   }
   CHECK_APP_CANARY()
 
+  // Initialize pkd
   get_pkd(zip32_seed, p, out->diversifier, out->pkd);
   CHECK_APP_CANARY()
 
   MEMZERO(zip32_seed, sizeof(zip32_seed));
 
+  // To simplify the code and avoid making copies, read the 'address_raw' variable.
+  // This variable completely overlaps with the 'diversifier' and 'pkd' fields.
+  // Therefore, using 'address_raw' is equivalent to have [diversifier(11) | pkd(32)]
   if (bech32EncodeFromBytes(out->address_bech32,
                             sizeof_field(tmp_buf_addr_s, address_bech32),
                             BECH32_HRP, out->address_raw,

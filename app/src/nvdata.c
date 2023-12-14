@@ -130,12 +130,11 @@ zxerr_t transparent_signatures_append(uint8_t *signature) {
 }
 
 zxerr_t get_next_transparent_signature(uint8_t *result) {
-  uint8_t index = transaction_header.t_in_len - transaction_header.t_sign_index;
-  if (transaction_header.t_in_len <= index || index < 0) {
+  const uint8_t index = transaction_header.t_in_len - transaction_header.t_sign_index;
+  if (index >= transaction_header.t_in_len) {
     return zxerr_unknown;
   }
-  MEMCPY(result, (void *)&N_transactioninfo.transparent_signatures[index],
-         SIGNATURE_SIZE);
+  MEMCPY(result, (void *)&N_transactioninfo.transparent_signatures[index], SIGNATURE_SIZE);
   transaction_header.t_sign_index--;
   if (!transparent_signatures_more_extract() &&
       !spend_signatures_more_extract()) {
@@ -163,13 +162,11 @@ zxerr_t spend_signatures_append(uint8_t *signature) {
 }
 
 zxerr_t get_next_spend_signature(uint8_t *result) {
-  uint8_t index =
-      transaction_header.spendlist_len - transaction_header.spends_sign_index;
-  if (transaction_header.spendlist_len <= index || index < 0) {
+  const uint8_t index = transaction_header.spendlist_len - transaction_header.spends_sign_index;
+  if (index >= transaction_header.spendlist_len) {
     return zxerr_unknown;
   }
-  MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index],
-         SIGNATURE_SIZE);
+  MEMCPY(result, (void *)&N_transactioninfo.spend_signatures[index], SIGNATURE_SIZE);
   transaction_header.spends_sign_index--;
   if (!transparent_signatures_more_extract() &&
       !spend_signatures_more_extract()) {
