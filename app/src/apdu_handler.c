@@ -82,12 +82,6 @@ __Z_INLINE void extractHDPath(uint32_t rx, uint32_t offset) {
 __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
   const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
-  /*
-  if (G_io_apdu_buffer[OFFSET_P2] != 0 && G_io_apdu_buffer[OFFSET_P2] != 4 &&
-  G_io_apdu_buffer[OFFSET_P2] != 5 ) { THROW(APDU_CODE_INVALIDP1P2);
-  }
-   */
-
   if (rx < OFFSET_DATA) {
     THROW(APDU_CODE_WRONG_LENGTH);
   }
@@ -616,16 +610,14 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags,
   parser_addr_div_t parser_addr;
   MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
-  parser_error_t prserr = parser_sapling_path_with_div(
-      G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
+  parser_error_t parseErr = parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
   MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-  if (prserr != parser_ok) {
+  if (parseErr != parser_ok) {
     *tx = 0;
     THROW(APDU_CODE_DATA_INVALID);
   }
-  zxerr_t err = crypto_fillAddress_with_diversifier_sapling(
-      G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path,
-      parser_addr.div, &replyLen);
+  zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path,
+                                                            parser_addr.div, &replyLen);
   if (err != zxerr_ok) {
     *tx = 0;
     THROW(APDU_CODE_DATA_INVALID);
@@ -708,8 +700,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
   uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
   uint32_t zip32path = 0;
-  parser_error_t prserr = parser_sapling_path(
-      G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
+  parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
   MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
   if (prserr != parser_ok) {
     *tx = 0;
@@ -737,49 +728,6 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags,
 }
 
 __Z_INLINE void handleSignSapling() { THROW(APDU_CODE_COMMAND_NOT_ALLOWED); }
-
-#if defined(APP_TESTING)
-#include "cx.h"
-#include "jubjub.h"
-#include "rslib.h"
-#include <zxmacros.h>
-
-void handleTest(volatile uint32_t *tx) {
-
-  uint8_t point[32] = {48,  181, 242, 170, 173, 50,  86,  48, 188, 221, 219,
-                       206, 77,  103, 101, 109, 5,   253, 28, 194, 208, 55,
-                       187, 83,  117, 182, 233, 109, 158, 1,  161, 215};
-
-  uint8_t scalar[32] = {
-      0x66, 0x5e, 0xd6, 0xf7, 0xb7, 0x93, 0xaf, 0xa1, 0x82, 0x21, 0xe1,
-      0x57, 0xba, 0xd5, 0x43, 0x3c, 0x54, 0x23, 0xf4, 0xfe, 0xc9, 0x46,
-      0xe0, 0x8e, 0xd6, 0x30, 0xa0, 0xc6, 0x0a, 0x1f, 0xac, 0x02,
-  };
-
-  jubjub_extendedpoint p;
-  jubjub_fq scal;
-  if (jubjub_field_frombytes(scal, scalar) != zxerr_ok) {
-    *tx = 0;
-    MEMZERO(point, sizeof(point));
-    THROW(APDU_CODE_OK);
-  }
-
-  jubjub_extendedpoint_tobytes(point, JUBJUB_GEN);
-  const zxerr_t err = jubjub_extendedpoint_frombytes(&p, point);
-  if (err != zxerr_ok) {
-    *tx = 0;
-    MEMZERO(point, sizeof(point));
-    THROW(APDU_CODE_OK);
-  }
-  // MEMCPY(&p, &JUBJUB_GEN, 32);
-  // jubjub_extendedpoint_scalarmult(&p, scal);
-  jubjub_extendedpoint_tobytes(point, p);
-
-  MEMCPY(G_io_apdu_buffer, point, 32);
-  *tx = 32;
-  THROW(APDU_CODE_OK);
-}
-#endif
 
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
   uint16_t sw = 0;
@@ -891,18 +839,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
         break;
       }
 
-#if defined(APP_TESTING)
-      case INS_TEST: {
-        handleTest(tx);
-        /*
-        G_io_apdu_buffer[0] = 0xCA;
-        G_io_apdu_buffer[1] = 0xFE;
-        *tx = 3;
-        */
-        THROW(APDU_CODE_OK);
-        break;
-      }
-#endif
       default:
         THROW(APDU_CODE_INS_NOT_SUPPORTED);
       }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2021 Zondax AG
+ *   (c) 2018 - 2023 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ zxerr_t jubjub_field_sqrt(jubjub_fq r, const jubjub_fq a) {
   CHECK_ZXERR(jubjub_field_mult(b, x, w));
   jubjub_field_copy(z, JUBJUB_FQ_ROOT_OF_UNITY);
   jubjub_fq tmp;
-  // uint8_t index = 0;
+
   for (uint8_t max_v = 32; max_v >= 1; max_v--) {
     uint8_t k = 1;
     CHECK_ZXERR(jubjub_field_square(tmp, b));
@@ -238,9 +238,7 @@ static zxerr_t jubjub_extendedpoint_add(jubjub_extendedpoint *r, const jubjub_ex
   if (r == NULL || p == NULL) {
     return zxerr_no_data;
   }
-  // jubjub_extendedpoint np;
-  // jubjub_extendedpoint_normalize(&np, p);
-  // extendednielspoint
+
   jubjub_fq v_minus_u, v_plus_u, t2d;
 
   CHECK_ZXERR(jubjub_field_add(v_plus_u, p->V, p->U));

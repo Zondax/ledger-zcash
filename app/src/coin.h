@@ -95,7 +95,7 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 #define MENU_MAIN_APP_LINE2_SECRET "?"
 #define COIN_SECRET_REQUIRED_CLICKS 0
 
-#define COIN_AMOUNT_DECIMAL_PLACES 18 // FIXME: Check this
+#define COIN_AMOUNT_DECIMAL_PLACES 18
 #define CRYPTO_BLOB_SKIP_BYTES 0
 
 #ifdef __cplusplus

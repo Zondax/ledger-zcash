@@ -48,7 +48,7 @@ typedef struct {
 
 parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen,
                                             parser_addr_div_t *prs) {
-  if (dataLen < 15) {
+  if (dataLen != 15) {
     return parser_context_unexpected_size;
   }
   parser_context_t pars_ctx;
@@ -62,7 +62,7 @@ parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen,
     return pars_err;
   }
   prs->path = p | 0x80000000;
-  memcpy(prs->div, data + 4, 11);
+  memcpy(prs->div, data + 4, DIV_SIZE);
   return parser_ok;
 }
 
@@ -258,15 +258,13 @@ parser_error_t parser_getItem(uint8_t displayIdx, char *outKey,
   CHECK_PARSER_ERR(parser_getNumItems(&numItems))
   CHECK_APP_CANARY()
 
-  if (displayIdx < 0 || displayIdx >= numItems) {
+  if (displayIdx >= numItems) {
     return parser_no_data;
   }
 
   parser_sapling_t prs;
   MEMZERO(&prs, sizeof(parser_sapling_t));
   CHECK_PARSER_ERR(parser_sapling_getTypes(displayIdx, &prs));
-
-  // FIXME: what decimals to take for ZECs?
 
   switch (prs.type) {
   case type_tin: {
