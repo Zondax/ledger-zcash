@@ -41,7 +41,7 @@ $(info COIN  = [$(COIN)])
 ifeq ($(COIN),ZEC)
 # Main app configuration
 APPNAME = "Zcash-new"
-APPPATH = "44'/133'"
+APPPATH = "44'/133'" --path "44'/1'"
 else
 define error_message
 COIN value not supported: [$(COIN)]
