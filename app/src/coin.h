@@ -87,9 +87,9 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 #define VIEW_ADDRESS_OFFSET_SECP256K1 PK_LEN_SECP256K1
 #define VIEW_ADDRESS_OFFSET_SAPLING ADDR_LEN_SAPLING
 
-#define MENU_MAIN_APP_LINE1 "Zcash"
+#define MENU_MAIN_APP_LINE1 "Zcash Shielded"
 #define MENU_MAIN_APP_LINE2 "Ready"
-#define APPVERSION_LINE1 "Zcash"
+#define APPVERSION_LINE1 "Zcash Shielded"
 #define APPVERSION_LINE2 ("v" APPVERSION)
 
 #define MENU_MAIN_APP_LINE2_SECRET "?"
