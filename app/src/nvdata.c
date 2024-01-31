@@ -82,7 +82,7 @@ zxerr_t t_outlist_append_item(uint8_t *addr, uint64_t v) {
 
   transaction_header.total_value -= v;
 
-  t_output_item_t newitem;
+  t_output_item_t newitem = {0};
   MEMCPY(newitem.address, addr, SCRIPT_SIZE);
   newitem.value = v;
 
@@ -247,7 +247,7 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v,
   transaction_header.sapling_value -= v;
   transaction_header.total_value -= v;
 
-  output_item_t newitem;
+  output_item_t newitem = {0};
   newitem.value = v;
   MEMCPY(newitem.rcmvalue, rcmv, RCM_V_SIZE);
   MEMCPY(newitem.rseed, rseed, RSEED_SIZE);
@@ -263,7 +263,7 @@ zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v,
 }
 
 output_item_t *outputlist_retrieve_item(uint8_t i) {
-  if (transaction_header.outputlist_len < i) {
+  if (transaction_header.outputlist_len <= i) {
     return NULL;
   } else {
     return (output_item_t *)&N_outputlist.items[i];
@@ -328,14 +328,10 @@ void zeroize_tout_data() {
 void zeroize_spend_data() {
   uint32_t p = 0;
   uint64_t v = 0;
-  uint8_t div[DIV_SIZE];
-  uint8_t pkd[PKD_SIZE];
-  uint8_t rcm[RCM_SIZE];
-  uint8_t alpha[ALPHA_SIZE];
-  MEMZERO(div, sizeof(div));
-  MEMZERO(pkd, sizeof(pkd));
-  MEMZERO(rcm, sizeof(rcm));
-  MEMZERO(alpha, sizeof(alpha));
+  uint8_t div[DIV_SIZE] = {0};
+  uint8_t pkd[PKD_SIZE] = {0};
+  uint8_t rcm[RCM_SIZE] = {0};
+  uint8_t alpha[ALPHA_SIZE] = {0};
   transaction_header.spendlist_len = 0;
   for (int i = 0; i < SPEND_LIST_SIZE; i++) {
     spendlist_append_item(p, v, div, pkd, rcm, alpha);
@@ -345,17 +341,12 @@ void zeroize_spend_data() {
 
 void zeroize_output_data() {
   uint64_t v = 0;
-  uint8_t div[DIV_SIZE];
-  uint8_t pkd[PKD_SIZE];
-  uint8_t ovk[OVK_SIZE];
-  uint8_t rcmv[RCM_V_SIZE];
-  uint8_t rseed[RSEED_SIZE];
+  uint8_t div[DIV_SIZE] = {0};
+  uint8_t pkd[PKD_SIZE] = {0};
+  uint8_t ovk[OVK_SIZE] = {0};
+  uint8_t rcmv[RCM_V_SIZE] = {0};
+  uint8_t rseed[RSEED_SIZE] = {0};
   uint8_t memotype = 0x00;
-  MEMZERO(div, sizeof(div));
-  MEMZERO(pkd, sizeof(pkd));
-  MEMZERO(ovk, sizeof(ovk));
-  MEMZERO(rcmv, sizeof(rcmv));
-  MEMZERO(rseed, sizeof(rseed));
   transaction_header.outputlist_len = 0;
   for (int i = 0; i < OUTPUT_LIST_SIZE; i++) {
     outputlist_append_item(div, pkd, v, memotype, ovk, rcmv, rseed);
@@ -364,8 +355,7 @@ void zeroize_output_data() {
 }
 
 void zeroize_signatures() {
-  uint8_t sig[SIGNATURE_SIZE];
-  MEMZERO(sig, SIGNATURE_SIZE);
+  uint8_t sig[SIGNATURE_SIZE] = {0};
 
   transaction_header.t_sign_index = 0;
   for (int i = 0; i < T_IN_LIST_SIZE; i++) {

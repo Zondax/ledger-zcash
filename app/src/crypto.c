@@ -329,22 +329,22 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen,
 
     uint8_t *memotype = start + INDEX_INPUT_OUTPUTMEMO;
     uint8_t *ovk = start + INDEX_INPUT_OUTPUTOVK;
+
     if (ovk[0] != 0x00 && ovk[0] != 0x01) {
       return (zxerr_t)EXTRACT_SAPLING_EB;
     }
-    uint8_t hash_seed[OVK_SET_SIZE];
+
+    uint8_t hash_seed[OVK_SET_SIZE] = {0};
     if (ovk[0] == 0x00) {
-      MEMZERO(hash_seed, OVK_SET_SIZE);
       cx_rng(hash_seed + 1, OVK_SIZE);
       ovk = hash_seed;
     }
 
-    uint8_t rnd1[RND_SIZE];
-    uint8_t rnd2[RND_SIZE];
+    uint8_t rnd1[RND_SIZE] = {0};
+    uint8_t rnd2[RND_SIZE] = {0};
     random_fr(rnd1);
     cx_rng(rnd2, RND_SIZE);
-    zxerr_t err =
-        outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
+    zxerr_t err = outputlist_append_item(div, pkd, v, *memotype, ovk, rnd1, rnd2);
     if (err != zxerr_ok) {
       return (zxerr_t)EXTRACT_SAPLING_EC;
     }

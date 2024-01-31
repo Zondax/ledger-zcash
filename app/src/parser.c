@@ -325,6 +325,10 @@ parser_error_t parser_getItem(uint8_t displayIdx, char *outKey,
 
     uint8_t itemnum = prs.index / NUM_ITEMS_SOUT;
     output_item_t *item = outputlist_retrieve_item(itemnum);
+    if (item == NULL) {
+        return parser_unexpected_error;
+    }
+
     uint8_t itemtype = prs.index % NUM_ITEMS_SOUT;
     switch (itemtype) {
     case 0: {
@@ -349,13 +353,10 @@ parser_error_t parser_getItem(uint8_t displayIdx, char *outKey,
 
     case 3: {
       snprintf(outKey, outKeyLen, "S-out OVK");
-      uint8_t dummy[OVK_SIZE];
-      MEMZERO(dummy, sizeof(dummy));
       if (item->ovk[0] == 0x01) {
-        char tmpBuffer[100];
+        char tmpBuffer[100] = {0};
         array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), item->ovk + 1, OVK_SIZE);
         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
-        return parser_ok;
       } else {
         snprintf(outVal, outValLen, "None");
       }
