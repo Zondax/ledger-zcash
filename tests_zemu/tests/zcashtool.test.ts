@@ -32,7 +32,7 @@ const defaultOptions = {
 jest.setTimeout(600000)
 
 async function takeLastSnapshot(testname: string, index: number, sim: Zemu) {
-  await sim.waitUntilScreenIs(sim.getMainMenuSnapshot(), 30000)
+  await sim.waitUntilScreenIs(sim.getMainMenuSnapshot())
   await sim.takeSnapshotAndOverwrite('.', testname, index)
   sim.compareSnapshots('.', testname, index)
 }
@@ -790,7 +790,6 @@ describe('End to end transactions', function () {
       const tx_input_data = TX_INPUT_DATA[2]
 
       const {
-        t_in: [],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
@@ -1308,10 +1307,8 @@ describe('End to end transactions', function () {
 
       const tx_input_data = TX_INPUT_DATA[4]
       const {
-        t_in: [tin1, tin2],
+        t_in: [tin1],
         t_out: [tout1, tout2],
-        s_spend: [],
-        s_output: [],
       } = tx_input_data
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
@@ -1427,12 +1424,6 @@ describe('End to end transactions', function () {
       In this test, we try to extract signatures without having done the checks and signing.
        */
       const tx_input_data = TX_INPUT_DATA[5]
-      const {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -1512,12 +1503,6 @@ describe('Failing transactions', function () {
        */
 
       const tx_input_data = TX_INPUT_DATA[5]
-      const {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
@@ -2230,13 +2215,6 @@ describe('Failing transactions', function () {
       const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
       tx_input_data.s_output[1].value -= 500 //change fee to something invalid
 
-      const {
-        t_in: [tin1],
-        t_out: [tout1],
-        s_spend: [s_spend1],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
-
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
@@ -2280,12 +2258,6 @@ describe('Failing transactions', function () {
        */
 
       const tx_input_data = TX_INPUT_DATA[5]
-      const {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
@@ -2340,8 +2312,6 @@ describe('Failing transactions', function () {
 
       const tx_input_data = TX_INPUT_DATA[5]
       const {
-        t_in: [],
-        t_out: [],
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
       } = tx_input_data
@@ -2353,8 +2323,7 @@ describe('Failing transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
-      await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.navigateUntilText('', '', sim.startOptions.approveKeyword, true, false) // we don't take snapshots here
       await sim.deleteEvents()
 
       const req = await reqinit
