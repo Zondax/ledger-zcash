@@ -314,7 +314,7 @@ Initiates a transaction for sapling. The init_message should have the following 
 | byte (variable) | transparent input data = [t_in]          | t_in_len \* 54 bytes  |
 | byte (variable) | transparent output data = [t_out]        | t_out_len \* 34 bytes |
 | byte (variable) | shielded spend data = [s_spend]          | s_in_len \* 55 bytes  |
-| byte (variable) | shielded output data = [s_out]           | s_out_len \* 84 bytes |
+| byte (variable) | shielded output data = [s_out]           | s_out_len \* 85 bytes |
 
 where
 
