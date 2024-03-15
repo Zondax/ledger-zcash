@@ -44,3 +44,12 @@ fn debug(_msg: &str) {}
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
+
+extern "C" {
+    fn io_heart_beat();
+}
+
+// Lets the device breath between computations
+pub(crate) fn heart_beat() {
+    unsafe { io_heart_beat() }
+}

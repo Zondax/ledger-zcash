@@ -174,3 +174,7 @@ void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar) {
     MEMZERO(point, JUBJUB_FIELD_BYTES);
   }
 }
+
+void io_heart_beat() {
+    io_seproxyhal_io_heartbeat();
+}
