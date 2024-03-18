@@ -45,11 +45,15 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
+#[cfg(not(test))]
 extern "C" {
     fn io_heart_beat();
 }
 
 // Lets the device breath between computations
 pub(crate) fn heart_beat() {
-    unsafe { io_heart_beat() }
+    #[cfg(not(test))]
+    unsafe {
+        io_heart_beat()
+    }
 }

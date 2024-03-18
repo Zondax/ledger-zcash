@@ -55,12 +55,14 @@ pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] 
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
+    crate::heart_beat();
     let r = sign_generate_r(&msg);
     let rbar = sign_compute_rbar(&r.to_bytes());
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
     sig[..32].copy_from_slice(&rbar);
     sig[32..].copy_from_slice(&sbar);
+    crate::heart_beat();
     sig
 }
 
@@ -127,12 +129,12 @@ pub extern "C" fn randomized_secret_from_seed(
     alpha_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    let mut ask = [0u8;32];
-    let mut nsk = [0u8;32];
+    let mut ask = [0u8; 32];
+    let mut nsk = [0u8; 32];
     let alpha = unsafe { &*alpha_ptr };
     let output = unsafe { &mut *output_ptr };
 
-    zip32_child_ask_nsk(seed_ptr,&mut ask, &mut nsk, pos);
+    zip32_child_ask_nsk(seed_ptr, &mut ask, &mut nsk, pos);
 
     let mut skfr = Fr::from_bytes(&ask).unwrap();
     let alphafr = Fr::from_bytes(&alpha).unwrap();

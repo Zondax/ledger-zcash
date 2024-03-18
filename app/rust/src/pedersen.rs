@@ -261,7 +261,6 @@ pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
     extended_to_bytes(&result_point)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
