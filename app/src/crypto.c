@@ -188,28 +188,28 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len,
 }
 
 zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
-  zemu_log_stack("crypto_fillSaplingSeed");
+    zemu_log_stack("crypto_fillSaplingSeed");
 
-  // Generate randomness using a fixed path related to the device mnemonic
-  const uint32_t path[HDPATH_LEN_DEFAULT] = {
-      0x8000002c, 0x80000085, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
-  };
-  MEMZERO(sk, ED25519_SK_SIZE);
+    // Generate randomness using a fixed path related to the device mnemonic
+    const uint32_t path[HDPATH_LEN_DEFAULT] = {
+        0x8000002c, 0x80000085, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
+    };
+    MEMZERO(sk, ED25519_SK_SIZE);
 
-  zxerr_t error = zxerr_unknown;
+    zxerr_t error = zxerr_unknown;
     io_seproxyhal_io_heartbeat();
-  CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519,
-                                                   path, HDPATH_LEN_DEFAULT, sk,
-                                                   NULL, NULL, 0));
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519,
+                                                    path, HDPATH_LEN_DEFAULT, sk,
+                                                    NULL, NULL, 0));
     io_seproxyhal_io_heartbeat();
-  error = zxerr_ok;
+    error = zxerr_ok;
 
-catch_cx_error:
-  if (error != zxerr_ok) {
-    MEMZERO(sk, 64);
-  }
+    catch_cx_error:
+    if (error != zxerr_ok) {
+        MEMZERO(sk, 64);
+    }
 
-  return error;
+    return error;
 }
 
 // handleInitTX step 1/2
@@ -710,6 +710,8 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen,
     // we later need nsk
     zip32_child_ask_nsk(tmp.step1.zip32_seed, tmp.step2.ask, tmp.step2.nsk,
                         item->path);
+    io_seproxyhal_io_heartbeat();
+
     get_rk(tmp.step2.ask, (uint8_t *)item->alpha, tmp.step3.rk);
     if (MEMCMP(tmp.step3.rk,
                start_spenddata + INDEX_SPEND_RK + i * SPEND_TX_LEN,
@@ -724,6 +726,7 @@ zxerr_t crypto_checkspend_sapling(uint8_t *buffer, uint16_t bufferLen,
                VALUE_COMMITMENT_SIZE) != 0) {
       CHECK_ZXERROR_AND_CLEAN(zxerr_unknown)
     }
+    io_seproxyhal_io_heartbeat();
 
     compute_note_commitment_fullpoint(tmp_buf->pedersen_hash,
                                       start_spendolddata + INDEX_SPEND_OLD_RCM +
@@ -842,10 +845,15 @@ zxerr_t crypto_checkoutput_sapling(uint8_t *buffer, uint16_t bufferLen,
     }
 
     rseed_get_rcm(item->rseed, rcm);
+    io_seproxyhal_io_heartbeat();
+
     compute_note_commitment(ncm.step4.notecommitment, rcm, item->value,
                             item->div, item->pkd);
+    io_seproxyhal_io_heartbeat();
+
     compute_value_commitment(item->value, item->rcmvalue,
                              ncm.step4.valuecommitment);
+    io_seproxyhal_io_heartbeat();
 
     if (MEMCMP(ncm.step4.valuecommitment,
                start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,
@@ -1098,6 +1106,7 @@ static zxerr_t address_to_script(uint8_t *address, uint8_t *output) {
   cx_hash_sha256(address, PK_LEN_SECP256K1, tmp, CX_SHA256_SIZE);
 
   CHECK_ZXERR(ripemd160(tmp, CX_SHA256_SIZE, script + SCRIPT_CONSTS_SIZE));
+  io_seproxyhal_io_heartbeat();
 
   script[24] = 0x88;
   script[25] = 0xac;
@@ -1176,6 +1185,7 @@ zxerr_t crypto_sign_and_check_transparent(uint8_t *buffer, uint16_t bufferLen,
                                                    &cx_publicKey));
     CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey,
                                                  &cx_privateKey, 1));
+    io_seproxyhal_io_heartbeat();
 
     for (int j = 0; j < PUB_KEY_SIZE; j++) {
       pubKey[j] = cx_publicKey.W[SIG_S_SIZE + SIG_R_SIZE - j];
@@ -1305,6 +1315,7 @@ zxerr_t crypto_signspends_sapling(uint8_t *buffer, uint16_t bufferLen,
     rsk_to_rk((uint8_t *)tmp.step3.rsk, message);
 
     sign_redjubjub(tmp.step3.rsk, message, buffer);
+    io_seproxyhal_io_heartbeat();
     CHECK_ZXERROR_AND_CLEAN(spend_signatures_append(buffer))
     MEMZERO(&tmp, sizeof(tmp_sign_s));
     CHECK_APP_CANARY()
@@ -1588,43 +1599,43 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer,
 // handleGetAddrSapling
 zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen,
                                    uint32_t p, uint16_t *replyLen) {
-  if (bufferLen < sizeof(tmp_buf_addr_s)) {
-    return zxerr_unknown;
-  }
+    if (bufferLen < sizeof(tmp_buf_addr_s)) {
+        return zxerr_unknown;
+    }
 
-  zemu_log_stack("crypto_fillAddress_sapling");
-  tmp_buf_addr_s *const out = (tmp_buf_addr_s *)buffer;
-  MEMZERO(buffer, bufferLen);
+    zemu_log_stack("crypto_fillAddress_sapling");
+    tmp_buf_addr_s *const out = (tmp_buf_addr_s *)buffer;
+    MEMZERO(buffer, bufferLen);
 
-  // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-  // part of hdPath
-  uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
+    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
+    // part of hdPath
+    uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
-  // Temporarily get sk from Ed25519
-  if (crypto_fillSaplingSeed(zip32_seed) != zxerr_ok) {
+    // Temporarily get sk from Ed25519
+    if (crypto_fillSaplingSeed(zip32_seed) != zxerr_ok) {
+        MEMZERO(zip32_seed, sizeof(zip32_seed));
+        *replyLen = 0;
+        return zxerr_unknown;
+    }
+    CHECK_APP_CANARY()
+
+    get_pkd_from_seed(zip32_seed, p, out->startindex, out->diversifier, out->pkd);
+    MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
+    CHECK_APP_CANARY()
+
     MEMZERO(zip32_seed, sizeof(zip32_seed));
-    *replyLen = 0;
-    return zxerr_unknown;
-  }
-  CHECK_APP_CANARY()
+    if (bech32EncodeFromBytes(out->address_bech32,
+                                sizeof_field(tmp_buf_addr_s, address_bech32),
+                                BECH32_HRP, out->address_raw,
+                                sizeof_field(tmp_buf_addr_s, address_raw), 1,
+                                BECH32_ENCODING_BECH32) != zxerr_ok) {
+        MEMZERO(out, bufferLen);
+        *replyLen = 0;
+        return zxerr_unknown;
+    }
+    CHECK_APP_CANARY()
 
-  get_pkd_from_seed(zip32_seed, p, out->startindex, out->diversifier, out->pkd);
-  MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
-  CHECK_APP_CANARY()
-
-  MEMZERO(zip32_seed, sizeof(zip32_seed));
-  if (bech32EncodeFromBytes(out->address_bech32,
-                            sizeof_field(tmp_buf_addr_s, address_bech32),
-                            BECH32_HRP, out->address_raw,
-                            sizeof_field(tmp_buf_addr_s, address_raw), 1,
-                            BECH32_ENCODING_BECH32) != zxerr_ok) {
-    MEMZERO(out, bufferLen);
-    *replyLen = 0;
-    return zxerr_unknown;
-  }
-  CHECK_APP_CANARY()
-
-  *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) +
-              strlen((const char *)out->address_bech32);
-  return zxerr_ok;
+    *replyLen = sizeof_field(tmp_buf_addr_s, address_raw) +
+                strlen((const char *)out->address_bech32);
+    return zxerr_ok;
 }

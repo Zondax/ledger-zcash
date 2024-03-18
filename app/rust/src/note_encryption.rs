@@ -63,9 +63,9 @@ pub extern "C" fn ka_to_key(
     let epk = unsafe { &*epk_ptr };
     let shared_secret = sapling_ka_agree(esk, pkd);
     let key = kdf_sapling(&shared_secret, epk);
+    crate::heart_beat();
     let output = unsafe { &mut *output_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&key);
-    crate::heart_beat();
 }
 
 #[no_mangle]

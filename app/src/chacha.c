@@ -118,6 +118,7 @@ void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key,
       todo = in_len;
     }
     chacha_core(buf, input);
+    io_seproxyhal_io_heartbeat();
     for (i = 0; i < todo; i++) {
       out[i] = in[i] ^ buf[i];
     }

@@ -57,7 +57,9 @@ pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] 
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
     crate::heart_beat();
     let r = sign_generate_r(&msg);
+    crate::heart_beat();
     let rbar = sign_compute_rbar(&r.to_bytes());
+    crate::heart_beat();
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
     sig[..32].copy_from_slice(&rbar);

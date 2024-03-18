@@ -14,6 +14,7 @@ use crate::{bolos, pedersen::extended_to_bytes, zip32};
 #[inline(never)]
 pub fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {
     let bytes = zip32::prf_expand(rseed, &[0x04]);
+    crate::heart_beat();
     jubjub::Fr::from_bytes_wide(&bytes)
 }
 
