@@ -197,9 +197,11 @@ zxerr_t crypto_fillSaplingSeed(uint8_t *sk) {
   MEMZERO(sk, ED25519_SK_SIZE);
 
   zxerr_t error = zxerr_unknown;
+    io_seproxyhal_io_heartbeat();
   CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519,
                                                    path, HDPATH_LEN_DEFAULT, sk,
                                                    NULL, NULL, 0));
+    io_seproxyhal_io_heartbeat();
   error = zxerr_ok;
 
 catch_cx_error:
