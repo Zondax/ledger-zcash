@@ -57,6 +57,7 @@ zxerr_t nu5_transparent_prevouts_hash(const uint8_t *input, uint8_t *output) {
   const uint8_t *data = input + INDEX_TIN_PREVOUT;
   for (uint8_t i = 0; i < n - 1; i++, data += T_IN_TX_LEN) {
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, data, PREVOUT_SIZE, NULL, 0));
+    io_seproxyhal_io_heartbeat();
   }
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, data, PREVOUT_SIZE, output, HASH_SIZE));
   return zxerr_ok;
@@ -80,6 +81,7 @@ zxerr_t nu5_transparent_sequence_hash(const uint8_t *input, uint8_t *output) {
   const uint8_t *data = input + INDEX_TIN_SEQ;
   for (uint8_t i = 0; i < n - 1; i++, data += T_IN_TX_LEN) {
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, data, SEQUENCE_SIZE, NULL, 0));
+    io_seproxyhal_io_heartbeat();
   }
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, data, SEQUENCE_SIZE, output, HASH_SIZE));
   return zxerr_ok;

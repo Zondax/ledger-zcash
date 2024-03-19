@@ -51,6 +51,7 @@ zxerr_t sapling_transparent_prevouts_hash(const uint8_t *input, uint8_t *output)
     if (cx_hash_no_throw(&ctx.header, 0, data, 36, NULL, 0) != CX_OK) {
       return zxerr_invalid_crypto_settings;
     }
+    io_seproxyhal_io_heartbeat();
   }
   const cx_err_t error = cx_hash_no_throw(&ctx.header, CX_LAST, data, 36, output, HASH_SIZE);
 
@@ -71,6 +72,7 @@ zxerr_t sapling_transparent_sequence_hash(const uint8_t *input, uint8_t *output)
   const uint8_t *data = input + INDEX_TIN_SEQ;
   for (uint8_t i = 0; i < n - 1; i++, data += T_IN_TX_LEN) {
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, data, 4, NULL, 0));
+    io_seproxyhal_io_heartbeat();
   }
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, data, 4, output, HASH_SIZE));
 
@@ -95,6 +97,7 @@ zxerr_t v4_transparent_outputs_hash(uint8_t *output) {
     MEMCPY(data, (uint8_t *)&(item->value), 8);
     MEMCPY(data + 8, item->address, SCRIPT_SIZE);
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, data, sizeof(data), NULL, 0));
+    io_seproxyhal_io_heartbeat();
   }
   t_output_item_t *item = t_outlist_retrieve_item(i);
   MEMCPY(data, (uint8_t *)&(item->value), 8);
@@ -168,14 +171,19 @@ static zxerr_t signature_hash_v5(const uint8_t *input, uint8_t *start_signdata,
   uint8_t orchard_digest[32] = {0};
 
   CHECK_ZXERR(hash_header_txid_data(start_signdata, header_digest));
+  io_seproxyhal_io_heartbeat();
   CHECK_ZXERR(transparent_sig_digest(input, start_signdata, index, type, transparent_digest));
+  io_seproxyhal_io_heartbeat();
   CHECK_ZXERR(hash_sapling_txid_data(start_signdata, sapling_digest));
+  io_seproxyhal_io_heartbeat();
   CHECK_ZXERR(hash_empty_orchard_txid_data(orchard_digest));
+  io_seproxyhal_io_heartbeat();
 
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, header_digest, HASH_SIZE, NULL, 0));
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, transparent_digest, HASH_SIZE, NULL, 0));
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, sapling_digest, HASH_SIZE, NULL, 0));
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, orchard_digest, HASH_SIZE, output, HASH_SIZE));
+  io_seproxyhal_io_heartbeat();
 
   return zxerr_ok;
 }
@@ -208,6 +216,7 @@ static zxerr_t signature_script_hash_v4(const uint8_t *input, uint16_t inputlen,
   CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)personalization, PERSONALIZATION_SIZE));
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, input, inputlen, NULL, 0));
   CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, script, scriptlen, output, HASH_SIZE));
+  io_seproxyhal_io_heartbeat();
 
   return zxerr_ok;
 }
