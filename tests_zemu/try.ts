@@ -5,7 +5,8 @@ import { get_inittx_data, ZcashBuilderBridge } from '@zondax/zcashtools'
 import assert from 'node:assert'
 import { createHash } from 'node:crypto'
 import { resolve as Resolve } from 'node:path'
-import { TX_INPUT_DATA, TxInputData } from './tests/vectors'
+import { TX_INPUT_DATA } from './tests/vectors'
+import type { InitData as TxInputData } from '@zondax/zcashtools'
 
 const SPEND_PATH = Resolve('../zcashtools/params/sapling-spend.params')
 const OUTPUT_PATH = Resolve('../zcashtools/params/sapling-output.params')
@@ -109,8 +110,8 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
   builder.add_signatures(signatures)
 
   const tx = builder.finalize();
-  console.log(`Final transaction payload: ${tx.toString('hex')}`);
-  return tx;
+  console.log(`Final transaction payload: ${tx.toString()}`);
+  return Buffer.from(tx);
 }
 
 async function main() {
@@ -120,9 +121,11 @@ async function main() {
   });
   const app = new ZCashApp(transport);
 
-  for (const input of TX_INPUT_DATA) {
-    await test(app, input);
-  }
+  const resp = await app.getivk(1000);
+  console.log(resp)
+//   for (const input of TX_INPUT_DATA) {
+//     await test(app, input);
+//   }
 }
 
 ; (async () => {
