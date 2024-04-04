@@ -46,7 +46,7 @@
     "jest-serial-runner": "^1.2.0",
     "prettier": "^3.2.4",
     "secp256k1": "^5.0.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "scripts": {
     "build": "babel src --out-dir dist && yarn build:types",

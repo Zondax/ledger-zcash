@@ -40,6 +40,15 @@ zcashtools_test: zcashtools_build
 
 zemu_install: zcashtools_build
 
+update:
+#	cd app/rust && cargo update
+	cd zcashtools && cargo update
+	cd zcashtools/neon/native && cargo update
+	git submodule update --init --remote
+
+shell:
+	poetry install --no-root && poetry shell
+
 test_all:
 	make zemu_install
 	make zcashtools_test
