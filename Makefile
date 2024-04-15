@@ -45,3 +45,6 @@ test_all:
 	make zcashtools_test
 	make
 	make zemu_test
+
+shell:
+	poetry install --no-root && poetry shell
