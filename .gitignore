@@ -102,3 +102,4 @@ app/glyphs/glyphs.h
 /tests_zemu/yarn.lock
 
 node_modules/.yarn-integrity
+app/rust/.cargo/.package-cache-mutate
