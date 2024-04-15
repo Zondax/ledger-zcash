@@ -22,11 +22,7 @@ pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32
 }
 
 #[no_mangle]
-pub fn get_epk(
-    esk_ptr: *const [u8; 32],
-    d_ptr: *const [u8; 11],
-    output_ptr: *mut [u8; 32],
-) {
+pub fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let d = unsafe { &*d_ptr };
     let output = unsafe { &mut *output_ptr };
@@ -35,18 +31,22 @@ pub fn get_epk(
 }
 
 #[no_mangle]
-pub extern "C" fn rseed_get_esk_epk(rseed_ptr: *const [u8; 32],
-                                    d_ptr: *const [u8; 11],
-                                    output_esk_ptr: *mut [u8; 32],
-                                    output_epk_ptr: *mut [u8; 32]) {
+pub extern "C" fn rseed_get_esk_epk(
+    rseed_ptr: *const [u8; 32],
+    d_ptr: *const [u8; 11],
+    output_esk_ptr: *mut [u8; 32],
+    output_epk_ptr: *mut [u8; 32],
+) {
+    crate::heart_beat();
     let rseed = unsafe { &*rseed_ptr };
-//    let d = unsafe { &*d_ptr };
+    //    let d = unsafe { &*d_ptr };
     let output_esk = unsafe { &mut *output_esk_ptr };
     let output_epk = unsafe { &mut *output_epk_ptr };
     rseed_get_esk(rseed, output_esk);
 
     //let epk = multwithgd(output_esk, d);
-    get_epk(output_esk,d_ptr,output_epk);
+    get_epk(output_esk, d_ptr, output_epk);
+    crate::heart_beat();
     //output_epk.copy_from_slice(&epk);
 }
 
@@ -57,11 +57,13 @@ pub extern "C" fn ka_to_key(
     epk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
+    crate::heart_beat();
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let pkd = unsafe { &*pkd_ptr };
     let epk = unsafe { &*epk_ptr };
     let shared_secret = sapling_ka_agree(esk, pkd);
     let key = kdf_sapling(&shared_secret, epk);
+    crate::heart_beat();
     let output = unsafe { &mut *output_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&key);
 }

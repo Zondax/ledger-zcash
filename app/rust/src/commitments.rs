@@ -271,9 +271,12 @@ pub extern "C" fn compute_nullifier(
     let nsk = unsafe { &*nsk_ptr };
     let mut nk = [0u8; 32];
     nsk_to_nk(nsk, &mut nk);
+    crate::heart_beat();
     let scalar = Fr::from(pos);
     let e = bytes_to_extended(ncm);
+    crate::heart_beat();
     let rho = mixed_pedersen(&e, scalar);
+    crate::heart_beat();
     let output = unsafe { &mut *output_ptr };
     output.copy_from_slice(&prf_nf(&nk, &rho));
 }
@@ -350,6 +353,8 @@ pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> b
 
 #[cfg(test)]
 mod tests {
+    use byteorder::ByteOrder;
+
     use super::*;
 
     #[test]

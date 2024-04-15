@@ -14,12 +14,12 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models, OUTPUT_PATH, SPEND_PATH } from './common'
-import { ZcashBuilderBridge } from '@zondax/zcashtools'
+import { APP_SEED, models } from './common'
+import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
+import { fee_for, TX_INPUT_DATA } from './vectors'
 
-const addon = require('@zondax/zcashtools')
 const crypto = require('crypto')
 const tx_version = 0x05
 
@@ -31,19 +31,14 @@ const defaultOptions = {
 
 jest.setTimeout(600000)
 
-beforeAll(async () => {
-  await Zemu.checkAndPullImage()
-})
-
-async function takeLastSnapshot(testname: string, index: number, sim: any) {
-  await sim.waitForText('Ready', 30000)
+async function takeLastSnapshot(testname: string, index: number, sim: Zemu) {
+  await sim.waitUntilScreenIs(sim.getMainMenuSnapshot())
   await sim.takeSnapshotAndOverwrite('.', testname, index)
-  await sim.compareSnapshots('.', testname, index)
+  sim.compareSnapshots('.', testname, index)
 }
 
-
 describe('Get keys', function () {
-  test.each(models)('get ivk', async function (m) {
+  test.concurrent.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -72,7 +67,7 @@ describe('Get keys', function () {
     }
   })
 
-  test.each(models)('get outgoing viewing key', async function (m) {
+  test.concurrent.each(models)('get outgoing viewing key', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -96,7 +91,7 @@ describe('Get keys', function () {
     }
   })
 
-  test.each(models)('Get full viewing key', async function (m) {
+  test.concurrent.each(models)('Get full viewing key', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -128,7 +123,7 @@ describe('Get keys', function () {
     }
   })
 
-  test.each(models)('Get nullifier', async function (m) {
+  test.concurrent.each(models)('Get nullifier', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -165,7 +160,7 @@ describe('Get keys', function () {
 })
 
 describe('Addresses and diversifiers', function () {
-  test.each(models)('get shielded address with div', async function (m) {
+  test.concurrent.each(models)('get shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -189,10 +184,15 @@ describe('Addresses and diversifiers', function () {
     }
   })
 
-  test.each(models)('show shielded address with div', async function (m) {
+  test.concurrent.each(models)('show shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new ZCashApp(sim.getTransport())
 
       const path = 1000
@@ -215,7 +215,7 @@ describe('Addresses and diversifiers', function () {
     }
   })
 
-  test.each(models)('get div list with startindex', async function (m) {
+  test.concurrent.each(models)('get div list with startindex', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -246,56 +246,28 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      // here 1000 represents the fee
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
        In this test, Alice wants to send 55000 ZEC to Bob.
        For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
        The inputs to the initialization is therefore two spend notes and two output notes.
-       She takes a transaction fee of 1000.
+       She takes a transaction fee according to ZIP-0317.
        All this info is gathered from the UI and put in the correct jsons.
         */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-      // CHANGE ADDRESS:
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
+      const tx_input_data = TX_INPUT_DATA[0]
+      const {
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
        The inputs to the get_inittx_data function are the inputs to the transaction.
        The output is a blob that can be sent to the ledger device.
        */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       /*
@@ -309,9 +281,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -477,7 +449,7 @@ describe('End to end transactions', function () {
        For this, it uses the input from inittx to verify.
        If all checks are ok, the ledger signs the transaction.
         */
-//      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
+      //      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
       const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
       console.log(req6)
@@ -512,9 +484,9 @@ describe('End to end transactions', function () {
       Note that for this transaction, we do not have any transparent signatures.
       */
 
-     const signatures = {
-       transparent_sigs: [],
-       spend_sigs: [req7.sig_raw, req8.sig_raw],
+      const signatures = {
+        transparent_sigs: [],
+        spend_sigs: [req7.sig_raw, req8.sig_raw],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -541,8 +513,6 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      const builder = new ZcashBuilderBridge(1000)
-
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
       For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
@@ -550,49 +520,24 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 65000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[1]
+      const {
         t_in: [tin1],
-        t_out: [],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -606,9 +551,9 @@ describe('End to end transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -829,10 +774,7 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -841,48 +783,25 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
+      const tx_input_data = TX_INPUT_DATA[2]
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
-        t_in: [],
+      const {
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -897,9 +816,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1106,10 +1025,7 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1118,54 +1034,25 @@ describe('End to end transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3]
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -1180,9 +1067,9 @@ describe('End to end transactions', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -1412,53 +1299,29 @@ describe('End to end transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
        */
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 50000,
-      }
 
-      const tin2 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 50000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const tout2 = {
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 100000 - 1000 - 10000,
-      }
-
-      const tx_input_data = {
-        t_in: [tin1, tin2],
+      const tx_input_data = TX_INPUT_DATA[4]
+      const {
+        t_in: [tin1],
         t_out: [tout1, tout2],
-        s_spend: [],
-        s_output: [],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
-      const testname =  `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-2-tr-in-2-tr-out`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1560,49 +1423,17 @@ describe('End to end transactions', function () {
       /*
       In this test, we try to extract signatures without having done the checks and signing.
        */
+      const tx_input_data = TX_INPUT_DATA[5]
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      }
-
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      const testname = `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
+      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.deleteEvents()
 
       const req = await reqinit
       expect(req.return_code).toEqual(0x9000)
@@ -1671,40 +1502,9 @@ describe('Failing transactions', function () {
       In this test, we try to extract signatures without having done the checks and signing.
        */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
+      const tx_input_data = TX_INPUT_DATA[5]
 
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      }
-
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       const reqinit = app.inittx(ledgerblob_initdata)
@@ -1732,10 +1532,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -1744,54 +1541,25 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3]
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -1907,7 +1675,7 @@ describe('Failing transactions', function () {
       const outj1 = {
         rcv: req4.rcv_raw,
         rseed: req4.rseed_raw,
-        ovk: null,
+        ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
@@ -1933,7 +1701,7 @@ describe('Failing transactions', function () {
       const outj2 = {
         rcv: req5.rcv_raw,
         rseed: req5.rseed_raw,
-        ovk: null,
+        ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
@@ -2009,10 +1777,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -2021,54 +1786,25 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3]
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).toString('hex'))
 
       /*
@@ -2261,10 +1997,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const { ZcashBuilderBridge } = addon
       console.log(SPEND_PATH)
-
-      const builder = new ZcashBuilderBridge(1000)
 
       /*
       In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
@@ -2273,54 +2006,26 @@ describe('Failing transactions', function () {
       The inputs to the initialization is therefore:
       - one transparent input and one transparent output
       - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
+      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
+      const tx_input_data = TX_INPUT_DATA[3]
+      const {
         t_in: [tin1],
         t_out: [tout1],
         s_spend: [s_spend1],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2500,67 +2205,22 @@ describe('Failing transactions', function () {
     }
   })
 
-  test.each(models)('try txfee of 10000', async function (m) {
+  test.each(models)('try non ZIP-0317 fee', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee of 10000 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
-
-      const tin1 = {
-        path: [44 + 0x80000000, 133 + 0x80000000, 5 + 0x80000000, 0, 0],
-        address: '1976a9140f71709c4b828df00f93d20aa2c34ae987195b3388ac',
-        value: 60000,
-      }
-
-      const tout1 = {
-        address: '1976a914000000000000000000000000000000000000000088ac',
-        value: 10000,
-      }
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 40000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 10000 - 55000 - 10000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
-        t_in: [tin1],
-        t_out: [tout1],
-        s_spend: [s_spend1],
-        s_output: [s_out1, s_out2],
-      }
+      //use stringify+parse for deep copy
+      const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
+      tx_input_data.s_output[1].value -= 500 //change fee to something invalid
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2585,7 +2245,7 @@ describe('Failing transactions', function () {
   test.each(models)('extract data after tx reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({ ...defaultOptions, model: m.name, rejectKeyword: m.name === 'stax' ? 'Hold' : '' })
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -2594,49 +2254,17 @@ describe('Failing transactions', function () {
       In this test, Alice wants to send 55000 ZEC to Bob.
       For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
       The inputs to the initialization is therefore two spend notes and two output notes.
-      She takes a transaction fee of 1000.
       All this info is gathered from the UI and put in the correct jsons.
        */
 
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      }
+      const tx_input_data = TX_INPUT_DATA[5]
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
       The output is a blob that can be send to the ledger device.
       */
 
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
@@ -2650,7 +2278,7 @@ describe('Failing transactions', function () {
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.navigateAndCompareUntilText('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`, 'REJECT')
+      await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`)
 
       const req = await reqinit
 
@@ -2682,52 +2310,21 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      // here 1000 represents the fee
-      const builder = new ZcashBuilderBridge(1000)
-
-      const s_spend1 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_spend2 = {
-        path: 1000,
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 50000,
-      }
-
-      const s_out1 = {
-        address: '15eae700e01e24e2137d554d67bb0da64eee0bf1c2c392c5f1173a979baeb899663808cd22ed8df27566cc',
-        value: 55000,
-        memo_type: 0xf6,
-        ovk: null,
-      }
-      // CHANGE ADDRESS:
-      const s_out2 = {
-        address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
-        value: 100000 - 1000 - 55000,
-        memo_type: 0xf6,
-        ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
-      }
-
-      const tx_input_data = {
-        t_in: [],
-        t_out: [],
+      const tx_input_data = TX_INPUT_DATA[5]
+      const {
         s_spend: [s_spend1, s_spend2],
         s_output: [s_out1, s_out2],
-      }
+      } = tx_input_data
+      const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-
-      const ledgerblob_initdata = addon.get_inittx_data(tx_input_data)
+      const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
       const reqinit = app.inittx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname =  `${m.prefix.toLowerCase()}-2-spend-2-out`
-      const last_index = await sim.navigateUntilText('.', testname, 'APPROVE')
-      sim.deleteEvents()
+      await sim.navigateUntilText('', '', sim.startOptions.approveKeyword, true, false) // we don't take snapshots here
+      await sim.deleteEvents()
 
       const req = await reqinit
 
@@ -2735,11 +2332,10 @@ describe('Failing transactions', function () {
       expect(req.return_code).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
-      let hash = crypto.createHash('sha256')
+      const hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
-      let h = hash.digest('hex')
+      const h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
-
 
       const req2 = await app.extractspenddata()
       console.log(req2)
@@ -2866,5 +2462,4 @@ describe('Failing transactions', function () {
       await sim.close()
     }
   })
-
 })

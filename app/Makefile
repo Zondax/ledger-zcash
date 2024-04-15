@@ -40,8 +40,8 @@ $(info COIN  = [$(COIN)])
 
 ifeq ($(COIN),ZEC)
 # Main app configuration
-APPNAME = "Zcash"
-APPPATH = "44'/133'"
+APPNAME = "Zcash Shielded"
+APPPATH = "44'/133'" --path "44'/1'"
 else
 define error_message
 COIN value not supported: [$(COIN)]
@@ -49,9 +49,8 @@ endef
 $(error "$(error_message)")
 endif
 
-APP_LOAD_PARAMS = --curve secp256k1 $(COMMON_LOAD_PARAMS) --path $(APPPATH)
+APP_LOAD_PARAMS = --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS) --path $(APPPATH)
 
-NANOS_STACK_SIZE := 3216
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.devices
 
 $(info TARGET_NAME  = [$(TARGET_NAME)])
@@ -63,7 +62,7 @@ endif
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
 
-DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512
+DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512 HAVE_ZIP0317
 APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
