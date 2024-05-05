@@ -22,12 +22,11 @@ pub fn into_fixed_array<T: Into<u128>>(value: T) -> [u8; 32] {
 
     let mut scalar = [0u8; 32];
 
-    let size = std::mem::size_of::<T>();
+    let size = core::mem::size_of::<T>();
     scalar[..size].copy_from_slice(&bytes[..size]);
 
     scalar
 }
-
 #[inline(never)]
 pub fn shiftsixbits(input: &mut [u8; 73]) {
     for i in (1..73).rev() {

@@ -1,21 +1,17 @@
-use aes::block_cipher_trait::{
-    BlockCipher,
-    generic_array::GenericArray,
-    generic_array::typenum::{U16, U32, U8},
-};
 use binary_ff1::BinaryFF1;
 use blake2s_simd::Params as Blake2sParams;
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
+use aes::block_cipher_trait::BlockCipher;
+use aes::block_cipher_trait::generic_array::GenericArray;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
 use crate::commitments::bytes_to_extended;
 use crate::constants::{AK_NK, AK_NSK, ASK_NSK, COIN_TYPE, DIV_DEFAULT_LIST_LEN, DIV_SIZE, DK, DK_AK_NK, FIRSTVALUE, PROVING_KEY_BASE};
 use crate::pedersen::extended_to_bytes;
-use crate::{bolos};
 use crate::bolos::{blake2b, c_zemu_log_stack};
 use crate::bolos::blake2b::{blake2b64_with_personalization, blake2b_expand_seed, blake2b_expand_vec_four, blake2b_expand_vec_two};
-use crate::bolos::aes::aes256_encrypt_block;
+use crate::bolos::aes::AesSDK;
 use crate::bolos::canary::c_check_app_canary;
 use crate::bolos::jubjub::sdk_jubjub_scalarmult_spending_base;
 use crate::perso::{CRH_IVK_PERSONALIZATION, ZIP32_SAPLING_MASTER_PERSONALIZATION};
@@ -115,33 +111,6 @@ pub fn default_diversifier_fromlist(list: &[u8; 110]) -> [u8; 11] {
     }
     //return a value that indicates that diversifier not found
     result
-}
-
-struct AesSDK {
-    key: [u8; 32],
-}
-
-impl BlockCipher for AesSDK {
-    type KeySize = U32;
-    type BlockSize = U16;
-    type ParBlocks = U8;
-
-    #[inline(never)]
-    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesSDK {
-        let v: [u8; 32] = k.as_slice().try_into().expect("Wrong length");
-        AesSDK { key: v }
-    }
-    #[inline(never)]
-    fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>) {
-        let x: [u8; 16] = block.as_slice().try_into().expect("err");
-        let y = aes256_encrypt_block(&self.key, &x);
-
-        block.copy_from_slice(&y);
-    }
-
-    fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>) {
-        //not used but has to be defined
-    }
 }
 
 //list of 10 diversifiers
