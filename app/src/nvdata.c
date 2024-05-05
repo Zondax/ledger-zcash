@@ -123,8 +123,7 @@ zxerr_t transparent_signatures_append(uint8_t *signature) {
     if (transaction_header.t_sign_index >= transaction_header.t_in_len) {
         return zxerr_unknown;
     }
-    MEMCPY_NV((void *)&N_transactioninfo.transparent_signatures[transaction_header.t_sign_index], signature,
-              SIGNATURE_SIZE);
+    MEMCPY_NV((void *)&N_transactioninfo.transparent_signatures[transaction_header.t_sign_index], signature, SIGNATURE_SIZE);
     transaction_header.t_sign_index++;
     return zxerr_ok;
 }
@@ -152,8 +151,7 @@ zxerr_t spend_signatures_append(uint8_t *signature) {
         return zxerr_unknown;
     }
 
-    MEMCPY_NV((void *)&N_transactioninfo.spend_signatures[transaction_header.spends_sign_index], signature,
-              SIGNATURE_SIZE);
+    MEMCPY_NV((void *)&N_transactioninfo.spend_signatures[transaction_header.spends_sign_index], signature, SIGNATURE_SIZE);
     transaction_header.spends_sign_index++;
     return zxerr_ok;
 }

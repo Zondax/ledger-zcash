@@ -15,10 +15,17 @@
  ********************************************************************************/
 
 #pragma once
+#include "zxerror.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct {
+    key_type_e kind;
+    uint8_t len;
+} key_state_t;
+
 
 /// Return the number of items in the address view
 zxerr_t key_getNumItems(uint8_t *num_items);

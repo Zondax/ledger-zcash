@@ -22,20 +22,19 @@ use core::mem;
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
-pub use zxformat::{fpi64_to_str, fpu64_to_str};
-
-use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
 
 mod bolos;
 mod commitments;
 mod constants;
 mod errors;
-mod note_encryption;
+mod notes;
 mod pedersen;
 mod redjubjub;
 mod zeccrypto;
 mod zip32;
-mod zxformat;
+mod utils;
+mod perso;
+mod bitstreamer;
 
 fn debug(_msg: &str) {}
 

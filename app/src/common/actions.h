@@ -19,23 +19,15 @@
 #include <stdint.h>
 
 #include "apdu_codes.h"
+#include "apdu_errors.h"
 #include "app_main.h"
 #include "coin.h"
 #include "crypto.h"
 #include "nvdata.h"
 #include "parser.h"
 #include "tx.h"
-#include "apdu_errors.h"
-
-typedef struct {
-    address_kind_e kind;
-    uint8_t len;
-} address_state_t;
-
-typedef struct {
-    key_type_e kind;
-    uint8_t len;
-} key_state_t;
+#include "key.h"
+#include "addr.h"
 
 extern address_state_t action_addrResponse;
 extern key_state_t key_state;

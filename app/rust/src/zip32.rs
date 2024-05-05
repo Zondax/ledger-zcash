@@ -1,46 +1,30 @@
-use aes::{
-    block_cipher_trait::{
-        generic_array::typenum::{U16, U32, U8},
-        generic_array::GenericArray,
-        BlockCipher,
-    },
-    Aes256,
+use aes::block_cipher_trait::{
+    BlockCipher,
+    generic_array::GenericArray,
+    generic_array::typenum::{U16, U32, U8},
 };
 use binary_ff1::BinaryFF1;
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
+use blake2s_simd::Params as Blake2sParams;
 use byteorder::{ByteOrder, LittleEndian};
 use core::convert::TryInto;
-use core::mem;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
 use crate::commitments::bytes_to_extended;
-use crate::constants::{AK_NK, AK_NSK, ASK_NSK,
-                       COIN_TYPE,
-                       CRH_IVK_PERSONALIZATION,
-                       DIV_SIZE, DIV_DEFAULT_LIST_LEN,
-                       DK,DK_AK_NK,
-                       FIRSTVALUE,
-                       PROVING_KEY_BASE};
+use crate::constants::{AK_NK, AK_NSK, ASK_NSK, COIN_TYPE, DIV_DEFAULT_LIST_LEN, DIV_SIZE, DK, DK_AK_NK, FIRSTVALUE, PROVING_KEY_BASE};
 use crate::pedersen::extended_to_bytes;
-use crate::{bolos, c_check_app_canary, constants};
+use crate::{bolos};
+use crate::bolos::{blake2b, c_zemu_log_stack};
+use crate::bolos::blake2b::{blake2b64_with_personalization, blake2b_expand_seed, blake2b_expand_vec_four, blake2b_expand_vec_two};
+use crate::bolos::aes::aes256_encrypt_block;
+use crate::bolos::canary::c_check_app_canary;
+use crate::bolos::jubjub::sdk_jubjub_scalarmult_spending_base;
+use crate::perso::{CRH_IVK_PERSONALIZATION, ZIP32_SAPLING_MASTER_PERSONALIZATION};
 
-
-extern "C" {
-    fn zemu_log_stack(buffer: *const u8);
-}
-
-#[cfg(not(test))]
-pub fn c_zemu_log_stack(s: &[u8]) {
-    unsafe { zemu_log_stack(s.as_ptr()) }
-}
-
-#[cfg(test)]
-pub fn c_zemu_log_stack(_s: &[u8]) {}
 
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
     crate::heart_beat();
-    bolos::blake2b_expand_seed(sk, t)
+    blake2b_expand_seed(sk, t)
 }
 
 #[inline(never)]
@@ -60,7 +44,7 @@ pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> [u8; 32] {
 #[inline(never)]
 pub fn sapling_ask_to_ak(ask: &[u8; 32]) -> [u8; 32] {
     let mut point = [0u8; 32];
-    bolos::sdk_jubjub_scalarmult_spending_base(&mut point, &ask[..]);
+    sdk_jubjub_scalarmult_spending_base(&mut point, &ask[..]);
     point
 }
 
@@ -105,7 +89,7 @@ fn diversifier_group_hash_light(tag: &[u8]) -> bool {
     if tag == [0u8; 11] {
         return false;
     }
-    let hash_tag = bolos::blake2s_diversification(tag);
+    let hash_tag = blake2b::blake2s_diversification(tag);
 
     //    diversifier_group_hash_check(&x)
 
@@ -150,7 +134,7 @@ impl BlockCipher for AesSDK {
     #[inline(never)]
     fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>) {
         let x: [u8; 16] = block.as_slice().try_into().expect("err");
-        let y = bolos::aes256_encryptblock(&self.key, &x);
+        let y = aes256_encrypt_block(&self.key, &x);
 
         block.copy_from_slice(&y);
     }
@@ -247,7 +231,7 @@ pub fn ff1aes_list_with_startingindex(
 
 #[inline(never)]
 pub fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
-    let h = bolos::blake2s_diversification(d);
+    let h = blake2b::blake2s_diversification(d);
 
     let v = AffinePoint::from_bytes(h).unwrap();
     let q = v.mul_by_cofactor();
@@ -257,7 +241,7 @@ pub fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn multwithgd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
-    let h = bolos::blake2s_diversification(d);
+    let h = blake2b::blake2s_diversification(d);
 
     let v = AffinePoint::from_bytes(h)
         .unwrap()
@@ -279,7 +263,7 @@ pub fn niels_multbits(p: &mut ExtendedPoint, b: &[u8; 32]) {
 
 #[inline(never)]
 pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
-    let h = bolos::blake2s_diversification(d);
+    let h = blake2b::blake2s_diversification(d);
     c_zemu_log_stack(b"default_pkd\x00\n".as_ref());
     let mut y = bytes_to_extended(h);
     mul_by_cof(&mut y);
@@ -291,8 +275,7 @@ pub fn default_pkd(ivk: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn master_spending_key_zip32(seed: &[u8; 32]) -> [u8; 64] {
-    pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
-    bolos::blake2b64_with_personalization(ZIP32_SAPLING_MASTER_PERSONALIZATION, seed)
+    blake2b64_with_personalization(ZIP32_SAPLING_MASTER_PERSONALIZATION, seed)
 }
 
 #[inline(never)]
@@ -347,7 +330,7 @@ pub fn expandedspendingkey_zip32(key: &[u8; 32]) -> [u8; 96] {
 pub fn update_dk_zip32(key: &[u8; 32], dk: &mut [u8; 32]) {
     let mut dkcopy = [0u8; 32];
     dkcopy.copy_from_slice(dk);
-    dk.copy_from_slice(&bolos::blake2b_expand_vec_two(key, &[0x16], &dkcopy)[0..32]);
+    dk.copy_from_slice(&blake2b_expand_vec_two(key, &[0x16], &dkcopy)[0..32]);
 }
 
 #[inline(never)]
@@ -356,7 +339,7 @@ pub fn update_exk_zip32(key: &[u8; 32], exk: &mut [u8; 96]) {
     exk[32..64].copy_from_slice(&sapling_derive_dummy_nsk(key));
     let mut ovkcopy = [0u8; 32];
     ovkcopy.copy_from_slice(&exk[64..96]);
-    exk[64..96].copy_from_slice(&bolos::blake2b_expand_vec_two(key, &[0x15], &ovkcopy)[..32]);
+    exk[64..96].copy_from_slice(&blake2b_expand_vec_two(key, &[0x15], &ovkcopy)[..32]);
 }
 
 #[inline(never)]
@@ -419,7 +402,7 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
             crate::heart_beat();
             //make index LE
             //zip32 child derivation
-            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
         //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
@@ -427,7 +410,7 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
             crate::heart_beat();
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x12], &fvk, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&chain, &[0x12], &fvk, &divkey, &le_i);
         }
         crate::heart_beat();
         //extract key and chainkey
@@ -485,7 +468,7 @@ pub fn derive_zip32_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 9
             crate::heart_beat();
             //make index LE
             //zip32 child derivation
-            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&chain, &[0x11], &expkey, &divkey, &le_i);
             //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
@@ -494,7 +477,7 @@ pub fn derive_zip32_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 9
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
             crate::heart_beat();
-            tmp = bolos::blake2b_expand_vec_four(&chain, &[0x12], &fvk, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&chain, &[0x12], &fvk, &divkey, &le_i);
         }
         //extract key and chainkey
         key.copy_from_slice(&tmp[..32]);
@@ -522,6 +505,7 @@ pub fn derive_zip32_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 9
 }
 
 #[inline(never)]
+#[deprecated(note = "This function is deprecated and will be removed in future releases.")]
 pub fn master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
 
     let tmp = master_spending_key_zip32(seed); //64
@@ -566,14 +550,14 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_c
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
             //make index LE
             //zip32 child derivation
-            tmp = bolos::blake2b_expand_vec_four(&tmp[32..], &[0x11], &expkey, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&tmp[32..], &[0x11], &expkey, &divkey, &le_i);
             //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
             let fvk = full_viewingkey(&tmp[..32].try_into().unwrap());
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            tmp = bolos::blake2b_expand_vec_four(&tmp[32..], &[0x12], &fvk, &divkey, &le_i);
+            tmp = blake2b_expand_vec_four(&tmp[32..], &[0x12], &fvk, &divkey, &le_i);
         }
 
         crate::heart_beat();
@@ -590,7 +574,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_c
 
     // Get ak from ask
     let mut ak = [0u8; 32];
-    bolos::sdk_jubjub_scalarmult_spending_base(&mut ak, &ask.to_bytes());
+    sdk_jubjub_scalarmult_spending_base(&mut ak, &ask.to_bytes());
     crate::heart_beat();
 
     // Get nk from nsk = k[64..96]
@@ -809,6 +793,7 @@ pub extern "C" fn zip32_child_ask_nsk(
 }
 
 #[no_mangle]
+#[deprecated(note = "This function is deprecated and will be removed in future releases.")]
 pub extern "C" fn zip32_nsk_from_seed(
     seed_ptr: *const [u8; 32],
     nsk_ptr: *mut [u8; 32],
@@ -905,8 +890,6 @@ pub extern "C" fn get_pkd_from_seed(
     let tmp_pkd = default_pkd(&ivk, div);
     pkd.copy_from_slice(&tmp_pkd);
 }
-
-
 
 #[no_mangle]
 pub extern "C" fn is_valid_diversifier(div_ptr: *const [u8; 11]) -> bool {

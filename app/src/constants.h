@@ -73,38 +73,38 @@
 
 // NVDATA File
 // fixme: maybe increase some of these
-#define T_IN_LIST_SIZE       5
-#define T_OUT_LIST_SIZE      5
-#define SPEND_LIST_SIZE      5
-#define OUTPUT_LIST_SIZE     5
+#define T_IN_LIST_SIZE                     5
+#define T_OUT_LIST_SIZE                    5
+#define SPEND_LIST_SIZE                    5
+#define OUTPUT_LIST_SIZE                   5
 
-#define PREVOUT_SIZE         36
-#define SEQUENCE_SIZE        4
-#define T_OUTPUT_SIZE        34  // script size (26) + value size (uint64_t -> 8)
+#define PREVOUT_SIZE                       36
+#define SEQUENCE_SIZE                      4
+#define T_OUTPUT_SIZE                      34  // script size (26) + value size (uint64_t -> 8)
 
-#define PKD_SIZE             32
-#define RCM_SIZE             32
-#define ALPHA_SIZE           32
-#define DIV_SIZE             11
-#define DIV_INDEX_SIZE       11
-#define DIV_LIST_LENGTH      20
-#define DIV_DEFAULT_LIST_LEN 4
-#define MAX_SIZE_BUF_ADDR    143
+#define PKD_SIZE                           32
+#define RCM_SIZE                           32
+#define ALPHA_SIZE                         32
+#define DIV_SIZE                           11
+#define DIV_INDEX_SIZE                     11
+#define DIV_LIST_LENGTH                    20
+#define DIV_DEFAULT_LIST_LEN               4
+#define MAX_SIZE_BUF_ADDR                  143
 
-#define SESSION_KEY_SIZE     32
+#define SESSION_KEY_SIZE                   32
 
-#define OVK_SIZE             32
-#define OVK_SET_SIZE         1 + OVK_SIZE
-#define RSEED_SIZE           32
-#define RCM_V_SIZE           32
+#define OVK_SIZE                           32
+#define OVK_SET_SIZE                       1 + OVK_SIZE
+#define RSEED_SIZE                         32
+#define RCM_V_SIZE                         32
 
-#define SCRIPT_SIZE          26
-#define PATH_SIZE            5
+#define SCRIPT_SIZE                        26
+#define PATH_SIZE                          5
 
-#define SIGNATURE_SIZE       SIG_R_SIZE + SIG_S_SIZE
+#define SIGNATURE_SIZE                     SIG_R_SIZE + SIG_S_SIZE
 
-#define TX_VERSION_SAPLING   4
-#define TX_VERSION_NU5       5
+#define TX_VERSION_SAPLING                 4
+#define TX_VERSION_NU5                     5
 
 #define NU5_LENGTH_HASH_DATA               220
 

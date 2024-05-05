@@ -1,30 +1,8 @@
 use core::convert::TryInto;
-use core::mem;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use crate::bitstreamer::Bitstreamer;
 
-use crate::bolos::c_zemu_log_stack;
-
-#[inline(never)]
-fn handle_chunk(bits: u8, cur: &mut Fr, acc: &mut Fr) {
-    let c = bits & 1;
-    let b = bits & 2;
-    let a = bits & 4;
-    let mut tmp = *cur;
-    if a == 4 {
-        tmp = tmp.add(cur);
-    }
-    *cur = cur.double(); // 2^1 * cur
-    if b == 2 {
-        tmp = tmp.add(cur);
-    }
-    // conditionally negate
-    if c == 1 {
-        tmp = tmp.neg();
-    }
-    *acc = acc.add(&tmp);
-}
-
-static NIELSPOINTS: [jubjub::AffineNielsPoint; 6] = [
+static NIELSPOINTS: [AffineNielsPoint; 6] = [
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
             0x194e_4292_6f66_1b51,
@@ -134,10 +112,10 @@ fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
     add_to_point(point, &p);
 }
 
-#[inline(never)]
-fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
-    AffinePoint::from(*point).get_u().to_bytes()
-}
+// #[inline(never)]
+// fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
+//     AffinePoint::from(*point).get_u().to_bytes()
+// }
 
 #[inline(never)]
 pub fn extended_to_u_bytes(point: &ExtendedPoint) -> [u8; 32] {
@@ -156,50 +134,20 @@ fn squarings(cur: &mut Fr) {
     *cur = cur.double();
 }
 
-pub struct Bitstreamer<'a> {
-    pub input_bytes: &'a [u8],
-    pub byte_index: usize,
-    pub bitsize: u32,
-    pub bit_index: u32,
-    pub curr: u32,
-    pub shift: i8,
-    pub carry: i8,
-}
-
-impl<'a> Bitstreamer<'a> {
-    #[inline(never)]
-    fn peek(&self) -> bool {
-        self.bit_index < self.bitsize
+#[inline(never)]
+fn handle_chunk(bits: u8, cur: &mut Fr, acc: &mut Fr) {
+    let mut tmp = *cur;
+    if bits & 4 != 0 {
+        tmp = tmp.add(cur);
     }
-}
-
-impl<'a> Iterator for Bitstreamer<'a> {
-    type Item = u8;
-    #[inline(never)]
-    fn next(&mut self) -> Option<u8> {
-        if self.bit_index >= self.bitsize || self.byte_index >= self.input_bytes.len() {
-            return None;
-        }
-        let s = ((self.curr >> (self.shift as u32)) & 7) as u8;
-        self.bit_index += 3;
-        if self.shift - 3 < 0 {
-            self.byte_index += 1;
-            if self.byte_index < self.input_bytes.len() {
-                self.carry = ((self.carry - 1) + 3) % 3;
-                self.curr <<= 8;
-                self.curr += self.input_bytes[self.byte_index] as u32;
-                self.shift = 5 + self.carry;
-            } else {
-                let sh =
-                    (((self.carry & 2) + ((self.carry & 2) >> 1)) ^ (self.carry & 1) ^ 1) as u32;
-                self.curr <<= sh;
-                self.shift = 0;
-            }
-        } else {
-            self.shift -= 3;
-        }
-        Some(s)
+    *cur = cur.double();
+    if bits & 2 != 0 {
+        tmp = tmp.add(cur);
     }
+    if bits & 1 != 0 {
+        tmp = tmp.neg();
+    }
+    *acc = acc.add(&tmp);
 }
 
 #[inline(never)]
@@ -225,19 +173,19 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
             carry: 0,
         };
 
-        while b.peek() {
-            let bits = b.next().unwrap();
+        while let Some(bits) = b.next() {
             handle_chunk(bits, &mut cur, &mut acc);
 
             counter += 1;
-            //check if we need to move to the next curvepoint
             if counter == MAXCOUNTER {
+                // Reset and move to the next curve point
                 add_point(&mut result_point, &acc.to_bytes(), pointcounter);
                 counter = 0;
                 pointcounter += 1;
                 acc = Fr::zero();
                 cur = Fr::one();
             } else {
+                // Continue processing at the current curve point
                 squarings(&mut cur);
             }
         }
@@ -277,9 +225,9 @@ mod tests {
             shift: 5,
             carry: 0,
         };
-        assert_eq!(b.next(), Some(7 as u8));
-        assert_eq!(b.next(), Some(7 as u8));
-        assert_eq!(b.next(), Some(4 as u8));
+        assert_eq!(b.next(), Some(7u8));
+        assert_eq!(b.next(), Some(7u8));
+        assert_eq!(b.next(), Some(4u8));
         assert_eq!(b.next(), None);
     }
 

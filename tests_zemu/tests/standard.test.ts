@@ -190,7 +190,7 @@ describe('Nullifier', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const path = 0xFE;
+      const path = 0xFF;
       const pos = Buffer.alloc(8);
       const cmu = Buffer.from("df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea", "hex");
 
@@ -201,13 +201,13 @@ describe('Nullifier', function () {
       await sim.clickBoth()
 
       const resp = await promise_resp
-      console.log(resp)
       expect(resp.returnCode).toEqual(0x9000)
 
       const expected_nfRaw = '3840188b5e05bced04ec715af62db7da39c06d643971a6748ee020c845427b95'
 
       if ('nfRaw' in resp) {
         const nfRaw = resp.nfRaw.toString('hex')
+        console.log(nfRaw)
         expect(nfRaw).toEqual(expected_nfRaw)
       } else {
         fail("Expected property nfRaw is missing in the response.")

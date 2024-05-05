@@ -88,8 +88,8 @@ zxerr_t tx_getNumItems(uint8_t *num_items) {
     return zxerr_ok;
 }
 
-zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen,
-                   uint8_t pageIdx, uint8_t *pageCount) {
+zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen, uint8_t pageIdx,
+                   uint8_t *pageCount) {
     uint8_t numItems = 0;
 
     CHECK_ZXERR(tx_getNumItems(&numItems))

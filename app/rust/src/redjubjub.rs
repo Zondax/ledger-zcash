@@ -2,11 +2,10 @@ use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
 use crate::bolos::c_zemu_log_stack;
-use crate::bolos::{
-    blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base, Trng,
-};
+use crate::bolos::blake2b::blake2b_redjubjub;
+use crate::bolos::jubjub::sdk_jubjub_scalarmult_spending_base;
+use crate::bolos::rng::Trng;
 use crate::commitments::bytes_to_extended;
-use crate::constants;
 use crate::constants::*;
 use crate::pedersen::extended_to_bytes;
 use crate::zip32::zip32_child_ask_nsk;
@@ -57,8 +56,10 @@ pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] 
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
     crate::heart_beat();
     let r = sign_generate_r(&msg);
+
     crate::heart_beat();
     let rbar = sign_compute_rbar(&r.to_bytes());
+
     crate::heart_beat();
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
@@ -222,7 +223,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_jubjubrandom() {
+    pub fn test_jubjub_random() {
         let sk = [
             0x85, 0x83, 0x6f, 0x98, 0x32, 0xb2, 0x8d, 0xe7, 0xc6, 0x36, 0x13, 0xe2, 0xa6, 0xed,
             0x36, 0xfb, 0x1a, 0xb4, 0x4f, 0xb0, 0xc1, 0x3f, 0xa8, 0x79, 0x8c, 0xd9, 0xcd, 0x30,

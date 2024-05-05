@@ -53,8 +53,8 @@ parser_error_t parser_validate();
 parser_error_t parser_getNumItems(uint8_t *num_items);
 
 // retrieves a readable output for each field / page
-parser_error_t parser_getItem(uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outValue,
-                              uint16_t outValueLen, uint8_t pageIdx, uint8_t *pageCount);
+parser_error_t parser_getItem(uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outValue, uint16_t outValueLen,
+                              uint8_t pageIdx, uint8_t *pageCount);
 
 void parser_resetState();
 

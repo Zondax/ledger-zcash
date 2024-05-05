@@ -18,6 +18,7 @@
 
 #if defined(BOLOS_SDK)
 #include <os_io_seproxyhal.h>
+
 #include "view.h"
 #endif
 
@@ -164,11 +165,10 @@ parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVa
     address[1] = VERSION_P2PKH & 0xFF;
     MEMCPY(address + VERSION_SIZE, addr + 4, CX_RIPEMD160_SIZE);
 
-    cx_hash_sha256(address, VERSION_SIZE + CX_RIPEMD160_SIZE, address + VERSION_SIZE + CX_RIPEMD160_SIZE,
-                   CX_SHA256_SIZE);
+    cx_hash_sha256(address, VERSION_SIZE + CX_RIPEMD160_SIZE, address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE);
 
-    cx_hash_sha256(address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE,
-                   address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE);
+    cx_hash_sha256(address + VERSION_SIZE + CX_RIPEMD160_SIZE, CX_SHA256_SIZE, address + VERSION_SIZE + CX_RIPEMD160_SIZE,
+                   CX_SHA256_SIZE);
 
     uint8_t tmpBuffer[60];
     size_t outLen = sizeof(tmpBuffer);
@@ -188,8 +188,7 @@ parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char
     MEMCPY(address, div, DIV_SIZE);
     MEMCPY(address + DIV_SIZE, pkd, PKD_SIZE);
     char tmpBuffer[100];
-    bech32EncodeFromBytes(tmpBuffer, sizeof(tmpBuffer), BECH32_HRP, address, sizeof(address), 1,
-                          BECH32_ENCODING_BECH32);
+    bech32EncodeFromBytes(tmpBuffer, sizeof(tmpBuffer), BECH32_HRP, address, sizeof(address), 1, BECH32_ENCODING_BECH32);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
@@ -225,8 +224,8 @@ parser_error_t parser_sapling_getTypes(const uint16_t displayIdx, parser_sapling
 }
 
 parser_error_t parser_getNumItems(uint8_t *num_items) {
-    *num_items = t_inlist_len() * NUM_ITEMS_TIN + t_outlist_len() * NUM_ITEMS_TOUT +
-                 spendlist_len() * NUM_ITEMS_SSPEND + outputlist_len() * NUM_ITEMS_SOUT + NUM_ITEMS_CONST;
+    *num_items = t_inlist_len() * NUM_ITEMS_TIN + t_outlist_len() * NUM_ITEMS_TOUT + spendlist_len() * NUM_ITEMS_SSPEND +
+                 outputlist_len() * NUM_ITEMS_SOUT + NUM_ITEMS_CONST;
 
     return parser_ok;
 }
@@ -291,8 +290,7 @@ parser_error_t parser_getItem(uint8_t displayIdx, char *outKey, uint16_t outKeyL
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "S-in addr");
-                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx,
-                                                            pageCount);
+                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
                     snprintf(outKey, outKeyLen, "S-in (ZEC)");
@@ -312,8 +310,7 @@ parser_error_t parser_getItem(uint8_t displayIdx, char *outKey, uint16_t outKeyL
             switch (itemtype) {
                 case 0: {
                     snprintf(outKey, outKeyLen, "S-out addr");
-                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx,
-                                                            pageCount);
+                    return parser_sapling_display_address_s(item->div, item->pkd, outVal, outValLen, pageIdx, pageCount);
                 }
                 case 1: {
                     snprintf(outKey, outKeyLen, "S-out (ZEC)");

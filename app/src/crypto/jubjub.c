@@ -23,9 +23,9 @@
 
 #define CONVERT_CX_ZX(CALL) return CALL == CX_OK ? zxerr_ok : zxerr_invalid_crypto_settings;
 
-unsigned char const JUBJUB_FR_MODULUS_BYTES[JUBJUB_SCALAR_BYTES] = {
-    14,  125, 180, 234, 101, 51,  175, 169, 6,   103, 59, 1,  1,   52,  59, 0,
-    166, 104, 32,  147, 204, 200, 16,  130, 208, 151, 14, 94, 214, 247, 44, 183};
+unsigned char const JUBJUB_FR_MODULUS_BYTES[JUBJUB_SCALAR_BYTES] = {14, 125, 180, 234, 101, 51,  175, 169, 6,   103, 59,
+                                                                    1,  1,   52,  59,  0,   166, 104, 32,  147, 204, 200,
+                                                                    16, 130, 208, 151, 14,  94,  214, 247, 44,  183};
 
 unsigned char const JUBJUB_FQ_MODULUS_BYTES[JUBJUB_FIELD_BYTES] = {
     0x73, 0xed, 0xa7, 0x53, 0x29, 0x9d, 0x7d, 0x48, 0x33, 0x39, 0xd8, 0x08, 0x09, 0xa1, 0xd8, 0x05,

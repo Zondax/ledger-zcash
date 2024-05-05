@@ -1,26 +1,9 @@
-//! Rust interfaces to Ledger SDK APIs.
-
-use crate::constants;
-use aes::{
-    block_cipher_trait::{
-        generic_array::typenum::{U16, U32, U8},
-        generic_array::GenericArray,
-        BlockCipher,
-    },
-    Aes256,
-};
-#[cfg(test)]
-use blake2b_simd::{Hash as Blake2bHash, Params as Blake2bParams};
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use core::convert::TryInto;
-#[cfg(test)]
-#[cfg(any(unix, windows))]
-use getrandom::getrandom;
-use jubjub::AffinePoint;
-use rand::{CryptoRng, RngCore};
+use blake2b_simd::Params as Blake2bParams;
+use blake2s_simd::Params as Blake2sParams;
+use crate::bolos;
+use crate::perso::{KEY_DIVERSIFICATION_PERSONALIZATION, PRF_EXPAND_PERSONALIZATION, REDJUBJUB_PERSONALIZATION};
 
 extern "C" {
-    fn bolos_cx_rng(buffer: *mut u8, len: u32);
     fn c_zcash_blake2b_expand_seed(
         input_a: *const u8,
         input_a_len: u32,
@@ -28,7 +11,6 @@ extern "C" {
         input_b_len: u32,
         out: *mut u8,
     );
-    fn c_aes256_encryptblock(k: *const u8, a: *const u8, out: *mut u8);
     fn c_zcash_blake2b_expand_vec_two(
         input_a: *const u8,
         input_a_len: u32,
@@ -42,7 +24,6 @@ extern "C" {
     fn c_blake2b32_withpersonal(person: *const u8, input: *const u8, input_len: u32, out: *mut u8);
     fn c_blake2b64_withpersonal(person: *const u8, input: *const u8, input_len: u32, out: *mut u8);
 
-    // FIXME: We should probably consider exposing context + update to minimize so many arguments + stack usage
     fn c_zcash_blake2b_expand_vec_four(
         input_a: *const u8,
         input_a_len: u32,
@@ -58,48 +39,8 @@ extern "C" {
     );
     fn c_zcash_blake2b_zip32master(a: *const u8, a_len: u32, out: *mut u8);
 
-    fn zemu_log_stack(buffer: *const u8);
-    fn check_app_canary();
     fn zcash_blake2b_expand_seed(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
     fn c_zcash_blake2b_redjubjub(a: *const u8, a_len: u32, b: *const u8, b_len: u32, out: *mut u8);
-    fn c_jubjub_scalarmult(point: *mut u8, scalar: *const u8);
-    fn c_jubjub_spending_base_scalarmult(point: *mut u8, scalar: *const u8);
-}
-
-#[cfg(not(test))]
-pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
-    unsafe {
-        c_jubjub_spending_base_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
-        check_app_canary();
-    }
-}
-
-#[cfg(test)]
-pub fn sdk_jubjub_scalarmult_spending_base(point: &mut [u8], scalar: &[u8]) {
-    let mut scalarbytes = [0u8; 32];
-    scalarbytes.copy_from_slice(&scalar);
-    let result = constants::SPENDING_KEY_BASE.multiply_bits(&scalarbytes);
-    point.copy_from_slice(&AffinePoint::from(result).to_bytes());
-}
-
-#[cfg(not(test))]
-pub fn sdk_jubjub_scalarmult(point: &mut [u8], scalar: &[u8]) {
-    unsafe {
-        c_jubjub_scalarmult(point.as_mut_ptr(), scalar.as_ptr());
-    }
-}
-
-#[cfg(test)]
-pub fn sdk_jubjub_scalarmult(point: &mut [u8], scalar: &[u8]) {
-    let mut bytes = [0u8; 32];
-    bytes.copy_from_slice(&point);
-    let mut scalarbytes = [0u8; 32];
-    scalarbytes.copy_from_slice(&scalar);
-    let result = jubjub::AffinePoint::from_bytes(bytes)
-        .unwrap()
-        .to_niels()
-        .multiply_bits(&scalarbytes);
-    point.copy_from_slice(&AffinePoint::from(result).to_bytes());
 }
 
 #[cfg(test)]
@@ -154,8 +95,6 @@ pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64
 
 #[cfg(test)]
 pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
-    pub const REDJUBJUB_PERSONALIZATION: &[u8; 16] = b"Zcash_RedJubjubH";
-
     let h = Blake2bParams::new()
         .hash_length(64)
         .personal(REDJUBJUB_PERSONALIZATION)
@@ -182,22 +121,6 @@ pub fn blake2b_redjubjub(a: &[u8], b: &[u8]) -> [u8; 64] {
     }
     hash
 }
-
-#[cfg(not(test))]
-pub fn c_zemu_log_stack(s: &[u8]) {
-    unsafe { zemu_log_stack(s.as_ptr()) }
-}
-
-#[cfg(test)]
-pub fn c_zemu_log_stack(_s: &[u8]) {}
-
-#[cfg(not(test))]
-pub fn c_check_app_canary() {
-    unsafe { check_app_canary() }
-}
-
-#[cfg(test)]
-pub fn c_check_app_canary() {}
 
 #[cfg(not(test))]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
@@ -258,30 +181,8 @@ pub fn blake2b_expand_vec_four(
     hash
 }
 
-#[cfg(not(test))]
-pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
-    let mut out = [0u8; 16];
-    unsafe {
-        c_aes256_encryptblock(k.as_ptr(), a.as_ptr(), out.as_mut_ptr());
-    }
-    out
-}
-
-#[cfg(test)]
-pub fn aes256_encryptblock(k: &[u8], a: &[u8]) -> [u8; 16] {
-    let cipher: Aes256 = Aes256::new(GenericArray::from_slice(k));
-    //cipher.encrypt_block(block);
-
-    let mut b = GenericArray::clone_from_slice(a);
-    cipher.encrypt_block(&mut b);
-
-    let out: [u8; 16] = b.as_slice().try_into().expect("err");
-    out
-}
-
 #[cfg(test)]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
-    pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
 
     let h = Blake2bParams::new()
         .hash_length(64)
@@ -297,7 +198,6 @@ pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
 
 #[inline(never)]
 pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
-    pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"Zcash_gd";
     pub const GH_FIRST_BLOCK: &[u8; 64] =
         b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
 
@@ -315,7 +215,6 @@ pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
 
 #[cfg(test)]
 pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
-    pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
     let mut h = Blake2bParams::new()
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)
@@ -336,7 +235,6 @@ pub fn blake2b_expand_vec_four(
     in_d: &[u8],
     in_e: &[u8],
 ) -> [u8; 64] {
-    pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";
     let mut blake2b_state = Blake2bParams::new()
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)
@@ -349,56 +247,4 @@ pub fn blake2b_expand_vec_four(
     let mut hash = [0u8; 64];
     hash.copy_from_slice(&blake2b_state.finalize().as_bytes());
     hash
-}
-
-pub struct Trng;
-
-impl RngCore for Trng {
-    fn next_u32(&mut self) -> u32 {
-        let mut out = [0; 4];
-        self.fill_bytes(&mut out);
-        u32::from_le_bytes(out)
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        let mut out = [0; 8];
-        self.fill_bytes(&mut out);
-        u64::from_le_bytes(out)
-    }
-
-    #[cfg(not(any(unix, windows)))]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        unsafe {
-            bolos_cx_rng(dest.as_mut_ptr(), dest.len() as u32);
-        }
-    }
-
-    #[cfg(test)]
-    #[cfg(any(unix, windows))]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        getrandom(dest).unwrap()
-    }
-
-    #[cfg(not(test))]
-    #[cfg(any(unix, windows))]
-    fn fill_bytes(&mut self, _dest: &mut [u8]) {}
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        self.fill_bytes(dest);
-        Ok(())
-    }
-}
-
-impl CryptoRng for Trng {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_randomness() {
-        let mut buf = [0u8; 64];
-        Trng.fill_bytes(&mut buf);
-        assert_ne!(buf[..], [0u8; 64][..]);
-    }
 }

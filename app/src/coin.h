@@ -14,6 +14,7 @@
  *  limitations under the License.
  ********************************************************************************/
 #pragma once
+#include "bolos_target.h"
 
 #ifdef __cplusplus
 extern "C" {

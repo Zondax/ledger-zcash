@@ -1,12 +1,13 @@
 use blake2s_simd::Params as Blake2sParams;
 use byteorder::LittleEndian;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
-
 use crate::bolos::c_zemu_log_stack;
+
 use crate::pedersen::*;
-use crate::redjubjub::*;
-use crate::zeccrypto::prf_ock;
-use crate::zip32::{group_hash_from_div, nsk_to_nk,zip32_nsk_from_seed};
+use crate::perso::CRH_NF;
+use crate::utils;
+use crate::utils::{into_fixed_array, shiftsixbits};
+use crate::zip32::{group_hash_from_div, nsk_to_nk, zip32_nsk_from_seed};
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -73,55 +74,6 @@ pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked
 .to_niels();
 
 #[inline(never)]
-pub fn revert(source: &[u8; 32], dest: &mut [u8]) {
-    for i in 0..32 {
-        let mut uv = source[i];
-        for j in 0..8 {
-            dest[i] ^= (uv & 1) as u8;
-            uv >>= 1;
-            if j < 7 {
-                dest[i] <<= 1;
-            }
-        }
-    }
-}
-
-#[inline(never)]
-pub fn bytes_to_u64(value: &mut [u8; 8]) -> u64 {
-    value.reverse();
-    let mut newvalue = 0;
-    for i in 0..8 {
-        for j in 0..8 {
-            newvalue += (value[i] & 1) as u64;
-            if j < 7 {
-                value[i] >>= 1;
-                newvalue <<= 1;
-            }
-        }
-        if i < 7 {
-            newvalue <<= 1;
-        }
-    }
-    newvalue
-}
-
-#[inline(never)]
-pub fn write_u64_tobytes(v: u64) -> [u8; 8] {
-    let mut dest = [0u8; 8];
-    let mut uv = v;
-    for i in 0..8 {
-        for j in 0..8 {
-            dest[i] ^= (uv & 1) as u8;
-            uv >>= 1;
-            if j < 7 {
-                dest[i] <<= 1;
-            }
-        }
-    }
-    dest
-}
-
-#[inline(never)]
 pub fn add_points(a: ExtendedPoint, b: ExtendedPoint) -> ExtendedPoint {
     a + b
 }
@@ -131,80 +83,91 @@ pub fn multiply_with_pedersenbase(val: &[u8; 32]) -> ExtendedPoint {
     PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }
 
-#[inline(never)]
-pub fn shiftsixbits(input: &mut [u8; 73]) {
-    let mut i: usize = 72;
-    while i > 0 {
-        input[i] ^= (input[i - 1] & 0x3F) << 2;
-        input[i - 1] >>= 6;
-        i -= 1;
-    }
-    input[0] ^= 0b1111_1100; //todo: these 6 bits could be different?
-}
-
+/**
+ * Computes the note commitment for the given parameters.
+ * 
+ * This function logs the commitment process, prepares an input hash from the given parameters,
+ * computes a Pedersen hash to a point, and then adds a point derived from multiplying the
+ * randomness base with `rcm`.
+ * 
+ * @param v - The value to be committed.
+ * @param g_d - The diversifier of the recipient's address.
+ * @param pk_d - The transmission key of the recipient's address.
+ * @param rcm - The randomness used in the commitment.
+ * @returns The resulting ExtendedPoint after the commitment process.
+ */
 #[inline(never)]
 pub fn note_commitment(v: u64, g_d: &[u8; 32], pk_d: &[u8; 32], rcm: &[u8; 32]) -> ExtendedPoint {
     c_zemu_log_stack(b"notecommit\x00".as_ref());
     let mut input_hash = [0u8; 73];
 
-    let vbytes = write_u64_tobytes(v);
+    // Convert the value to bytes and reverse the bits as per protocol
+    let vbytes = utils::write_u64_tobytes(v);
     input_hash[0..8].copy_from_slice(&vbytes);
 
-    revert(g_d, &mut input_hash[8..40]);
-    revert(pk_d, &mut input_hash[40..72]);
+    // Reverse bits for g_d and pk_d and place them into the input hash
+    utils::reverse_bits(g_d, &mut input_hash[8..40]);
+    utils::reverse_bits(pk_d, &mut input_hash[40..72]);
 
+    // Perform a bit shift operation on the entire array
     shiftsixbits(&mut input_hash);
 
+    // Compute the Pedersen hash to point
     let mut p = pedersen_hash_to_point(&input_hash, 582);
+
+    // Multiply the randomness base by rcm and add to the point
     let s = PEDERSEN_RANDOMNESS_BASE.multiply_bits(rcm);
     p += s;
+
     p
-    //let s = multiply_with_pedersenbase(rcm);
-    //add_points(p, s)
 }
 
-#[inline(never)]
-fn u64_to_bytes(value: u64) -> [u8; 32] {
-    let mut scalar = [0u8; 32];
-    let mut num = value;
-    for i in 0..8 {
-        scalar[i] = (num & 255) as u8;
-        num >>= 8;
-    }
-    scalar
-}
-
+/**
+ * Prepares and hashes input data for commitment using Pedersen hash.
+ * 
+ * This function takes a value and pointers to diversifier and transmission key,
+ * prepares the input data by reversing bits and performing a bit shift,
+ * and then computes the Pedersen hash of the prepared data.
+ * 
+ * @param value - The value to be hashed.
+ * @param g_d_ptr - Pointer to the diversifier of the recipient's address.
+ * @param pkd_ptr - Pointer to the transmission key of the recipient's address.
+ * @param output_ptr - Pointer to the output buffer where the hash will be stored.
+ */
 #[inline(never)]
 pub fn prepare_and_hash_input_commitment(
     value: u64,
     g_d_ptr: *const [u8; 32],
     pkd_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
-)  {
+) {
+    // Dereference pointers safely within an unsafe block
     let gd = unsafe { &*g_d_ptr };
     let pkd = unsafe { &*pkd_ptr };
-
-    let mut prepared_msg =  [0u8; 73];
-    let mut input_hash = [0u8; 73];
     let output_msg = unsafe { &mut *output_ptr };
 
+    // Initialize buffers for input hash and prepared message
+    let mut input_hash = [0u8; 73];
 
-    let vbytes = write_u64_tobytes(value);
+    // Convert the value to bytes and reverse the bits
+    let vbytes = utils::write_u64_tobytes(value);
     input_hash[0..8].copy_from_slice(&vbytes);
 
-    revert(gd, &mut input_hash[8..40]);
-    revert(pkd, &mut input_hash[40..72]);
+    // Reverse bits for g_d and pk_d and place them into the input hash
+    utils::reverse_bits(gd, &mut input_hash[8..40]);
+    utils::reverse_bits(pkd, &mut input_hash[40..72]);
 
+    // Perform a bit shift operation on the entire array
     shiftsixbits(&mut input_hash);
-    prepared_msg.copy_from_slice(&input_hash);
 
-    let h = pedersen_hash_pointbytes(&mut prepared_msg, 582);
+    // Compute the Pedersen hash from the prepared input hash
+    let h = pedersen_hash_pointbytes(&input_hash, 582);
     output_msg.copy_from_slice(&h);
 }
 
 #[inline(never)]
 pub fn value_commitment_step1(value: u64) -> ExtendedPoint {
-    let scalar = u64_to_bytes(value);
+    let scalar = into_fixed_array(value);
     VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar)
 }
 
@@ -215,21 +178,10 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
 
 #[inline(never)]
 pub fn value_commitment(value: u64, rcm: &[u8; 32]) -> [u8; 32] {
-    let scalar = u64_to_bytes(value);
+    let scalar = into_fixed_array(value);
     let mut x = VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar);
     x += VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm);
     extended_to_bytes(&x)
-}
-
-#[inline(never)]
-pub fn scalar_to_bytes(pos: u32) -> [u8; 32] {
-    let mut num = pos;
-    let mut scalar = [0u8; 32];
-    for i in 0..4 {
-        scalar[i] = (num & 255) as u8;
-        num >>= 8;
-    }
-    scalar
 }
 
 #[inline(never)]
@@ -242,7 +194,6 @@ pub fn mixed_pedersen(e: &ExtendedPoint, scalar: Fr) -> [u8; 32] {
 #[inline(never)]
 pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
     // BLAKE2s Personalization for PRF^nf = BLAKE2s(nk | rho)
-    pub const CRH_NF: &[u8; 8] = b"Zcash_nf";
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_NF)
@@ -270,13 +221,17 @@ pub extern "C" fn compute_nullifier(
     let ncm = unsafe { *ncm_ptr };
     let nsk = unsafe { &*nsk_ptr };
     let mut nk = [0u8; 32];
+
     nsk_to_nk(nsk, &mut nk);
     crate::heart_beat();
+
     let scalar = Fr::from(pos);
     let e = bytes_to_extended(ncm);
     crate::heart_beat();
+
     let rho = mixed_pedersen(&e, scalar);
     crate::heart_beat();
+
     let output = unsafe { &mut *output_ptr };
     output.copy_from_slice(&prf_nf(&nk, &rho));
 }
@@ -295,9 +250,11 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
+
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
+
     add_to_point(&mut e, &s);
 
     out.copy_from_slice(&extended_to_u_bytes(&e));
@@ -319,9 +276,11 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
+
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
     let s = multiply_with_pedersenbase(rc);
+
     add_to_point(&mut e, &s);
 
     out.copy_from_slice(&extended_to_bytes(&e));
@@ -354,6 +313,7 @@ pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> b
 #[cfg(test)]
 mod tests {
     use byteorder::ByteOrder;
+    use crate::utils::into_fixed_array;
 
     use super::*;
 
@@ -392,59 +352,6 @@ mod tests {
                 76, 7, 90, 151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
             ]
         );
-    }
-
-    #[test]
-    fn test_endianness() {
-        let value: u64 = 1;
-        let mut a = [0u8; 8];
-        LittleEndian::write_u64(&mut a, value);
-
-        let mut input_hash = [0u8; 8];
-        let mut uv = value;
-        for i in 0..8 {
-            for j in 0..8 {
-                input_hash[i] ^= (uv & 1) as u8;
-                uv >>= 1;
-                if j < 7 {
-                    input_hash[i] <<= 1;
-                }
-            }
-        }
-
-        assert_ne!(input_hash, a);
-    }
-
-    #[test]
-    fn test_revert_endianness() {
-        let value: u64 = 100000000;
-        let mut input_hash = [0u8; 8];
-        let mut uv = value;
-        for i in 0..8 {
-            for j in 0..8 {
-                input_hash[i] ^= (uv & 1) as u8;
-                uv >>= 1;
-                if j < 7 {
-                    input_hash[i] <<= 1;
-                }
-            }
-        }
-
-        let mut newvalue: u64 = 0;
-        input_hash.reverse();
-        for i in 0..8 {
-            for j in 0..8 {
-                newvalue += (input_hash[i] & 1) as u64;
-                if j < 7 {
-                    input_hash[i] >>= 1;
-                    newvalue <<= 1;
-                }
-            }
-            if i < 7 {
-                newvalue <<= 1;
-            }
-        }
-        assert_eq!(newvalue, value);
     }
 
     #[test]
@@ -495,7 +402,7 @@ mod tests {
 
         let h = note_commitment(value, &g_d, &pk_d, &rcm);
 
-        let mp = mixed_pedersen(&h, jubjub::Fr::from_bytes(&scalar_to_bytes(pos)).unwrap());
+        let mp = mixed_pedersen(&h, jubjub::Fr::from_bytes(&into_fixed_array(pos)).unwrap());
 
         let nf = prf_nf(&nk, &mp);
 
@@ -537,8 +444,8 @@ mod tests {
 
     #[test]
     fn test_mixed_pedersen() {
-        let v = 312354353;
-        let scalar = scalar_to_bytes(v);
+        let v = 312354353u32;
+        let scalar = into_fixed_array(v);
         let mp = mixed_pedersen(
             &ExtendedPoint::identity(),
             jubjub::Fr::from_bytes(&scalar).unwrap(),

@@ -89,8 +89,7 @@ void chacha_core(uint8_t *output, const uint32_t *input) {
     }
 }
 
-void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, const uint8_t *nonce,
-            uint32_t counter) {
+void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, const uint8_t *nonce, uint32_t counter) {
     uint32_t input[16];
     uint8_t buf[64];
     size_t todo, i;

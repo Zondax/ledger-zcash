@@ -1,21 +1,13 @@
-use aes::block_cipher_trait::generic_array::{GenericArray, GenericArrayImplEven};
 use byteorder::{ByteOrder, LittleEndian};
-use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
-
-use crate::bolos::{blake2b32_with_personalization, c_zemu_log_stack};
-use crate::commitments::{bytes_to_extended, bytes_to_u64, note_commitment, write_u64_tobytes};
-use crate::constants::{
-    COMPACT_NOTE_SIZE, ENC_CIPHERTEXT_SIZE, ENC_COMPACT_SIZE, NOTE_PLAINTEXT_SIZE,
-    OUT_CIPHERTEXT_SIZE, OUT_PLAINTEXT_SIZE,
-};
-use crate::pedersen::extended_to_u_bytes;
+use crate::bolos::blake2b::blake2b32_with_personalization;
+use crate::constants::{COMPACT_NOTE_SIZE};
+use crate::perso::PRF_OCK_PERSONALIZATION;
 use crate::zeccrypto::*;
-use crate::zip32::{default_pkd, group_hash_from_div, multwithgd, pkd_group_hash};
+use crate::zip32::multwithgd;
 
 #[no_mangle]
 pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32]) {
     let input = unsafe { &*input_ptr }; //ovk, cv, cmu, epk
-    pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
     let hash = blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, input);
     let output = unsafe { &mut *out_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&hash);
@@ -39,15 +31,13 @@ pub extern "C" fn rseed_get_esk_epk(
 ) {
     crate::heart_beat();
     let rseed = unsafe { &*rseed_ptr };
-    //    let d = unsafe { &*d_ptr };
+
     let output_esk = unsafe { &mut *output_esk_ptr };
     let output_epk = unsafe { &mut *output_epk_ptr };
     rseed_get_esk(rseed, output_esk);
 
-    //let epk = multwithgd(output_esk, d);
     get_epk(output_esk, d_ptr, output_epk);
     crate::heart_beat();
-    //output_epk.copy_from_slice(&epk);
 }
 
 #[no_mangle]

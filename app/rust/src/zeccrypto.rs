@@ -1,33 +1,32 @@
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use core::convert::TryInto;
-use core::mem;
-use group::{Group, GroupEncoding};
+use group::GroupEncoding;
 use jubjub::{AffinePoint, Fr};
 use rand::RngCore;
 
-use crate::bolos::{c_zemu_log_stack, Trng};
+use crate::bolos::c_zemu_log_stack;
 use crate::commitments::bytes_to_extended;
 use crate::constants;
 use crate::zip32::*;
-use crate::{bolos, pedersen::extended_to_bytes, zip32};
+use crate::{bolos, pedersen::extended_to_bytes};
+use crate::bolos::blake2b::blake2b32_with_personalization;
+use crate::bolos::rng::Trng;
+use crate::perso::{KDF_SAPLING_PERSONALIZATION, PRF_OCK_PERSONALIZATION, PRF_SESSION_PERSONALIZATION};
 
 #[inline(never)]
 pub fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {
-    let bytes = zip32::prf_expand(rseed, &[0x04]);
+    let bytes = prf_expand(rseed, &[0x04]);
     crate::heart_beat();
-    jubjub::Fr::from_bytes_wide(&bytes)
+    Fr::from_bytes_wide(&bytes)
 }
 
 #[inline(never)]
 pub fn rseed_generate_esk(rseed: &[u8; 32]) -> Fr {
-    let bytes = zip32::prf_expand(rseed, &[0x05]);
-    jubjub::Fr::from_bytes_wide(&bytes)
+    let bytes = prf_expand(rseed, &[0x05]);
+    Fr::from_bytes_wide(&bytes)
 }
 
 pub fn generate_esk() -> [u8; 32] {
     let mut buffer = [0u8; 64];
     Trng.fill_bytes(&mut buffer);
-    //Trng.fill_bytes(&mut buffer); //fill with random bytes
     let esk = Fr::from_bytes_wide(&buffer);
     esk.to_bytes()
 }
@@ -48,13 +47,13 @@ pub fn sapling_ka_agree(esk: &[u8; 32], pk_d: &[u8; 32]) -> [u8; 32] {
     extended_to_bytes(&y)
 }
 
+
 pub fn kdf_sapling(dhsecret: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
     let mut input = [0u8; 64];
     (&mut input[..32]).copy_from_slice(dhsecret);
     (&mut input[32..]).copy_from_slice(epk);
-    pub const KDF_SAPLING_PERSONALIZATION: &[u8; 16] = b"Zcash_SaplingKDF";
     crate::heart_beat();
-    bolos::blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
+    blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
 }
 
 pub fn prf_ock(ovk: &[u8; 32], cv: &[u8; 32], cmu: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
@@ -63,16 +62,14 @@ pub fn prf_ock(ovk: &[u8; 32], cv: &[u8; 32], cmu: &[u8; 32], epk: &[u8; 32]) ->
     ock_input[32..64].copy_from_slice(cv);
     ock_input[64..96].copy_from_slice(cmu);
     ock_input[96..128].copy_from_slice(epk);
-    pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
     crate::heart_beat();
-    bolos::blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, &ock_input)
+    blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, &ock_input)
 }
 
 #[inline(never)]
 pub fn prf_sessionkey(data: &[u8]) -> [u8; 32] {
-    pub const PRF_SESSION_PERSONALIZATION: &[u8; 16] = b"Zcash_SessionKey";
     crate::heart_beat();
-    bolos::blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
+    blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
 }
 
 #[no_mangle]

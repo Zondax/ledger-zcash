@@ -22,6 +22,7 @@
 
 #include "actions.h"
 #include "addr.h"
+#include "apdu_errors.h"
 #include "app_main.h"
 #include "app_mode.h"
 #include "coin.h"
@@ -32,7 +33,6 @@
 #include "tx.h"
 #include "view.h"
 #include "view_internal.h"
-#include "apdu_errors.h"
 #include "zxmacros.h"
 
 __Z_INLINE void handle_getversion(volatile uint32_t *tx) {
@@ -74,6 +74,7 @@ __Z_INLINE void extractHDPath(uint32_t rx, uint32_t offset) {
 }
 
 __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
+    // FIXME: correct/improve this. Move to common?
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
     if (rx < OFFSET_DATA) {
@@ -326,9 +327,9 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
 // and the note position pos.
 // (nk is part of the full viewing key fvk = (ak, nk, ovk) )
 __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("----[handleGetNullifier]\n");
-
     *tx = 0;
+    // TODO: review this.. there is too much copy-paste. Move into a single configurable function
+
     if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF ||
         G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
@@ -478,8 +479,7 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *tx, uint32_t rx) {
     set_state(STATE_VERIFIED_ALL_TXDATA);
     view_tx_state();
 
-    err =
-        crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
+    err = crypto_sign_and_check_transparent(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength, txVersion);
     if (err != zxerr_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         view_idle_show(0, NULL);
@@ -569,8 +569,8 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint3
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3,
-                                                              parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, parser_addr.path,
+                                                              parser_addr.div, &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -651,8 +651,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     uint32_t zip32path = 0;
-    parser_error_t prserr =
-        parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
@@ -726,7 +725,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_FVK: {
-                    zemu_log("----[INS_GET_FVK]\n");
                     CHECK_PIN_VALIDATED()
                     handleGetKeyFVK(flags, tx, rx);
                     break;
