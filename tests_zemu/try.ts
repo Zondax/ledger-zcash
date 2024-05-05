@@ -16,7 +16,7 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
   const builder = new ZcashBuilderBridge(1000);
 
   const init = await app.inittx(tx_init_data_blob);
-  assert.equal(init.return_code, 0x9000);
+  assert.equal(init.returnCode, 0x9000);
 
   var hasher = createHash('sha256');
   hasher.update(Buffer.from(tx_init_data_blob));
@@ -42,19 +42,19 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
     builder.add_transparent_output(output);
   }
 
-  const expected_proofkey_raw =
+  const expected_proofkeyRaw =
     '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
 
   for (const spendData of tx_init_data.s_spend) {
     const spend = await app.extractspenddata();
-    assert.equal(spend.return_code, 0x9000);
-    assert.equal(spend.key_raw.toString('hex'), expected_proofkey_raw)
-    assert.notEqual(spend.rcv_raw, spend.alpha_raw)
+    assert.equal(spend.returnCode, 0x9000);
+    assert.equal(spend.keyRaw.toString('hex'), expected_proofkeyRaw)
+    assert.notEqual(spend.rcvRaw, spend.alphaRaw)
 
     const spendj = {
-      proofkey: spend.key_raw,
-      rcv: spend.rcv_raw,
-      alpha: spend.alpha_raw,
+      proofkey: spend.keyRaw,
+      rcv: spend.rcvRaw,
+      alpha: spend.alphaRaw,
       address: spendData.address,
       value: spendData.value,
       witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -65,11 +65,11 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
 
   for (const outData of tx_init_data.s_output) {
     const out = await app.extractoutputdata()
-    assert.equal(out.return_code, 0x9000);
+    assert.equal(out.returnCode, 0x9000);
 
     const outj = {
-      rcv: out.rcv_raw,
-      rseed: out.rseed_raw,
+      rcv: out.rcvRaw,
+      rseed: out.rseedRaw,
       ovk: outData.ovk,
       address: outData.address,
       value: outData.value,
@@ -83,7 +83,7 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
   const txdata_blob = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version);
 
   const checkAndSign = await app.checkandsign(txdata_blob, tx_version);
-  assert.equal(checkAndSign.return_code, 0x9000);
+  assert.equal(checkAndSign.returnCode, 0x9000);
 
   hasher = createHash('sha256');
   hasher.update(Buffer.from(txdata_blob))
@@ -94,16 +94,16 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
 
   for (let i = 0; i < tx_init_data.t_in.length; i++) {
     const sig = await app.extracttranssig()
-    assert.equal(sig.return_code, 0x9000)
+    assert.equal(sig.returnCode, 0x9000)
 
-    signatures.transparent_sigs[i] = sig.sig_raw;
+    signatures.transparent_sigs[i] = sig.sigRaw;
   }
 
   for (let i = 0; i < tx_init_data.s_spend.length; i++) {
     const sig = await app.extractspendsig()
-    assert.equal(sig.return_code, 0x9000)
+    assert.equal(sig.returnCode, 0x9000)
 
-    signatures.spend_sigs[i] = sig.sig_raw;
+    signatures.spend_sigs[i] = sig.sigRaw;
   }
 
   builder.add_signatures(signatures)

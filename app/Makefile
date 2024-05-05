@@ -1,6 +1,6 @@
 #*******************************************************************************
 #  Ledger App
-#  (c) 2018 - 2023 Zondax AG
+#  (c) 2018 - 2024 Zondax AG
 #  (c) 2017 Ledger
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,9 +42,12 @@ ifeq ($(COIN),ZEC)
 # Main app configuration
 APPNAME = "Zcash Shielded"
 APPPATH = "44'/133'" --path "44'/1'"
+
 else
 define error_message
+
 COIN value not supported: [$(COIN)]
+
 endef
 $(error "$(error_message)")
 endif
@@ -62,21 +65,24 @@ endif
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
 
+# Add SDK BLAKE2b
 DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512 HAVE_ZIP0317
+INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
-LDFLAGS += -z muldefs
-LDLIBS += -Lrust/target/thumbv6m-none-eabi/release -lrslib
 
+# Building Rust
+LDFLAGS += -z muldefs
+LDLIBS += -L$(MY_DIR)rust/target/$(RUST_TARGET)/release -lrslib
+
+APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_CUSTOM_LINK_DEPENDENCIES = rust
+RUST_TARGET:=thumbv6m-none-eabi
 
 .PHONY: rust
 rust:
-	cd rust && CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target thumbv6m-none-eabi --release
-
-# Before linking, we need to be sure rust lib is there
-bin/app.elf: rust
+	cd rust && RUSTC_BOOTSTRAP=1 CARGO_HOME="$(CURDIR)/rust/.cargo" cargo build --target $(RUST_TARGET) --release
 
 .PHONY: rust_clean
 rust_clean:
@@ -84,14 +90,7 @@ rust_clean:
 
 clean: rust_clean
 
-# load, delete and listvariants are provided to comply with Ledger requirements
-.PHONY: load
-load:
-	python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
-
-.PHONY: delete
-delete:
-	python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
+include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.side_loading
 
 # Import generic rules from the SDK
 include $(BOLOS_SDK)/Makefile.rules
@@ -99,7 +98,6 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
-.PHONY: listvariants
 listvariants:
 	@echo VARIANTS COIN ZEC
 

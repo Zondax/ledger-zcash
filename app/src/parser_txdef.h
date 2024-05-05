@@ -26,8 +26,8 @@ extern "C" {
 #include <stdint.h>
 
 typedef struct {
-  uint8_t *state;
-  uint16_t len;
+    uint8_t *state;
+    uint16_t len;
 } parser_tx_t;
 
 #ifdef __cplusplus

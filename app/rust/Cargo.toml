@@ -2,45 +2,36 @@
 authors = ["Zondax AG <info@zondax.ch>"]
 name = "rslib"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 readme = "README.md"
+resolver = "2"
 
 [lib]
 name = "rslib"
 crate-type = ["staticlib"]
 
 [dependencies]
-jubjub = { version = "0.9", default-features = false }
-rand = { version = "0.7", default-features = false }
-blake2b_simd = { version = "0.5", default-features = false }
-blake2s_simd = { version = "0.5", default-features = false }
+jubjub = { version = "0.10.0", default-features = false }
+
+rand = { version = "0.8", default-features = false }
+blake2b_simd = { version = "1", default-features = false }
+blake2s_simd = { version = "1", default-features = false }
 binary-ff1 = { version = "0.1.0", default-features = false }
+group = { version = "0.13", default-features = false }
 aes = { version = "0.3", default-features = false }
+
+chacha20poly1305 = { version = "0.5.1", default-features = false, features = ["heapless", "chacha20"] }
+
 byteorder = { version = "1", default-features = false }
-hex = { version = "0.4.2", default-features = false }
-nom = { version = "5.1.1", default-features = false }
-group = { version = "0.12", default-features = false }
-
-[dependencies.chacha20poly1305]
-version = "0.5.1"
-default-features = false
-features = ["heapless", "chacha20"]
-
-[dependencies.bs58]
-version = "0.3.1"
-default-features = false
-features = ["check"]
+hex = { version = "0.4.3", default-features = false }
+nom = { version = "7", default-features = false }
+bs58 = { version = "0.5.1", default-features = false, features = ["check"] }
 
 [target.'cfg(any(unix, windows))'.dependencies]
-getrandom = { version = "0.1.14", default-features = false }
+getrandom = { version = "0.2.14", default-features = false }
 
 [target.thumbv6m-none-eabi.dev-dependencies]
 panic-halt = "0.2.0"
-
-[dev-dependencies]
-serde_json = "1.0.53"
-hex = { version = "0.4", default-features = false }
-serde = { version = "1.0.110", features = ["derive"] }
 
 [profile.release]
 lto = false
@@ -50,4 +41,18 @@ opt-level = "z"
 overflow-checks = true
 
 [profile.dev]
+lto = "fat"
+codegen-units = 1
+debug=true
+opt-level = "s"
 panic = "abort"
+
+[dev-dependencies]
+serde_json = "1.0.116"
+serde = { version = "1.0.200", features = ["derive"] }
+hex = { version = "0.4.3", features = ["alloc"] }
+
+[features]
+default = []
+# use when compiling this crate as a lib for the cpp_tests suite
+cpp_tests = []

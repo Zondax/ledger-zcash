@@ -5,6 +5,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+yarn.lock
+
 # Runtime data
 pids
 *.pid
@@ -67,7 +69,4 @@ typings/
 TODO\.md
 
 \dist
-/certs/cert.pem
-/certs/server.cert
-/certs/server.key
-yarn.lock
+node_modules

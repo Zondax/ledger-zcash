@@ -22,8 +22,7 @@
 extern "C" {
 #endif
 
-uint64_t zip_0317(uint64_t n_tin, uint64_t n_tout, uint64_t n_sapling_spends,
-                  uint64_t n_sapling_outs);
+uint64_t zip_0317(uint64_t n_tin, uint64_t n_tout, uint64_t n_sapling_spends, uint64_t n_sapling_outs);
 
 #ifdef __cplusplus
 }

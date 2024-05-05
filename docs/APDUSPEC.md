@@ -1,33 +1,33 @@
 # Zcash App
 
-- Zondax API: New API that provides support for shielded and unshielded transactions
-
-## General Structure
+## General structure
 
 The general structure of commands and responses is as follows:
 
+### Commands
+
 | Field   | Type     | Content                | Note |
-|---------|----------|------------------------|------|
-| CLA     | byte (1) | Application Identifier | 0x85 |
+| :------ | :------- | :--------------------- | ---- |
+| CLA     | byte (1) | Application Identifier | 0x59 |
 | INS     | byte (1) | Instruction ID         |      |
 | P1      | byte (1) | Parameter 1            |      |
 | P2      | byte (1) | Parameter 2            |      |
 | L       | byte (1) | Bytes in payload       |      |
 | PAYLOAD | byte (L) | Payload                |      |
 
-#### Response
+### Response
 
 | Field   | Type     | Content     | Note                     |
-|---------|----------|-------------|--------------------------|
+| ------- | -------- | ----------- | ------------------------ |
 | ANSWER  | byte (?) | Answer      | depends on the command   |
 | SW1-SW2 | byte (2) | Return code | see list of return codes |
 
-#### Return codes
+### Return codes
 
 | Return code | Description             |
 | ----------- | ----------------------- |
 | 0x6400      | Execution Error         |
-| 0x6400      | Wrong buffer length     |
+| 0x6700      | Wrong buffer length     |
 | 0x6982      | Empty buffer            |
 | 0x6983      | Output buffer too small |
 | 0x6984      | Data is invalid         |
@@ -206,14 +206,14 @@ Also returns the default diversifier (starting from index 0).
 
 #### Command
 
-| Field      | Type     | Content                   | Expected          |
-|------------|----------|---------------------------|-------------------|
-| CLA        | byte (1) | Application Identifier    | 0x85              |
-| INS        | byte (1) | Instruction ID            | 0xf0              |
-| P1         | byte (1) | Request User confirmation | always 1 or error |
-| P2         | byte (1) | Parameter 2               | ignored           |
-| L          | byte (1) | Bytes in payload          | (depends)         |
-| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+| Field      | Type     | Content                | Expected          |
+|------------|----------|------------------------|-------------------|
+| CLA        | byte (1) | Application Identifier | 0x85              |
+| INS        | byte (1) | Instruction ID         | 0xf0              |
+| P1         | byte (1) | Ignored                | ignored           |
+| P2         | byte (1) | Parameter 2            | ignored           |
+| L          | byte (1) | Bytes in payload       | (depends)         |
+| ZIP32-path | byte (4) | Derivation Path Data   | u32 Little-Endian |
 
 #### Response
 
@@ -231,14 +231,14 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 
 #### Command
 
-| Field      | Type     | Content                   | Expected          |
-|------------|----------|---------------------------|-------------------|
-| CLA        | byte (1) | Application Identifier    | 0x85              |
-| INS        | byte (1) | Instruction ID            | 0xf1              |
-| P1         | byte (1) | Request User confirmation | always 1 or error |
-| P2         | byte (1) | Parameter 2               | ignored           |
-| L          | byte (1) | Bytes in payload          | (depends)         |
-| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
+| Field      | Type     | Content                | Expected          |
+|------------|----------|------------------------|-------------------|
+| CLA        | byte (1) | Application Identifier | 0x85              |
+| INS        | byte (1) | Instruction ID         | 0xf1              |
+| P1         | byte (1) | Ignored                | ignored           |
+| P2         | byte (1) | Ignored                | ignored           |
+| L          | byte (1) | Bytes in payload       | (depends)         |
+| ZIP32-path | byte (4) | Derivation Path Data   | u32 Little-Endian |
 
 #### Response
 
@@ -255,16 +255,16 @@ Returns a sapling nullifier. TODO: Forced user confirmation (So P1 needs to be 0
 
 #### Command
 
-| Field      | Type     | Content                   | Expected          |
-|------------|----------|---------------------------|-------------------|
-| CLA        | byte (1) | Application Identifier    | 0x85              |
-| INS        | byte (1) | Instruction ID            | 0xf2              |
-| P1         | byte (1) | Request User confirmation | always 1 or error |
-| P2         | byte (1) | Parameter 2               | ignored           |
-| L          | byte (1) | Bytes in payload          | (depends)         |
-| ZIP32-path | byte (4) | Derivation Path Data      | u32 Little-Endian |
-| POSITION   | byte (8) | Note position             | uint64            |
-| CM         | byte(32) | Note commitment Data      | 32-bytes          |
+| Field      | Type     | Content                | Expected          |
+|------------|----------|------------------------|-------------------|
+| CLA        | byte (1) | Application Identifier | 0x85              |
+| INS        | byte (1) | Instruction ID         | 0xf2              |
+| P1         | byte (1) | Ignored                | ignored           |
+| P2         | byte (1) | Ignored                | ignored           |
+| L          | byte (1) | Bytes in payload       | (depends)         |
+| ZIP32-path | byte (4) | Derivation Path Data   | u32 Little-Endian |
+| POSITION   | byte (8) | Note position          | uint64            |
+| CM         | byte(32) | Note commitment Data   | 32-bytes          |
 
 #### Response
 
@@ -441,8 +441,7 @@ Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a s
 #### Response
 
 | Field     | Type      | Content       | Note                                      |
-|-----------|-----------|---------------|------------------------------------------
--|
+|-----------|-----------|---------------|-------------------------------------------|
 | rcv_RAW   | byte (32) | Raw rcv       |                                           |
 | rseed_RAW | byte (32) | Raw rseed     |                                           |
 | hash_seed | byte (32) | Raw hash_seed | Only returned if OVK=None for this output |
@@ -623,15 +622,3 @@ Returns a spend signature for a sapling shielded spend input if available. Othre
 | Field     | Type      | Content       | Note                     |
 |-----------|-----------|---------------|--------------------------|
 | SW1-SW2   | byte (2)  | Return code   | see list of return codes |
-
----
-
-### INS_SIGN_SECP256K1
-
-**THIS COMMAND HAS BEEN DEPRECATED**
-
----
-
-### INS_SIGN_SAPLING
-
-**THIS COMMAND HAS BEEN DEPRECATED**

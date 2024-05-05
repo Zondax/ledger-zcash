@@ -1,5 +1,4 @@
 # Created by .ignore support plugin (hsz.mobi)
-### C template
 # Prerequisites
 *.d
 
@@ -47,59 +46,38 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
 
-\cmake-build-debug
-\.idea/
-/tmp/
-/deps/nano2-sdk/
+##########################
 
-# Created by cmake
-googletest-download/
-googletest-src/
-googletest-build/
-CMakeFiles/
-CMakeCache.txt
-unittests
-*.cmake
-Testing/
-cmake-build-fuzz/
+tests_zemu/.yarn/*
+tests_zemu/!.yarn/patches
+tests_zemu/!.yarn/releases
+tests_zemu/!.yarn/plugins
+tests_zemu/!.yarn/sdks
+tests_zemu/!.yarn/versions
+tests_zemu/.pnp.*
 
-# Others
-/cmake-build-debug/
-/cmake-build-fuzz/
-\.idea
-/app/bin/
-/app/debug/
-/app/obj/
+#########################
 
-\deps/*
-!\deps/nanos-secure-sdk
-\deps/nano2-sdk
-!\deps/ledger-zxlib
-!\deps/tiny-aes
-!\deps/BLAKE
-/build
-yarn.lock
-!/tests_zemu/yarn.lock
-!/tests_zemu/yarn-error.log
-/app/rust/Cargo.lock
-/zcashtools/target/
-!/zcashtools/neon/yarn.lock
+.vscode/*
+.idea
+
+node_modules
+fuzz/corpora
+
+!build/.gitkeep
+build/*
+cmake-build-debug
 app/build/*
 
-app/glyphs/glyphs.c
-
-app/glyphs/glyphs.h
-.vscode/configurationCache.log
-.vscode/dryrun.log
-.vscode/settings.json
-.vscode/targets.log
-/tests_zemu/yarn.lock
-
-node_modules/.yarn-integrity
-app/rust/.cargo/.package-cache-mutate
+tests_zemu/snapshots-tmp
+tests_zemu/yarn.lock
+tests_tools/target
+fuzz-*.log
+/scan-build
+/build
+app/rust/.cargo/registry
+app/rust/.cargo/.package-cache*
+zcashtools/target
+js/node_modules
+target

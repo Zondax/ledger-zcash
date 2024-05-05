@@ -15,22 +15,23 @@
  ********************************************************************************/
 
 #include "tx.h"
+
+#include <string.h>
+
 #include "apdu_codes.h"
 #include "buffering.h"
 #include "parser.h"
 #include "zxmacros.h"
-#include <string.h>
 
 // Ram
 uint8_t ram_buffer[RAM_BUFFER_SIZE];
 
 // Flash
 typedef struct {
-  uint8_t buffer[FLASH_BUFFER_SIZE];
+    uint8_t buffer[FLASH_BUFFER_SIZE];
 } storage_t;
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX) ||                          \
-    defined(TARGET_NANOS2) || defined(TARGET_STAX)
+#if defined(TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX)
 storage_t NV_CONST N_appdata_impl __attribute__((aligned(64)));
 #define N_appdata (*(NV_VOLATILE storage_t *)PIC(&N_appdata_impl))
 #endif
@@ -39,72 +40,72 @@ static parser_tx_t tx_obj;
 static parser_context_t ctx_parsed_tx;
 
 void tx_initialize() {
-  buffering_init(ram_buffer, sizeof(ram_buffer), (uint8_t *)N_appdata.buffer,
-                 sizeof(N_appdata.buffer));
+    buffering_init(ram_buffer, sizeof(ram_buffer), (uint8_t *)N_appdata.buffer, sizeof(N_appdata.buffer));
 }
 
-void tx_reset() { buffering_reset(); }
+void tx_reset() {
+    buffering_reset();
+}
 
 uint32_t tx_append(unsigned char *buffer, uint32_t length) {
-  return buffering_append(buffer, length);
+    return buffering_append(buffer, length);
 }
 
-uint32_t tx_get_buffer_length() { return buffering_get_buffer()->pos; }
+uint32_t tx_get_buffer_length() {
+    return buffering_get_buffer()->pos;
+}
 
-uint8_t *tx_get_buffer() { return buffering_get_buffer()->data; }
+uint8_t *tx_get_buffer() {
+    return buffering_get_buffer()->data;
+}
 
 const char *tx_parse() {
-  MEMZERO(&tx_obj, sizeof(tx_obj));
+    MEMZERO(&tx_obj, sizeof(tx_obj));
 
-  uint8_t err =
-      parser_parse(&ctx_parsed_tx, tx_get_buffer(), tx_get_buffer_length());
+    uint8_t err = parser_parse(&ctx_parsed_tx, tx_get_buffer(), tx_get_buffer_length());
 
-  if (err != parser_ok) {
-    return parser_getErrorDescription(err);
-  }
+    if (err != parser_ok) {
+        return parser_getErrorDescription(err);
+    }
 
-  err = parser_validate();
-  CHECK_APP_CANARY()
+    err = parser_validate();
+    CHECK_APP_CANARY()
 
-  if (err != parser_ok) {
-    return parser_getErrorDescription(err);
-  }
+    if (err != parser_ok) {
+        return parser_getErrorDescription(err);
+    }
 
-  return NULL;
+    return NULL;
 }
 
 zxerr_t tx_getNumItems(uint8_t *num_items) {
-  parser_error_t err = parser_getNumItems(num_items);
+    parser_error_t err = parser_getNumItems(num_items);
 
-  if (err != parser_ok) {
-    return zxerr_no_data;
-  }
+    if (err != parser_ok) {
+        return zxerr_no_data;
+    }
 
-  return zxerr_ok;
+    return zxerr_ok;
 }
 
-zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen,
-                   char *outVal, uint16_t outValLen, uint8_t pageIdx,
-                   uint8_t *pageCount) {
-  uint8_t numItems = 0;
+zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen,
+                   uint8_t pageIdx, uint8_t *pageCount) {
+    uint8_t numItems = 0;
 
-  CHECK_ZXERR(tx_getNumItems(&numItems))
+    CHECK_ZXERR(tx_getNumItems(&numItems))
 
-  if (displayIdx < 0 || displayIdx >= numItems) {
-    return zxerr_no_data;
-  }
+    if (displayIdx < 0 || displayIdx >= numItems) {
+        return zxerr_no_data;
+    }
 
-  parser_error_t err = parser_getItem(displayIdx, outKey, outKeyLen, outVal,
-                                      outValLen, pageIdx, pageCount);
+    parser_error_t err = parser_getItem(displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
-  // Convert error codes
-  if (err == parser_no_data || err == parser_display_idx_out_of_range ||
-      err == parser_display_page_out_of_range) {
-    return zxerr_no_data;
-  }
+    // Convert error codes
+    if (err == parser_no_data || err == parser_display_idx_out_of_range || err == parser_display_page_out_of_range) {
+        return zxerr_no_data;
+    }
 
-  if (err != parser_ok)
-    return zxerr_unknown;
+    if (err != parser_ok) return zxerr_unknown;
 
-  return zxerr_ok;
+    return zxerr_ok;
 }

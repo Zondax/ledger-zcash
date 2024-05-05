@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import {expect, test} from "./jest";
-import {serializePathv1} from "../src/helperV1";
+import { expect, test } from "./jest";
+import { serializePathv1 } from "../src/helperV1";
 
 test("serializePathv1", async () => {
   const path = "m/44'/461'/0/0/5";
