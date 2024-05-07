@@ -11,6 +11,8 @@ name = "rslib"
 crate-type = ["staticlib"]
 
 [dependencies]
+ztruct = { path = "../ztruct", version = "*" }
+
 jubjub = { version = "0.10.0", default-features = false }
 
 rand = { version = "0.8", default-features = false }

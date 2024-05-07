@@ -32,6 +32,8 @@ mod types;
 mod utils;
 mod zip32;
 
+use ztruct;
+
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 
