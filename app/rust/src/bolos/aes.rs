@@ -1,7 +1,7 @@
-use aes::Aes256;
+use aes::block_cipher_trait::generic_array::typenum::{U16, U32, U8};
 use aes::block_cipher_trait::generic_array::GenericArray;
 use aes::block_cipher_trait::BlockCipher;
-use aes::block_cipher_trait::generic_array::typenum::{U16, U32, U8};
+use aes::Aes256;
 
 extern "C" {
     fn c_aes256_encryptblock(k: *const u8, a: *const u8, out: *mut u8);

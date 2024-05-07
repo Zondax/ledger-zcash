@@ -1,81 +1,27 @@
+use crate::bolos::c_zemu_log_stack;
+use crate::constants::{
+    NOTE_POSITION_BASE, PEDERSEN_RANDOMNESS_BASE, VALUE_COMMITMENT_RANDOM_BASE,
+    VALUE_COMMITMENT_VALUE_BASE,
+};
+use crate::crypto::{add_to_point, extended_to_bytes, extended_to_u_bytes};
 use blake2s_simd::Params as Blake2sParams;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
-use crate::bolos::c_zemu_log_stack;
-use crate::constants::{NOTE_POSITION_BASE, PEDERSEN_RANDOMNESS_BASE, VALUE_COMMITMENT_RANDOM_BASE, VALUE_COMMITMENT_VALUE_BASE};
 
 use crate::pedersen::*;
 use crate::personalization::CRH_NF;
-use crate::utils;
+use crate::sapling::sapling_nsk_to_nk;
 use crate::utils::{into_fixed_array, shiftsixbits};
-use crate::zip32::{group_hash_from_div, nsk_to_nk, zip32_nsk_from_seed};
-
-// #[inline(never)]
-// pub fn add_points(a: ExtendedPoint, b: ExtendedPoint) -> ExtendedPoint {
-//     a + b
-// }
-
-// pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> bool {
-//     let v = bytes_to_extended(*valuecommitsum);
-//     let r = VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcmsum);
-//     v == r
-// }
+use crate::zip32::zip32_nsk_from_seed;
+use crate::{crypto, utils, zip32}; // #[inline(never)]
 
 #[inline(never)]
-pub fn multiply_with_pedersen_base(val: &[u8; 32]) -> ExtendedPoint {
-    PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
+pub fn group_hash_from_diversifier(diversifier_ptr: *const [u8; 11], gd_ptr: *mut [u8; 32]) {
+    let diversifier = unsafe { &*diversifier_ptr };
+    let gd = unsafe { &mut *gd_ptr };
+    let gd_tmp = zip32::pkd_group_hash(diversifier);
+    gd.copy_from_slice(&gd_tmp);
 }
 
-/**
- * Computes the note commitment for the given parameters.
- * 
- * This function logs the commitment process, prepares an input hash from the given parameters,
- * computes a Pedersen hash to a point, and then adds a point derived from multiplying the
- * randomness base with `rcm`.
- * 
- * @param v - The value to be committed.
- * @param g_d - The diversifier of the recipient's address.
- * @param pk_d - The transmission key of the recipient's address.
- * @param rcm - The randomness used in the commitment.
- * @returns The resulting ExtendedPoint after the commitment process.
- */
-#[inline(never)]
-pub fn note_commitment(v: u64, g_d: &[u8; 32], pk_d: &[u8; 32], rcm: &[u8; 32]) -> ExtendedPoint {
-    c_zemu_log_stack(b"notecommit\x00".as_ref());
-    let mut input_hash = [0u8; 73];
-
-    // Convert the value to bytes and reverse the bits as per protocol
-    let vbytes = utils::write_u64_tobytes(v);
-    input_hash[0..8].copy_from_slice(&vbytes);
-
-    // Reverse bits for g_d and pk_d and place them into the input hash
-    utils::reverse_bits(g_d, &mut input_hash[8..40]);
-    utils::reverse_bits(pk_d, &mut input_hash[40..72]);
-
-    // Perform a bit shift operation on the entire array
-    shiftsixbits(&mut input_hash);
-
-    // Compute the Pedersen hash to point
-    let mut p = pedersen_hash_to_point(&input_hash, 582);
-
-    // Multiply the randomness base by rcm and add to the point
-    let s = PEDERSEN_RANDOMNESS_BASE.multiply_bits(rcm);
-    p += s;
-
-    p
-}
-
-/**
- * Prepares and hashes input data for commitment using Pedersen hash.
- * 
- * This function takes a value and pointers to diversifier and transmission key,
- * prepares the input data by reversing bits and performing a bit shift,
- * and then computes the Pedersen hash of the prepared data.
- * 
- * @param value - The value to be hashed.
- * @param g_d_ptr - Pointer to the diversifier of the recipient's address.
- * @param pkd_ptr - Pointer to the transmission key of the recipient's address.
- * @param output_ptr - Pointer to the output buffer where the hash will be stored.
- */
 #[inline(never)]
 pub fn prepare_and_hash_input_commitment(
     value: u64,
@@ -107,24 +53,8 @@ pub fn prepare_and_hash_input_commitment(
     output_msg.copy_from_slice(&h);
 }
 
-#[inline(never)]
-pub fn value_commitment_step1(value: u64) -> ExtendedPoint {
-    let scalar = into_fixed_array(value);
-    VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar)
-}
-
-#[inline(never)]
-pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
-    VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm)
-}
-
-#[inline(never)]
-pub fn value_commitment(value: u64, rcm: &[u8; 32]) -> [u8; 32] {
-    let scalar = into_fixed_array(value);
-    let mut x = VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar);
-    x += VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm);
-    extended_to_bytes(&x)
-}
+////////////////////////////////////////////////
+////////////////////////////////////////////////
 
 #[inline(never)]
 pub fn mixed_pedersen(e: &ExtendedPoint, scalar: Fr) -> [u8; 32] {
@@ -147,11 +77,8 @@ pub fn prf_nf(nk: &[u8; 32], rho: &[u8; 32]) -> [u8; 32] {
     x
 }
 
-#[inline(never)]
-pub fn bytes_to_extended(m: [u8; 32]) -> ExtendedPoint {
-    ExtendedPoint::from(AffinePoint::from_bytes(m).unwrap())
-}
-
+//////////////////////////////
+//////////////////////////////
 #[no_mangle]
 pub extern "C" fn compute_nullifier(
     ncm_ptr: *const [u8; 32],
@@ -162,13 +89,12 @@ pub extern "C" fn compute_nullifier(
     c_zemu_log_stack(b"compute_nullifier\x00".as_ref());
     let ncm = unsafe { *ncm_ptr };
     let nsk = unsafe { &*nsk_ptr };
-    let mut nk = [0u8; 32];
+    let nk = sapling_nsk_to_nk(nsk);
 
-    nsk_to_nk(nsk, &mut nk);
     crate::bolos::heartbeat();
 
     let scalar = Fr::from(pos);
-    let e = bytes_to_extended(ncm);
+    let e = crypto::bytes_to_extended(ncm);
     crate::bolos::heartbeat();
 
     let rho = mixed_pedersen(&e, scalar);
@@ -178,23 +104,26 @@ pub extern "C" fn compute_nullifier(
     output.copy_from_slice(&prf_nf(&nk, &rho));
 }
 
+//////////////////////////////
+//////////////////////////////
 #[no_mangle]
-pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
-                                          rcm_ptr: *const [u8; 32],
-                                          value: u64,
-                                          diversifier_ptr: *const [u8; 11],
-                                          pkd_ptr: *const [u8; 32]) {
-
+pub extern "C" fn compute_note_commitment(
+    input_ptr: *mut [u8; 32],
+    rcm_ptr: *const [u8; 32],
+    value: u64,
+    diversifier_ptr: *const [u8; 11],
+    pkd_ptr: *const [u8; 32],
+) {
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
-    group_hash_from_div(diversifier, &mut gd);
+    group_hash_from_diversifier(diversifier, &mut gd);
 
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
 
     let rc = unsafe { &*rcm_ptr };
-    let mut e = bytes_to_extended(*out);
+    let mut e = crypto::bytes_to_extended(*out);
     let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
@@ -202,30 +131,46 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
     out.copy_from_slice(&extended_to_u_bytes(&e));
 }
 
-
+//////////////////////////////
+//////////////////////////////
 #[no_mangle]
 pub extern "C" fn compute_note_commitment_fullpoint(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
     value: u64,
     diversifier_ptr: *const [u8; 11],
-    pkd_ptr: *const [u8; 32]) {
+    pkd_ptr: *const [u8; 32],
+) {
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
 
-    group_hash_from_div(diversifier, &mut gd);
+    group_hash_from_diversifier(diversifier, &mut gd);
 
     let pkd = unsafe { &*pkd_ptr };
     let out = unsafe { &mut *input_ptr };
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
 
     let rc = unsafe { &*rcm_ptr };
-    let mut e = bytes_to_extended(*out);
+    let mut e = crypto::bytes_to_extended(*out);
     let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
 
     out.copy_from_slice(&extended_to_bytes(&e));
+}
+
+//////////////////////////////
+//////////////////////////////
+
+#[inline(never)]
+pub fn value_commitment_step1(value: u64) -> ExtendedPoint {
+    let scalar = into_fixed_array(value);
+    VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar)
+}
+
+#[inline(never)]
+pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
+    VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm)
 }
 
 #[no_mangle]
@@ -234,7 +179,6 @@ pub extern "C" fn compute_value_commitment(
     rcm_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-
     let rc = unsafe { &*rcm_ptr };
     let output_msg = unsafe { &mut *output_ptr };
 
@@ -246,11 +190,53 @@ pub extern "C" fn compute_value_commitment(
     output_msg.copy_from_slice(&vcm);
 }
 
+//////////////////////////////
+//////////////////////////////
+
 #[cfg(test)]
 mod tests {
     use crate::utils::into_fixed_array;
 
     use super::*;
+
+    #[inline(never)]
+    pub fn note_commitment(
+        v: u64,
+        g_d: &[u8; 32],
+        pk_d: &[u8; 32],
+        rcm: &[u8; 32],
+    ) -> ExtendedPoint {
+        c_zemu_log_stack(b"notecommit\x00".as_ref());
+        let mut input_hash = [0u8; 73];
+
+        // Convert the value to bytes and reverse the bits as per protocol
+        let vbytes = utils::write_u64_tobytes(v);
+        input_hash[0..8].copy_from_slice(&vbytes);
+
+        // Reverse bits for g_d and pk_d and place them into the input hash
+        utils::reverse_bits(g_d, &mut input_hash[8..40]);
+        utils::reverse_bits(pk_d, &mut input_hash[40..72]);
+
+        // Perform a bit shift operation on the entire array
+        shiftsixbits(&mut input_hash);
+
+        // Compute the Pedersen hash to point
+        let mut p = pedersen_hash_to_point(&input_hash, 582);
+
+        // Multiply the randomness base by rcm and add to the point
+        let s = PEDERSEN_RANDOMNESS_BASE.multiply_bits(rcm);
+        p += s;
+
+        p
+    }
+
+    #[inline(never)]
+    pub fn value_commitment(value: u64, rcm: &[u8; 32]) -> [u8; 32] {
+        let scalar = into_fixed_array(value);
+        let mut x = VALUE_COMMITMENT_VALUE_BASE.multiply_bits(&scalar);
+        x += VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm);
+        extended_to_bytes(&x)
+    }
 
     #[test]
     fn test_ncm_c() {
@@ -261,9 +247,9 @@ mod tests {
         let rcm = [0u8; 32];
         let output = [0u8; 32];
 
-        let div = &div_ptr ;
+        let div = &div_ptr;
 
-        group_hash_from_div(div, &mut gd);
+        group_hash_from_diversifier(div, &mut gd);
 
         prepare_and_hash_input_commitment(
             v,
@@ -277,14 +263,14 @@ mod tests {
             rcm.as_ptr() as *const [u8; 32],
             v,
             div.as_ptr() as *const [u8; 11],
-            pkd.as_ptr() as *const [u8; 32]
+            pkd.as_ptr() as *const [u8; 32],
         );
 
         assert_eq!(
             output,
             [
-                51, 107, 65, 49, 174, 10, 181, 105, 255, 123, 174, 149, 217, 191, 95,
-                76, 7, 90, 151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
+                51, 107, 65, 49, 174, 10, 181, 105, 255, 123, 174, 149, 217, 191, 95, 76, 7, 90,
+                151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
             ]
         );
     }
@@ -354,26 +340,27 @@ mod tests {
         let pos: u64 = 2578461368;
 
         let seed: [u8; 32] = [
-            176,142,61,152,218,67,28,239,69,102,161,60,27,179,72,185,
-            130,247,216,231,67,180,59,182,37,87,186,81,153,75,18,87,
+            176, 142, 61, 152, 218, 67, 28, 239, 69, 102, 161, 60, 27, 179, 72, 185, 130, 247, 216,
+            231, 67, 180, 59, 182, 37, 87, 186, 81, 153, 75, 18, 87,
         ];
 
         let cm: [u8; 32] = [
             0x21, 0xc9, 0x46, 0x98, 0xca, 0x32, 0x4b, 0x4c, 0xba, 0xce, 0x29, 0x1d, 0x27, 0xab,
             0xb6, 0x8a, 0xa, 0xaf, 0x27, 0x37, 0xdc, 0x45, 0x56, 0x54, 0x1c, 0x7f, 0xcd, 0xe8,
-            0xce, 0x11, 0xdd, 0xe8];
+            0xce, 0x11, 0xdd, 0xe8,
+        ];
 
         let mut nsk = [0u8; 32];
-        zip32_nsk_from_seed(&seed,&mut nsk);
+        zip32_nsk_from_seed(&seed, &mut nsk);
 
         let mut nf = [0u8; 32];
-        compute_nullifier(&cm, pos, &nsk,&mut nf);
-
+        compute_nullifier(&cm, pos, &nsk, &mut nf);
 
         let nftest: [u8; 32] = [
-            0x25,0xf1,0xf2,0xcf,0x5e,0x2c,0x2b,0xc3,0x1d,0x7,0xb6,0x6f,
-            0x4d,0x54,0xf0,0x90,0xad,0x89,0xb1,0x98,0x89,0x3f,0x12,0xad,
-            0xae,0x44,0x7d,0xdf,0x84,0xe2,0x14,0x5a];
+            0x25, 0xf1, 0xf2, 0xcf, 0x5e, 0x2c, 0x2b, 0xc3, 0x1d, 0x7, 0xb6, 0x6f, 0x4d, 0x54,
+            0xf0, 0x90, 0xad, 0x89, 0xb1, 0x98, 0x89, 0x3f, 0x12, 0xad, 0xae, 0x44, 0x7d, 0xdf,
+            0x84, 0xe2, 0x14, 0x5a,
+        ];
         assert_eq!(nf, nftest);
     }
 

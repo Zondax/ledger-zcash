@@ -1,7 +1,9 @@
+use crate::bolos;
+use crate::personalization::{
+    KEY_DIVERSIFICATION_PERSONALIZATION, PRF_EXPAND_PERSONALIZATION, REDJUBJUB_PERSONALIZATION,
+};
 use blake2b_simd::Params as Blake2bParams;
 use blake2s_simd::Params as Blake2sParams;
-use crate::bolos;
-use crate::personalization::{KEY_DIVERSIFICATION_PERSONALIZATION, PRF_EXPAND_PERSONALIZATION, REDJUBJUB_PERSONALIZATION};
 
 extern "C" {
     fn c_zcash_blake2b_expand_seed(
@@ -183,7 +185,6 @@ pub fn blake2b_expand_vec_four(
 
 #[cfg(test)]
 pub fn blake2b_expand_seed(a: &[u8], b: &[u8]) -> [u8; 64] {
-
     let h = Blake2bParams::new()
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)

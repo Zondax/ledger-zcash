@@ -16,20 +16,20 @@ use core::convert::TryInto;
 use core::mem;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
 
+mod bitstreamer;
 mod bolos;
 mod commitments;
 mod constants;
+mod crypto;
 mod errors;
 mod notes;
 mod pedersen;
-mod redjubjub;
-mod zeccrypto;
-mod zip32;
-mod utils;
 mod personalization;
-mod bitstreamer;
+mod redjubjub;
 mod refactor;
-
+mod sapling;
+mod utils;
+mod zip32;
 
 #[cfg(not(test))]
 use core::panic::PanicInfo;

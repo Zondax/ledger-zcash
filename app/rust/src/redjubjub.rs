@@ -1,31 +1,39 @@
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
-use crate::bolos::c_zemu_log_stack;
 use crate::bolos::blake2b::blake2b_redjubjub;
-use crate::bolos::jubjub::sdk_jubjub_scalarmult_spending_base;
+use crate::bolos::c_zemu_log_stack;
+use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::bolos::rng::Trng;
-use crate::commitments::bytes_to_extended;
 use crate::constants::*;
-use crate::pedersen::extended_to_bytes;
-use crate::zip32::zip32_child_ask_nsk;
-
-#[inline(never)]
-pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
-    Fr::from_bytes_wide(&blake2b_redjubjub(a, b))
-}
+use crate::crypto::bytes_to_extended;
 
 #[inline(never)]
 pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {
     let mut point = [0u8; 32];
-    sdk_jubjub_scalarmult_spending_base(&mut point, &sk[..]);
+    scalarmult_spending_base(&mut point, &sk[..]);
     point
 }
 
 #[inline(never)]
-pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
-    let rndpk = jubjub_sk_to_pk(&alpha);
-    *pk += bytes_to_extended(rndpk);
+pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
+    let sk = unsafe { &*sk_ptr };
+    let pk = unsafe { &mut *pk_ptr };
+    let pubkey = jubjub_sk_to_pk(sk);
+    pk.copy_from_slice(&pubkey);
+}
+
+#[no_mangle]
+pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
+    sk_to_pk(rsk_ptr, rk_ptr)
+}
+
+//////////////////////////
+/////////////////////////.
+
+#[inline(never)]
+pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
+    Fr::from_bytes_wide(&blake2b_redjubjub(a, b))
 }
 
 #[inline(never)]
@@ -64,41 +72,6 @@ pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
     sig
 }
 
-#[inline(never)]
-pub fn random_scalar() -> Fr {
-    let mut t = [0u8; 64];
-    Trng.fill_bytes(&mut t);
-    Fr::from_bytes_wide(&t)
-}
-
-#[inline(never)]
-pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    let sk = unsafe { &*sk_ptr };
-    let pk = unsafe { &mut *pk_ptr };
-    let pubkey = jubjub_sk_to_pk(sk);
-    pk.copy_from_slice(&pubkey);
-}
-
-#[no_mangle]
-pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
-    sk_to_pk(rsk_ptr, rk_ptr)
-}
-
-#[inline(never)]
-pub fn randomized_secret(
-    sk_ptr: *const [u8; 32],
-    alpha_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
-) {
-    let alpha = unsafe { &*alpha_ptr };
-    let sk = unsafe { &*sk_ptr };
-    let output = unsafe { &mut *output_ptr };
-    let mut skfr = Fr::from_bytes(&sk).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
-    skfr += alphafr;
-    output.copy_from_slice(&skfr.to_bytes());
-}
-
 #[no_mangle]
 pub extern "C" fn sign_redjubjub(
     key_ptr: *const [u8; 32],
@@ -113,6 +86,16 @@ pub extern "C" fn sign_redjubjub(
     output.copy_from_slice(&sign_complete(&msg, &sk));
 }
 
+///////////////////////////
+///////////////////////////
+
+#[inline(never)]
+pub fn random_scalar() -> Fr {
+    let mut t = [0u8; 64];
+    Trng.fill_bytes(&mut t);
+    Fr::from_bytes_wide(&t)
+}
+
 #[no_mangle]
 pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
     let alpha = unsafe { &mut *alpha_ptr };
@@ -120,21 +103,19 @@ pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
     alpha.copy_from_slice(&fr.to_bytes());
 }
 
-#[no_mangle]
-pub extern "C" fn randomized_secret_from_seed(
-    seed_ptr: *const [u8; 32],
-    pos: u32,
+///////////////////////////
+///////////////////////////
+
+#[inline(never)]
+pub fn randomized_secret(
+    sk_ptr: *const [u8; 32],
     alpha_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    let mut ask = [0u8; 32];
-    let mut nsk = [0u8; 32];
     let alpha = unsafe { &*alpha_ptr };
+    let sk = unsafe { &*sk_ptr };
     let output = unsafe { &mut *output_ptr };
-
-    zip32_child_ask_nsk(seed_ptr, &mut ask, &mut nsk, pos);
-
-    let mut skfr = Fr::from_bytes(&ask).unwrap();
+    let mut skfr = Fr::from_bytes(&sk).unwrap();
     let alphafr = Fr::from_bytes(&alpha).unwrap();
     skfr += alphafr;
     output.copy_from_slice(&skfr.to_bytes());
@@ -166,6 +147,11 @@ pub extern "C" fn get_rk(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
+        let rndpk = jubjub_sk_to_pk(&alpha);
+        *pk += bytes_to_extended(rndpk);
+    }
 
     pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
         sk + alpha

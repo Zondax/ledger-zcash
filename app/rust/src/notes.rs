@@ -1,10 +1,29 @@
-use byteorder::{ByteOrder, LittleEndian};
+use crate::bolos::blake2b::blake2b32_with_personalization;
 use crate::constants::COMPACT_NOTE_SIZE;
-use crate::zeccrypto::*;
-use crate::zip32::mult_by_gd;
+use crate::crypto::{
+    bytes_to_extended, extended_to_bytes, mul_by_cofactor, mult_by_gd, prf_expand,
+};
+use crate::personalization::KDF_SAPLING_PERSONALIZATION;
+use crate::zip32::niels_multbits;
+use byteorder::{ByteOrder, LittleEndian};
+use jubjub::Fr;
+
+#[inline(never)]
+fn rseed_generate_esk(rseed: &[u8; 32]) -> Fr {
+    let bytes = prf_expand(rseed, &[0x05]);
+    Fr::from_bytes_wide(&bytes)
+}
+
+#[inline(never)]
+fn rseed_get_esk(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
+    let rseed = unsafe { &*rseed_ptr };
+    let output = unsafe { &mut *output_ptr };
+    let p = rseed_generate_esk(rseed);
+    output.copy_from_slice(&p.to_bytes());
+}
 
 #[no_mangle]
-pub fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
+fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let d = unsafe { &*d_ptr };
     let output = unsafe { &mut *output_ptr };
@@ -24,10 +43,32 @@ pub extern "C" fn rseed_get_esk_epk(
 
     let output_esk = unsafe { &mut *output_esk_ptr };
     let output_epk = unsafe { &mut *output_epk_ptr };
+
     rseed_get_esk(rseed, output_esk);
 
     get_epk(output_esk, d_ptr, output_epk);
+
     crate::bolos::heartbeat();
+}
+
+//////////////////////////////
+//////////////////////////////
+
+#[inline(never)]
+pub fn ka_agree(esk: &[u8; 32], pk_d: &[u8; 32]) -> [u8; 32] {
+    let mut y = bytes_to_extended(*pk_d);
+    mul_by_cofactor(&mut y);
+    niels_multbits(&mut y, esk);
+    extended_to_bytes(&y)
+}
+
+#[inline(never)]
+pub fn sapling_kdf(dh_secret: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
+    let mut input = [0u8; 64];
+    (&mut input[..32]).copy_from_slice(dh_secret);
+    (&mut input[32..]).copy_from_slice(epk);
+    crate::bolos::heartbeat();
+    blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
 }
 
 #[no_mangle]
@@ -41,12 +82,15 @@ pub extern "C" fn ka_to_key(
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let pkd = unsafe { &*pkd_ptr };
     let epk = unsafe { &*epk_ptr };
-    let shared_secret = sapling_ka_agree(esk, pkd);
-    let key = kdf_sapling(&shared_secret, epk);
+    let shared_secret = ka_agree(esk, pkd);
+    let key = sapling_kdf(&shared_secret, epk);
     crate::bolos::heartbeat();
     let output = unsafe { &mut *output_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&key);
 }
+
+//////////////////////////////
+//////////////////////////////
 
 #[no_mangle]
 pub extern "C" fn prepare_enccompact_input(
@@ -73,6 +117,27 @@ pub extern "C" fn prepare_enccompact_input(
     input[COMPACT_NOTE_SIZE] = memotype;
     output.copy_from_slice(&input);
 }
+
+//////////////////////////////
+//////////////////////////////
+
+#[inline(never)]
+fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {
+    let bytes = prf_expand(rseed, &[0x04]);
+    crate::bolos::heartbeat();
+    Fr::from_bytes_wide(&bytes)
+}
+
+#[no_mangle]
+pub extern "C" fn rseed_get_rcm(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
+    let rseed = unsafe { &*rseed_ptr };
+    let output = unsafe { &mut *output_ptr };
+    let p = rseed_generate_rcm(rseed);
+    output.copy_from_slice(&p.to_bytes());
+}
+
+//////////////////////////////
+//////////////////////////////
 
 #[cfg(test)]
 mod tests {
@@ -106,8 +171,8 @@ mod tests {
             output.as_mut_ptr() as *mut [u8; 32],
         );
 
-        let shared_secret = sapling_ka_agree(&esk, &pk_d);
-        let key = kdf_sapling(&shared_secret, &epk);
+        let shared_secret = ka_agree(&esk, &pk_d);
+        let key = sapling_kdf(&shared_secret, &epk);
 
         assert_eq!(output, key);
     }

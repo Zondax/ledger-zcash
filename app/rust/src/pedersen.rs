@@ -1,39 +1,13 @@
-use core::convert::TryInto;
-use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use crate::bitstreamer::Bitstreamer;
-use crate::constants::NIELSPOINTS;
-
-#[inline(never)]
-fn mult_bits(index: usize, bits: &[u8; 32]) -> ExtendedPoint {
-    let q = NIELSPOINTS[index];
-    q.multiply_bits(bits)
-}
-
-#[inline(never)]
-pub fn add_to_point(point: &mut ExtendedPoint, p: &ExtendedPoint) {
-    *point += p;
-}
-
-#[inline(never)]
-fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
-    let p = mult_bits(index, acc);
-    add_to_point(point, &p);
-}
+use crate::constants::PEDERSEN_RANDOMNESS_BASE;
+use crate::crypto;
+use core::convert::TryInto;
+use jubjub::{ExtendedPoint, Fr};
 
 // #[inline(never)]
 // fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
 //     AffinePoint::from(*point).get_u().to_bytes()
 // }
-
-#[inline(never)]
-pub fn extended_to_u_bytes(point: &ExtendedPoint) -> [u8; 32] {
-    AffinePoint::from(*point).get_u().to_bytes()
-}
-
-#[inline(never)]
-pub fn extended_to_bytes(point: &ExtendedPoint) -> [u8; 32] {
-    AffinePoint::from(*point).to_bytes()
-}
 
 #[inline(never)]
 fn squarings(cur: &mut Fr) {
@@ -87,7 +61,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
             counter += 1;
             if counter == MAXCOUNTER {
                 // Reset and move to the next curve point
-                add_point(&mut result_point, &acc.to_bytes(), pointcounter);
+                crypto::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
                 counter = 0;
                 pointcounter += 1;
                 acc = Fr::zero();
@@ -99,7 +73,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
         }
     }
     if counter > 0 {
-        add_point(&mut result_point, &acc.to_bytes(), pointcounter);
+        crypto::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
     }
 
     result_point
@@ -108,13 +82,13 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
 #[inline(never)]
 pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    extended_to_u_bytes(&result_point)
+    crypto::extended_to_u_bytes(&result_point)
 }
 
 #[inline(never)]
 pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    extended_to_bytes(&result_point)
+    crypto::extended_to_bytes(&result_point)
 }
 
 #[cfg(test)]
@@ -326,4 +300,9 @@ mod tests {
             ]
         );
     }
+}
+
+#[inline(never)]
+pub fn multiply_with_pedersen_base(val: &[u8; 32]) -> ExtendedPoint {
+    PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }

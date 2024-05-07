@@ -20,11 +20,11 @@ impl<'a> Iterator for Bitstreamer<'a> {
 
     /**
      * Retrieves the next group of 3 bits from the bitstream.
-     * 
+     *
      * This method extracts the next group of 3 bits from the current position in the bitstream.
      * It handles the bit and byte indexing, including the necessary shifts and carries
      * when the end of the current byte is reached.
-     * 
+     *
      * @returns An `Option<u8>` which is `None` if the end of the stream is reached, or `Some(u8)` with the next group of 3 bits.
      */
     #[inline(never)]
@@ -60,7 +60,8 @@ impl<'a> Iterator for Bitstreamer<'a> {
                 self.shift = 5 + self.carry;
             } else {
                 // Calculate the shift needed to adjust the current bits when no more bytes are available.
-                let sh = (((self.carry & 2) + ((self.carry & 2) >> 1)) ^ (self.carry & 1) ^ 1) as u32;
+                let sh =
+                    (((self.carry & 2) + ((self.carry & 2) >> 1)) ^ (self.carry & 1) ^ 1) as u32;
 
                 // Shift the current bits left by the calculated shift amount.
                 self.curr <<= sh;
@@ -114,7 +115,13 @@ mod tests {
 
         for &expected in expected_outputs.iter() {
             let received = streamer.next();
-            assert_eq!(received, Some(expected), "Expected value: {:?}, but received: {:?}", Some(expected), received);
+            assert_eq!(
+                received,
+                Some(expected),
+                "Expected value: {:?}, but received: {:?}",
+                Some(expected),
+                received
+            );
         }
 
         assert_eq!(streamer.next(), None);
