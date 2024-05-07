@@ -127,9 +127,6 @@ uint16_t fp_uint64_to_str(char *out, uint16_t outLen, const uint64_t value, uint
     return fpuint64_to_str(out, outLen, value, decimals);
 }
 
-void check_canary() {
-}
-
 void _zemu_log_stack(uint8_t *buffer) {
     zemu_log_stack((char *)buffer);
 }
@@ -166,6 +163,6 @@ void c_jubjub_spending_base_scalarmult(uint8_t *point, const uint8_t *scalar) {
     }
 }
 
-void io_heart_beat() {
+void io_heartbeat() {
     io_seproxyhal_io_heartbeat();
 }

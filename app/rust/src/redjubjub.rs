@@ -79,10 +79,10 @@ pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
     pk.copy_from_slice(&pubkey);
 }
 
-// #[no_mangle]
-// pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
-//     sk_to_pk(rsk_ptr, rk_ptr)
-// }
+#[no_mangle]
+pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
+    sk_to_pk(rsk_ptr, rk_ptr)
+}
 
 #[inline(never)]
 pub fn randomized_secret(

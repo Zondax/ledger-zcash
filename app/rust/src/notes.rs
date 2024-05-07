@@ -1,14 +1,14 @@
 use byteorder::{ByteOrder, LittleEndian};
 use crate::constants::COMPACT_NOTE_SIZE;
 use crate::zeccrypto::*;
-use crate::zip32::multwithgd;
+use crate::zip32::mult_by_gd;
 
 #[no_mangle]
 pub fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let d = unsafe { &*d_ptr };
     let output = unsafe { &mut *output_ptr };
-    let epk = multwithgd(esk, d);
+    let epk = mult_by_gd(esk, d);
     output.copy_from_slice(&epk);
 }
 

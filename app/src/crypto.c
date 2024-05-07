@@ -958,6 +958,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
             MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN, VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN, NOTE_COMMITMENT_SIZE);
+
             // Note that tmp->step4.prfinput is the same memory chunk as the
             // concatenation of tmp->step3.ovk || tmp->step3.valuecmt ||
             // tmp->step3.notecmt || tmp->step3.epk so next we hash that

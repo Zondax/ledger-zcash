@@ -25,7 +25,7 @@ void get_default_diversifier_list_withstartindex(const uint8_t *seed_ptr, const 
 
 void get_default_diversifier_without_start_index(const uint8_t *see_ptr, const uint32_t pos, uint8_t *default_diversifier);
 
-void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
+// void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
 
 void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, const uint32_t pos);
 
@@ -87,6 +87,6 @@ void rsk_to_rk(const uint8_t *rsk_ptr, uint8_t *rk_ptr);
 void sign_redjubjub(uint8_t *key_ptr, uint8_t *msg_ptr, uint8_t *out_ptr);
 
 // Session key
-void sessionkey_agree(uint8_t *scalar_ptr, uint8_t *point_ptr, uint8_t *output_ptr);
+// void sessionkey_agree(uint8_t *scalar_ptr, uint8_t *point_ptr, uint8_t *output_ptr);
 
-void pubkey_gen(uint8_t *scalar_ptr, uint8_t *output_ptr);
+// void pubkey_gen(uint8_t *scalar_ptr, uint8_t *output_ptr);

@@ -67,18 +67,18 @@ pub fn aknk_to_ivk(ak: &[u8; 32], nk: &[u8; 32]) -> [u8; 32] {
     x
 }
 
-#[inline(never)]
-fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
-    let u = AffinePoint::from_bytes(*hash);
-    if u.is_some().unwrap_u8() == 1 {
-        let v = u.unwrap();
-        let q = v.mul_by_cofactor();
-        let i = ExtendedPoint::identity();
-        return q != i;
-    }
-
-    false
-}
+// #[inline(never)]
+// fn diversifier_group_hash_check(hash: &[u8; 32]) -> bool {
+//     let u = AffinePoint::from_bytes(*hash);
+//     if u.is_some().unwrap_u8() == 1 {
+//         let v = u.unwrap();
+//         let q = v.mul_by_cofactor();
+//         let i = ExtendedPoint::identity();
+//         return q != i;
+//     }
+//
+//     false
+// }
 
 #[inline(never)]
 fn diversifier_group_hash_light(tag: &[u8]) -> bool {
@@ -209,7 +209,7 @@ pub fn pkd_group_hash(d: &[u8; 11]) -> [u8; 32] {
 }
 
 #[inline(never)]
-pub fn multwithgd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
+pub fn mult_by_gd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
     let h = blake2b::blake2s_diversification(d);
 
     let v = AffinePoint::from_bytes(h)
@@ -255,14 +255,14 @@ pub fn diversifier_key_zip32(in_key: &[u8; 32]) -> [u8; 32] {
 }
 
 #[inline(never)]
-pub fn outgoingviewingkey(key: &[u8; 32]) -> [u8; 32] {
+pub fn outgoing_viewing_key(key: &[u8; 32]) -> [u8; 32] {
     let mut ovk = [0u8; 32];
     ovk.copy_from_slice(&prf_expand(key, &[0x02])[..32]);
     ovk
 }
 
 #[inline(never)]
-pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
+pub fn full_viewing_key(key: &[u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(key);
     crate::bolos::heartbeat();
     let ak = sapling_ask_to_ak(&ask);
@@ -273,7 +273,7 @@ pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
     let nk = sapling_nsk_to_nk(&nsk);
     crate::bolos::heartbeat();
 
-    let ovk = outgoingviewingkey(key);
+    let ovk = outgoing_viewing_key(key);
     crate::bolos::heartbeat();
 
     let mut result = [0u8; 96];
@@ -287,7 +287,7 @@ pub fn full_viewingkey(key: &[u8; 32]) -> [u8; 96] {
 pub fn expandedspendingkey_zip32(key: &[u8; 32]) -> [u8; 96] {
     let ask = sapling_derive_dummy_ask(key);
     let nsk = sapling_derive_dummy_nsk(key);
-    let ovk = outgoingviewingkey(key);
+    let ovk = outgoing_viewing_key(key);
     let mut result = [0u8; 96];
     result[0..32].copy_from_slice(&ask);
     result[32..64].copy_from_slice(&nsk);
@@ -375,7 +375,7 @@ pub fn derive_zip32_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 3
         //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let fvk = full_viewingkey(&key);
+            let fvk = full_viewing_key(&key);
                 crate::bolos::heartbeat();
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
@@ -442,7 +442,7 @@ pub fn derive_zip32_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 9
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
                 crate::bolos::heartbeat();
-            let fvk = full_viewingkey(&key);
+            let fvk = full_viewing_key(&key);
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
                 crate::bolos::heartbeat();
@@ -523,7 +523,7 @@ pub fn derive_zip32_child_fromseedandpath(seed: &[u8; 32], path: &[u32], child_c
             //64
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let fvk = full_viewingkey(&tmp[..32].try_into().unwrap());
+            let fvk = full_viewing_key(&tmp[..32].try_into().unwrap());
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
             tmp = blake2b_expand_vec_four(&tmp[32..], &[0x12], &fvk, &divkey, &le_i);
@@ -674,20 +674,20 @@ pub extern "C" fn get_default_diversifier_without_start_index(
     }
 }
 
-#[no_mangle]
-pub extern "C" fn zip32_master(
-    seed_ptr: *const [u8; 32],
-    sk_ptr: *mut [u8; 32],
-    dk_ptr: *mut [u8; 32],
-) {
-    let seed = unsafe { &*seed_ptr };
-    let sk = unsafe { &mut *sk_ptr };
-    let dk = unsafe { &mut *dk_ptr };
-
-    let k = derive_zip32_master(seed);
-    sk.copy_from_slice(&k[0..32]);
-    dk.copy_from_slice(&k[32..64])
-}
+// #[no_mangle]
+// pub extern "C" fn zip32_master(
+//     seed_ptr: *const [u8; 32],
+//     sk_ptr: *mut [u8; 32],
+//     dk_ptr: *mut [u8; 32],
+// ) {
+//     let seed = unsafe { &*seed_ptr };
+//     let sk = unsafe { &mut *sk_ptr };
+//     let dk = unsafe { &mut *dk_ptr };
+//
+//     let k = derive_zip32_master(seed);
+//     sk.copy_from_slice(&k[0..32]);
+//     dk.copy_from_slice(&k[32..64])
+// }
 
 //this function is consistent with zecwallet code
 #[no_mangle]
