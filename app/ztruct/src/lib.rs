@@ -67,12 +67,21 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         field_initializers.extend(initializer);
     }
 
+    let from_bytes_method = quote! {
+        pub fn from_bytes(bytes: &[u8]) -> Self {
+            assert!(bytes.len() == #total_size, "Byte slice length does not match struct size");
+            let mut instance = Self { data: [0u8; #total_size] };
+            instance.data.copy_from_slice(bytes);
+            instance
+        }
+    };
+
     let buffer_accessors = quote! {
-        pub fn buffer(&self) -> &[u8] {
+        pub fn to_bytes(&self) -> &[u8] {
             &self.data
         }
 
-        pub fn buffer_mut(&mut self) -> &mut [u8] {
+        pub fn to_bytes_mut(&mut self) -> &mut [u8] {
             &mut self.data
         }
     };
@@ -88,6 +97,8 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 #field_initializers
                 instance
             }
+
+            #from_bytes_method
 
             #field_accessors
             #mutable_field_accessors
