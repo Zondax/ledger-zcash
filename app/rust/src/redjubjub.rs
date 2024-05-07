@@ -6,7 +6,7 @@ use crate::bolos::c_zemu_log_stack;
 use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::bolos::rng::Trng;
 use crate::constants::*;
-use crate::crypto::bytes_to_extended;
+use crate::cryptoops::bytes_to_extended;
 
 #[inline(never)]
 pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {

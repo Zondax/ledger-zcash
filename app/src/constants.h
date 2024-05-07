@@ -19,19 +19,23 @@
 // CRYPTO File
 #define CHECKSUM_LENGTH          4
 
+#define ED25519_SK_SIZE          64
+
+#define ZIP32_SEED_SIZE          64
+#define ZIP32_PATH_SIZE          4
+
 #define SK_SECP256K1_SIZE        32
 #define PUB_KEY_SIZE             32
 #define DER_MAX_SIZE             73
+
 #define AK_SIZE                  32
 #define NSK_SIZE                 32
 #define ASK_SIZE                 32
 #define DK_SIZE                  32
 #define NK_SIZE                  32
-#define ED25519_SK_SIZE          64
 #define IVK_SIZE                 32
-#define ZIP32_SEED_SIZE          64
-#define ZIP32_PATH_SIZE          4
 #define RND_SIZE                 32
+
 #define NULLIFIER_SIZE           32
 #define RK_SIZE                  32
 

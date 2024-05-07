@@ -1,6 +1,7 @@
 use crate::bolos::blake2b;
 use crate::bolos::blake2b::blake2b_expand_seed;
 use crate::constants::NIELSPOINTS;
+use crate::types::Diversifier;
 use jubjub::{AffinePoint, ExtendedPoint};
 
 #[inline(always)]
@@ -10,13 +11,14 @@ pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
 }
 
 #[inline(never)]
-pub fn mult_by_gd(scalar: &[u8; 32], d: &[u8; 11]) -> [u8; 32] {
+pub fn mult_by_gd(scalar: &[u8; 32], d: &Diversifier) -> [u8; 32] {
     let h = blake2b::blake2s_diversification(d);
 
     let v = AffinePoint::from_bytes(h)
         .unwrap()
         .mul_by_cofactor()
         .to_niels();
+
     let t = v.multiply_bits(scalar);
     extended_to_bytes(&t)
 }

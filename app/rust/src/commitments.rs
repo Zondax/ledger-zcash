@@ -3,19 +3,20 @@ use crate::constants::{
     NOTE_POSITION_BASE, PEDERSEN_RANDOMNESS_BASE, VALUE_COMMITMENT_RANDOM_BASE,
     VALUE_COMMITMENT_VALUE_BASE,
 };
-use crate::crypto::{add_to_point, extended_to_bytes, extended_to_u_bytes};
+use crate::cryptoops::{add_to_point, extended_to_bytes, extended_to_u_bytes};
 use blake2s_simd::Params as Blake2sParams;
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
 use crate::pedersen::*;
 use crate::personalization::CRH_NF;
 use crate::sapling::sapling_nsk_to_nk;
+use crate::types::Diversifier;
 use crate::utils::{into_fixed_array, shiftsixbits};
 use crate::zip32::zip32_nsk_from_seed;
-use crate::{crypto, utils, zip32}; // #[inline(never)]
+use crate::{cryptoops, utils, zip32}; // #[inline(never)]
 
 #[inline(never)]
-pub fn group_hash_from_diversifier(diversifier_ptr: *const [u8; 11], gd_ptr: *mut [u8; 32]) {
+pub fn group_hash_from_diversifier(diversifier_ptr: *const Diversifier, gd_ptr: *mut [u8; 32]) {
     let diversifier = unsafe { &*diversifier_ptr };
     let gd = unsafe { &mut *gd_ptr };
     let gd_tmp = zip32::pkd_group_hash(diversifier);
@@ -94,7 +95,7 @@ pub extern "C" fn compute_nullifier(
     crate::bolos::heartbeat();
 
     let scalar = Fr::from(pos);
-    let e = crypto::bytes_to_extended(ncm);
+    let e = cryptoops::bytes_to_extended(ncm);
     crate::bolos::heartbeat();
 
     let rho = mixed_pedersen(&e, scalar);
@@ -111,7 +112,7 @@ pub extern "C" fn compute_note_commitment(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
     value: u64,
-    diversifier_ptr: *const [u8; 11],
+    diversifier_ptr: *const Diversifier,
     pkd_ptr: *const [u8; 32],
 ) {
     let mut gd = [0u8; 32];
@@ -123,7 +124,7 @@ pub extern "C" fn compute_note_commitment(
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
 
     let rc = unsafe { &*rcm_ptr };
-    let mut e = crypto::bytes_to_extended(*out);
+    let mut e = cryptoops::bytes_to_extended(*out);
     let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
@@ -138,7 +139,7 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
     value: u64,
-    diversifier_ptr: *const [u8; 11],
+    diversifier_ptr: *const Diversifier,
     pkd_ptr: *const [u8; 32],
 ) {
     let mut gd = [0u8; 32];
@@ -151,7 +152,7 @@ pub extern "C" fn compute_note_commitment_fullpoint(
     prepare_and_hash_input_commitment(value, &gd, pkd, out);
 
     let rc = unsafe { &*rcm_ptr };
-    let mut e = crypto::bytes_to_extended(*out);
+    let mut e = cryptoops::bytes_to_extended(*out);
     let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
@@ -195,6 +196,7 @@ pub extern "C" fn compute_value_commitment(
 
 #[cfg(test)]
 mod tests {
+    use crate::types::diversifier_zero;
     use crate::utils::into_fixed_array;
 
     use super::*;
@@ -242,7 +244,7 @@ mod tests {
     fn test_ncm_c() {
         let v = 100000;
         let mut gd = [0u8; 32];
-        let div_ptr = [0u8; 11];
+        let div_ptr = diversifier_zero();
         let pkd = [0u8; 32];
         let rcm = [0u8; 32];
         let output = [0u8; 32];
@@ -262,7 +264,7 @@ mod tests {
             output.as_ptr() as *mut [u8; 32],
             rcm.as_ptr() as *const [u8; 32],
             v,
-            div.as_ptr() as *const [u8; 11],
+            div.as_ptr() as *const Diversifier,
             pkd.as_ptr() as *const [u8; 32],
         );
 

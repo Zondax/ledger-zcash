@@ -1,6 +1,6 @@
 use crate::bitstreamer::Bitstreamer;
 use crate::constants::PEDERSEN_RANDOMNESS_BASE;
-use crate::crypto;
+use crate::cryptoops;
 use core::convert::TryInto;
 use jubjub::{ExtendedPoint, Fr};
 
@@ -61,7 +61,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
             counter += 1;
             if counter == MAXCOUNTER {
                 // Reset and move to the next curve point
-                crypto::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
+                cryptoops::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
                 counter = 0;
                 pointcounter += 1;
                 acc = Fr::zero();
@@ -73,7 +73,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
         }
     }
     if counter > 0 {
-        crypto::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
+        cryptoops::add_point(&mut result_point, &acc.to_bytes(), pointcounter);
     }
 
     result_point
@@ -82,13 +82,13 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
 #[inline(never)]
 pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    crypto::extended_to_u_bytes(&result_point)
+    cryptoops::extended_to_u_bytes(&result_point)
 }
 
 #[inline(never)]
 pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
     let result_point = pedersen_hash_to_point(&m, bitsize);
-    crypto::extended_to_bytes(&result_point)
+    cryptoops::extended_to_bytes(&result_point)
 }
 
 #[cfg(test)]

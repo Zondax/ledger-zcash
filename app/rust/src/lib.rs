@@ -20,7 +20,7 @@ mod bitstreamer;
 mod bolos;
 mod commitments;
 mod constants;
-mod crypto;
+mod cryptoops;
 mod errors;
 mod notes;
 mod pedersen;
@@ -28,6 +28,7 @@ mod personalization;
 mod redjubjub;
 mod refactor;
 mod sapling;
+mod types;
 mod utils;
 mod zip32;
 

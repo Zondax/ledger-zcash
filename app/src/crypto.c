@@ -1495,8 +1495,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *)buffer;
     MEMZERO(buffer, bufferLen);
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
+    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last part of hdPath
     uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
     // Temporarily get sk from Ed25519

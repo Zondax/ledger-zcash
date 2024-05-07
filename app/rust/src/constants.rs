@@ -74,29 +74,6 @@ pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
 )
 .to_niels();
 
-pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
-//52
-pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
-pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
-pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
-//68
-pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
-pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
-
-pub const DIV_SIZE: usize = 11;
-pub const DIV_DEFAULT_LIST_LEN: usize = 4;
-pub const MAX_SIZE_BUF_ADDR: usize = 143;
-
-pub const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-pub const COIN_TYPE: u32 = 133 ^ 0x8000_0000;
-
-// ZIP32 Child components
-pub const AK_NK: u8 = 0;
-pub const DK: u8 = 2;
-pub const AK_NSK: u8 = 3;
-pub const ASK_NSK: u8 = 4;
-pub const DK_AK_NK: u8 = 5;
-
 pub static NIELSPOINTS: [AffineNielsPoint; 6] = [
     AffinePoint::from_raw_unchecked(
         Fq::from_raw([
@@ -253,3 +230,30 @@ pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked
     ]),
 )
 .to_niels();
+
+pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
+//52
+pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
+pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
+pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
+//68
+pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
+pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
+
+pub const DIV_SIZE: usize = 11;
+pub const DIV_DEFAULT_LIST_LEN: usize = 4;
+pub const MAX_SIZE_BUF_ADDR: usize = 143;
+
+/// https://zips.z.cash/zip-0032#key-path-levels
+/// m/PURPOSE/COIN/account
+pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
+pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
+
+/// ZIP32 Child components
+pub enum Zip32ChildComponents {
+    AkNk = 0,
+    Dk = 2,
+    AkNsk = 3,
+    AskNsk = 4,
+    DkAkNk = 5,
+}

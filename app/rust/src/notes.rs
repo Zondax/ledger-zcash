@@ -1,9 +1,10 @@
 use crate::bolos::blake2b::blake2b32_with_personalization;
 use crate::constants::COMPACT_NOTE_SIZE;
-use crate::crypto::{
+use crate::cryptoops::{
     bytes_to_extended, extended_to_bytes, mul_by_cofactor, mult_by_gd, prf_expand,
 };
 use crate::personalization::KDF_SAPLING_PERSONALIZATION;
+use crate::types::Diversifier;
 use crate::zip32::niels_multbits;
 use byteorder::{ByteOrder, LittleEndian};
 use jubjub::Fr;
@@ -23,7 +24,7 @@ fn rseed_get_esk(rseed_ptr: *const [u8; 32], output_ptr: *mut [u8; 32]) {
 }
 
 #[no_mangle]
-fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
+fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const Diversifier, output_ptr: *mut [u8; 32]) {
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let d = unsafe { &*d_ptr };
     let output = unsafe { &mut *output_ptr };
@@ -34,7 +35,7 @@ fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u
 #[no_mangle]
 pub extern "C" fn rseed_get_esk_epk(
     rseed_ptr: *const [u8; 32],
-    d_ptr: *const [u8; 11],
+    d_ptr: *const Diversifier,
     output_esk_ptr: *mut [u8; 32],
     output_epk_ptr: *mut [u8; 32],
 ) {
@@ -94,7 +95,7 @@ pub extern "C" fn ka_to_key(
 
 #[no_mangle]
 pub extern "C" fn prepare_enccompact_input(
-    d_ptr: *const [u8; 11],
+    d_ptr: *const Diversifier,
     value: u64,
     rcm_ptr: *const [u8; 32],
     memotype: u8,
