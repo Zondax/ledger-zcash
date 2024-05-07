@@ -1,17 +1,7 @@
 use byteorder::{ByteOrder, LittleEndian};
-use crate::bolos::blake2b::blake2b32_with_personalization;
-use crate::constants::{COMPACT_NOTE_SIZE};
-use crate::perso::PRF_OCK_PERSONALIZATION;
+use crate::constants::COMPACT_NOTE_SIZE;
 use crate::zeccrypto::*;
 use crate::zip32::multwithgd;
-
-#[no_mangle]
-pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32]) {
-    let input = unsafe { &*input_ptr }; //ovk, cv, cmu, epk
-    let hash = blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, input);
-    let output = unsafe { &mut *out_ptr }; //ovk, cv, cmu, epk
-    output.copy_from_slice(&hash);
-}
 
 #[no_mangle]
 pub fn get_epk(esk_ptr: *const [u8; 32], d_ptr: *const [u8; 11], output_ptr: *mut [u8; 32]) {
@@ -29,7 +19,7 @@ pub extern "C" fn rseed_get_esk_epk(
     output_esk_ptr: *mut [u8; 32],
     output_epk_ptr: *mut [u8; 32],
 ) {
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let rseed = unsafe { &*rseed_ptr };
 
     let output_esk = unsafe { &mut *output_esk_ptr };
@@ -37,7 +27,7 @@ pub extern "C" fn rseed_get_esk_epk(
     rseed_get_esk(rseed, output_esk);
 
     get_epk(output_esk, d_ptr, output_epk);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
 }
 
 #[no_mangle]
@@ -47,13 +37,13 @@ pub extern "C" fn ka_to_key(
     epk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let pkd = unsafe { &*pkd_ptr };
     let epk = unsafe { &*epk_ptr };
     let shared_secret = sapling_ka_agree(esk, pkd);
     let key = kdf_sapling(&shared_secret, epk);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let output = unsafe { &mut *output_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&key);
 }

@@ -1,7 +1,7 @@
 use blake2b_simd::Params as Blake2bParams;
 use blake2s_simd::Params as Blake2sParams;
 use crate::bolos;
-use crate::perso::{KEY_DIVERSIFICATION_PERSONALIZATION, PRF_EXPAND_PERSONALIZATION, REDJUBJUB_PERSONALIZATION};
+use crate::personalization::{KEY_DIVERSIFICATION_PERSONALIZATION, PRF_EXPAND_PERSONALIZATION, REDJUBJUB_PERSONALIZATION};
 
 extern "C" {
     fn c_zcash_blake2b_expand_seed(

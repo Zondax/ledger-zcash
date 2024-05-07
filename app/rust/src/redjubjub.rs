@@ -23,11 +23,6 @@ pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {
 }
 
 #[inline(never)]
-pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
-    sk + alpha
-}
-
-#[inline(never)]
 pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
     let rndpk = jubjub_sk_to_pk(&alpha);
     *pk += bytes_to_extended(rndpk);
@@ -54,18 +49,18 @@ pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] 
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let r = sign_generate_r(&msg);
 
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let rbar = sign_compute_rbar(&r.to_bytes());
 
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
     sig[..32].copy_from_slice(&rbar);
     sig[32..].copy_from_slice(&sbar);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
     sig
 }
 
@@ -84,10 +79,10 @@ pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
     pk.copy_from_slice(&pubkey);
 }
 
-#[no_mangle]
-pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
-    sk_to_pk(rsk_ptr, rk_ptr)
-}
+// #[no_mangle]
+// pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
+//     sk_to_pk(rsk_ptr, rk_ptr)
+// }
 
 #[inline(never)]
 pub fn randomized_secret(
@@ -159,18 +154,22 @@ pub extern "C" fn get_rk(
     sk_to_pk(&rsk, rk);
 }
 
-#[no_mangle]
-pub extern "C" fn randomize_pk(alpha_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    let alpha = unsafe { *alpha_ptr };
-    let pk = unsafe { &mut *pk_ptr };
-    let mut pubkey = bytes_to_extended(*pk);
-    jubjub_randomized_pk(&mut pubkey, alpha);
-    pk.copy_from_slice(&extended_to_bytes(&pubkey));
-}
+// #[no_mangle]
+// pub extern "C" fn randomize_pk(alpha_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
+//     let alpha = unsafe { *alpha_ptr };
+//     let pk = unsafe { &mut *pk_ptr };
+//     let mut pubkey = bytes_to_extended(*pk);
+//     jubjub_randomized_pk(&mut pubkey, alpha);
+//     pk.copy_from_slice(&extended_to_bytes(&pubkey));
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
+        sk + alpha
+    }
 
     #[test]
     pub fn test_jubjub_nonrandom() {

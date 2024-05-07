@@ -1,85 +1,27 @@
 use blake2s_simd::Params as Blake2sParams;
-use byteorder::LittleEndian;
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
+use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use crate::bolos::c_zemu_log_stack;
+use crate::constants::{NOTE_POSITION_BASE, PEDERSEN_RANDOMNESS_BASE, VALUE_COMMITMENT_RANDOM_BASE, VALUE_COMMITMENT_VALUE_BASE};
 
 use crate::pedersen::*;
-use crate::perso::CRH_NF;
+use crate::personalization::CRH_NF;
 use crate::utils;
 use crate::utils::{into_fixed_array, shiftsixbits};
 use crate::zip32::{group_hash_from_div, nsk_to_nk, zip32_nsk_from_seed};
 
-pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0xa514_3b34_a8e3_6462,
-        0xf091_9d06_ffb1_ecda,
-        0xa140_9aa1_f33b_ec2c,
-        0x26eb_9f8a_9ec7_2a8c,
-    ]),
-    Fq::from_raw([
-        0xd4fc_6365_796c_77ac,
-        0x96b7_8bea_fa9c_c44c,
-        0x949d_7747_6e26_2c95,
-        0x114b_7501_ad10_4c57,
-    ]),
-)
-.to_niels();
+// #[inline(never)]
+// pub fn add_points(a: ExtendedPoint, b: ExtendedPoint) -> ExtendedPoint {
+//     a + b
+// }
 
-pub const VALUE_COMMITMENT_VALUE_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0x3618_3b2c_b4d7_ef51,
-        0x9472_c89a_c043_042d,
-        0xd861_8ed1_d15f_ef4e,
-        0x273f_910d_9ecc_1615,
-    ]),
-    Fq::from_raw([
-        0xa77a_81f5_0667_c8d7,
-        0xbc33_32d0_fa1c_cd18,
-        0xd322_94fd_8977_4ad6,
-        0x466a_7e3a_82f6_7ab1,
-    ]),
-)
-.to_niels();
-
-pub const VALUE_COMMITMENT_RANDOM_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0x3bce_3b77_9366_4337,
-        0xd1d8_da41_af03_744e,
-        0x7ff6_826a_d580_04b4,
-        0x6800_f4fa_0f00_1cfc,
-    ]),
-    Fq::from_raw([
-        0x3cae_fab9_380b_6a8b,
-        0xad46_f1b0_473b_803b,
-        0xe6fb_2a6e_1e22_ab50,
-        0x6d81_d3a9_cb45_dedb,
-    ]),
-)
-.to_niels();
-
-pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
-    Fq::from_raw([
-        0x2ce3_3921_888d_30db,
-        0xe81c_ee09_a561_229e,
-        0xdb56_b6db_8d80_75ed,
-        0x2400_c2e2_e336_2644,
-    ]),
-    Fq::from_raw([
-        0xa3f7_fa36_c72b_0065,
-        0xe155_b8e8_ffff_2e42,
-        0xfc9e_8a15_a096_ba8f,
-        0x6136_9d54_40bf_84a5,
-    ]),
-)
-.to_niels();
+// pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> bool {
+//     let v = bytes_to_extended(*valuecommitsum);
+//     let r = VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcmsum);
+//     v == r
+// }
 
 #[inline(never)]
-pub fn add_points(a: ExtendedPoint, b: ExtendedPoint) -> ExtendedPoint {
-    a + b
-}
-
-#[inline(never)]
-pub fn multiply_with_pedersenbase(val: &[u8; 32]) -> ExtendedPoint {
+pub fn multiply_with_pedersen_base(val: &[u8; 32]) -> ExtendedPoint {
     PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }
 
@@ -223,14 +165,14 @@ pub extern "C" fn compute_nullifier(
     let mut nk = [0u8; 32];
 
     nsk_to_nk(nsk, &mut nk);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
 
     let scalar = Fr::from(pos);
     let e = bytes_to_extended(ncm);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
 
     let rho = mixed_pedersen(&e, scalar);
-    crate::heart_beat();
+    crate::bolos::heartbeat();
 
     let output = unsafe { &mut *output_ptr };
     output.copy_from_slice(&prf_nf(&nk, &rho));
@@ -253,7 +195,7 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
 
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
-    let s = multiply_with_pedersenbase(rc);
+    let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
 
@@ -279,7 +221,7 @@ pub extern "C" fn compute_note_commitment_fullpoint(
 
     let rc = unsafe { &*rcm_ptr };
     let mut e = bytes_to_extended(*out);
-    let s = multiply_with_pedersenbase(rc);
+    let s = multiply_with_pedersen_base(rc);
 
     add_to_point(&mut e, &s);
 
@@ -304,15 +246,8 @@ pub extern "C" fn compute_value_commitment(
     output_msg.copy_from_slice(&vcm);
 }
 
-pub fn verify_bindingsig_keys(rcmsum: &[u8; 32], valuecommitsum: &[u8; 32]) -> bool {
-    let v = bytes_to_extended(*valuecommitsum);
-    let r = VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcmsum);
-    v == r
-}
-
 #[cfg(test)]
 mod tests {
-    use byteorder::ByteOrder;
     use crate::utils::into_fixed_array;
 
     use super::*;
