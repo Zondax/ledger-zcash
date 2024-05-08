@@ -27,7 +27,7 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let field_size = quote! { ::core::mem::size_of::<#field_type>() };
 
         total_size = quote! { #total_size + #field_size };
-        let offset = quote! { #i * #field_size };
+        let offset = quote! { #total_size - #field_size };
         offsets.push((field_name.clone(), field_type.clone(), offset.clone()));
 
         let param = quote! { #field_name: #field_type };
@@ -39,8 +39,8 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         // Generate accessor for each field
         let accessor = quote! {
             pub fn #field_name(&self) -> #field_type {
-                let ptr = self.data.as_ptr() as *const #field_type;
-                unsafe { *ptr.add(#offset) }
+                let ptr = self.data.as_ptr() as *const u8;
+                unsafe { *(ptr.add(#offset) as *const #field_type) }
             }
         };
         field_accessors.extend(accessor);
@@ -50,23 +50,22 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         let mutable_accessor_ident = syn::Ident::new(&mutable_accessor_name, proc_macro2::Span::call_site());
         let mutable_accessor = quote! {
             pub fn #mutable_accessor_ident(&mut self) -> &mut #field_type {
-                let ptr = self.data.as_mut_ptr() as *mut #field_type;
-                unsafe { &mut *ptr.add(#offset) }
+                let ptr = self.data.as_mut_ptr() as *mut u8;
+                unsafe { &mut *(ptr.add(#offset) as *mut #field_type) }
             }
         };
         mutable_field_accessors.extend(mutable_accessor);
     }
 
-    for (field_name, field_type, offset) in offsets {
+    for (field_name, field_type, offset) in &offsets {
         let initializer = quote! {
-            let ptr = instance.data.as_mut_ptr() as *mut #field_type;
+            let ptr = instance.data.as_mut_ptr() as *mut u8;
             unsafe {
-                ::core::ptr::write(ptr.add(#offset), #field_name);
+                ::core::ptr::write(ptr.add(#offset) as *mut #field_type, #field_name);
             }
         };
         field_initializers.extend(initializer);
     }
-
     let from_bytes_method = quote! {
         pub fn from_bytes(bytes: &[u8]) -> Self {
             assert!(bytes.len() == #total_size, "Byte slice length does not match struct size");
@@ -108,3 +107,4 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     proc_macro::TokenStream::from(proc_macro2::TokenStream::from(expanded))
 }
+
