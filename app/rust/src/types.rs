@@ -4,10 +4,15 @@ pub fn diversifier_zero() -> Diversifier {
     [0u8; 11]
 }
 
-// FIXME: This is not good design
-pub type DiversifierList = [u8; 110];
+// FIXME: This is not good design. Mayeb something like
+// #[repr(C)]
+// pub struct DiversifierList<const N: usize>(pub [u8; N * 11]);
+pub type DiversifierList4 = [u8; 44];
+pub type DiversifierList10 = [u8; 110];
 
-pub fn diversifier_list_zero() -> DiversifierList {
+pub type DiversifierList20 = [u8; 220];
+
+pub fn diversifier_list10_zero() -> DiversifierList10 {
     [0u8; 110]
 }
 
