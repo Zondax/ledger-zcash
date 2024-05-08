@@ -20,7 +20,7 @@ use crate::bolos::blake2b::{
 use crate::bolos::c_check_app_canary;
 use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::bolos::{blake2b, c_zemu_log_stack};
-use crate::types::{diversifier_zero, AskBytes, Diversifier, DiversifierList, OvkBytes, Zip32MasterSpendingKey, Zip32MasterKey, NskBytes, FullViewingKey, ExpandedSpendingKey};
+use crate::types::{diversifier_zero, AskBytes, Diversifier, DiversifierList, OvkBytes, Zip32MasterSpendingKey, Zip32MasterKey, NskBytes, FullViewingKey, ExpandedSpendingKey, DkBytes, Zip32SeedBytes};
 use crate::{cryptoops, sapling};
 
 #[inline(never)]
@@ -173,11 +173,13 @@ pub fn outgoing_viewing_key(key: &[u8; 32]) -> OvkBytes {
 pub fn full_viewing_key(key: &[u8; 32]) -> FullViewingKey {
     let ask = sapling_derive_dummy_ask(key);
     crate::bolos::heartbeat();
+
     let ak = sapling::sapling_ask_to_ak(&ask);
     crate::bolos::heartbeat();
 
     let nsk = sapling_derive_dummy_nsk(key);
     crate::bolos::heartbeat();
+
     let nk = sapling::sapling_nsk_to_nk(&nsk);
     crate::bolos::heartbeat();
 
@@ -188,12 +190,14 @@ pub fn full_viewing_key(key: &[u8; 32]) -> FullViewingKey {
 }
 
 #[inline(never)]
-pub fn zip32_master_spending_key(seed: &[u8; 32]) -> [u8; 64] {
-    blake2b64_with_personalization(ZIP32_SAPLING_MASTER_PERSONALIZATION, seed)
+pub fn zip32_master_key(seed: &[u8; 32]) -> Zip32MasterKey {
+    Zip32MasterKey::from_bytes(
+        &blake2b64_with_personalization(ZIP32_SAPLING_MASTER_PERSONALIZATION, seed)
+    )
 }
 
 #[inline(never)]
-pub fn zip32_diversifier_key(in_key: &[u8; 32]) -> [u8; 32] {
+pub fn zip32_diversifier_key(in_key: &[u8; 32]) -> DkBytes {
     let mut dk_m = [0u8; 32];
     dk_m.copy_from_slice(&cryptoops::prf_expand(in_key, &[0x10])[..32]);
     dk_m
@@ -201,11 +205,10 @@ pub fn zip32_diversifier_key(in_key: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn zip32_expanded_spending_key(key: &[u8; 32]) -> ExpandedSpendingKey {
-    let ask = sapling_derive_dummy_ask(key);
-    let nsk = sapling_derive_dummy_nsk(key);
-    let ovk = outgoing_viewing_key(key);
-
-    ExpandedSpendingKey::new(ask, nsk, ovk)
+    ExpandedSpendingKey::new(
+        sapling_derive_dummy_ask(key),
+        sapling_derive_dummy_nsk(key),
+        outgoing_viewing_key(key))
 }
 
 #[inline(never)]
@@ -217,7 +220,6 @@ pub fn zip32_update_dk(key: &[u8; 32], dk: &mut [u8; 32]) {
 
 #[inline(never)]
 pub fn zip32_update_exk(key: &[u8; 32], exk: &mut ExpandedSpendingKey) {
-
     exk.ask_mut().copy_from_slice(&sapling_derive_dummy_ask(key));
     exk.nsk_mut().copy_from_slice(&sapling_derive_dummy_nsk(key));
 
@@ -228,18 +230,12 @@ pub fn zip32_update_exk(key: &[u8; 32], exk: &mut ExpandedSpendingKey) {
 
 #[inline(never)]
 pub fn zip32_derive_master(seed: &[u8; 32]) -> [u8; 96] {
-    let tmp = zip32_master_spending_key(seed); //64
-    let mut key = [0u8; 32]; //32
-    let mut chain = [0u8; 32]; //32
+    let master_key = zip32_master_key(seed); //64
 
-    key.copy_from_slice(&tmp[..32]);
-    chain.copy_from_slice(&tmp[32..]);
+    let divkey = zip32_diversifier_key(&master_key.spending_key());
+    let ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
+    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
 
-    let ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x00]));
-
-    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x01]));
-
-    let divkey = zip32_diversifier_key(&key); //32
     let mut result = [0u8; 96];
     result[0..32].copy_from_slice(&divkey);
     result[32..64].copy_from_slice(&ask.to_bytes());
@@ -253,136 +249,125 @@ ChildIndex::Hardened(pos)
 */
 
 #[inline(never)]
-pub fn zip32_derive_ovk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 32] {
-    //ASSERT: len(path) == len(harden)
-
-    let mut tmp = zip32_master_spending_key(seed); //64
-    let mut key = [0u8; 32]; //32
-    let mut chain = [0u8; 32]; //32
+pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32SeedBytes, path: &[u32]) -> [u8; 32] {
+    let mut master_key = zip32_master_key(seed);
     crate::bolos::heartbeat();
 
-    key.copy_from_slice(&tmp[..32]);
-    chain.copy_from_slice(&tmp[32..]);
-
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x00]));
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x01]));
+    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
+    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
     crate::bolos::heartbeat();
 
-    let mut expkey= zip32_expanded_spending_key(&key);
+    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
     crate::bolos::heartbeat();
 
     let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&key)); //32
+    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
+
     for p in path.iter().copied() {
         //compute expkey needed for zip32 child derivation
         //non-hardened child
         let hardened = (p & 0x8000_0000) != 0;
         let c = p & 0x7FFF_FFFF;
+
         if hardened {
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
-            crate::bolos::heartbeat();
+
             //make index LE
             //zip32 child derivation
-            tmp = blake2b_expand_vec_four(&chain, &[0x11], &expkey.to_bytes(), &divkey, &le_i);
-            //64
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x11], &expkey.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let fvk = full_viewing_key(&key);
-            crate::bolos::heartbeat();
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            tmp = blake2b_expand_vec_four(&chain, &[0x12], &fvk.to_bytes(), &divkey, &le_i);
+
+            let fvk = full_viewing_key(&master_key.spending_key());
+
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x12], &fvk.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
         }
         crate::bolos::heartbeat();
-        //extract key and chainkey
-        key.copy_from_slice(&tmp[..32]);
-        chain.copy_from_slice(&tmp[32..]);
 
-        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x13]));
-        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x14]));
+        //extract key and chainkey
+        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
+        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
 
         ask += ask_cur;
         nsk += nsk_cur;
 
         //new divkey from old divkey and key
         crate::bolos::heartbeat();
-        zip32_update_dk(&key, &mut divkey);
-        zip32_update_exk(&key, &mut expkey);
+        zip32_update_dk(&master_key.spending_key(), &mut divkey);
+        zip32_update_exk(&master_key.spending_key(), &mut expkey);
     }
+
     let mut result = [0u8; 32];
-    result[0..32].copy_from_slice(&key);
+    result[0..32].copy_from_slice(&master_key.spending_key());
     result
 }
 
 #[inline(never)]
-pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> [u8; 96] {
-    //ASSERT: len(path) == len(harden)
-
+pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> FullViewingKey {
+    let mut master_key = zip32_master_key(seed);
     crate::bolos::heartbeat();
-    let mut tmp = zip32_master_spending_key(seed); //64
-    let mut key = [0u8; 32]; //32
-    let mut chain = [0u8; 32]; //32
 
-    key.copy_from_slice(&tmp[..32]);
-    chain.copy_from_slice(&tmp[32..]);
-
+    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
+    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
     crate::bolos::heartbeat();
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x00]));
 
+    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
     crate::bolos::heartbeat();
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x01]));
-
-    crate::bolos::heartbeat();
-    let mut expkey= zip32_expanded_spending_key(&key);
 
     let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&key)); //32
-    for &p in path {
+    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
+
+    for p in path.iter().copied() {
         //compute expkey needed for zip32 child derivation
         //non-hardened child
         let hardened = (p & 0x8000_0000) != 0;
         let c = p & 0x7FFF_FFFF;
+
         if hardened {
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
-            crate::bolos::heartbeat();
+
             //make index LE
             //zip32 child derivation
-            tmp = blake2b_expand_vec_four(&chain, &[0x11], &expkey.to_bytes(), &divkey, &le_i);
-            //64
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x11], &expkey.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
         } else {
             //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            crate::bolos::heartbeat();
-            let fvk = full_viewing_key(&key);
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            crate::bolos::heartbeat();
-            tmp = blake2b_expand_vec_four(&chain, &[0x12], &fvk.to_bytes(), &divkey, &le_i);
-        }
-        //extract key and chainkey
-        key.copy_from_slice(&tmp[..32]);
-        chain.copy_from_slice(&tmp[32..]);
 
+            let fvk = full_viewing_key(&master_key.spending_key());
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x12], &fvk.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
+        }
         crate::bolos::heartbeat();
-        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x13]));
-        crate::bolos::heartbeat();
-        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x14]));
+
+        //extract key and chainkey
+        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
+        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
 
         ask += ask_cur;
         nsk += nsk_cur;
 
         //new divkey from old divkey and key
-        zip32_update_dk(&key, &mut divkey);
-        zip32_update_exk(&key, &mut expkey);
+        crate::bolos::heartbeat();
+        zip32_update_dk(&master_key.spending_key(), &mut divkey);
+        zip32_update_exk(&master_key.spending_key(), &mut expkey);
     }
+
     let ak = sapling::sapling_ask_to_ak(&ask.to_bytes());
     let nk = sapling::sapling_nsk_to_nk(&nsk.to_bytes());
-    let mut result = [0u8; 96];
-    result[0..32].copy_from_slice(&ak);
-    result[32..64].copy_from_slice(&nk);
-    result[64..96].copy_from_slice(&key);
-    result
+
+    FullViewingKey::new(ak, nk, outgoing_viewing_key(&master_key.spending_key()))
 }
 
 #[inline(never)]
@@ -391,78 +376,73 @@ pub fn zip32_derive_child_fromseedandpath(
     account: u32,
     child_components: Zip32ChildComponents,
 ) -> [u8; 96] {
-    //ASSERT: len(path) == len(harden)
-    c_zemu_log_stack(b"derive_zip32_child\x00\n".as_ref());
-    let mut tmp = zip32_master_spending_key(seed); //64
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
+
+    let mut master_key = zip32_master_key(seed);
+    crate::bolos::heartbeat();
 
     // master secret key sk = tmp[..32]
     // chain = tmp[32..]
 
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(
-        tmp[..32].try_into().unwrap(),
-        &[0x00],
-    ));
-
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(
-        tmp[..32].try_into().unwrap(),
-        &[0x01],
-    ));
+    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
+    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
     crate::bolos::heartbeat();
 
-    let mut expkey= zip32_expanded_spending_key(&tmp[..32].try_into().unwrap());
+    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
     crate::bolos::heartbeat();
 
-    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
-
-    //master divkey
     let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&tmp[..32].try_into().unwrap())); //32
+    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
+
     for p in path.iter().copied() {
         //compute expkey needed for zip32 child derivation
         //non-hardened child
         let hardened = (p & 0x8000_0000) != 0;
         let c = p & 0x7FFF_FFFF;
+
         if hardened {
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c + (1 << 31));
+
             //make index LE
             //zip32 child derivation
-            tmp = blake2b_expand_vec_four(&tmp[32..], &[0x11], &expkey.to_bytes(), &divkey, &le_i);
-            //64
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x11], &expkey.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
         } else {
             // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let fvk = full_viewing_key(&tmp[..32].try_into().unwrap());
             let mut le_i = [0; 4];
             LittleEndian::write_u32(&mut le_i, c);
-            tmp = blake2b_expand_vec_four(&tmp[32..], &[0x12], &fvk.to_bytes(), &divkey, &le_i);
-        }
 
+            let fvk = full_viewing_key(&master_key.spending_key());
+
+            let r = blake2b_expand_vec_four(&master_key.chain_code(), &[0x12], &fvk.to_bytes(), &divkey, &le_i);
+
+            master_key.to_bytes_mut().copy_from_slice(&r);
+        }
         crate::bolos::heartbeat();
-        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&tmp[..32], &[0x13]));
-        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&tmp[..32], &[0x14]));
+
+        //extract key and chainkey
+        let ask_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
+        let nsk_cur = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
 
         ask += ask_cur;
         nsk += nsk_cur;
 
         //new divkey from old divkey and key
-        zip32_update_dk(&tmp[..32].try_into().unwrap(), &mut divkey);
-        zip32_update_exk(&tmp[..32].try_into().unwrap(), &mut expkey);
+        crate::bolos::heartbeat();
+        zip32_update_dk(&master_key.spending_key(), &mut divkey);
+        zip32_update_exk(&master_key.spending_key(), &mut expkey);
     }
 
-    // Get ak from ask
-    let mut ak = [0u8; 32];
-    scalarmult_spending_base(&mut ak, &ask.to_bytes());
-    crate::bolos::heartbeat();
-
-    // Get nk from nsk = k[64..96]
-    let nk_tmp = PROVING_KEY_BASE.multiply_bits(&nsk.to_bytes());
-    let nk = AffinePoint::from(nk_tmp); //.to_bytes();
+    let ak = sapling::sapling_ask_to_ak(&ask.to_bytes());
+    let nk = sapling::sapling_nsk_to_nk(&nsk.to_bytes());
 
     let mut result = [0u8; 96];
     match child_components {
         Zip32ChildComponents::AkNk => {
             result[0..32].copy_from_slice(&ak);
-            result[32..64].copy_from_slice(&nk.to_bytes());
+            result[32..64].copy_from_slice(&nk);
         }
         Zip32ChildComponents::Dk => {
             result[0..32].copy_from_slice(&divkey);
@@ -478,7 +458,7 @@ pub fn zip32_derive_child_fromseedandpath(
         Zip32ChildComponents::DkAkNk => {
             result[0..32].copy_from_slice(&divkey);
             result[32..64].copy_from_slice(&ak);
-            result[64..96].copy_from_slice(&nk.to_bytes());
+            result[64..96].copy_from_slice(&nk);
         }
     }
     c_check_app_canary();
@@ -488,12 +468,11 @@ pub fn zip32_derive_child_fromseedandpath(
 #[inline(never)]
 #[deprecated(note = "This function is deprecated and will be removed in future releases.")]
 pub fn deprecated_master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
-    let tmp = zip32_master_spending_key(seed); //64
-    let mut key = [0u8; 32]; //32
+    let master_key = zip32_master_key(seed); //64
 
-    key.copy_from_slice(&tmp[..32]);
     crate::bolos::heartbeat();
-    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&key, &[0x01]));
+    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
+
     let mut result = [0u8; 32];
     result.copy_from_slice(&nsk.to_bytes());
     result
@@ -504,8 +483,6 @@ pub fn get_dk(seed_ptr: *const [u8; 32], dk_ptr: *mut [u8; 32], pos: u32) {
     let seed = unsafe { &*seed_ptr };
     let dk = unsafe { &mut *dk_ptr };
 
-    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
     let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::Dk); //consistent with zecwallet
 
     // k = dk || ...
@@ -565,10 +542,10 @@ pub extern "C" fn get_default_diversifier_without_start_index(
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                        .try_into()
-                        .unwrap(),
-                )
+                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                    .try_into()
+                    .unwrap(),
+            )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
@@ -595,29 +572,25 @@ pub extern "C" fn get_default_diversifier_without_start_index(
 
 //this function is consistent with zecwallet code
 #[no_mangle]
-pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], pos: u32) {
+pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], account: u32) {
     let seed = unsafe { &*seed_ptr };
     let ovk = unsafe { &mut *ovk_ptr };
 
-    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
     crate::bolos::heartbeat();
-    let k = zip32_derive_ovk_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet
+
+    let k = zip32_derive_ovk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
     ovk.copy_from_slice(&k[0..32]);
 }
 
 //this function is consistent with zecwallet code
 #[no_mangle]
-pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], pos: u32) {
+pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], account: u32) {
     c_zemu_log_stack(b"zip32_fvk\x00\n".as_ref());
-
     let seed = unsafe { &*seed_ptr };
-    let fvk = unsafe { &mut *fvk_ptr };
 
-    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
-    let k = zip32_derive_fvk_fromseedandpath(seed, &[FIRSTVALUE, COIN_TYPE, pos]); //consistent with zecwallet
-    fvk.copy_from_slice(&k[0..96]);
+    let fvk = unsafe { &mut *fvk_ptr };
+    let k = zip32_derive_fvk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
+    fvk.copy_from_slice(k.to_bytes());
 }
 
 ////////////////////////////////
@@ -628,16 +601,14 @@ pub extern "C" fn zip32_child_proof_key(
     seed_ptr: *const [u8; 32],
     ak_ptr: *mut [u8; 32],
     nsk_ptr: *mut [u8; 32],
-    pos: u32,
+    account: u32,
 ) {
     let seed = unsafe { &*seed_ptr };
+
+    let k = zip32_derive_child_fromseedandpath(seed, account, Zip32ChildComponents::AkNsk); //consistent with zecwallet
+
     let ak = unsafe { &mut *ak_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
-
-    const FIRSTVALUE: u32 = 32 ^ 0x8000_0000;
-    const COIN_TYPE: u32 = 133 ^ 0x8000_0000; //hardened, fixed value from https://github.com/adityapk00/librustzcash/blob/master/zcash_client_backend/src/constants/mainnet.rs
-    let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::AkNsk); //consistent with zecwallet
-
     // k = ak || nsk
     ak.copy_from_slice(&k[0..32]);
     nsk.copy_from_slice(&k[32..64]);
@@ -654,11 +625,11 @@ pub extern "C" fn zip32_child_ask_nsk(
     pos: u32,
 ) {
     let seed = unsafe { &*seed_ptr };
-    let ask = unsafe { &mut *ask_ptr };
-    let nsk = unsafe { &mut *nsk_ptr };
 
     let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::AskNsk); //consistent with zecwallet;
 
+    let ask = unsafe { &mut *ask_ptr };
+    let nsk = unsafe { &mut *nsk_ptr };
     ask.copy_from_slice(&k[0..32]);
     nsk.copy_from_slice(&k[32..64]);
 }
@@ -758,10 +729,10 @@ pub extern "C" fn get_pkd_from_seed(
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                        .try_into()
-                        .unwrap(),
-                )
+                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                    .try_into()
+                    .unwrap(),
+            )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);

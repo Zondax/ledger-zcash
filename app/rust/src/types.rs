@@ -23,6 +23,8 @@ pub type IvkBytes = [u8; 32];
 
 pub type OvkBytes = [u8; 32];
 
+pub type DkBytes = [u8; 32];
+
 pub type Zip32SeedBytes = [u8; 32];
 
 use ztruct::create_ztruct;
