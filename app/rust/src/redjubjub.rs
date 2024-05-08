@@ -2,7 +2,6 @@ use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
 use crate::bolos::blake2b::blake2b_redjubjub;
-use crate::bolos::c_zemu_log_stack;
 use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::bolos::rng::Trng;
 use crate::constants::*;
@@ -21,11 +20,6 @@ pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
     let pk = unsafe { &mut *pk_ptr };
     let pubkey = jubjub_sk_to_pk(sk);
     pk.copy_from_slice(&pubkey);
-}
-
-#[no_mangle]
-pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
-    sk_to_pk(rsk_ptr, rk_ptr)
 }
 
 //////////////////////////
@@ -70,37 +64,6 @@ pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
     sig[32..].copy_from_slice(&sbar);
     crate::bolos::heartbeat();
     sig
-}
-
-#[no_mangle]
-pub extern "C" fn sign_redjubjub(
-    key_ptr: *const [u8; 32],
-    msg_ptr: *const [u8; 64],
-    out_ptr: *mut [u8; 64],
-) {
-    c_zemu_log_stack(b"sign_redjubjub\x00".as_ref());
-    let key = unsafe { *key_ptr };
-    let msg = unsafe { *msg_ptr };
-    let output = unsafe { &mut *out_ptr };
-    let sk = Fr::from_bytes(&key).unwrap();
-    output.copy_from_slice(&sign_complete(&msg, &sk));
-}
-
-///////////////////////////
-///////////////////////////
-
-#[inline(never)]
-pub fn random_scalar() -> Fr {
-    let mut t = [0u8; 64];
-    Trng.fill_bytes(&mut t);
-    Fr::from_bytes_wide(&t)
-}
-
-#[no_mangle]
-pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
-    let alpha = unsafe { &mut *alpha_ptr };
-    let fr = random_scalar();
-    alpha.copy_from_slice(&fr.to_bytes());
 }
 
 ///////////////////////////

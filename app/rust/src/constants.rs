@@ -231,6 +231,26 @@ pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked
 )
 .to_niels();
 
+/// https://zips.z.cash/zip-0032#key-path-levels
+/// m/PURPOSE/COIN/account
+pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
+pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
+
+/// ZIP32 Child components
+pub enum Zip32ChildComponents {
+    FullViewingKey,
+    AskNskDk,
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
 pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
 //52
 pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
@@ -243,14 +263,3 @@ pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
 pub const DIV_SIZE: usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
 pub const MAX_SIZE_BUF_ADDR: usize = 143;
-
-/// https://zips.z.cash/zip-0032#key-path-levels
-/// m/PURPOSE/COIN/account
-pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
-pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
-
-/// ZIP32 Child components
-pub enum Zip32ChildComponents {
-    FullViewingKey,
-    AskNskDk,
-}

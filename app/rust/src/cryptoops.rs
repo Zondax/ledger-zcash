@@ -1,8 +1,10 @@
 use crate::bolos::blake2b;
 use crate::bolos::blake2b::blake2b_expand_seed;
+use crate::bolos::rng::Trng;
 use crate::constants::NIELSPOINTS;
 use crate::types::Diversifier;
-use jubjub::{AffinePoint, ExtendedPoint};
+use jubjub::{AffinePoint, ExtendedPoint, Fr};
+use rand::RngCore;
 
 #[inline(always)]
 pub fn prf_expand(sk: &[u8], t: &[u8]) -> [u8; 64] {
@@ -62,4 +64,16 @@ fn mult_bits(index: usize, bits: &[u8; 32]) -> ExtendedPoint {
 pub fn add_point(point: &mut ExtendedPoint, acc: &[u8; 32], index: usize) {
     let p = mult_bits(index, acc);
     add_to_point(point, &p);
+}
+
+#[inline(never)]
+pub fn niels_multbits(p: &mut ExtendedPoint, b: &[u8; 32]) {
+    *p = p.to_niels().multiply_bits(b);
+}
+
+#[inline(never)]
+pub fn random_scalar() -> Fr {
+    let mut t = [0u8; 64];
+    Trng.fill_bytes(&mut t);
+    Fr::from_bytes_wide(&t)
 }

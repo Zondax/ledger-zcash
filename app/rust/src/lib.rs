@@ -10,27 +10,28 @@
 extern crate chacha20poly1305;
 extern crate core;
 
-use blake2s_simd::{blake2s, Hash as Blake2sHash, Params as Blake2sParams};
-use byteorder::{ByteOrder, LittleEndian};
+use byteorder::ByteOrder;
 use core::convert::TryInto;
-use core::mem;
-use jubjub::{AffineNielsPoint, AffinePoint, ExtendedNielsPoint, ExtendedPoint, Fq, Fr};
 
 mod bitstreamer;
 mod bolos;
 mod commitments;
+mod commitments_extern;
 mod constants;
 mod cryptoops;
 mod errors;
 mod notes;
+mod notes_extern;
 mod pedersen;
 mod personalization;
 mod redjubjub;
+mod redjubjub_extern;
 mod refactor;
 mod sapling;
 mod types;
 mod utils;
 mod zip32;
+mod zip32_extern;
 
 use ztruct;
 

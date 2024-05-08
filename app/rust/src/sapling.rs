@@ -1,10 +1,10 @@
 use crate::bolos::blake2b::blake2b32_with_personalization;
 use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::constants::PROVING_KEY_BASE;
+use crate::cryptoops::niels_multbits;
 use crate::cryptoops::{bytes_to_extended, extended_to_bytes, mul_by_cofactor};
 use crate::personalization::{CRH_IVK_PERSONALIZATION, KDF_SAPLING_PERSONALIZATION};
 use crate::types::{AkBytes, AskBytes, IvkBytes, NkBytes, NskBytes};
-use crate::zip32::niels_multbits;
 use blake2s_simd::Params as Blake2sParams;
 use jubjub::AffinePoint;
 
@@ -26,6 +26,7 @@ pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
     let ak = sapling_ask_to_ak(ask);
     let nk = sapling_nsk_to_nk(nsk);
 
+    // FIXME: not using bolos blake!?
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_IVK_PERSONALIZATION)
@@ -41,6 +42,7 @@ pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
 
 #[inline(never)]
 pub fn sapling_aknk_to_ivk(ak: &AkBytes, nk: &NkBytes) -> IvkBytes {
+    // FIXME: not using bolos blake!?
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_IVK_PERSONALIZATION)
