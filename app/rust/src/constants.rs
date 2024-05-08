@@ -237,12 +237,6 @@ pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
 pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
 pub const ZIP32_HARDENED: u32 = 0x8000_0000;
 
-/// ZIP32 Child components
-pub enum Zip32ChildComponents {
-    FullViewingKey,
-    AskNskDk,
-}
-
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////

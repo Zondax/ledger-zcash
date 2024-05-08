@@ -87,9 +87,10 @@ create_ztruct! {
 }
 
 create_ztruct! {
-    pub struct SaplingAskNskDk {
+    pub struct SaplingKeyBundle {
         pub ask: AskBytes,
         pub nsk: NskBytes,
         pub dk: DkBytes,
+        pub ovk: OvkBytes,
     }
 }
