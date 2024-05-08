@@ -256,4 +256,6 @@ pub enum Zip32ChildComponents {
     AkNsk = 3,
     AskNsk = 4,
     DkAkNk = 5,
+    Ovk,
+    FullViewingKey,
 }

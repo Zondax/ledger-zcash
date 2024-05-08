@@ -1,30 +1,30 @@
 use core::convert::TryInto;
 
-use aes::block_cipher_trait::generic_array::GenericArray;
 use aes::block_cipher_trait::BlockCipher;
+use aes::block_cipher_trait::generic_array::GenericArray;
 use binary_ff1::BinaryFF1;
 use byteorder::{ByteOrder, LittleEndian};
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
+use crate::{cryptoops, sapling};
+use crate::bolos::{blake2b, c_zemu_log_stack};
 use crate::bolos::aes::AesSDK;
 use crate::bolos::blake2b::{
     blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
 };
 use crate::bolos::c_check_app_canary;
-use crate::bolos::{blake2b, c_zemu_log_stack};
 use crate::constants::{
-    Zip32ChildComponents, DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE,
+    DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE, Zip32ChildComponents,
 };
 use crate::cryptoops::bytes_to_extended;
 use crate::cryptoops::extended_to_bytes;
 use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
 use crate::sapling::{sapling_ask_to_ak, sapling_nsk_to_nk};
 use crate::types::{
-    diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
+    AskBytes, Diversifier, diversifier_zero, DiversifierList10, DiversifierList20,
     DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingExpandedSpendingKey,
     Zip32MasterKey, Zip32Seed,
 };
-use crate::{cryptoops, sapling};
 
 #[inline(never)]
 // Calculates I based on https://zips.z.cash/zip-0032#sapling-master-key-generation
@@ -306,67 +306,6 @@ pub fn zip32_derive_master(seed: &Zip32Seed) -> [u8; 96] {
     result[64..96].copy_from_slice(&nsk);
     result
 }
-/*
-ChildIndex::Hardened(32),
-ChildIndex::Hardened(config.get_coin_type()),
-ChildIndex::Hardened(pos)
-*/
-
-#[inline(never)]
-pub fn zip32_sapling_derive_child_ovk(seed: &Zip32Seed, account: u32) -> OvkBytes {
-    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
-
-    // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
-    let mut ik = zip32_master_key_i(seed);
-
-    // FIXME: Duplicated work?
-    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
-
-    let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
-    let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
-    let mut ovk_i = zip32_sapling_ovk_m(&ik.spending_key());
-
-    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
-
-    for p in path.iter().copied() {
-        zip32_sapling_derive_child(
-            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
-        );
-    }
-
-    let mut result: OvkBytes = [0u8; 32];
-    result[0..32].copy_from_slice(&ik.spending_key());
-    result
-}
-
-#[inline(never)]
-pub fn zip32_sapling_derive_child_fvk(seed: &[u8; 32], account: u32) -> FullViewingKey {
-    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
-
-    // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
-    let mut ik = zip32_master_key_i(seed);
-
-    // FIXME: Duplicated work?
-    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
-
-    let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
-    let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
-    let mut ovk_i = zip32_sapling_ovk_m(&ik.spending_key());
-
-    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
-
-    for p in path.iter().copied() {
-        zip32_sapling_derive_child(
-            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
-        );
-    }
-
-    FullViewingKey::new(
-        sapling_ask_to_ak(&ask_i),
-        sapling_nsk_to_nk(&nsk_i),
-        zip32_sapling_ovk_m(&ik.spending_key()),
-    )
-}
 
 fn zip32_sapling_derive_child(
     ik: &mut Zip32MasterKey,
@@ -444,7 +383,7 @@ pub fn zip32_sapling_derive(
 
     for p in path.iter().copied() {
         zip32_sapling_derive_child(
-            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i
+            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
         );
     }
 
@@ -452,15 +391,15 @@ pub fn zip32_sapling_derive(
     match child_components {
         /// Group These Two
         Zip32ChildComponents::DkAkNk => {
-            let ak = sapling::sapling_ask_to_ak(&ask_i);
-            let nk = sapling::sapling_nsk_to_nk(&nsk_i);
+            let ak = sapling_ask_to_ak(&ask_i);
+            let nk = sapling_nsk_to_nk(&nsk_i);
             result[0..32].copy_from_slice(&dk_i);
             result[32..64].copy_from_slice(&ak);
             result[64..96].copy_from_slice(&nk);
         }
         Zip32ChildComponents::AkNk => {
-            let ak = sapling::sapling_ask_to_ak(&ask_i);
-            let nk = sapling::sapling_nsk_to_nk(&nsk_i);
+            let ak = sapling_ask_to_ak(&ask_i);
+            let nk = sapling_nsk_to_nk(&nsk_i);
             result[0..32].copy_from_slice(&ak);
             result[32..64].copy_from_slice(&nk);
         }
@@ -468,7 +407,7 @@ pub fn zip32_sapling_derive(
             result[0..32].copy_from_slice(&dk_i);
         }
         Zip32ChildComponents::AkNsk => {
-            let ak = sapling::sapling_ask_to_ak(&ask_i);
+            let ak = sapling_ask_to_ak(&ask_i);
             result[0..32].copy_from_slice(&ak);
             result[32..64].copy_from_slice(&nsk_i);
         }
@@ -476,6 +415,18 @@ pub fn zip32_sapling_derive(
         Zip32ChildComponents::AskNsk => {
             result[0..32].copy_from_slice(&ask_i);
             result[32..64].copy_from_slice(&nsk_i);
+        }
+        Zip32ChildComponents::Ovk => {
+            // FIXME: Is this correct????????
+            result[0..32].copy_from_slice(&ik.spending_key());
+        }
+        Zip32ChildComponents::FullViewingKey => {
+            result.copy_from_slice(
+                FullViewingKey::new(
+                    sapling_ask_to_ak(&ask_i),
+                    sapling_nsk_to_nk(&nsk_i),
+                    zip32_sapling_ovk_m(&ik.spending_key()),
+                ).to_bytes())
         }
     }
     c_check_app_canary();
@@ -558,10 +509,10 @@ pub extern "C" fn get_default_diversifier_without_start_index(
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                        .try_into()
-                        .unwrap(),
-                )
+                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                    .try_into()
+                    .unwrap(),
+            )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
@@ -594,8 +545,8 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], a
 
     crate::bolos::heartbeat();
 
-    // FIXME: no need to pass the complete path
-    let k = zip32_sapling_derive_child_ovk(seed, account); //consistent with zecwallet
+    // FIXME: duplicating space, risky
+    let k = zip32_sapling_derive(seed, account, Zip32ChildComponents::Ovk);
     ovk.copy_from_slice(&k[0..32]);
 }
 
@@ -604,12 +555,12 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], a
 pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], account: u32) {
     c_zemu_log_stack(b"zip32_fvk\x00\n".as_ref());
     let seed = unsafe { &*seed_ptr };
-
     let fvk = unsafe { &mut *fvk_ptr };
 
-    // FIXME: no need to pass the complete path
-    let k = zip32_sapling_derive_child_fvk(seed, account); //consistent with zecwallet
-    fvk.copy_from_slice(k.to_bytes());
+    // FIXME: we are duplicating the space
+    let result = zip32_sapling_derive(seed, account, Zip32ChildComponents::FullViewingKey);
+
+    fvk.copy_from_slice(&result);
 }
 
 ////////////////////////////////
@@ -744,10 +695,10 @@ pub extern "C" fn get_pkd_from_seed(
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                        .try_into()
-                        .unwrap(),
-                )
+                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                    .try_into()
+                    .unwrap(),
+            )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
