@@ -22,6 +22,24 @@ pub fn sapling_nsk_to_nk(nsk: &NskBytes) -> NkBytes {
 }
 
 #[inline(never)]
+pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
+    let ak = sapling_ask_to_ak(ask);
+    let nk = sapling_nsk_to_nk(nsk);
+
+    let h = Blake2sParams::new()
+        .hash_length(32)
+        .personal(CRH_IVK_PERSONALIZATION)
+        .to_state()
+        .update(&ak)
+        .update(&nk)
+        .finalize();
+
+    let mut x: [u8; 32] = *h.as_array();
+    x[31] &= 0b0000_0111; //check this
+    x
+}
+
+#[inline(never)]
 pub fn sapling_aknk_to_ivk(ak: &AkBytes, nk: &NkBytes) -> IvkBytes {
     let h = Blake2sParams::new()
         .hash_length(32)

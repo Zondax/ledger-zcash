@@ -1,30 +1,30 @@
 use core::convert::TryInto;
 
-use aes::block_cipher_trait::BlockCipher;
 use aes::block_cipher_trait::generic_array::GenericArray;
+use aes::block_cipher_trait::BlockCipher;
 use binary_ff1::BinaryFF1;
 use byteorder::{ByteOrder, LittleEndian};
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
-use crate::{cryptoops, sapling};
-use crate::bolos::{blake2b, c_zemu_log_stack};
 use crate::bolos::aes::AesSDK;
 use crate::bolos::blake2b::{
     blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
 };
 use crate::bolos::c_check_app_canary;
+use crate::bolos::{blake2b, c_zemu_log_stack};
 use crate::constants::{
-    DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE, Zip32ChildComponents,
+    Zip32ChildComponents, DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE,
 };
 use crate::cryptoops::bytes_to_extended;
 use crate::cryptoops::extended_to_bytes;
 use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
-use crate::sapling::{sapling_ask_to_ak, sapling_nsk_to_nk};
+use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_nsk_to_nk};
 use crate::types::{
-    AskBytes, Diversifier, diversifier_zero, DiversifierList10, DiversifierList20,
-    DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingExpandedSpendingKey,
-    Zip32MasterKey, Zip32Seed,
+    diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
+    DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingAskNskDk,
+    SaplingExpandedSpendingKey, Zip32MasterKey, Zip32Seed,
 };
+use crate::{cryptoops, sapling};
 
 #[inline(never)]
 // Calculates I based on https://zips.z.cash/zip-0032#sapling-master-key-generation
@@ -293,18 +293,14 @@ pub fn zip32_update_esk(key: &[u8; 32], exk: &mut SaplingExpandedSpendingKey) {
 }
 
 #[inline(never)]
-pub fn zip32_derive_master(seed: &Zip32Seed) -> [u8; 96] {
-    let master_key = zip32_master_key_i(seed); //64
+pub fn zip32_derive_master(seed: &Zip32Seed) -> SaplingAskNskDk {
+    let master_key = zip32_master_key_i(seed);
 
-    let dk = zip32_sapling_dk_m(&master_key.spending_key());
     let ask = zip32_sapling_ask_m(&master_key.spending_key());
     let nsk = zip32_sapling_nsk_m(&master_key.spending_key());
+    let dk = zip32_sapling_dk_m(&master_key.spending_key());
 
-    let mut result = [0u8; 96];
-    result[0..32].copy_from_slice(&dk);
-    result[32..64].copy_from_slice(&ask);
-    result[64..96].copy_from_slice(&nsk);
-    result
+    SaplingAskNskDk::new(ask, nsk, dk)
 }
 
 fn zip32_sapling_derive_child(
@@ -325,9 +321,10 @@ fn zip32_sapling_derive_child(
 
         //make index LE
         //zip32 child derivation
-        let r = blake2b_expand_v4(&ik.chain_code(), &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
+        let c_i = &ik.chain_code();
+        let prf_result = blake2b_expand_v4(c_i, &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
 
-        ik.to_bytes_mut().copy_from_slice(&r);
+        ik.to_bytes_mut().copy_from_slice(&prf_result);
     } else {
         //non-hardened child
         // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
@@ -344,9 +341,10 @@ fn zip32_sapling_derive_child(
 
         let fvk = FullViewingKey::new(ak, nk, ovk);
 
-        let r = blake2b_expand_v4(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
+        let prf_result =
+            blake2b_expand_v4(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
 
-        ik.to_bytes_mut().copy_from_slice(&r);
+        ik.to_bytes_mut().copy_from_slice(&prf_result);
     }
     crate::bolos::heartbeat();
 
@@ -389,45 +387,17 @@ pub fn zip32_sapling_derive(
 
     let mut result = [0u8; 96];
     match child_components {
-        /// Group These Two
-        Zip32ChildComponents::DkAkNk => {
-            let ak = sapling_ask_to_ak(&ask_i);
-            let nk = sapling_nsk_to_nk(&nsk_i);
-            result[0..32].copy_from_slice(&dk_i);
-            result[32..64].copy_from_slice(&ak);
-            result[64..96].copy_from_slice(&nk);
+        Zip32ChildComponents::AskNskDk => {
+            result.copy_from_slice(SaplingAskNskDk::new(ask_i, nsk_i, dk_i).to_bytes());
         }
-        Zip32ChildComponents::AkNk => {
-            let ak = sapling_ask_to_ak(&ask_i);
-            let nk = sapling_nsk_to_nk(&nsk_i);
-            result[0..32].copy_from_slice(&ak);
-            result[32..64].copy_from_slice(&nk);
-        }
-        Zip32ChildComponents::Dk => {
-            result[0..32].copy_from_slice(&dk_i);
-        }
-        Zip32ChildComponents::AkNsk => {
-            let ak = sapling_ask_to_ak(&ask_i);
-            result[0..32].copy_from_slice(&ak);
-            result[32..64].copy_from_slice(&nsk_i);
-        }
-        /////////////////////////
-        Zip32ChildComponents::AskNsk => {
-            result[0..32].copy_from_slice(&ask_i);
-            result[32..64].copy_from_slice(&nsk_i);
-        }
-        Zip32ChildComponents::Ovk => {
-            // FIXME: Is this correct????????
-            result[0..32].copy_from_slice(&ik.spending_key());
-        }
-        Zip32ChildComponents::FullViewingKey => {
-            result.copy_from_slice(
-                FullViewingKey::new(
-                    sapling_ask_to_ak(&ask_i),
-                    sapling_nsk_to_nk(&nsk_i),
-                    zip32_sapling_ovk_m(&ik.spending_key()),
-                ).to_bytes())
-        }
+        Zip32ChildComponents::FullViewingKey => result.copy_from_slice(
+            FullViewingKey::new(
+                sapling_ask_to_ak(&ask_i),
+                sapling_nsk_to_nk(&nsk_i),
+                zip32_sapling_ovk_m(&ik.spending_key()),
+            )
+            .to_bytes(),
+        ),
     }
     c_check_app_canary();
     result
@@ -451,33 +421,33 @@ pub fn get_dk(seed_ptr: *const [u8; 32], dk_ptr: *mut [u8; 32], pos: u32) {
     let seed = unsafe { &*seed_ptr };
     let dk = unsafe { &mut *dk_ptr };
 
-    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::Dk); //consistent with zecwallet
+    let k = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+        seed,
+        pos,
+        Zip32ChildComponents::AskNskDk,
+    ));
 
-    // k = dk || ...
-    dk.copy_from_slice(&k[0..32]);
+    dk.copy_from_slice(&k.dk());
 }
 
 ////////////////////////////////
 ////////////////////////////////
 
 #[no_mangle]
-pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], pos: u32) {
+pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], account: u32) {
     c_zemu_log_stack(b"zip32_ivk\x00\n".as_ref());
 
     let seed = unsafe { &*seed_ptr };
     let ivk = unsafe { &mut *ivk_ptr };
 
     crate::bolos::heartbeat();
-    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::AkNk); //consistent with zecwallet
+    let k = FullViewingKey::from_bytes(&zip32_sapling_derive(
+        seed,
+        account,
+        Zip32ChildComponents::FullViewingKey,
+    ));
 
-    // k =  ak || nk
-    // ak = k[0..32]
-    // nk = k[32..64]
-
-    let tmp_ivk = sapling::sapling_aknk_to_ivk(
-        &k[0..32].try_into().unwrap(),
-        &k[32..64].try_into().unwrap(),
-    );
+    let tmp_ivk = sapling_aknk_to_ivk(&k.ak(), &k.nk());
 
     ivk.copy_from_slice(&tmp_ivk)
 }
@@ -498,21 +468,25 @@ pub extern "C" fn get_default_diversifier_without_start_index(
 
     let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
 
-    let dk = zip32_sapling_derive(&seed, pos, Zip32ChildComponents::DkAkNk);
+    let ask_nsk_dk = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+        &seed,
+        pos,
+        Zip32ChildComponents::AskNskDk,
+    ));
 
     let mut found = false;
 
     while !found {
-        let sk = &dk[0..32].try_into().unwrap();
+        let sk = &ask_nsk_dk.dk().try_into().unwrap();
         ff1aes_list_with_startingindex_4(sk, &mut start, &mut div_list);
 
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                    .try_into()
-                    .unwrap(),
-            )
+                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                        .try_into()
+                        .unwrap(),
+                )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
@@ -539,28 +513,36 @@ pub extern "C" fn get_default_diversifier_without_start_index(
 
 //this function is consistent with zecwallet code
 #[no_mangle]
-pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], account: u32) {
+pub extern "C" fn zip32_ovk(seed_ptr: *const Zip32Seed, ovk_ptr: *mut [u8; 32], account: u32) {
     let seed = unsafe { &*seed_ptr };
     let ovk = unsafe { &mut *ovk_ptr };
 
     crate::bolos::heartbeat();
 
     // FIXME: duplicating space, risky
-    let k = zip32_sapling_derive(seed, account, Zip32ChildComponents::Ovk);
-    ovk.copy_from_slice(&k[0..32]);
+    let k = FullViewingKey::from_bytes(&zip32_sapling_derive(
+        seed,
+        account,
+        Zip32ChildComponents::FullViewingKey,
+    ));
+
+    ovk.copy_from_slice(&k.ovk());
 }
 
 //this function is consistent with zecwallet code
 #[no_mangle]
-pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], account: u32) {
-    c_zemu_log_stack(b"zip32_fvk\x00\n".as_ref());
+pub extern "C" fn zip32_fvk(seed_ptr: *const Zip32Seed, fvk_ptr: *mut [u8; 96], account: u32) {
     let seed = unsafe { &*seed_ptr };
     let fvk = unsafe { &mut *fvk_ptr };
 
     // FIXME: we are duplicating the space
-    let result = zip32_sapling_derive(seed, account, Zip32ChildComponents::FullViewingKey);
+    let k = FullViewingKey::from_bytes(&zip32_sapling_derive(
+        seed,
+        account,
+        Zip32ChildComponents::FullViewingKey,
+    ));
 
-    fvk.copy_from_slice(&result);
+    fvk.copy_from_slice(&k.to_bytes());
 }
 
 ////////////////////////////////
@@ -575,13 +557,17 @@ pub extern "C" fn zip32_child_proof_key(
 ) {
     let seed = unsafe { &*seed_ptr };
 
-    let k = zip32_sapling_derive(seed, account, Zip32ChildComponents::AkNsk); //consistent with zecwallet
+    let k = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+        seed,
+        account,
+        Zip32ChildComponents::AskNskDk,
+    ));
 
     let ak = unsafe { &mut *ak_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
-    // k = ak || nsk
-    ak.copy_from_slice(&k[0..32]);
-    nsk.copy_from_slice(&k[32..64]);
+
+    ak.copy_from_slice(&sapling_ask_to_ak(&k.ask()));
+    nsk.copy_from_slice(&k.nsk());
 }
 
 ////////////////////////////////
@@ -596,12 +582,16 @@ pub extern "C" fn zip32_child_ask_nsk(
 ) {
     let seed = unsafe { &*seed_ptr };
 
-    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::AskNsk); //consistent with zecwallet;
+    let k = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+        seed,
+        pos,
+        Zip32ChildComponents::AskNskDk,
+    ));
 
     let ask = unsafe { &mut *ask_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
-    ask.copy_from_slice(&k[0..32]);
-    nsk.copy_from_slice(&k[32..64]);
+    ask.copy_from_slice(&k.ask());
+    nsk.copy_from_slice(&k.nsk());
 }
 
 ////////////////////////////////
@@ -685,20 +675,25 @@ pub extern "C" fn get_pkd_from_seed(
 
     let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
     crate::bolos::heartbeat();
-    let dk_ak_nk = zip32_sapling_derive(&seed, pos, Zip32ChildComponents::DkAkNk);
+
+    let ask_nsk_df = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+        &seed,
+        pos,
+        Zip32ChildComponents::AskNskDk,
+    ));
 
     let mut found = false;
 
     while !found {
-        let sk = &mut dk_ak_nk[0..32].try_into().unwrap();
+        let sk = &mut ask_nsk_df.dk().try_into().unwrap();
         ff1aes_list_with_startingindex_4(sk, start, &mut div_list);
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
-                &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
-                    .try_into()
-                    .unwrap(),
-            )
+                    &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                        .try_into()
+                        .unwrap(),
+                )
             {
                 found = true;
                 div.copy_from_slice(&div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]);
@@ -706,9 +701,10 @@ pub extern "C" fn get_pkd_from_seed(
         }
         crate::bolos::heartbeat();
     }
-    let ivk = sapling::sapling_aknk_to_ivk(
-        &dk_ak_nk[32..64].try_into().unwrap(),
-        &dk_ak_nk[64..96].try_into().unwrap(),
+
+    let ivk = sapling::sapling_asknsk_to_ivk(
+        &ask_nsk_df.ask().try_into().unwrap(),
+        &ask_nsk_df.nsk().try_into().unwrap(),
     );
 
     let pkd = unsafe { &mut *pkd_ptr };
@@ -799,6 +795,7 @@ pub extern "C" fn get_pkd(
 mod tests {
     use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_nsk_to_nk};
     use crate::types::diversifier_list10_zero;
+    use std::convert::TryInto;
 
     use super::*;
 
@@ -815,7 +812,7 @@ mod tests {
             0xf9, 0x96, 0xa1, 0x72,
         ];
         let keys = zip32_derive_master(&seed);
-        assert_eq!(keys[0..32], dk);
+        assert_eq!(keys.dk(), dk);
     }
 
     #[test]
@@ -831,40 +828,29 @@ mod tests {
             0xf9, 0x96, 0xa1, 0x72,
         ];
         let keys = zip32_derive_master(&seed);
-        assert_eq!(keys[0..32], dk);
+        assert_eq!(keys.dk(), dk);
     }
 
     #[test]
     fn test_zip32_childaddress() {
         let seed = [0u8; 32];
 
-        let p: u32 = 0x8000_0001;
-        let dk_ak_nk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::DkAkNk);
-        let ask_nsk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::AskNsk);
-        let mut dk = [0u8; 32];
-        dk.copy_from_slice(&dk_ak_nk[0..32]);
+        let account: u32 = 0x8000_0001;
+        let ask_nsk_df = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+            &seed,
+            account,
+            Zip32ChildComponents::AskNskDk,
+        ));
 
-        let mut ak_derived = [0u8; 32];
-        ak_derived.copy_from_slice(&dk_ak_nk[32..64]);
-
-        let mut nk_derived = [0u8; 32];
-        nk_derived.copy_from_slice(&dk_ak_nk[64..96]);
-
-        let mut ask = [0u8; 32];
-        ask.copy_from_slice(&ask_nsk[0..32]);
-
-        let mut nsk = [0u8; 32];
-        nsk.copy_from_slice(&ask_nsk[32..64]);
+        let dk = ask_nsk_df.dk();
+        let ask = ask_nsk_df.ask();
+        let nsk = ask_nsk_df.nsk();
+        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let ak: [u8; 32] = sapling_ask_to_ak(&ask);
 
         let ask_expected = "3c2f45f9da64e1dd28cd51b9a967fefbd398f9a94373c13f64e4bfae9187f406";
 
         assert_eq!(hex::encode(ask), ask_expected);
-
-        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
-        let ak: [u8; 32] = sapling_ask_to_ak(&ask);
-
-        assert_eq!(ak, ak_derived);
-        assert_eq!(nk, nk_derived);
 
         let ivk = sapling_aknk_to_ivk(&ak, &nk);
         assert_eq!(
@@ -887,31 +873,24 @@ mod tests {
 
     #[test]
     fn test_zip32_childaddress_ledgerkey() {
-        //e91db3f6c120a86ece0de8d21d452dcdcb708d563494e60a6cee676f5047ded7
         let s = hex::decode("b08e3d98da431cef4566a13c1bb348b982f7d8e743b43bb62557ba51994b1257")
             .expect("error");
         let seed: [u8; 32] = s.as_slice().try_into().expect("er");
 
         let p: u32 = 0x8000_1000;
 
-        let dk_ak_nk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::DkAkNk);
-        let ask_nsk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::AskNsk);
-        let mut dk = [0u8; 32];
-        dk.copy_from_slice(&dk_ak_nk[0..32]);
+        let ask_nsk_dk = SaplingAskNskDk::from_bytes(&zip32_sapling_derive(
+            &seed,
+            p,
+            Zip32ChildComponents::AskNskDk,
+        ));
+        let dk = ask_nsk_dk.dk();
+        let ask = ask_nsk_dk.ask();
+        let nsk = ask_nsk_dk.nsk();
+        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
+        let ak: [u8; 32] = sapling_ask_to_ak(&ask);
 
-        let mut ak_derived = [0u8; 32];
-        ak_derived.copy_from_slice(&dk_ak_nk[32..64]);
-
-        let mut nk_derived = [0u8; 32];
-        nk_derived.copy_from_slice(&dk_ak_nk[64..96]);
-
-        let mut ask = [0u8; 32];
-        ask.copy_from_slice(&ask_nsk[0..32]);
-
-        let mut nsk = [0u8; 32];
-        nsk.copy_from_slice(&ask_nsk[32..64]);
-
-        let ivk = sapling_aknk_to_ivk(&ak_derived, &nk_derived);
+        let ivk = sapling_aknk_to_ivk(&ak, &nk);
 
         assert_eq!(
             hex::encode(ivk),
@@ -939,15 +918,9 @@ mod tests {
 
         let keys = zip32_derive_master(&seed);
 
-        let mut dk = [0u8; 32];
-        dk.copy_from_slice(&keys[0..32]);
-
-        let mut ask = [0u8; 32];
-        ask.copy_from_slice(&keys[32..64]);
-
-        let mut nsk = [0u8; 32];
-        nsk.copy_from_slice(&keys[64..96]);
-
+        let dk = keys.dk();
+        let ask = keys.ask();
+        let nsk = keys.nsk();
         let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
 
@@ -972,15 +945,9 @@ mod tests {
 
         let keys = zip32_derive_master(&seed);
 
-        let mut dk = [0u8; 32];
-        dk.copy_from_slice(&keys[0..32]);
-
-        let mut ask = [0u8; 32];
-        ask.copy_from_slice(&keys[32..64]);
-
-        let mut nsk = [0u8; 32];
-        nsk.copy_from_slice(&keys[64..96]);
-
+        let dk = keys.dk();
+        let ask = keys.ask();
+        let nsk = keys.nsk();
         let nk = sapling_nsk_to_nk(&nsk);
         let ak = sapling_ask_to_ak(&ask);
 
@@ -1000,16 +967,14 @@ mod tests {
 
     #[test]
     fn test_div() {
-        let nk = [
-            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
-            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
-            0xbd, 0x3f, 0xd6, 0xba,
-        ];
-        let ak = [
-            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
-            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
-            0x8e, 0xf1, 0x16, 0x20,
-        ];
+        let nk = hex::decode("f7cf9e77f2e58683383c1519ac7b062d30040e27a725fb88fb19a978bd3fd6ba")
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let ak = hex::decode("f344ec380fe1273e3098c2588c5d3a791fd7ba958032760777fd0efa8ef11620")
+            .unwrap()
+            .try_into()
+            .unwrap();
 
         let ivk: [u8; 32] = sapling_aknk_to_ivk(&ak, &nk);
         let default_d = [
@@ -1024,12 +989,8 @@ mod tests {
             let t = super::AffinePoint::from(v);
             let pk_d = t.to_bytes();
             assert_eq!(
-                pk_d,
-                [
-                    0xdb, 0x4c, 0xd2, 0xb0, 0xaa, 0xc4, 0xf7, 0xeb, 0x8c, 0xa1, 0x31, 0xf1, 0x65,
-                    0x67, 0xc4, 0x45, 0xa9, 0x55, 0x51, 0x26, 0xd3, 0xc2, 0x9f, 0x14, 0xe3, 0xd7,
-                    0x76, 0xe8, 0x41, 0xae, 0x74, 0x15
-                ]
+                hex::encode(pk_d),
+                "db4cd2b0aac4f7eb8ca131f16567c445a9555126d3c29f14e3d776e841ae7415"
             );
         }
     }
@@ -1040,29 +1001,24 @@ mod tests {
         let mut list = diversifier_list10_zero();
         ff1aes_list_10(&seed, &mut list);
         let default_d = default_diversifier_fromlist(&list);
-        assert_eq!(
-            default_d,
-            [0xdc, 0xe7, 0x7e, 0xbc, 0xec, 0x0a, 0x26, 0xaf, 0xd6, 0x99, 0x8c]
-        );
+        let expected_d = "dce77ebcec0a26afd6998c";
+        assert_eq!(hex::encode(default_d), expected_d);
     }
 
     #[test]
     fn test_grouphash_default() {
-        let default_d = [
-            0xf1, 0x9d, 0x9b, 0x79, 0x7e, 0x39, 0xf3, 0x37, 0x44, 0x58, 0x39,
-        ];
+        let default_d = hex::decode("f19d9b797e39f337445839")
+            .unwrap()
+            .try_into()
+            .unwrap();
 
         let result = pkd_group_hash(&default_d);
+
         let x = super::AffinePoint::from_bytes(result);
         assert_eq!(x.is_some().unwrap_u8(), 1);
-        assert_eq!(
-            result,
-            [
-                0x3a, 0x71, 0xe3, 0x48, 0x16, 0x9e, 0x0c, 0xed, 0xbc, 0x4f, 0x36, 0x33, 0xa2, 0x60,
-                0xd0, 0xe7, 0x85, 0xea, 0x8f, 0x89, 0x27, 0xce, 0x45, 0x01, 0xce, 0xf3, 0x21, 0x6e,
-                0xd0, 0x75, 0xce, 0xa2
-            ]
-        );
+
+        let expected_result = "3a71e348169e0cedbc4f3633a260d0e785ea8f8927ce4501cef3216ed075cea2";
+        assert_eq!(hex::encode(result), expected_result);
     }
 
     #[test]
@@ -1070,21 +1026,13 @@ mod tests {
         let seed = [0u8; 32];
         let ask: [u8; 32] = zip32_sapling_ask_m(&seed);
         assert_eq!(
-            ask,
-            [
-                0x85, 0x48, 0xa1, 0x4a, 0x47, 0x3e, 0xa5, 0x47, 0xaa, 0x23, 0x78, 0x40, 0x20, 0x44,
-                0xf8, 0x18, 0xcf, 0x19, 0x11, 0xcf, 0x5d, 0xd2, 0x05, 0x4f, 0x67, 0x83, 0x45, 0xf0,
-                0x0d, 0x0e, 0x88, 0x06
-            ]
+            hex::encode(ask),
+            "8548a14a473ea547aa2378402044f818cf1911cf5dd2054f678345f00d0e8806"
         );
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
         assert_eq!(
-            ak,
-            [
-                0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
-                0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
-                0x8e, 0xf1, 0x16, 0x20
-            ]
+            hex::encode(ak),
+            "f344ec380fe1273e3098c2588c5d3a791fd7ba958032760777fd0efa8ef11620"
         );
     }
 
@@ -1092,48 +1040,34 @@ mod tests {
     fn test_nk() {
         let seed = [0u8; 32];
 
-        let nsk: [u8; 32] = zip32_sapling_nsk_m(&seed);
-        assert_eq!(
-            nsk,
-            [
-                0x30, 0x11, 0x4e, 0xa0, 0xdd, 0x0b, 0xb6, 0x1c, 0xf0, 0xea, 0xea, 0xb6, 0xec, 0x33,
-                0x31, 0xf5, 0x81, 0xb0, 0x42, 0x5e, 0x27, 0x33, 0x85, 0x01, 0x26, 0x2d, 0x7e, 0xac,
-                0x74, 0x5e, 0x6e, 0x05
-            ]
-        );
+        let nsk = zip32_sapling_nsk_m(&seed);
+        let nk = sapling_nsk_to_nk(&nsk);
 
-        let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
         assert_eq!(
-            nk,
-            [
-                0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
-                0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
-                0xbd, 0x3f, 0xd6, 0xba
-            ]
+            hex::encode(nsk),
+            "30114ea0dd0bb61cf0eaeab6ec3331f581b0425e27338501262d7eac745e6e05"
+        );
+        assert_eq!(
+            hex::encode(nk),
+            "f7cf9e77f2e58683383c1519ac7b062d30040e27a725fb88fb19a978bd3fd6ba"
         );
     }
 
     #[test]
     fn test_ivk() {
-        let nk = [
-            0xf7, 0xcf, 0x9e, 0x77, 0xf2, 0xe5, 0x86, 0x83, 0x38, 0x3c, 0x15, 0x19, 0xac, 0x7b,
-            0x06, 0x2d, 0x30, 0x04, 0x0e, 0x27, 0xa7, 0x25, 0xfb, 0x88, 0xfb, 0x19, 0xa9, 0x78,
-            0xbd, 0x3f, 0xd6, 0xba,
-        ];
-        let ak = [
-            0xf3, 0x44, 0xec, 0x38, 0x0f, 0xe1, 0x27, 0x3e, 0x30, 0x98, 0xc2, 0x58, 0x8c, 0x5d,
-            0x3a, 0x79, 0x1f, 0xd7, 0xba, 0x95, 0x80, 0x32, 0x76, 0x07, 0x77, 0xfd, 0x0e, 0xfa,
-            0x8e, 0xf1, 0x16, 0x20,
-        ];
+        let nk = hex::decode("f7cf9e77f2e58683383c1519ac7b062d30040e27a725fb88fb19a978bd3fd6ba")
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let ak = hex::decode("f344ec380fe1273e3098c2588c5d3a791fd7ba958032760777fd0efa8ef11620")
+            .unwrap()
+            .try_into()
+            .unwrap();
 
         let ivk: [u8; 32] = sapling_aknk_to_ivk(&ak, &nk);
         assert_eq!(
-            ivk,
-            [
-                0xb7, 0x0b, 0x7c, 0xd0, 0xed, 0x03, 0xcb, 0xdf, 0xd7, 0xad, 0xa9, 0x50, 0x2e, 0xe2,
-                0x45, 0xb1, 0x3e, 0x56, 0x9d, 0x54, 0xa5, 0x71, 0x9d, 0x2d, 0xaa, 0x0f, 0x5f, 0x14,
-                0x51, 0x47, 0x92, 0x04
-            ]
+            hex::encode(ivk),
+            "b70b7cd0ed03cbdfd7ada9502ee245b13e569d54a5719d2daa0f5f1451479204"
         );
     }
 }

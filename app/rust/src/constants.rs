@@ -251,11 +251,6 @@ pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
 
 /// ZIP32 Child components
 pub enum Zip32ChildComponents {
-    AkNk = 0,
-    Dk = 2,
-    AkNsk = 3,
-    AskNsk = 4,
-    DkAkNk = 5,
-    Ovk,
     FullViewingKey,
+    AskNskDk,
 }

@@ -85,3 +85,11 @@ create_ztruct! {
         pub chain_code: Zip32MasterChainCode,
     }
 }
+
+create_ztruct! {
+    pub struct SaplingAskNskDk {
+        pub ask: AskBytes,
+        pub nsk: NskBytes,
+        pub dk: DkBytes,
+    }
+}
