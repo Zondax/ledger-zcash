@@ -7,7 +7,7 @@ void get_diversifier_list(const uint8_t *sk_ptr, uint8_t *diversifier_list);
 
 void get_diversifier_fromlist(const uint8_t *diversifier_list, uint8_t *diversifier);
 
-bool is_valid_diversifier(const uint8_t *diversifier);
+bool diversifier_is_valid(const uint8_t *diversifier);
 
 void get_diversifier_list_withstartindex(const uint8_t *seed_ptr, const uint32_t pos, const uint8_t *startindex,
                                          uint8_t *diversifier_list);
@@ -24,7 +24,7 @@ void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk, co
 /**
  * @deprecated This function is deprecated and should not be used in new code.
  */
-void zip32_nsk_from_seed(const uint8_t *seed_ptr, uint8_t *nsk);
+void zip32_nsk_from_seed(const uint8_t *seed_ptr, uint32_t zip32_path, uint8_t *nsk);
 
 /**
  * @deprecated This function is deprecated and should not be used in new code.

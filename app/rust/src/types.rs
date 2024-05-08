@@ -34,6 +34,8 @@ pub type DkBytes = [u8; 32];
 // FIXME: move to 64 to align with ed25519 private key?
 pub type Zip32Seed = [u8; 32];
 
+pub type Zip32Path = [u32];
+
 pub type Zip32MasterSpendingKey = [u8; 32];
 pub type Zip32MasterChainCode = [u8; 32];
 
@@ -75,6 +77,15 @@ create_ztruct! {
     }
 }
 
+create_ztruct! {
+    pub struct SaplingKeyBundle {
+        pub ask: AskBytes,
+        pub nsk: NskBytes,
+        pub ovk: OvkBytes,
+        pub dk: DkBytes,
+    }
+}
+
 // https://zips.z.cash/zip-0032#specification-sapling-key-derivation
 create_ztruct! {
     pub struct SaplingExtendedSpendingKey {
@@ -83,14 +94,5 @@ create_ztruct! {
         pub ovk: OvkBytes,
         pub dk: DkBytes,
         pub chain_code: Zip32MasterChainCode,
-    }
-}
-
-create_ztruct! {
-    pub struct SaplingKeyBundle {
-        pub ask: AskBytes,
-        pub nsk: NskBytes,
-        pub dk: DkBytes,
-        pub ovk: OvkBytes,
     }
 }

@@ -243,6 +243,7 @@ mod tests {
 
     #[test]
     fn test_get_nf() {
+        let account = 1;
         let pos: u64 = 2578461368;
 
         let seed: [u8; 32] = [
@@ -257,7 +258,7 @@ mod tests {
         ];
 
         let mut nsk = [0u8; 32];
-        zip32_nsk_from_seed(&seed, &mut nsk);
+        zip32_nsk_from_seed(&seed, account, &mut nsk);
 
         let mut nf = [0u8; 32];
         compute_nullifier(&cm, pos, &nsk, &mut nf);

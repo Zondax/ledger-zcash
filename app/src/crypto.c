@@ -1359,8 +1359,12 @@ zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
 }
 
 // handleGetNullifier
-zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen, uint64_t notepos, uint8_t *cm,
-                                 uint16_t *replyLen) {
+zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen,
+                                uint32_t zip32_path,
+                                uint64_t notepos,
+                                uint8_t *cm,
+                                uint16_t *replyLen) {
+
     zemu_log_stack("crypto_nullifier_sapling");
 
     MEMZERO(outputBuffer, outputBufferLen);
@@ -1377,10 +1381,9 @@ zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen
 
     // nk can be computed from nsk which itself can be computed from the seed.
     uint8_t nsk[NSK_SIZE] = {0};
+    zip32_nsk_from_seed(zip32_seed, zip32_path, nsk);
 
-    zip32_nsk_from_seed(zip32_seed, nsk);
     compute_nullifier(cm, notepos, nsk, outputBuffer);
-
     CHECK_APP_CANARY()
 
     MEMZERO(zip32_seed, sizeof(zip32_seed));
@@ -1407,7 +1410,7 @@ zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t p, const ui
 
     get_diversifier_list_withstartindex(zip32_seed, p, startindex, buffer);
     for (int i = 0; i < DIV_LIST_LENGTH; i++) {
-        if (!is_valid_diversifier(buffer + i * DIV_SIZE)) {
+        if (!diversifier_is_valid(buffer + i * DIV_SIZE)) {
             MEMZERO(buffer + i * DIV_SIZE, DIV_SIZE);
         }
     }
@@ -1451,7 +1454,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(uint8_t *buffer, uint16_t bu
 
     // Initialize diversifier
     MEMCPY(out->diversifier, div, DIV_SIZE);
-    if (!is_valid_diversifier(out->diversifier)) {
+    if (!diversifier_is_valid(out->diversifier)) {
         return zxerr_unknown;
     }
 

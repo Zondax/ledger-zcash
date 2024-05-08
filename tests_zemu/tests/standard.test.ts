@@ -20,8 +20,8 @@ import ZCashApp from '@zondax/ledger-zcash'
 
 jest.setTimeout(60000)
 
-describe('Standard', function () {
-  test.concurrent.each(models)('can start and stop container', async function (m) {
+describe('Standard', function() {
+  test.concurrent.each(models)('can start and stop container', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -30,7 +30,7 @@ describe('Standard', function () {
     }
   })
 
-  test.concurrent.each(models)('main menu', async function (m) {
+  test.concurrent.each(models)('main menu', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -41,7 +41,7 @@ describe('Standard', function () {
     }
   })
 
-  test.concurrent.each(models)('get app version', async function (m) {
+  test.concurrent.each(models)('get app version', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -62,14 +62,14 @@ describe('Standard', function () {
   })
 })
 
-describe('Addresses', function () {
-  test.concurrent.each(models)('get unshielded address', async function (m) {
+describe('Addresses', function() {
+  test.concurrent.each(models)('get unshielded address', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const addr = await app.getAddressAndPubKey("m/44'/133'/5'/0/0", true)
+      const addr = await app.getAddressAndPubKey('m/44\'/133\'/5\'/0/0', true)
       console.log(addr)
 
       const expectedAddrRaw = '031f6d238009787c20d5d7becb6b6ad54529fc0a3fd35088e85c2c3966bfec050e'
@@ -79,14 +79,14 @@ describe('Addresses', function () {
         expect(addr.addressRaw.toString('hex')).toEqual(expectedAddrRaw)
         expect(addr.address).toEqual(expectedAddr)
       } else {
-        fail("Expected properties addressRaw and address are missing in the response.")
+        fail('Expected properties addressRaw and address are missing in the response.')
       }
     } finally {
       await sim.close()
     }
   })
 
-  test.concurrent.each(models)('show unshielded address', async function (m) {
+  test.concurrent.each(models)('show unshielded address', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -97,7 +97,7 @@ describe('Addresses', function () {
       })
       const app = new ZCashApp(sim.getTransport())
 
-      const addrRequest = app.showAddressAndPubKey("m/44'/133'/5'/0/1", true)
+      const addrRequest = app.showAddressAndPubKey('m/44\'/133\'/5\'/0/1', true)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_address_unshielded`)
@@ -114,14 +114,14 @@ describe('Addresses', function () {
         expect(addrRaw).toEqual(expected_addrRaw)
         expect(addr.address).toEqual(expected_addr)
       } else {
-        fail("Expected properties addressRaw and address are missing in the response.")
+        fail('Expected properties addressRaw and address are missing in the response.')
       }
     } finally {
       await sim.close()
     }
   })
 
-  test.concurrent.each(models)('get shielded address', async function (m) {
+  test.concurrent.each(models)('get shielded address', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -132,22 +132,22 @@ describe('Addresses', function () {
       console.log(addr)
       expect(addr.returnCode).toEqual(0x9000)
 
-      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
-      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
+      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
+      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
 
       if ('addressRaw' in addr && 'address' in addr) {
         const addrRaw = addr.addressRaw.toString('hex')
         expect(addrRaw).toEqual(expected_addrRaw)
         expect(addr.address).toEqual(expected_addr)
       } else {
-        fail("Expected properties addressRaw and address are missing in the response.")
+        fail('Expected properties addressRaw and address are missing in the response.')
       }
     } finally {
       await sim.close()
     }
   })
 
-  test.concurrent.each(models)('show shielded address', async function (m) {
+  test.concurrent.each(models)('show shielded address', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -167,15 +167,15 @@ describe('Addresses', function () {
       console.log(addr)
       expect(addr.returnCode).toEqual(0x9000)
 
-      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
-      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
+      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
+      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
 
       if ('addressRaw' in addr && 'address' in addr) {
         const addrRaw = addr.addressRaw.toString('hex')
         expect(addrRaw).toEqual(expected_addrRaw)
         expect(addr.address).toEqual(expected_addr)
       } else {
-        fail("Expected properties addressRaw and address are missing in the response.")
+        fail('Expected properties addressRaw and address are missing in the response.')
       }
     } finally {
       await sim.close()
@@ -183,18 +183,18 @@ describe('Addresses', function () {
   })
 })
 
-describe('Nullifier', function () {
-  test.concurrent.each(models)('get nullifier', async function (m) {
+describe('Nullifier', function() {
+  test.concurrent.each(models)('get nullifier account 0x01', async function(m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const path = 0xFF;
-      const pos = Buffer.alloc(8);
-      const cmu = Buffer.from("df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea", "hex");
+      const path = 0x01
+      const pos = Buffer.alloc(8)
+      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
-      const promise_resp = app.getNullifier(path, pos, cmu);
+      const promise_resp = app.getNullifier(path, pos, cmu)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.clickRight()
       await sim.clickRight()
@@ -203,14 +203,47 @@ describe('Nullifier', function () {
       const resp = await promise_resp
       expect(resp.returnCode).toEqual(0x9000)
 
-      const expected_nfRaw = '3840188b5e05bced04ec715af62db7da39c06d643971a6748ee020c845427b95'
+      const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
 
       if ('nfRaw' in resp) {
         const nfRaw = resp.nfRaw.toString('hex')
         console.log(nfRaw)
         expect(nfRaw).toEqual(expected_nfRaw)
       } else {
-        fail("Expected property nfRaw is missing in the response.")
+        fail('Expected property nfRaw is missing in the response.')
+      }
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.concurrent.each(models)('get nullifier account 0xFF', async function(m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      const path = 0xFF
+      const pos = Buffer.alloc(8)
+      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+
+      const promise_resp = app.getNullifier(path, pos, cmu)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+
+      const resp = await promise_resp
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
+
+      if ('nfRaw' in resp) {
+        const nfRaw = resp.nfRaw.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } else {
+        fail('Expected property nfRaw is missing in the response.')
       }
     } finally {
       await sim.close()

@@ -21,8 +21,9 @@ use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
 use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_nsk_to_nk};
 use crate::types::{
     diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
-    DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingKeyBundle,
-    SaplingExpandedSpendingKey, Zip32MasterKey, Zip32Seed,
+    DiversifierList4, DkBytes, FullViewingKey, IvkBytes, NskBytes, OvkBytes,
+    SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterKey, Zip32MasterSpendingKey,
+    Zip32Path, Zip32Seed,
 };
 
 #[inline(never)]
@@ -234,7 +235,7 @@ pub fn pkd_group_hash(d: &Diversifier) -> [u8; 32] {
 }
 
 #[inline(never)]
-pub fn default_pkd(ivk: &[u8; 32], d: &Diversifier) -> [u8; 32] {
+pub fn pkd_default(ivk: &IvkBytes, d: &Diversifier) -> [u8; 32] {
     let h = blake2b::blake2s_diversification(d);
     let mut y = bytes_to_extended(h);
 
@@ -243,15 +244,6 @@ pub fn default_pkd(ivk: &[u8; 32], d: &Diversifier) -> [u8; 32] {
 
     let tmp = extended_to_bytes(&y);
     tmp
-}
-
-#[inline(never)]
-fn zip32_sapling_esk(s_k: &[u8; 32]) -> SaplingExpandedSpendingKey {
-    SaplingExpandedSpendingKey::new(
-        zip32_sapling_ask_m(s_k),
-        zip32_sapling_nsk_m(s_k),
-        zip32_sapling_ovk_m(s_k),
-    )
 }
 
 #[inline(never)]
@@ -266,8 +258,7 @@ pub(crate) fn zip32_sapling_fvk(k: &SaplingKeyBundle) -> FullViewingKey {
 fn zip32_sapling_derive_child(
     ik: &mut Zip32MasterKey,
     path_i: u32,
-    esk_i: &mut SaplingExpandedSpendingKey,
-    mut dk_i: &mut DkBytes,
+    key_bundle_i: &mut SaplingKeyBundle,
 ) {
     let hardened = (path_i & 0x8000_0000) != 0;
     let c = path_i & 0x7FFF_FFFF;
@@ -284,7 +275,7 @@ fn zip32_sapling_derive_child(
         //zip32 child derivation
         let c_i = &ik.chain_code();
 
-        let prf_result = blake2b_expand_v4(c_i, &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
+        let prf_result = blake2b_expand_v4(c_i, &[0x11], &key_bundle_i.to_bytes(), &[], &le_i);
 
         ik.to_bytes_mut().copy_from_slice(&prf_result);
     } else {
@@ -307,8 +298,13 @@ fn zip32_sapling_derive_child(
 
         let fvk = FullViewingKey::new(ak, nk, ovk);
 
-        let prf_result =
-            blake2b_expand_v4(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
+        let prf_result = blake2b_expand_v4(
+            &ik.chain_code(),
+            &[0x12],
+            &fvk.to_bytes(),
+            &key_bundle_i.dk(),
+            &le_i,
+        );
 
         ik.to_bytes_mut().copy_from_slice(&prf_result);
     }
@@ -316,72 +312,30 @@ fn zip32_sapling_derive_child(
 
     // https://zips.z.cash/zip-0032#deriving-a-child-extended-spending-key
 
-    zip32_sapling_ask_i_update(&ik.spending_key(), esk_i.ask_mut());
-    zip32_sapling_nsk_i_update(&ik.spending_key(), esk_i.nsk_mut());
-    zip32_sapling_ovk_i_update(&ik.spending_key(), esk_i.ovk_mut());
-
-    zip32_sapling_dk_i_update(&ik.spending_key(), &mut dk_i);
+    zip32_sapling_ask_i_update(&ik.spending_key(), key_bundle_i.ask_mut());
+    zip32_sapling_nsk_i_update(&ik.spending_key(), key_bundle_i.nsk_mut());
+    zip32_sapling_ovk_i_update(&ik.spending_key(), key_bundle_i.ovk_mut());
+    zip32_sapling_dk_i_update(&ik.spending_key(), &mut key_bundle_i.dk_mut());
 }
 
 #[inline(never)]
-pub fn zip32_sapling_derive(seed: &[u8; 32], path: &[u32]) -> SaplingKeyBundle {
+pub fn zip32_sapling_derive(seed: &Zip32Seed, path: &Zip32Path) -> SaplingKeyBundle {
     // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
     let mut ik = zip32_master_key_i(seed);
-    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
-    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
 
-    if cfg!(test) {
-        debug!("------------------------------ ");
-        debug!("---- s_k_i :  {}", hex::encode(ik.spending_key()));
-        debug!("---- c_k_i :  {}", hex::encode(ik.chain_code()));
-        debug!("---- ask_i :  {}", hex::encode(esk_i.ask()));
-        debug!("---- nsk_i :  {}", hex::encode(esk_i.nsk()));
-        debug!("---- osk_i :  {}", hex::encode(esk_i.ovk()));
-    }
+    let mut key_bundle_i = SaplingKeyBundle::new(
+        zip32_sapling_ask_m(&ik.spending_key()),
+        zip32_sapling_nsk_m(&ik.spending_key()),
+        zip32_sapling_ovk_m(&ik.spending_key()),
+        zip32_sapling_dk_m(&ik.spending_key()),
+    );
 
     for path_i in path.iter().copied() {
-        zip32_sapling_derive_child(&mut ik, path_i, &mut esk_i, &mut dk_i);
-
-        if cfg!(test) {
-            debug!("---- path_i: {:x}", path_i);
-            debug!("---- s_k_i :  {}", hex::encode(ik.spending_key()));
-            debug!("---- c_k_i :  {}", hex::encode(ik.chain_code()));
-            debug!("---- ask_i :  {}", hex::encode(esk_i.ask()));
-            debug!("---- nsk_i :  {}", hex::encode(esk_i.nsk()));
-            debug!("---- osk_i :  {}", hex::encode(esk_i.ovk()));
-        }
-
+        zip32_sapling_derive_child(&mut ik, path_i, &mut key_bundle_i);
         c_check_app_canary();
     }
 
-    if cfg!(test) {
-        debug!("------------------------------ ");
-    }
-
-    SaplingKeyBundle::new(esk_i.ask(), esk_i.nsk(), dk_i, esk_i.ovk())
-}
-
-#[inline(never)]
-#[deprecated(note = "This function is deprecated and will be removed in future releases.")]
-pub fn deprecated_master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
-    let master_key = zip32_master_key_i(seed);
-
-    crate::bolos::heartbeat();
-    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
-
-    let mut result = [0u8; 32];
-    result.copy_from_slice(&nsk.to_bytes());
-    result
-}
-
-#[no_mangle]
-pub fn zip32_sapling_dk(seed_ptr: *const Zip32Seed, account: u32, dk_ptr: *mut [u8; 32]) {
-    let seed = unsafe { &*seed_ptr };
-    let dk = unsafe { &mut *dk_ptr };
-
-    let k = zip32_sapling_derive(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]);
-
-    dk.copy_from_slice(&k.dk());
+    key_bundle_i
 }
 
 #[inline(never)]
@@ -433,7 +387,7 @@ fn zip32_sapling_derive_master(seed: &Zip32Seed) -> SaplingKeyBundle {
     let dk = zip32_sapling_dk_m(&master_key.spending_key());
     let ovk = zip32_sapling_ovk_m(&master_key.spending_key());
 
-    SaplingKeyBundle::new(ask, nsk, dk, ovk)
+    SaplingKeyBundle::new(ask, nsk, ovk, dk)
 }
 
 #[cfg(test)]
@@ -800,7 +754,7 @@ mod tests {
         ff1aes_list_10(&k.dk(), &mut listbytes);
         let default_d = diversifier_default_fromlist(&listbytes);
 
-        let pk_d = default_pkd(&ivk, &default_d);
+        let pk_d = pkd_default(&ivk, &default_d);
 
         assert_eq!(hex::encode(default_d), "9f6e0bf90a18fc0b9b83ae");
         assert_eq!(
@@ -830,7 +784,7 @@ mod tests {
         ff1aes_list_10(&k.dk(), &mut list);
         let default_d = diversifier_default_fromlist(&list);
 
-        let pk_d = default_pkd(&ivk, &default_d);
+        let pk_d = pkd_default(&ivk, &default_d);
 
         assert_eq!(hex::encode(default_d), "186df0ee24e1b09f3a8c0f");
         assert_eq!(
@@ -859,7 +813,7 @@ mod tests {
         ff1aes_list_10(&dk, &mut list);
         let default_d = diversifier_default_fromlist(&list);
 
-        let pk_d = default_pkd(&ivk, &default_d);
+        let pk_d = pkd_default(&ivk, &default_d);
 
         assert_eq!(hex::encode(default_d), "f93dcfe2047253eebc17d4");
         assert_eq!(
@@ -885,7 +839,7 @@ mod tests {
         ff1aes_list_10(&dk, &mut list);
         let default_d = diversifier_default_fromlist(&list);
 
-        let pk_d = default_pkd(&ivk, &default_d);
+        let pk_d = pkd_default(&ivk, &default_d);
 
         assert_eq!(hex::encode(default_d), "3bf6fa1f83bf4563c8a713");
         assert_eq!(

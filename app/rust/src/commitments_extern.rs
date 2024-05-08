@@ -11,7 +11,7 @@ use jubjub::Fr;
 #[no_mangle]
 pub extern "C" fn compute_nullifier(
     ncm_ptr: *const [u8; 32],
-    pos: u64,
+    note_pos: u64,
     nsk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
@@ -22,7 +22,7 @@ pub extern "C" fn compute_nullifier(
 
     crate::bolos::heartbeat();
 
-    let scalar = Fr::from(pos);
+    let scalar = Fr::from(note_pos);
     let e = cryptoops::bytes_to_extended(ncm);
     crate::bolos::heartbeat();
 

@@ -5,7 +5,7 @@ use crate::constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PU
 use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak};
 use crate::types::{
     diversifier_zero, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4,
-    SaplingKeyBundle, Zip32Seed,
+    NskBytes, Zip32Seed,
 };
 use crate::zip32::{diversifier_group_hash_light, zip32_sapling_derive, zip32_sapling_fvk};
 use crate::{sapling, zip32};
@@ -128,14 +128,16 @@ pub extern "C" fn zip32_child_ask_nsk(
 }
 
 #[no_mangle]
-#[deprecated(note = "This function is deprecated and will be removed in future releases.")]
-pub extern "C" fn zip32_nsk_from_seed(seed_ptr: *const [u8; 32], nsk_ptr: *mut [u8; 32]) {
+pub extern "C" fn zip32_nsk_from_seed(
+    seed_ptr: *const Zip32Seed,
+    account: u32,
+    nsk_ptr: *mut NskBytes,
+) {
     let seed = unsafe { &*seed_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
+    let k = zip32_sapling_derive(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]);
 
-    let k = zip32::deprecated_master_nsk_from_seed(seed);
-
-    nsk.copy_from_slice(&k);
+    nsk.copy_from_slice(&k.nsk());
 }
 
 #[no_mangle]
@@ -151,31 +153,33 @@ pub extern "C" fn get_diversifier_list(
 #[no_mangle]
 pub extern "C" fn get_diversifier_list_withstartindex(
     seed_ptr: *const [u8; 32],
-    pos: u32,
+    account: u32,
     start_index: *const Diversifier,
     diversifier_list_ptr: *mut DiversifierList20,
 ) {
-    let mut dk = [0u8; 32];
     let seed = unsafe { &*seed_ptr };
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    zip32::zip32_sapling_dk(seed, pos, &mut dk);
-    zip32::ff1aes_list_with_startingindex_20(&mut dk, start, diversifier);
+
+    let k = zip32_sapling_derive(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]);
+
+    zip32::ff1aes_list_with_startingindex_20(&mut k.dk(), start, diversifier);
 }
 
 #[no_mangle]
 pub extern "C" fn get_default_diversifier_list_withstartindex(
-    seed_ptr: *const [u8; 32],
-    pos: u32,
+    seed_ptr: *const Zip32Seed,
+    account: u32,
     start_ptr: *mut Diversifier,
     diversifier_list_ptr: *mut DiversifierList4,
 ) {
-    let mut dk = [0u8; 32];
     let seed = unsafe { &*seed_ptr };
     let start = unsafe { &mut *start_ptr };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    zip32::zip32_sapling_dk(seed, pos, &mut dk);
-    zip32::ff1aes_list_with_startingindex_4(&mut dk, start, diversifier);
+
+    let k = zip32_sapling_derive(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]);
+
+    zip32::ff1aes_list_with_startingindex_4(&mut k.dk(), start, diversifier);
 }
 
 #[no_mangle]
@@ -220,7 +224,7 @@ pub extern "C" fn get_pkd_from_seed(
         sapling::sapling_asknsk_to_ivk(&k.ask().try_into().unwrap(), &k.nsk().try_into().unwrap());
 
     let pkd = unsafe { &mut *pkd_ptr };
-    let tmp_pkd = zip32::default_pkd(&ivk, div);
+    let tmp_pkd = zip32::pkd_default(&ivk, div);
     pkd.copy_from_slice(&tmp_pkd);
 }
 
@@ -249,7 +253,7 @@ pub extern "C" fn get_pkd(
     let pkd = unsafe { &mut *pkd_ptr };
     zip32_ivk(seed_ptr, ivk_ptr, account);
 
-    let tmp_pkd = zip32::default_pkd(ivk_ptr, &diversifier);
+    let tmp_pkd = zip32::pkd_default(ivk_ptr, &diversifier);
     pkd.copy_from_slice(&tmp_pkd)
 }
 
