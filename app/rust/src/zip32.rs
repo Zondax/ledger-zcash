@@ -20,23 +20,104 @@ use crate::cryptoops::extended_to_bytes;
 use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
 use crate::types::{
     diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
-    DiversifierList4, DkBytes, ExpandedSpendingKey, FullViewingKey, NskBytes, OvkBytes,
-    Zip32MasterKey, Zip32SeedBytes,
+    DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingExpandedSpendingKey,
+    Zip32MasterKey, Zip32MasterSpendingKey, Zip32Seed,
 };
 use crate::{cryptoops, sapling};
 
 #[inline(never)]
-pub fn sapling_derive_dummy_ask(sk_in: &[u8]) -> AskBytes {
-    let t = cryptoops::prf_expand(&sk_in, &[0x00]);
+// Calculates I based on https://zips.z.cash/zip-0032#sapling-master-key-generation
+pub fn zip32_master_key_i(seed: &Zip32Seed) -> Zip32MasterKey {
+    Zip32MasterKey::from_bytes(&blake2b64_with_personalization(
+        ZIP32_SAPLING_MASTER_PERSONALIZATION,
+        seed,
+    ))
+}
+
+#[inline(never)]
+// As per ask_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
+pub fn zip32_sapling_ask_m(sk_m: &[u8]) -> AskBytes {
+    let t = cryptoops::prf_expand(&sk_m, &[0x00]);
     let ask = Fr::from_bytes_wide(&t);
     ask.to_bytes()
 }
 
 #[inline(never)]
-pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> NskBytes {
-    let t = cryptoops::prf_expand(&sk_in, &[0x01]);
+// As per nsk_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
+pub fn zip32_sapling_nsk_m(sk_m: &[u8]) -> NskBytes {
+    let t = cryptoops::prf_expand(&sk_m, &[0x01]);
     let nsk = Fr::from_bytes_wide(&t);
     nsk.to_bytes()
+}
+
+#[inline(never)]
+// As per ovk_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
+pub fn zip32_sapling_ovk_m(key: &[u8; 32]) -> OvkBytes {
+    let prf_output = cryptoops::prf_expand(key, &[0x02]);
+
+    // truncate
+    let mut ovk = [0u8; 32];
+    ovk.copy_from_slice(&prf_output[..32]);
+    ovk
+}
+
+#[inline(never)]
+// As per dk_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
+pub fn zip32_sapling_dk_m(sk_m: &[u8; 32]) -> DkBytes {
+    let prf_output = cryptoops::prf_expand(sk_m, &[0x10]);
+
+    // truncate
+    let mut dk_m = [0u8; 32];
+    dk_m.copy_from_slice(&prf_output[..32]);
+    dk_m
+}
+
+#[inline(never)]
+pub fn zip32_sapling_i_ask(sk_m: &[u8]) -> AskBytes {
+    let t = cryptoops::prf_expand(&sk_m, &[0x13]);
+    let ask = Fr::from_bytes_wide(&t);
+    ask.to_bytes()
+}
+
+#[inline(never)]
+pub fn zip32_sapling_i_nsk(sk_m: &[u8]) -> NskBytes {
+    let t = cryptoops::prf_expand(&sk_m, &[0x14]);
+    let nsk = Fr::from_bytes_wide(&t);
+    nsk.to_bytes()
+}
+
+////////////
+
+#[inline(never)]
+pub fn zip32_sapling_ask_i_update(sk_m: &[u8], ask_i: &mut AskBytes) {
+    let i_ask = zip32_sapling_i_ask(&sk_m);
+    *ask_i = (Fr::from_bytes(&ask_i).unwrap() + Fr::from_bytes(&i_ask).unwrap()).to_bytes();
+}
+
+#[inline(never)]
+pub fn zip32_sapling_nsk_i_update(sk_m: &[u8], nsk_i: &mut NskBytes) {
+    let i_nsk = zip32_sapling_i_nsk(&sk_m);
+    *nsk_i = (Fr::from_bytes(&nsk_i).unwrap() + Fr::from_bytes(&i_nsk).unwrap()).to_bytes();
+}
+
+#[inline(never)]
+pub fn zip32_sapling_ovk_i_update(sk_m: &[u8], ovk_i: &mut DkBytes) {
+    let mut ovk_copy = [0u8; 32];
+    ovk_copy.copy_from_slice(ovk_i);
+
+    let t = &blake2b_expand_vec_two(sk_m, &[0x15], &ovk_copy);
+
+    ovk_i.copy_from_slice(&t[0..32]);
+}
+
+#[inline(never)]
+pub fn zip32_sapling_dk_i_update(sk_m: &[u8], dk_i: &mut DkBytes) {
+    let mut dk_copy = [0u8; 32];
+    dk_copy.copy_from_slice(dk_i);
+
+    let t = &blake2b_expand_vec_two(sk_m, &[0x16], &dk_copy);
+
+    dk_i.copy_from_slice(&t[0..32]);
 }
 
 // #[inline(never)]
@@ -54,7 +135,7 @@ pub fn sapling_derive_dummy_nsk(sk_in: &[u8]) -> NskBytes {
 
 //list of 10 diversifiers
 #[inline(never)]
-pub fn ff1aes_list(sk: &[u8; 32], result: &mut DiversifierList10) {
+pub fn ff1aes_list_10(sk: &[u8; 32], result: &mut DiversifierList10) {
     let DIVERSIFIER_LIST_SIZE = 10;
 
     let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
@@ -79,41 +160,9 @@ pub fn ff1aes_list(sk: &[u8; 32], result: &mut DiversifierList10) {
     }
 }
 
-//list of 20 diversifiers
-#[inline(never)]
-pub fn ff1aes_list_with_startingindex(
-    sk: &[u8; 32],
-    startindex: &Diversifier,
-    result: &mut DiversifierList20,
-) {
-    let DIVERSIFIER_LIST_SIZE = 20;
-
-    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
-
-    let mut scratch = [0u8; 12];
-    let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
-
-    let mut d: Diversifier;
-    let mut counter: Diversifier = diversifier_zero();
-    counter.copy_from_slice(startindex);
-
-    for c in 0..DIVERSIFIER_LIST_SIZE {
-        d = counter;
-        ff1.encrypt(&mut d).unwrap();
-        result[c * 11..(c + 1) * 11].copy_from_slice(&d);
-        for k in 0..11 {
-            counter[k] = counter[k].wrapping_add(1);
-            if counter[k] != 0 {
-                // No overflow
-                break;
-            }
-        }
-    }
-}
-
 //list of 4 diversifiers
 #[inline(never)]
-pub fn ff1aes_list_with_startingindex_default(
+pub fn ff1aes_list_with_startingindex_4(
     sk: &[u8; 32],
     counter: &mut Diversifier,
     result: &mut DiversifierList4,
@@ -129,6 +178,38 @@ pub fn ff1aes_list_with_startingindex_default(
 
     for c in 0..DIVERSIFIER_LIST_SIZE {
         d = *counter;
+        ff1.encrypt(&mut d).unwrap();
+        result[c * 11..(c + 1) * 11].copy_from_slice(&d);
+        for k in 0..11 {
+            counter[k] = counter[k].wrapping_add(1);
+            if counter[k] != 0 {
+                // No overflow
+                break;
+            }
+        }
+    }
+}
+
+//list of 20 diversifiers
+#[inline(never)]
+pub fn ff1aes_list_with_startingindex_20(
+    sk: &[u8; 32],
+    start_diversifier: &Diversifier,
+    result: &mut DiversifierList20,
+) {
+    let DIVERSIFIER_LIST_SIZE = 20;
+
+    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
+
+    let mut scratch = [0u8; 12];
+    let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
+
+    let mut d: Diversifier;
+    let mut counter: Diversifier = diversifier_zero();
+    counter.copy_from_slice(start_diversifier);
+
+    for c in 0..DIVERSIFIER_LIST_SIZE {
+        d = counter;
         ff1.encrypt(&mut d).unwrap();
         result[c * 11..(c + 1) * 11].copy_from_slice(&d);
         for k in 0..11 {
@@ -169,72 +250,40 @@ pub fn default_pkd(ivk: &[u8; 32], d: &Diversifier) -> [u8; 32] {
 }
 
 #[inline(never)]
-pub fn outgoing_viewing_key(key: &[u8; 32]) -> OvkBytes {
-    let mut ovk = [0u8; 32];
-    ovk.copy_from_slice(&cryptoops::prf_expand(key, &[0x02])[..32]);
-    ovk
-}
-
-#[inline(never)]
-pub fn full_viewing_key(key: &[u8; 32]) -> FullViewingKey {
-    let ask = sapling_derive_dummy_ask(key);
+pub fn full_viewing_key(s_k: &[u8; 32]) -> FullViewingKey {
+    let ask = zip32_sapling_ask_m(s_k);
     crate::bolos::heartbeat();
+
+    let nsk = zip32_sapling_nsk_m(s_k);
+    crate::bolos::heartbeat();
+
+    let ovk = zip32_sapling_ovk_m(s_k);
+    crate::bolos::heartbeat();
+
+    ////
 
     let ak = sapling::sapling_ask_to_ak(&ask);
     crate::bolos::heartbeat();
 
-    let nsk = sapling_derive_dummy_nsk(key);
-    crate::bolos::heartbeat();
-
     let nk = sapling::sapling_nsk_to_nk(&nsk);
-    crate::bolos::heartbeat();
-
-    let ovk = outgoing_viewing_key(key);
     crate::bolos::heartbeat();
 
     FullViewingKey::new(ak, nk, ovk)
 }
 
 #[inline(never)]
-pub fn zip32_master_key(seed: &[u8; 32]) -> Zip32MasterKey {
-    Zip32MasterKey::from_bytes(&blake2b64_with_personalization(
-        ZIP32_SAPLING_MASTER_PERSONALIZATION,
-        seed,
-    ))
-}
-
-#[inline(never)]
-pub fn zip32_diversifier_key(in_key: &[u8; 32]) -> DkBytes {
-    let prf_output = cryptoops::prf_expand(in_key, &[0x10]);
-
-    // trim
-    let mut dk_m = [0u8; 32];
-    dk_m.copy_from_slice(&prf_output[..32]);
-    dk_m
-}
-
-#[inline(never)]
-pub fn zip32_expanded_spending_key(key: &[u8; 32]) -> ExpandedSpendingKey {
-    ExpandedSpendingKey::new(
-        sapling_derive_dummy_ask(key),
-        sapling_derive_dummy_nsk(key),
-        outgoing_viewing_key(key),
+pub fn zip32_expanded_spending_key(key: &[u8; 32]) -> SaplingExpandedSpendingKey {
+    SaplingExpandedSpendingKey::new(
+        zip32_sapling_ask_m(key),
+        zip32_sapling_nsk_m(key),
+        zip32_sapling_ovk_m(key),
     )
 }
 
 #[inline(never)]
-pub fn zip32_update_dk(key: &[u8; 32], dk: &mut [u8; 32]) {
-    let mut dkcopy = [0u8; 32];
-    dkcopy.copy_from_slice(dk);
-    dk.copy_from_slice(&blake2b_expand_vec_two(key, &[0x16], &dkcopy)[0..32]);
-}
-
-#[inline(never)]
-pub fn zip32_update_exk(key: &[u8; 32], exk: &mut ExpandedSpendingKey) {
-    exk.ask_mut()
-        .copy_from_slice(&sapling_derive_dummy_ask(key));
-    exk.nsk_mut()
-        .copy_from_slice(&sapling_derive_dummy_nsk(key));
+pub fn zip32_update_exk(key: &[u8; 32], exk: &mut SaplingExpandedSpendingKey) {
+    exk.ask_mut().copy_from_slice(&zip32_sapling_ask_m(key));
+    exk.nsk_mut().copy_from_slice(&zip32_sapling_nsk_m(key));
 
     let mut ovkcopy = [0u8; 32];
     ovkcopy.copy_from_slice(&exk.ovk());
@@ -243,17 +292,17 @@ pub fn zip32_update_exk(key: &[u8; 32], exk: &mut ExpandedSpendingKey) {
 }
 
 #[inline(never)]
-pub fn zip32_derive_master(seed: &[u8; 32]) -> [u8; 96] {
-    let master_key = zip32_master_key(seed); //64
+pub fn zip32_derive_master(seed: &Zip32Seed) -> [u8; 96] {
+    let master_key = zip32_master_key_i(seed); //64
 
-    let divkey = zip32_diversifier_key(&master_key.spending_key());
-    let ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
-    let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
+    let dk = zip32_sapling_dk_m(&master_key.spending_key());
+    let ask = zip32_sapling_ask_m(&master_key.spending_key());
+    let nsk = zip32_sapling_nsk_m(&master_key.spending_key());
 
     let mut result = [0u8; 96];
-    result[0..32].copy_from_slice(&divkey);
-    result[32..64].copy_from_slice(&ask.to_bytes());
-    result[64..96].copy_from_slice(&nsk.to_bytes());
+    result[0..32].copy_from_slice(&dk);
+    result[32..64].copy_from_slice(&ask);
+    result[64..96].copy_from_slice(&nsk);
     result
 }
 /*
@@ -263,8 +312,8 @@ ChildIndex::Hardened(pos)
 */
 
 #[inline(never)]
-pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32SeedBytes, path: &[u32]) -> [u8; 32] {
-    let mut master_key = zip32_master_key(seed);
+pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32Seed, path: &[u32]) -> OvkBytes {
+    let mut master_key = zip32_master_key_i(seed);
     crate::bolos::heartbeat();
 
     let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
@@ -275,7 +324,7 @@ pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32SeedBytes, path: &[u32]) -> 
     crate::bolos::heartbeat();
 
     let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
+    divkey.copy_from_slice(&zip32_sapling_dk_m(&master_key.spending_key())); //32
 
     for p in path.iter().copied() {
         //compute expkey needed for zip32 child derivation
@@ -328,18 +377,18 @@ pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32SeedBytes, path: &[u32]) -> 
 
         //new divkey from old divkey and key
         crate::bolos::heartbeat();
-        zip32_update_dk(&master_key.spending_key(), &mut divkey);
+        zip32_sapling_dk_i_update(&master_key.spending_key(), &mut divkey);
         zip32_update_exk(&master_key.spending_key(), &mut expkey);
     }
 
-    let mut result = [0u8; 32];
+    let mut result: OvkBytes = [0u8; 32];
     result[0..32].copy_from_slice(&master_key.spending_key());
     result
 }
 
 #[inline(never)]
 pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> FullViewingKey {
-    let mut master_key = zip32_master_key(seed);
+    let mut master_key = zip32_master_key_i(seed);
     crate::bolos::heartbeat();
 
     let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
@@ -350,7 +399,7 @@ pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> FullVi
     crate::bolos::heartbeat();
 
     let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
+    divkey.copy_from_slice(&zip32_sapling_dk_m(&master_key.spending_key())); //32
 
     for p in path.iter().copied() {
         //compute expkey needed for zip32 child derivation
@@ -402,119 +451,119 @@ pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> FullVi
 
         //new divkey from old divkey and key
         crate::bolos::heartbeat();
-        zip32_update_dk(&master_key.spending_key(), &mut divkey);
+        zip32_sapling_dk_i_update(&master_key.spending_key(), &mut divkey);
         zip32_update_exk(&master_key.spending_key(), &mut expkey);
     }
 
     let ak = sapling::sapling_ask_to_ak(&ask.to_bytes());
     let nk = sapling::sapling_nsk_to_nk(&nsk.to_bytes());
+    let ovk = zip32_sapling_ovk_m(&master_key.spending_key());
 
-    FullViewingKey::new(ak, nk, outgoing_viewing_key(&master_key.spending_key()))
+    FullViewingKey::new(ak, nk, ovk)
+}
+
+fn zip32_sapling_derive_child(
+    ik: &mut Zip32MasterKey,
+    path_i: u32,
+    mut esk_i: &mut SaplingExpandedSpendingKey,
+    mut dk_i: &mut DkBytes,
+    mut ask_i: &mut AskBytes,
+    mut nsk_i: &mut NskBytes,
+    mut ovk_i: &mut OvkBytes,
+) {
+    let hardened = (path_i & 0x8000_0000) != 0;
+    let c = path_i & 0x7FFF_FFFF;
+
+    let mut le_i = [0; 4];
+    if hardened {
+        LittleEndian::write_u32(&mut le_i, c + (1 << 31));
+
+        //make index LE
+        //zip32 child derivation
+        let r =
+            blake2b_expand_vec_four(&ik.chain_code(), &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
+
+        ik.to_bytes_mut().copy_from_slice(&r);
+    } else {
+        //non-hardened child
+        // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
+        LittleEndian::write_u32(&mut le_i, c);
+
+        // FIXME: Duplicated work?
+        let fvk = full_viewing_key(&ik.spending_key());
+
+        let r = blake2b_expand_vec_four(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
+
+        ik.to_bytes_mut().copy_from_slice(&r);
+    }
+    crate::bolos::heartbeat();
+
+    // https://zips.z.cash/zip-0032#deriving-a-child-extended-spending-key
+
+    zip32_sapling_ask_i_update(&ik.spending_key(), &mut *ask_i);
+    zip32_sapling_nsk_i_update(&ik.spending_key(), &mut *nsk_i);
+    zip32_sapling_dk_i_update(&ik.spending_key(), &mut dk_i);
+    zip32_sapling_ovk_i_update(&ik.spending_key(), &mut ovk_i);
+
+    zip32_update_exk(&ik.spending_key(), &mut esk_i);
 }
 
 #[inline(never)]
-pub fn zip32_derive_child_fromseedandpath(
+pub fn zip32_sapling_derive(
     seed: &[u8; 32],
     account: u32,
     child_components: Zip32ChildComponents,
 ) -> [u8; 96] {
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
 
-    let mut master_key = zip32_master_key(seed);
+    // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
+    let mut ik = zip32_master_key_i(seed);
     crate::bolos::heartbeat();
 
-    // master secret key sk = tmp[..32]
-    // chain = tmp[32..]
+    let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
+    let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
+    let mut ovk_i = zip32_sapling_ovk_m(&ik.spending_key());
 
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
+    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
+
+    // FIXME: Duplicated work?
+    let mut esk_i = zip32_expanded_spending_key(&ik.spending_key());
     crate::bolos::heartbeat();
-
-    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
-    crate::bolos::heartbeat();
-
-    let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_diversifier_key(&master_key.spending_key())); //32
 
     for p in path.iter().copied() {
-        //compute expkey needed for zip32 child derivation
-        //non-hardened child
-        let hardened = (p & 0x8000_0000) != 0;
-        let c = p & 0x7FFF_FFFF;
-
-        if hardened {
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c + (1 << 31));
-
-            //make index LE
-            //zip32 child derivation
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x11],
-                &expkey.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        } else {
-            // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c);
-
-            let fvk = full_viewing_key(&master_key.spending_key());
-
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x12],
-                &fvk.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        }
-        crate::bolos::heartbeat();
-
-        //extract key and chainkey
-        let ask_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
-        let nsk_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
-
-        ask += ask_cur;
-        nsk += nsk_cur;
-
-        //new divkey from old divkey and key
-        crate::bolos::heartbeat();
-        zip32_update_dk(&master_key.spending_key(), &mut divkey);
-        zip32_update_exk(&master_key.spending_key(), &mut expkey);
+        zip32_sapling_derive_child(
+            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
+        );
     }
-
-    let ak = sapling::sapling_ask_to_ak(&ask.to_bytes());
-    let nk = sapling::sapling_nsk_to_nk(&nsk.to_bytes());
 
     let mut result = [0u8; 96];
     match child_components {
+        /// Group These Two
+        Zip32ChildComponents::DkAkNk => {
+            let ak = sapling::sapling_ask_to_ak(&ask_i);
+            let nk = sapling::sapling_nsk_to_nk(&nsk_i);
+            result[0..32].copy_from_slice(&dk_i);
+            result[32..64].copy_from_slice(&ak);
+            result[64..96].copy_from_slice(&nk);
+        }
         Zip32ChildComponents::AkNk => {
+            let ak = sapling::sapling_ask_to_ak(&ask_i);
+            let nk = sapling::sapling_nsk_to_nk(&nsk_i);
             result[0..32].copy_from_slice(&ak);
             result[32..64].copy_from_slice(&nk);
         }
         Zip32ChildComponents::Dk => {
-            result[0..32].copy_from_slice(&divkey);
+            result[0..32].copy_from_slice(&dk_i);
         }
         Zip32ChildComponents::AkNsk => {
+            let ak = sapling::sapling_ask_to_ak(&ask_i);
             result[0..32].copy_from_slice(&ak);
-            result[32..64].copy_from_slice(&nsk.to_bytes());
+            result[32..64].copy_from_slice(&nsk_i);
         }
+        /////////////////////////
         Zip32ChildComponents::AskNsk => {
-            result[0..32].copy_from_slice(&ask.to_bytes());
-            result[32..64].copy_from_slice(&nsk.to_bytes());
-        }
-        Zip32ChildComponents::DkAkNk => {
-            result[0..32].copy_from_slice(&divkey);
-            result[32..64].copy_from_slice(&ak);
-            result[64..96].copy_from_slice(&nk);
+            result[0..32].copy_from_slice(&ask_i);
+            result[32..64].copy_from_slice(&nsk_i);
         }
     }
     c_check_app_canary();
@@ -524,7 +573,7 @@ pub fn zip32_derive_child_fromseedandpath(
 #[inline(never)]
 #[deprecated(note = "This function is deprecated and will be removed in future releases.")]
 pub fn deprecated_master_nsk_from_seed(seed: &[u8; 32]) -> [u8; 32] {
-    let master_key = zip32_master_key(seed); //64
+    let master_key = zip32_master_key_i(seed); //64
 
     crate::bolos::heartbeat();
     let nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
@@ -539,7 +588,7 @@ pub fn get_dk(seed_ptr: *const [u8; 32], dk_ptr: *mut [u8; 32], pos: u32) {
     let seed = unsafe { &*seed_ptr };
     let dk = unsafe { &mut *dk_ptr };
 
-    let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::Dk); //consistent with zecwallet
+    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::Dk); //consistent with zecwallet
 
     // k = dk || ...
     dk.copy_from_slice(&k[0..32]);
@@ -556,7 +605,7 @@ pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], p
     let ivk = unsafe { &mut *ivk_ptr };
 
     crate::bolos::heartbeat();
-    let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::AkNk); //consistent with zecwallet
+    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::AkNk); //consistent with zecwallet
 
     // k =  ak || nk
     // ak = k[0..32]
@@ -566,6 +615,7 @@ pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], p
         &k[0..32].try_into().unwrap(),
         &k[32..64].try_into().unwrap(),
     );
+
     ivk.copy_from_slice(&tmp_ivk)
 }
 
@@ -585,13 +635,13 @@ pub extern "C" fn get_default_diversifier_without_start_index(
 
     let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
 
-    let dk = zip32_derive_child_fromseedandpath(&seed, pos, Zip32ChildComponents::DkAkNk);
+    let dk = zip32_sapling_derive(&seed, pos, Zip32ChildComponents::DkAkNk);
 
     let mut found = false;
 
     while !found {
         let sk = &dk[0..32].try_into().unwrap();
-        ff1aes_list_with_startingindex_default(sk, &mut start, &mut div_list);
+        ff1aes_list_with_startingindex_4(sk, &mut start, &mut div_list);
 
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
@@ -632,6 +682,7 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], a
 
     crate::bolos::heartbeat();
 
+    // FIXME: no need to pass the complete path
     let k = zip32_derive_ovk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
     ovk.copy_from_slice(&k[0..32]);
 }
@@ -643,6 +694,8 @@ pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], a
     let seed = unsafe { &*seed_ptr };
 
     let fvk = unsafe { &mut *fvk_ptr };
+
+    // FIXME: no need to pass the complete path
     let k = zip32_derive_fvk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
     fvk.copy_from_slice(k.to_bytes());
 }
@@ -659,7 +712,7 @@ pub extern "C" fn zip32_child_proof_key(
 ) {
     let seed = unsafe { &*seed_ptr };
 
-    let k = zip32_derive_child_fromseedandpath(seed, account, Zip32ChildComponents::AkNsk); //consistent with zecwallet
+    let k = zip32_sapling_derive(seed, account, Zip32ChildComponents::AkNsk); //consistent with zecwallet
 
     let ak = unsafe { &mut *ak_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
@@ -680,7 +733,7 @@ pub extern "C" fn zip32_child_ask_nsk(
 ) {
     let seed = unsafe { &*seed_ptr };
 
-    let k = zip32_derive_child_fromseedandpath(seed, pos, Zip32ChildComponents::AskNsk); //consistent with zecwallet;
+    let k = zip32_sapling_derive(seed, pos, Zip32ChildComponents::AskNsk); //consistent with zecwallet;
 
     let ask = unsafe { &mut *ask_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
@@ -712,7 +765,7 @@ pub extern "C" fn get_diversifier_list(
 ) {
     let sk = unsafe { &*sk_ptr };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
-    ff1aes_list(sk, diversifier);
+    ff1aes_list_10(sk, diversifier);
 }
 
 ////////////////////////////////
@@ -730,7 +783,7 @@ pub extern "C" fn get_diversifier_list_withstartindex(
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
     get_dk(seed, &mut dk, pos);
-    ff1aes_list_with_startingindex(&mut dk, start, diversifier);
+    ff1aes_list_with_startingindex_20(&mut dk, start, diversifier);
 }
 
 ////////////////////////////////
@@ -748,7 +801,7 @@ pub extern "C" fn get_default_diversifier_list_withstartindex(
     let start = unsafe { &mut *start_ptr };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
     get_dk(seed, &mut dk, pos);
-    ff1aes_list_with_startingindex_default(&mut dk, start, diversifier);
+    ff1aes_list_with_startingindex_4(&mut dk, start, diversifier);
 }
 
 ////////////////////////////////
@@ -769,13 +822,13 @@ pub extern "C" fn get_pkd_from_seed(
 
     let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
     crate::bolos::heartbeat();
-    let dk_ak_nk = zip32_derive_child_fromseedandpath(&seed, pos, Zip32ChildComponents::DkAkNk);
+    let dk_ak_nk = zip32_sapling_derive(&seed, pos, Zip32ChildComponents::DkAkNk);
 
     let mut found = false;
 
     while !found {
         let sk = &mut dk_ak_nk[0..32].try_into().unwrap();
-        ff1aes_list_with_startingindex_default(sk, start, &mut div_list);
+        ff1aes_list_with_startingindex_4(sk, start, &mut div_list);
         for i in 0..DIV_DEFAULT_LIST_LEN {
             if !found
                 && is_valid_diversifier(
@@ -830,6 +883,7 @@ pub extern "C" fn is_valid_diversifier(div_ptr: *const Diversifier) -> bool {
 #[inline(never)]
 pub fn default_diversifier_fromlist(list: &DiversifierList10) -> Diversifier {
     let mut result = diversifier_zero();
+
     for c in 0..10 {
         result.copy_from_slice(&list[c * 11..(c + 1) * 11]);
         //c[1] += 1;
@@ -839,6 +893,7 @@ pub fn default_diversifier_fromlist(list: &DiversifierList10) -> Diversifier {
         }
     }
     //return a value that indicates that diversifier not found
+    // FIXME: this seems a problem
     result
 }
 
@@ -921,8 +976,8 @@ mod tests {
         let seed = [0u8; 32];
 
         let p: u32 = 0x8000_0001;
-        let dk_ak_nk = zip32_derive_child_fromseedandpath(&seed, p, Zip32ChildComponents::DkAkNk);
-        let ask_nsk = zip32_derive_child_fromseedandpath(&seed, p, Zip32ChildComponents::AskNsk);
+        let dk_ak_nk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::DkAkNk);
+        let ask_nsk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::AskNsk);
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 
@@ -955,7 +1010,7 @@ mod tests {
         );
 
         let mut listbytes = diversifier_list10_zero();
-        ff1aes_list(&dk, &mut listbytes);
+        ff1aes_list_10(&dk, &mut listbytes);
         let default_d = default_diversifier_fromlist(&listbytes);
 
         let pk_d = default_pkd(&ivk, &default_d);
@@ -976,8 +1031,8 @@ mod tests {
 
         let p: u32 = 0x8000_1000;
 
-        let dk_ak_nk = zip32_derive_child_fromseedandpath(&seed, p, Zip32ChildComponents::DkAkNk);
-        let ask_nsk = zip32_derive_child_fromseedandpath(&seed, p, Zip32ChildComponents::AskNsk);
+        let dk_ak_nk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::DkAkNk);
+        let ask_nsk = zip32_sapling_derive(&seed, p, Zip32ChildComponents::AskNsk);
         let mut dk = [0u8; 32];
         dk.copy_from_slice(&dk_ak_nk[0..32]);
 
@@ -1001,7 +1056,7 @@ mod tests {
         );
 
         let mut list = diversifier_list10_zero();
-        ff1aes_list(&dk, &mut list);
+        ff1aes_list_10(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
         let pk_d = default_pkd(&ivk, &default_d);
@@ -1036,7 +1091,7 @@ mod tests {
         let ivk = sapling_aknk_to_ivk(&ak, &nk);
 
         let mut list = diversifier_list10_zero();
-        ff1aes_list(&dk, &mut list);
+        ff1aes_list_10(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
         let pk_d = default_pkd(&ivk, &default_d);
@@ -1064,11 +1119,11 @@ mod tests {
         nsk.copy_from_slice(&keys[64..96]);
 
         let nk = sapling_nsk_to_nk(&nsk);
-        let ak= sapling_ask_to_ak(&ask);
+        let ak = sapling_ask_to_ak(&ask);
 
         let ivk = sapling_aknk_to_ivk(&ak, &nk);
         let mut list = diversifier_list10_zero();
-        ff1aes_list(&dk, &mut list);
+        ff1aes_list_10(&dk, &mut list);
         let default_d = default_diversifier_fromlist(&list);
 
         let pk_d = default_pkd(&ivk, &default_d);
@@ -1120,7 +1175,7 @@ mod tests {
     fn test_default_diversifier_fromlist() {
         let seed = [0u8; 32];
         let mut list = diversifier_list10_zero();
-        ff1aes_list(&seed, &mut list);
+        ff1aes_list_10(&seed, &mut list);
         let default_d = default_diversifier_fromlist(&list);
         assert_eq!(
             default_d,
@@ -1150,7 +1205,7 @@ mod tests {
     #[test]
     fn test_ak() {
         let seed = [0u8; 32];
-        let ask: [u8; 32] = sapling_derive_dummy_ask(&seed);
+        let ask: [u8; 32] = zip32_sapling_ask_m(&seed);
         assert_eq!(
             ask,
             [
@@ -1174,7 +1229,7 @@ mod tests {
     fn test_nk() {
         let seed = [0u8; 32];
 
-        let nsk: [u8; 32] = sapling_derive_dummy_nsk(&seed);
+        let nsk: [u8; 32] = zip32_sapling_nsk_m(&seed);
         assert_eq!(
             nsk,
             [
