@@ -157,7 +157,7 @@ pub fn blake2b_expand_vec_two(in_a: &[u8], in_b: &[u8], in_c: &[u8]) -> [u8; 64]
 }
 
 #[cfg(not(test))]
-pub fn blake2b_expand_vec_four(
+pub fn blake2b_expand_v4(
     in_a: &[u8],
     in_b: &[u8],
     in_c: &[u8],
@@ -229,7 +229,7 @@ pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
 }
 
 #[cfg(test)]
-pub fn blake2b_expand_vec_four(
+pub fn blake2b_expand_v4(
     in_a: &[u8],
     in_b: &[u8],
     in_c: &[u8],

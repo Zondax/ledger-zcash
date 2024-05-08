@@ -8,7 +8,7 @@ use jubjub::{AffinePoint, ExtendedPoint, Fr};
 
 use crate::bolos::aes::AesSDK;
 use crate::bolos::blake2b::{
-    blake2b64_with_personalization, blake2b_expand_vec_four, blake2b_expand_vec_two,
+    blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
 };
 use crate::bolos::c_check_app_canary;
 use crate::bolos::{blake2b, c_zemu_log_stack};
@@ -18,10 +18,11 @@ use crate::constants::{
 use crate::cryptoops::bytes_to_extended;
 use crate::cryptoops::extended_to_bytes;
 use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
+use crate::sapling::{sapling_ask_to_ak, sapling_nsk_to_nk};
 use crate::types::{
     diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
     DiversifierList4, DkBytes, FullViewingKey, NskBytes, OvkBytes, SaplingExpandedSpendingKey,
-    Zip32MasterKey, Zip32MasterSpendingKey, Zip32Seed,
+    Zip32MasterKey, Zip32Seed,
 };
 use crate::{cryptoops, sapling};
 
@@ -272,7 +273,7 @@ pub fn full_viewing_key(s_k: &[u8; 32]) -> FullViewingKey {
 }
 
 #[inline(never)]
-pub fn zip32_expanded_spending_key(key: &[u8; 32]) -> SaplingExpandedSpendingKey {
+pub fn zip32_sapling_esk(key: &[u8; 32]) -> SaplingExpandedSpendingKey {
     SaplingExpandedSpendingKey::new(
         zip32_sapling_ask_m(key),
         zip32_sapling_nsk_m(key),
@@ -281,7 +282,7 @@ pub fn zip32_expanded_spending_key(key: &[u8; 32]) -> SaplingExpandedSpendingKey
 }
 
 #[inline(never)]
-pub fn zip32_update_exk(key: &[u8; 32], exk: &mut SaplingExpandedSpendingKey) {
+pub fn zip32_update_esk(key: &[u8; 32], exk: &mut SaplingExpandedSpendingKey) {
     exk.ask_mut().copy_from_slice(&zip32_sapling_ask_m(key));
     exk.nsk_mut().copy_from_slice(&zip32_sapling_nsk_m(key));
 
@@ -312,154 +313,59 @@ ChildIndex::Hardened(pos)
 */
 
 #[inline(never)]
-pub fn zip32_derive_ovk_fromseedandpath(seed: &Zip32Seed, path: &[u32]) -> OvkBytes {
-    let mut master_key = zip32_master_key_i(seed);
-    crate::bolos::heartbeat();
+pub fn zip32_sapling_derive_child_ovk(seed: &Zip32Seed, account: u32) -> OvkBytes {
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
 
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
-    crate::bolos::heartbeat();
+    // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
+    let mut ik = zip32_master_key_i(seed);
 
-    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
-    crate::bolos::heartbeat();
+    // FIXME: Duplicated work?
+    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
 
-    let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_sapling_dk_m(&master_key.spending_key())); //32
+    let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
+    let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
+    let mut ovk_i = zip32_sapling_ovk_m(&ik.spending_key());
+
+    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
 
     for p in path.iter().copied() {
-        //compute expkey needed for zip32 child derivation
-        //non-hardened child
-        let hardened = (p & 0x8000_0000) != 0;
-        let c = p & 0x7FFF_FFFF;
-
-        if hardened {
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c + (1 << 31));
-
-            //make index LE
-            //zip32 child derivation
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x11],
-                &expkey.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        } else {
-            //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c);
-
-            let fvk = full_viewing_key(&master_key.spending_key());
-
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x12],
-                &fvk.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        }
-        crate::bolos::heartbeat();
-
-        //extract key and chainkey
-        let ask_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
-        let nsk_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
-
-        ask += ask_cur;
-        nsk += nsk_cur;
-
-        //new divkey from old divkey and key
-        crate::bolos::heartbeat();
-        zip32_sapling_dk_i_update(&master_key.spending_key(), &mut divkey);
-        zip32_update_exk(&master_key.spending_key(), &mut expkey);
+        zip32_sapling_derive_child(
+            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
+        );
     }
 
     let mut result: OvkBytes = [0u8; 32];
-    result[0..32].copy_from_slice(&master_key.spending_key());
+    result[0..32].copy_from_slice(&ik.spending_key());
     result
 }
 
 #[inline(never)]
-pub fn zip32_derive_fvk_fromseedandpath(seed: &[u8; 32], path: &[u32]) -> FullViewingKey {
-    let mut master_key = zip32_master_key_i(seed);
-    crate::bolos::heartbeat();
+pub fn zip32_sapling_derive_child_fvk(seed: &[u8; 32], account: u32) -> FullViewingKey {
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
 
-    let mut ask = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x00]));
-    let mut nsk = Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x01]));
-    crate::bolos::heartbeat();
+    // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
+    let mut ik = zip32_master_key_i(seed);
 
-    let mut expkey = zip32_expanded_spending_key(&master_key.spending_key());
-    crate::bolos::heartbeat();
+    // FIXME: Duplicated work?
+    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
 
-    let mut divkey = [0u8; 32];
-    divkey.copy_from_slice(&zip32_sapling_dk_m(&master_key.spending_key())); //32
+    let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
+    let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
+    let mut ovk_i = zip32_sapling_ovk_m(&ik.spending_key());
+
+    let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
 
     for p in path.iter().copied() {
-        //compute expkey needed for zip32 child derivation
-        //non-hardened child
-        let hardened = (p & 0x8000_0000) != 0;
-        let c = p & 0x7FFF_FFFF;
-
-        if hardened {
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c + (1 << 31));
-
-            //make index LE
-            //zip32 child derivation
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x11],
-                &expkey.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        } else {
-            //WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
-            let mut le_i = [0; 4];
-            LittleEndian::write_u32(&mut le_i, c);
-
-            let fvk = full_viewing_key(&master_key.spending_key());
-            let r = blake2b_expand_vec_four(
-                &master_key.chain_code(),
-                &[0x12],
-                &fvk.to_bytes(),
-                &divkey,
-                &le_i,
-            );
-
-            master_key.to_bytes_mut().copy_from_slice(&r);
-        }
-        crate::bolos::heartbeat();
-
-        //extract key and chainkey
-        let ask_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x13]));
-        let nsk_cur =
-            Fr::from_bytes_wide(&cryptoops::prf_expand(&master_key.spending_key(), &[0x14]));
-
-        ask += ask_cur;
-        nsk += nsk_cur;
-
-        //new divkey from old divkey and key
-        crate::bolos::heartbeat();
-        zip32_sapling_dk_i_update(&master_key.spending_key(), &mut divkey);
-        zip32_update_exk(&master_key.spending_key(), &mut expkey);
+        zip32_sapling_derive_child(
+            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
+        );
     }
 
-    let ak = sapling::sapling_ask_to_ak(&ask.to_bytes());
-    let nk = sapling::sapling_nsk_to_nk(&nsk.to_bytes());
-    let ovk = zip32_sapling_ovk_m(&master_key.spending_key());
-
-    FullViewingKey::new(ak, nk, ovk)
+    FullViewingKey::new(
+        sapling_ask_to_ak(&ask_i),
+        sapling_nsk_to_nk(&nsk_i),
+        zip32_sapling_ovk_m(&ik.spending_key()),
+    )
 }
 
 fn zip32_sapling_derive_child(
@@ -480,8 +386,7 @@ fn zip32_sapling_derive_child(
 
         //make index LE
         //zip32 child derivation
-        let r =
-            blake2b_expand_vec_four(&ik.chain_code(), &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
+        let r = blake2b_expand_v4(&ik.chain_code(), &[0x11], &esk_i.to_bytes(), &*dk_i, &le_i);
 
         ik.to_bytes_mut().copy_from_slice(&r);
     } else {
@@ -490,9 +395,17 @@ fn zip32_sapling_derive_child(
         LittleEndian::write_u32(&mut le_i, c);
 
         // FIXME: Duplicated work?
-        let fvk = full_viewing_key(&ik.spending_key());
+        let s_k = &ik.spending_key();
 
-        let r = blake2b_expand_vec_four(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
+        let ask = zip32_sapling_ask_m(s_k);
+        let nsk = zip32_sapling_nsk_m(s_k);
+        let ovk = zip32_sapling_ovk_m(s_k);
+        let ak = sapling_ask_to_ak(&ask);
+        let nk = sapling_nsk_to_nk(&nsk);
+
+        let fvk = FullViewingKey::new(ak, nk, ovk);
+
+        let r = blake2b_expand_v4(&ik.chain_code(), &[0x12], &fvk.to_bytes(), &*dk_i, &le_i);
 
         ik.to_bytes_mut().copy_from_slice(&r);
     }
@@ -500,12 +413,13 @@ fn zip32_sapling_derive_child(
 
     // https://zips.z.cash/zip-0032#deriving-a-child-extended-spending-key
 
+    zip32_update_esk(&ik.spending_key(), &mut esk_i);
+
     zip32_sapling_ask_i_update(&ik.spending_key(), &mut *ask_i);
     zip32_sapling_nsk_i_update(&ik.spending_key(), &mut *nsk_i);
-    zip32_sapling_dk_i_update(&ik.spending_key(), &mut dk_i);
     zip32_sapling_ovk_i_update(&ik.spending_key(), &mut ovk_i);
 
-    zip32_update_exk(&ik.spending_key(), &mut esk_i);
+    zip32_sapling_dk_i_update(&ik.spending_key(), &mut dk_i);
 }
 
 #[inline(never)]
@@ -518,7 +432,9 @@ pub fn zip32_sapling_derive(
 
     // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
     let mut ik = zip32_master_key_i(seed);
-    crate::bolos::heartbeat();
+
+    // FIXME: Duplicated work?
+    let mut esk_i = zip32_sapling_esk(&ik.spending_key());
 
     let mut ask_i = zip32_sapling_ask_m(&ik.spending_key());
     let mut nsk_i = zip32_sapling_nsk_m(&ik.spending_key());
@@ -526,13 +442,9 @@ pub fn zip32_sapling_derive(
 
     let mut dk_i = zip32_sapling_dk_m(&ik.spending_key());
 
-    // FIXME: Duplicated work?
-    let mut esk_i = zip32_expanded_spending_key(&ik.spending_key());
-    crate::bolos::heartbeat();
-
     for p in path.iter().copied() {
         zip32_sapling_derive_child(
-            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i,
+            &mut ik, p, &mut esk_i, &mut dk_i, &mut ask_i, &mut nsk_i, &mut ovk_i
         );
     }
 
@@ -683,7 +595,7 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const [u8; 32], ovk_ptr: *mut [u8; 32], a
     crate::bolos::heartbeat();
 
     // FIXME: no need to pass the complete path
-    let k = zip32_derive_ovk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
+    let k = zip32_sapling_derive_child_ovk(seed, account); //consistent with zecwallet
     ovk.copy_from_slice(&k[0..32]);
 }
 
@@ -696,7 +608,7 @@ pub extern "C" fn zip32_fvk(seed_ptr: *const [u8; 32], fvk_ptr: *mut [u8; 96], a
     let fvk = unsafe { &mut *fvk_ptr };
 
     // FIXME: no need to pass the complete path
-    let k = zip32_derive_fvk_fromseedandpath(seed, &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account]); //consistent with zecwallet
+    let k = zip32_sapling_derive_child_fvk(seed, account); //consistent with zecwallet
     fvk.copy_from_slice(k.to_bytes());
 }
 
