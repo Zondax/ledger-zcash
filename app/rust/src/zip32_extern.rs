@@ -1,5 +1,7 @@
 use crate::bolos::c_zemu_log_stack;
-use crate::constants::{Zip32ChildComponents, DIV_DEFAULT_LIST_LEN, DIV_SIZE};
+use crate::constants::{
+    Zip32ChildComponents, DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE,
+};
 use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak};
 use crate::types::{
     diversifier_zero, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4,
@@ -19,7 +21,7 @@ pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], a
     crate::bolos::heartbeat();
     let k = FullViewingKey::from_bytes(&zip32::zip32_sapling_derive(
         seed,
-        account,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::FullViewingKey,
     ));
 
@@ -31,7 +33,7 @@ pub extern "C" fn zip32_ivk(seed_ptr: *const [u8; 32], ivk_ptr: *mut [u8; 32], a
 #[no_mangle]
 pub extern "C" fn get_default_diversifier_without_start_index(
     seed_ptr: *const [u8; 32],
-    pos: u32,
+    account: u32,
     diversifier_ptr: *mut Diversifier,
 ) {
     c_zemu_log_stack(b"get_pkd_from_seed\x00\n".as_ref());
@@ -43,7 +45,7 @@ pub extern "C" fn get_default_diversifier_without_start_index(
 
     let ask_nsk_dk = SaplingAskNskDk::from_bytes(&zip32::zip32_sapling_derive(
         &seed,
-        pos,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::AskNskDk,
     ));
 
@@ -80,7 +82,7 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const Zip32Seed, ovk_ptr: *mut [u8; 32], 
     // FIXME: duplicating space, risky
     let k = FullViewingKey::from_bytes(&zip32::zip32_sapling_derive(
         seed,
-        account,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::FullViewingKey,
     ));
 
@@ -96,7 +98,7 @@ pub extern "C" fn zip32_fvk(seed_ptr: *const Zip32Seed, fvk_ptr: *mut [u8; 96], 
     // FIXME: we are duplicating the space
     let k = FullViewingKey::from_bytes(&zip32::zip32_sapling_derive(
         seed,
-        account,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::FullViewingKey,
     ));
 
@@ -114,7 +116,7 @@ pub extern "C" fn zip32_child_proof_key(
 
     let k = SaplingAskNskDk::from_bytes(&zip32::zip32_sapling_derive(
         seed,
-        account,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::AskNskDk,
     ));
 
@@ -130,13 +132,13 @@ pub extern "C" fn zip32_child_ask_nsk(
     seed_ptr: *const [u8; 32],
     ask_ptr: *mut [u8; 32],
     nsk_ptr: *mut [u8; 32],
-    pos: u32,
+    account: u32,
 ) {
     let seed = unsafe { &*seed_ptr };
 
     let k = SaplingAskNskDk::from_bytes(&zip32::zip32_sapling_derive(
         seed,
-        pos,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::AskNskDk,
     ));
 
@@ -215,7 +217,7 @@ pub extern "C" fn get_pkd_from_seed(
 
     let ask_nsk_df = SaplingAskNskDk::from_bytes(&zip32::zip32_sapling_derive(
         &seed,
-        account,
+        &[ZIP32_PURPOSE, ZIP32_COIN_TYPE, account],
         Zip32ChildComponents::AskNskDk,
     ));
 

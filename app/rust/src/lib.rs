@@ -49,3 +49,17 @@ extern crate hex;
 #[cfg(test)]
 #[macro_use]
 extern crate std;
+
+#[cfg(test)]
+mod tests {
+    use simple_logger::SimpleLogger;
+    use std::sync::Once;
+
+    static INIT: Once = Once::new();
+
+    pub fn setup_logging() {
+        INIT.call_once(|| {
+            let _ = SimpleLogger::new().init();
+        });
+    }
+}

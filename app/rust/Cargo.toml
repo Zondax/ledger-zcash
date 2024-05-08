@@ -28,6 +28,7 @@ byteorder = { version = "1", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 nom = { version = "7", default-features = false }
 bs58 = { version = "0.5.1", default-features = false, features = ["check"] }
+log = "0.4.21"
 
 [target.'cfg(any(unix, windows))'.dependencies]
 getrandom = { version = "0.2.14", default-features = false }
@@ -53,6 +54,7 @@ panic = "abort"
 serde_json = "1.0.116"
 serde = { version = "1.0.200", features = ["derive"] }
 hex = { version = "0.4.3", features = ["alloc"] }
+simple_logger = "5.0.0"
 
 [features]
 default = []
