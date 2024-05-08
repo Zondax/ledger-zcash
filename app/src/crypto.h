@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2022 Zondax AG
+ *   (c) 2018 -2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -48,11 +48,8 @@ zxerr_t crypto_ovk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
 
 zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);
 
-zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen,
-                                uint32_t zip32_path,
-                                uint64_t notepos,
-                                uint8_t *cm,
-                                uint16_t *replyLen);
+zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen, uint32_t zip32_path, uint64_t notepos,
+                                 uint8_t *cm, uint16_t *replyLen);
 
 zxerr_t crypto_hash_messagebuffer(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, uint16_t txdataLen);
 

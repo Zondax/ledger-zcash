@@ -18,16 +18,16 @@
 #include <os_io_seproxyhal.h>
 #include <stdint.h>
 
+#include "addr.h"
 #include "apdu_codes.h"
 #include "apdu_errors.h"
 #include "app_main.h"
 #include "coin.h"
 #include "crypto.h"
+#include "key.h"
 #include "nvdata.h"
 #include "parser.h"
 #include "tx.h"
-#include "key.h"
-#include "addr.h"
 
 extern address_state_t action_addrResponse;
 extern key_state_t key_state;

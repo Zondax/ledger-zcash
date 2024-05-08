@@ -10,11 +10,11 @@ pub extern "C" fn blake2b_prf(input_ptr: *const [u8; 128], out_ptr: *mut [u8; 32
     output.copy_from_slice(&hash);
 }
 
-#[inline(never)]
-pub fn prf_sessionkey(data: &[u8]) -> [u8; 32] {
-    crate::bolos::heartbeat();
-    blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
-}
+// #[inline(never)]
+// pub fn prf_sessionkey(data: &[u8]) -> [u8; 32] {
+//     crate::bolos::heartbeat();
+//     blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
+// }
 
 // pub fn generate_esk() -> [u8; 32] {
 //     let mut buffer = [0u8; 64];

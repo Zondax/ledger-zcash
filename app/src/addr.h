@@ -16,7 +16,9 @@
 
 #pragma once
 #include <stdint.h>
+
 #include "zxerror.h"
+#include "coin.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +28,6 @@ typedef struct {
     address_kind_e kind;
     uint8_t len;
 } address_state_t;
-
 
 /// Return the number of items in the address view
 zxerr_t addr_getNumItems(uint8_t *num_items);

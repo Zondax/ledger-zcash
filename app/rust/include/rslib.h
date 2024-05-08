@@ -2,12 +2,11 @@
 
 #include <stdint.h>
 
+#include "commitments.h"
+#include "notes.h"
 #include "parser_common.h"
 #include "parser_txdef.h"
-
 #include "zip32.h"
-#include "notes.h"
-#include "commitments.h"
 
 void blake2b_prf(uint8_t *inputptr, uint8_t *outptr);
 

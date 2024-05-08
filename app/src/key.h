@@ -26,7 +26,6 @@ typedef struct {
     uint8_t len;
 } key_state_t;
 
-
 /// Return the number of items in the address view
 zxerr_t key_getNumItems(uint8_t *num_items);
 

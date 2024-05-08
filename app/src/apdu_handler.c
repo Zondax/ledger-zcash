@@ -227,14 +227,14 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyIVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
+    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_IVK ||
+        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_IVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_IVK, &zip32path);
+    uint32_t zip32_account = 0;
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_IVK, &zip32_account);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
@@ -243,7 +243,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.kind = key_ivk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32_account, &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -261,14 +261,14 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyOVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
+    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_OVK ||
+        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_OVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_OVK, &zip32path);
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_OVK, &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
@@ -294,14 +294,14 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyFVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_FVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
+    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_FVK ||
+        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_FVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_FVK, &zip32path);
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_FVK, &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
@@ -330,14 +330,14 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     *tx = 0;
     // TODO: review this.. there is too much copy-paste. Move into a single configurable function
 
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF || G_io_apdu_buffer[OFFSET_P1] == 0) {
+    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_NF ||
+        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_NF || G_io_apdu_buffer[OFFSET_P1] == 0) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_NF, &zip32path);
+    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_NF, &zip32path);
     if (prserr != parser_ok) {
         MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
         *tx = 0;
@@ -546,11 +546,11 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint3
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_ADDR_DIV) {
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_ADDR_DIV) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_DIV) {
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_ADDR_DIV) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -564,7 +564,7 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint3
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
     parser_error_t parseErr =
-        parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
+        parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_ADDR_DIV, &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (parseErr != parser_ok) {
         *tx = 0;
@@ -597,11 +597,11 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_DIV_LIST) {
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_DIV_LIST) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_DIV_LIST) {
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_DIV_LIST) {
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -613,7 +613,7 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
     MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
 
     parser_error_t prserr =
-        parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_DIV_LIST, &parser_addr);
+        parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_DIV_LIST, &parser_addr);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
@@ -639,12 +639,12 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (rx != (uint32_t)(DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
+    if (rx != (uint32_t)(APDU_DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
         zemu_log("Wrong length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_ADDR_SAPLING) {
+    if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_ADDR_SAPLING) {
         zemu_log("Wrong offset data length!\n");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
@@ -652,7 +652,8 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 
     uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
+    parser_error_t prserr =
+        parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_ADDR_SAPLING, &zip32path);
     MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
     if (prserr != parser_ok) {
         *tx = 0;
