@@ -274,10 +274,7 @@ mod tests {
     fn test_mixed_pedersen() {
         let v = 312354353u32;
         let scalar = into_fixed_array(v);
-        let mp = mixed_pedersen(
-            &ExtendedPoint::identity(),
-            Fr::from_bytes(&scalar).unwrap(),
-        );
+        let mp = mixed_pedersen(&ExtendedPoint::identity(), Fr::from_bytes(&scalar).unwrap());
         assert_eq!(
             mp,
             [

@@ -1,6 +1,8 @@
-use aes::block_cipher_trait::generic_array::typenum::{U16, U32, U8};
-use aes::block_cipher_trait::generic_array::GenericArray;
-use aes::block_cipher_trait::BlockCipher;
+use aes::cipher::generic_array::typenum::{U16, U32, U8};
+use aes::cipher::generic_array::GenericArray;
+use aes::cipher::BlockEncrypt;
+use aes::cipher::NewBlockCipher;
+use aes::cipher::{BlockCipher, BlockCipherKey};
 use aes::Aes256;
 
 extern "C" {
@@ -42,24 +44,25 @@ impl AesBOLOS {
 }
 
 impl BlockCipher for AesBOLOS {
-    type KeySize = U32;
     type BlockSize = U16;
     type ParBlocks = U8;
+}
+
+impl NewBlockCipher for AesBOLOS {
+    type KeySize = U32;
 
     #[inline(never)]
-    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesBOLOS {
-        let v: [u8; 32] = k.as_slice().try_into().expect("Wrong length");
+    fn new(key: &BlockCipherKey<Self>) -> Self {
+        let v: [u8; 32] = key.as_slice().try_into().expect("Wrong length");
         AesBOLOS { key: v }
     }
+}
+impl BlockEncrypt for AesBOLOS {
     #[inline(never)]
     fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>) {
         let x: [u8; 16] = block.as_slice().try_into().expect("err");
         let y = aes256_encrypt_block(&self.key, &x);
 
         block.copy_from_slice(&y);
-    }
-
-    fn decrypt_block(&self, _block: &mut GenericArray<u8, Self::BlockSize>) {
-        //not used but has to be defined
     }
 }

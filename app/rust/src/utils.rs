@@ -70,11 +70,9 @@ mod tests {
         let result = write_u64_tobytes(v);
         let expected = [0xF7, 0xB3, 0xD5, 0x91, 0xE6, 0xA2, 0xC4, 0x80];
         assert_eq!(
-            result,
-            expected,
+            result, expected,
             "Result: {:X?}, Expected: {:X?}",
-            result,
-            expected
+            result, expected
         );
     }
 
@@ -84,11 +82,9 @@ mod tests {
         let result = write_u64_tobytes(v);
         let expected = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
         assert_eq!(
-            result,
-            expected,
+            result, expected,
             "Result: {:X?}, Expected: {:X?}",
-            result,
-            expected
+            result, expected
         );
     }
 
@@ -98,11 +94,9 @@ mod tests {
         let result = write_u64_tobytes(v);
         let expected = [0, 0, 0, 0, 0, 0, 0, 8];
         assert_eq!(
-            result,
-            expected,
+            result, expected,
             "Result: {:X?}, Expected: {:X?}",
-            result,
-            expected
+            result, expected
         );
     }
 
@@ -112,11 +106,9 @@ mod tests {
         let result = write_u64_tobytes(v);
         let expected = [0, 0, 0, 0, 0, 0, 0, 0x0f];
         assert_eq!(
-            result,
-            expected,
+            result, expected,
             "Result: {:X?}, Expected: {:X?}",
-            result,
-            expected
+            result, expected
         );
     }
 
@@ -126,11 +118,9 @@ mod tests {
         let result = write_u64_tobytes(v);
         let expected = [0x50, 0, 0, 0, 0, 0, 0, 0x0F];
         assert_eq!(
-            result,
-            expected,
+            result, expected,
             "Result: {:X?}, Expected: {:X?}",
-            result,
-            expected
+            result, expected
         );
     }
 
