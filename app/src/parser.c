@@ -16,12 +16,7 @@
 
 #include "parser.h"
 
-#if defined(BOLOS_SDK)
 #include <os_io_seproxyhal.h>
-
-#include "view.h"
-#endif
-
 #include <stdio.h>
 #include <zxformat.h>
 #include <zxmacros.h>
@@ -35,6 +30,7 @@
 #include "parser_impl.h"
 #include "parser_txdef.h"
 #include "rslib.h"
+#include "view.h"
 
 #define DEFAULT_MEMOTYPE 0xf6
 
@@ -148,16 +144,16 @@ parser_error_t parser_validate() {
     return parser_ok;
 }
 
-parser_error_t parser_sapling_display_value(uint64_t value, char *outVal, uint16_t outValLen, uint8_t pageIdx,
-                                            uint8_t *pageCount) {
+parser_error_t parser_sapling_display_value(
+    uint64_t value, char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     char tmpBuffer[100];
     fpuint64_to_str(tmpBuffer, sizeof(tmpBuffer), value, 8);
     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
     return parser_ok;
 }
 
-parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVal, uint16_t outValLen, uint8_t pageIdx,
-                                                uint8_t *pageCount) {
+parser_error_t parser_sapling_display_address_t(
+    const uint8_t *addr, char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     MEMZERO(outVal, outValLen);
 
     uint8_t address[VERSION_SIZE + CX_RIPEMD160_SIZE + CX_SHA256_SIZE];
@@ -182,8 +178,8 @@ parser_error_t parser_sapling_display_address_t(const uint8_t *addr, char *outVa
     return parser_ok;
 }
 
-parser_error_t parser_sapling_display_address_s(uint8_t *div, uint8_t *pkd, char *outVal, uint16_t outValLen,
-                                                uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t parser_sapling_display_address_s(
+    uint8_t *div, uint8_t *pkd, char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     uint8_t address[DIV_SIZE + PKD_SIZE];
     MEMCPY(address, div, DIV_SIZE);
     MEMCPY(address + DIV_SIZE, pkd, PKD_SIZE);
@@ -230,8 +226,13 @@ parser_error_t parser_getNumItems(uint8_t *num_items) {
     return parser_ok;
 }
 
-parser_error_t parser_getItem(uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen,
-                              uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t parser_getItem(uint8_t displayIdx,
+                              char *outKey,
+                              uint16_t outKeyLen,
+                              char *outVal,
+                              uint16_t outValLen,
+                              uint8_t pageIdx,
+                              uint8_t *pageCount) {
     MEMZERO(outKey, outKeyLen);
     MEMZERO(outVal, outValLen);
     snprintf(outKey, outKeyLen, "?");

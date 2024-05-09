@@ -17,9 +17,9 @@
 #pragma once
 
 // CRYPTO File
-#define CHECKSUM_LENGTH          4
+#define CHECKSUM_LENGTH 4
 
-#define ED25519_SK_SIZE          64
+#define ED25519_SK_SIZE 64
 
 // FIXME: there is a difference in the seed size with rust
 #define ZIP32_SEED_SIZE          64

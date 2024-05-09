@@ -85,8 +85,8 @@ zxerr_t c_zcash_blake2b_expand_seed(const uint8_t *a, uint32_t a_len, const uint
     return zxerr_ok;
 }
 
-zxerr_t c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len, const uint8_t *c,
-                                       uint32_t c_len, uint8_t *out) {
+zxerr_t c_zcash_blake2b_expand_vec_two(
+    const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len, const uint8_t *c, uint32_t c_len, uint8_t *out) {
     if (a == NULL || b == NULL || c == NULL || out == NULL) {
         return zxerr_no_data;
     }
@@ -102,8 +102,16 @@ zxerr_t c_zcash_blake2b_expand_vec_two(const uint8_t *a, uint32_t a_len, const u
     return zxerr_ok;
 }
 
-zxerr_t c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len, const uint8_t *b, uint32_t b_len, const uint8_t *c,
-                                        uint32_t c_len, const uint8_t *d, uint32_t d_len, const uint8_t *e, uint32_t e_len,
+zxerr_t c_zcash_blake2b_expand_vec_four(const uint8_t *a,
+                                        uint32_t a_len,
+                                        const uint8_t *b,
+                                        uint32_t b_len,
+                                        const uint8_t *c,
+                                        uint32_t c_len,
+                                        const uint8_t *d,
+                                        uint32_t d_len,
+                                        const uint8_t *e,
+                                        uint32_t e_len,
                                         uint8_t *out) {
     if (a == NULL || b == NULL || c == NULL || d == NULL || e == NULL || out == NULL) {
         return zxerr_no_data;
@@ -120,8 +128,14 @@ zxerr_t c_zcash_blake2b_expand_vec_four(const uint8_t *a, uint32_t a_len, const 
     return zxerr_ok;
 }
 
-zxerr_t zcash_blake2b_hash_two(const uint8_t *perso, uint32_t perso_len, const uint8_t *a, uint32_t a_len, const uint8_t *b,
-                               uint32_t b_len, uint8_t *out, uint32_t out_len) {
+zxerr_t zcash_blake2b_hash_two(const uint8_t *perso,
+                               uint32_t perso_len,
+                               const uint8_t *a,
+                               uint32_t a_len,
+                               const uint8_t *b,
+                               uint32_t b_len,
+                               uint8_t *out,
+                               uint32_t out_len) {
     if (perso == NULL || a == NULL || b == NULL || out == NULL) {
         return zxerr_no_data;
     }

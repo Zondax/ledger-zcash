@@ -33,7 +33,12 @@ zxerr_t addr_getNumItems(uint8_t *num_items) {
     return zxerr_ok;
 }
 
-zxerr_t addr_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal, uint16_t outValLen, uint8_t pageIdx,
+zxerr_t addr_getItem(int8_t displayIdx,
+                     char *outKey,
+                     uint16_t outKeyLen,
+                     char *outVal,
+                     uint16_t outValLen,
+                     uint8_t pageIdx,
                      uint8_t *pageCount) {
     ZEMU_LOGF(200, "[addr_getItem] %d/%d\n", displayIdx, pageIdx)
 

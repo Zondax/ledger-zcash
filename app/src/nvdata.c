@@ -232,8 +232,8 @@ bool outputlist_is_active() {
     return transaction_header.outputlist_len > 0;
 }
 
-zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv,
-                               uint8_t *rseed) {
+zxerr_t outputlist_append_item(
+    uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv, uint8_t *rseed) {
     if (transaction_header.outputlist_len >= OUTPUT_LIST_SIZE) {
         return zxerr_unknown;
     }

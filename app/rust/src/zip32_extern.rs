@@ -9,8 +9,7 @@ use crate::types::{
     diversifier_zero, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4,
     FullViewingKey, IvkBytes, NskBytes, Zip32Seed,
 };
-use crate::zip32::{
-    diversifier_find_valid, diversifier_group_hash_light, zip32_sapling_derive, zip32_sapling_fvk,
+use crate::zip32::{diversifier_group_hash_light, zip32_sapling_derive, zip32_sapling_fvk,
 };
 use crate::{sapling, zip32};
 
@@ -34,20 +33,20 @@ pub extern "C" fn zip32_ivk(seed_ptr: *const Zip32Seed, account: u32, ivk_ptr: *
 // This only tries to find ONE diversifier!!!
 // Related to handleGetKeyIVK
 #[no_mangle]
-pub extern "C" fn get_default_diversifier_without_start_index(
+pub extern "C" fn diversifier_find_valid(
     seed_ptr: *const [u8; 32],
-    account: u32,
+    zip32_account: u32,
     div_ptr: *mut Diversifier,
 ) {
     let seed = unsafe { &*seed_ptr };
-    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, zip32_account];
     let div_out = unsafe { &mut *div_ptr };
 
     let key_bundle = zip32_sapling_derive(seed, &path);
     let dk = key_bundle.dk();
 
     let start = diversifier_zero();
-    div_out.copy_from_slice(&diversifier_find_valid(&dk, &start));
+    div_out.copy_from_slice(&zip32::diversifier_find_valid(&dk, &start));
 }
 
 //this function is consistent with zecwallet code
@@ -136,20 +135,37 @@ pub extern "C" fn zip32_nsk_from_seed(
 // This will generate a list of 20 diversifiers starting from the given diversifier
 // related to handleGetDiversifierList
 #[no_mangle]
-pub extern "C" fn get_diversifier_list_withstartindex(
+pub extern "C" fn diversifier_get_list(
     seed_ptr: *const [u8; 32],
-    account: u32,
+    zip32_account: u32,
     start_index: *const Diversifier,
     diversifier_list_ptr: *mut DiversifierList20,
 ) {
     let seed = unsafe { &*seed_ptr };
-    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, zip32_account];
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
 
     let key_bundle = zip32_sapling_derive(seed, &path);
 
     zip32::diversifier_get_list_large(&key_bundle.dk(), start, diversifier);
+}
+
+#[no_mangle]
+pub extern "C" fn get_pkd(
+    seed_ptr: *const Zip32Seed,
+    account: u32,
+    diversifier_ptr: *const Diversifier,
+    pkd_ptr: *mut [u8; 32],
+) {
+    let ivk_ptr = &mut [0u8; 32];
+    let diversifier = unsafe { &*diversifier_ptr };
+    let pkd = unsafe { &mut *pkd_ptr };
+
+    zip32_ivk(seed_ptr, account, ivk_ptr);
+
+    let tmp_pkd = zip32::pkd_default(ivk_ptr, diversifier);
+    pkd.copy_from_slice(&tmp_pkd)
 }
 
 #[no_mangle]
@@ -168,30 +184,13 @@ pub extern "C" fn get_pkd_from_seed(
     let key_bundle = zip32_sapling_derive(seed, &path);
     let dk = key_bundle.dk();
 
-    div_out.copy_from_slice(&diversifier_find_valid(&dk, start));
+    div_out.copy_from_slice(&zip32::diversifier_find_valid(&dk, start));
 
     let ivk = sapling_asknsk_to_ivk(&key_bundle.ask(), &key_bundle.nsk());
     let tmp_pkd = zip32::pkd_default(&ivk, div_out);
 
     let pkd_out = unsafe { &mut *pkd_ptr };
     pkd_out.copy_from_slice(&tmp_pkd);
-}
-
-#[no_mangle]
-pub extern "C" fn get_pkd(
-    seed_ptr: *const [u8; 32],
-    account: u32,
-    diversifier_ptr: *const Diversifier,
-    pkd_ptr: *mut [u8; 32],
-) {
-    let ivk_ptr = &mut [0u8; 32];
-    let diversifier = unsafe { &*diversifier_ptr };
-    let pkd = unsafe { &mut *pkd_ptr };
-
-    zip32_ivk(seed_ptr, account, ivk_ptr);
-
-    let tmp_pkd = zip32::pkd_default(ivk_ptr, diversifier);
-    pkd.copy_from_slice(&tmp_pkd)
 }
 
 #[no_mangle]

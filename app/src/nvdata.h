@@ -163,8 +163,8 @@ bool spendlist_more_extract();
 // outputlist flashstorage API
 bool outputlist_is_active();
 
-zxerr_t outputlist_append_item(uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv,
-                               uint8_t *rseed);
+zxerr_t outputlist_append_item(
+    uint8_t *d, uint8_t *pkd, uint64_t v, uint8_t memotype, uint8_t *ovk, uint8_t *rcmv, uint8_t *rseed);
 
 uint8_t outputlist_len();
 

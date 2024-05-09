@@ -156,8 +156,8 @@ static zxerr_t signature_hash_v4(const uint8_t *input, uint16_t inputlen, uint8_
     return zxerr_ok;
 }
 
-static zxerr_t signature_hash_v5(const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type,
-                                 uint8_t *output) {
+static zxerr_t signature_hash_v5(
+    const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type, uint8_t *output) {
     zemu_log_stack("signature_hash_v5");
     if (input == NULL || start_signdata == NULL || output == NULL) {
         return zxerr_no_data;
@@ -192,8 +192,8 @@ static zxerr_t signature_hash_v5(const uint8_t *input, uint8_t *start_signdata, 
     return zxerr_ok;
 }
 
-zxerr_t signature_hash(const uint8_t *txdata, uint8_t *start_signdata, uint16_t inputlen, const uint8_t tx_version,
-                       uint8_t *output) {
+zxerr_t signature_hash(
+    const uint8_t *txdata, uint8_t *start_signdata, uint16_t inputlen, const uint8_t tx_version, uint8_t *output) {
     if (txdata == NULL || start_signdata == NULL || output == NULL) {
         return zxerr_no_data;
     }
@@ -207,8 +207,8 @@ zxerr_t signature_hash(const uint8_t *txdata, uint8_t *start_signdata, uint16_t 
     return zxerr_unknown;
 }
 
-static zxerr_t signature_script_hash_v4(const uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen,
-                                        uint8_t *output) {
+static zxerr_t signature_script_hash_v4(
+    const uint8_t *input, uint16_t inputlen, uint8_t *script, uint16_t scriptlen, uint8_t *output) {
     if (input == NULL || script == NULL || output == NULL) {
         return zxerr_no_data;
     }
@@ -225,8 +225,14 @@ static zxerr_t signature_script_hash_v4(const uint8_t *input, uint16_t inputlen,
     return zxerr_ok;
 }
 
-zxerr_t signature_script_hash(const uint8_t *input, uint8_t *start_signdata, uint16_t inputlen, uint8_t *script,
-                              uint16_t scriptlen, uint8_t index, const uint8_t tx_version, uint8_t *output) {
+zxerr_t signature_script_hash(const uint8_t *input,
+                              uint8_t *start_signdata,
+                              uint16_t inputlen,
+                              uint8_t *script,
+                              uint16_t scriptlen,
+                              uint8_t index,
+                              const uint8_t tx_version,
+                              uint8_t *output) {
     if (input == NULL || start_signdata == NULL || script == NULL || output == NULL) {
         return zxerr_no_data;
     }

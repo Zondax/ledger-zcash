@@ -392,12 +392,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "doc-comment"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
-
-[[package]]
 name = "educe"
 version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -633,7 +627,7 @@ checksum = "c21ffd28d97c9252671ab2ebe7078c9fa860ff3c5a125039e174d25ec6872169"
 dependencies = [
  "arrayref",
  "no-std-compat",
- "snafu 0.8.2",
+ "snafu",
 ]
 
 [[package]]
@@ -822,13 +816,13 @@ dependencies = [
 
 [[package]]
 name = "neon-serde"
-version = "0.10.0"
-source = "git+https://github.com/Zondax/neon-serde?branch=refactor/napi#0875bc21b0507730624f58628f41d903479b7853"
+version = "0.11.0"
+source = "git+https://github.com/Zondax/neon-serde?branch=master#44179e93ecd20083fa5c591ecfc0e25af2d379a0"
 dependencies = [
  "neon",
  "num",
  "serde",
- "snafu 0.7.5",
+ "snafu",
 ]
 
 [[package]]
@@ -1292,33 +1286,11 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snafu"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4de37ad025c587a29e8f3f5605c00f70b98715ef90b9061a815b9e59e9042d6"
-dependencies = [
- "doc-comment",
- "snafu-derive 0.7.5",
-]
-
-[[package]]
-name = "snafu"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75976f4748ab44f6e5332102be424e7c2dc18daeaf7e725f2040c3ebb133512e"
 dependencies = [
- "snafu-derive 0.8.2",
-]
-
-[[package]]
-name = "snafu-derive"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "990079665f075b699031e9c08fd3ab99be5029b96f3b78dc0709e8f77e4efebf"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
+ "snafu-derive",
 ]
 
 [[package]]
@@ -1714,7 +1686,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_derive",
- "snafu 0.8.2",
+ "snafu",
  "zcash_primitives",
 ]
 

@@ -56,5 +56,10 @@ const char *tx_parse();
 zxerr_t tx_getNumItems(uint8_t *num_items);
 
 /// Gets an specific item from the transaction (including paging)
-zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outValue, uint16_t outValueLen,
-                   uint8_t pageIdx, uint8_t *pageCount);
+zxerr_t tx_getItem(int8_t displayIdx,
+                   char *outKey,
+                   uint16_t outKeyLen,
+                   char *outValue,
+                   uint16_t outValueLen,
+                   uint8_t pageIdx,
+                   uint8_t *pageCount);

@@ -7,8 +7,12 @@
 #define P2PKH_STANDARD_INPUT_SIZE  150
 #define P2PKH_STANDARD_OUTPUT_SIZE 34
 
-uint64_t zip_0317_fee_raw(uint64_t tx_in_total_size, uint64_t tx_out_total_size, uint64_t n_join_split,
-                          uint64_t n_spends_sapling, uint64_t n_outputs_sapling, uint64_t n_actions_orchard) {
+uint64_t zip_0317_fee_raw(uint64_t tx_in_total_size,
+                          uint64_t tx_out_total_size,
+                          uint64_t n_join_split,
+                          uint64_t n_spends_sapling,
+                          uint64_t n_outputs_sapling,
+                          uint64_t n_actions_orchard) {
     uint64_t tin_actions = DIV_CEIL(tx_in_total_size, P2PKH_STANDARD_INPUT_SIZE);
     uint64_t tout_actions = DIV_CEIL(tx_out_total_size, P2PKH_STANDARD_OUTPUT_SIZE);
 

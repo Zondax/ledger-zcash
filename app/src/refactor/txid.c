@@ -154,12 +154,14 @@ zxerr_t nu5_hash_sapling_spends(const uint8_t *input, uint8_t *output) {
         return zxerr_ok;
     }
     cx_blake2b_t ch_ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(
-        &ch_ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_SPENDS_COMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ch_ctx, 256, NULL, 0,
+                                          (uint8_t *)ZCASH_SAPLING_SPENDS_COMPACT_HASH_PERSONALIZATION,
+                                          PERSONALIZATION_SIZE));
 
     cx_blake2b_t nh_ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(
-        &nh_ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_SPENDS_NONCOMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&nh_ctx, 256, NULL, 0,
+                                          (uint8_t *)ZCASH_SAPLING_SPENDS_NONCOMPACT_HASH_PERSONALIZATION,
+                                          PERSONALIZATION_SIZE));
 
     const uint8_t *nullifier_data = input + INDEX_SPEND_NF;
     const uint8_t *cv_data = input + INDEX_SPEND_VALUECMT;
@@ -221,16 +223,18 @@ zxerr_t nu5_hash_sapling_outputs(const uint8_t *input, uint8_t *output) {
     }
 
     cx_blake2b_t ch_ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(
-        &ch_ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_OUTPUTS_COMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&ch_ctx, 256, NULL, 0,
+                                          (uint8_t *)ZCASH_SAPLING_OUTPUTS_COMPACT_HASH_PERSONALIZATION,
+                                          PERSONALIZATION_SIZE));
 
     cx_blake2b_t mh_ctx = {0};
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&mh_ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_OUTPUTS_MEMOS_HASH_PERSONALIZATION,
                                           PERSONALIZATION_SIZE));
 
     cx_blake2b_t nh_ctx = {0};
-    CHECK_CX_OK(cx_blake2b_init2_no_throw(
-        &nh_ctx, 256, NULL, 0, (uint8_t *)ZCASH_SAPLING_OUTPUTS_NONCOMPACT_HASH_PERSONALIZATION, PERSONALIZATION_SIZE));
+    CHECK_CX_OK(cx_blake2b_init2_no_throw(&nh_ctx, 256, NULL, 0,
+                                          (uint8_t *)ZCASH_SAPLING_OUTPUTS_NONCOMPACT_HASH_PERSONALIZATION,
+                                          PERSONALIZATION_SIZE));
 
     const uint8_t *cmu = input + INDEX_OUTPUT_NOTECMT;
     const uint8_t *ephemeral_key = input + INDEX_OUTPUT_EPK;
@@ -334,8 +338,8 @@ zxerr_t hash_transparent_txid_data(const uint8_t *input, uint8_t *output) {
     return zxerr_ok;
 }
 
-zxerr_t transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type,
-                               uint8_t *output) {
+zxerr_t transparent_sig_digest(
+    const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type, uint8_t *output) {
     zemu_log_stack("transparent_sig_digest");
     if (input == NULL || start_signdata == NULL || output == NULL) {
         return zxerr_no_data;
