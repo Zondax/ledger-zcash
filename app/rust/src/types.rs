@@ -12,8 +12,8 @@ pub type DiversifierList10 = [u8; 110];
 
 pub type DiversifierList20 = [u8; 220];
 
-pub fn diversifier_list10_zero() -> DiversifierList10 {
-    [0u8; 110]
+pub fn diversifier_list20_zero() -> DiversifierList20 {
+    [0u8; 220]
 }
 
 pub type AskBytes = [u8; 32];
@@ -29,6 +29,8 @@ pub type IvkBytes = [u8; 32];
 pub type OvkBytes = [u8; 32];
 
 pub type DkBytes = [u8; 32];
+
+pub type NfBytes = [u8; 32];
 
 // This can be between 32 and 252 bytes
 // FIXME: move to 64 to align with ed25519 private key?

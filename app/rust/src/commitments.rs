@@ -19,6 +19,7 @@ pub fn group_hash_from_diversifier(diversifier_ptr: *const Diversifier, gd_ptr: 
     let diversifier = unsafe { &*diversifier_ptr };
     let gd = unsafe { &mut *gd_ptr };
     let gd_tmp = zip32::pkd_group_hash(diversifier);
+
     gd.copy_from_slice(&gd_tmp);
 }
 
@@ -100,7 +101,7 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
 #[cfg(test)]
 mod tests {
     use crate::commitments_extern::{compute_note_commitment, compute_nullifier};
-    use crate::types::diversifier_zero;
+    use crate::types::{diversifier_zero, NskBytes};
     use crate::utils::into_fixed_array;
 
     use super::*;
@@ -243,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_get_nf() {
-        let account = 1;
+        let account = 0;
         let pos: u64 = 2578461368;
 
         let seed: [u8; 32] = [
@@ -257,18 +258,16 @@ mod tests {
             0xce, 0x11, 0xdd, 0xe8,
         ];
 
-        let mut nsk = [0u8; 32];
-        zip32_nsk_from_seed(&seed, account, &mut nsk);
-
+        let mut nsk: NskBytes = [0u8; 32];
         let mut nf = [0u8; 32];
+
+        zip32_nsk_from_seed(&seed, account, &mut nsk);
         compute_nullifier(&cm, pos, &nsk, &mut nf);
 
-        let nftest: [u8; 32] = [
-            0x25, 0xf1, 0xf2, 0xcf, 0x5e, 0x2c, 0x2b, 0xc3, 0x1d, 0x7, 0xb6, 0x6f, 0x4d, 0x54,
-            0xf0, 0x90, 0xad, 0x89, 0xb1, 0x98, 0x89, 0x3f, 0x12, 0xad, 0xae, 0x44, 0x7d, 0xdf,
-            0x84, 0xe2, 0x14, 0x5a,
-        ];
-        assert_eq!(nf, nftest);
+        assert_eq!(
+            hex::encode(nf),
+            "ce0df155d652565ccab59ae392a569c4f2283df4dc8a26bfd48e178bfceed436"
+        );
     }
 
     #[test]

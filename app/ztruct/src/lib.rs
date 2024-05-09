@@ -85,6 +85,12 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         }
     };
 
+    let empty_constructor = quote! {
+        pub fn empty() -> Self {
+            Self { data: [0u8; #total_size] }
+        }
+    };
+
     let expanded = quote! {
         #visibility struct #name {
             data: [u8; #total_size],
@@ -97,6 +103,8 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 instance
             }
 
+            #empty_constructor
+
             #from_bytes_method
 
             #field_accessors
@@ -107,4 +115,3 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 
     proc_macro::TokenStream::from(proc_macro2::TokenStream::from(expanded))
 }
-

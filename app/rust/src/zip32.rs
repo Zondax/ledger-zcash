@@ -13,18 +13,21 @@ use crate::bolos::blake2b::{
     blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
 };
 use crate::bolos::c_check_app_canary;
-use crate::constants::{ZIP32_COIN_TYPE, ZIP32_PURPOSE};
-use crate::cryptoops;
+use crate::constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PURPOSE};
 use crate::cryptoops::bytes_to_extended;
 use crate::cryptoops::extended_to_bytes;
 use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
-use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_nsk_to_nk};
+use crate::sapling::{
+    sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_asknsk_to_ivk, sapling_nsk_to_nk,
+};
 use crate::types::{
     diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
     DiversifierList4, DkBytes, FullViewingKey, IvkBytes, NskBytes, OvkBytes,
     SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterKey, Zip32MasterSpendingKey,
     Zip32Path, Zip32Seed,
 };
+use crate::zip32_extern::diversifier_is_valid;
+use crate::{cryptoops, zip32};
 
 #[inline(never)]
 // Calculates I based on https://zips.z.cash/zip-0032#sapling-master-key-generation
@@ -134,38 +137,40 @@ fn zip32_sapling_dk_i_update(sk_m: &[u8], dk_i: &mut DkBytes) {
 //     false
 // }
 
-//list of 10 diversifiers
-#[inline(never)]
-pub fn ff1aes_list_10(sk: &[u8; 32], result: &mut DiversifierList10) {
-    let diversifier_list_size = 10;
+pub fn diversifier_find_valid(dk: &DkBytes, start: &Diversifier) -> Diversifier {
+    let mut div_list = [0u8; DIV_SIZE * DIV_DEFAULT_LIST_LEN];
+    let mut div_out = diversifier_zero();
 
-    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
+    let mut cur_div = diversifier_zero();
+    cur_div.copy_from_slice(start);
 
-    let mut scratch = [0u8; 12];
-    let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
+    let mut found = false;
+    while !found {
+        // we get some small list
+        diversifier_get_list(&dk, &mut cur_div, &mut div_list);
 
-    let mut d: Diversifier;
-    let mut counter: Diversifier = diversifier_zero();
+        for i in 0..DIV_DEFAULT_LIST_LEN {
+            let tmp = &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
+                .try_into()
+                .unwrap();
 
-    for c in 0..diversifier_list_size {
-        d = counter;
-        ff1.encrypt(&mut d).unwrap();
-        result[c * 11..(c + 1) * 11].copy_from_slice(&d);
-        for k in 0..11 {
-            counter[k] = counter[k].wrapping_add(1);
-            if counter[k] != 0 {
-                // No overflow
+            if diversifier_is_valid(tmp) {
+                div_out.copy_from_slice(tmp);
+                found = true;
                 break;
             }
         }
+
+        crate::bolos::heartbeat();
     }
+
+    div_out
 }
 
-//list of 4 diversifiers
 #[inline(never)]
-pub fn ff1aes_list_with_startingindex_4(
+pub fn diversifier_get_list(
     sk: &[u8; 32],
-    counter: &mut Diversifier,
+    start_diversifier: &mut Diversifier,
     result: &mut DiversifierList4,
 ) {
     let diversifier_list_size = 4;
@@ -178,12 +183,12 @@ pub fn ff1aes_list_with_startingindex_4(
     let mut d: Diversifier;
 
     for c in 0..diversifier_list_size {
-        d = *counter;
+        d = *start_diversifier;
         ff1.encrypt(&mut d).unwrap();
         result[c * 11..(c + 1) * 11].copy_from_slice(&d);
         for k in 0..11 {
-            counter[k] = counter[k].wrapping_add(1);
-            if counter[k] != 0 {
+            start_diversifier[k] = start_diversifier[k].wrapping_add(1);
+            if start_diversifier[k] != 0 {
                 // No overflow
                 break;
             }
@@ -191,21 +196,21 @@ pub fn ff1aes_list_with_startingindex_4(
     }
 }
 
-//list of 20 diversifiers
 #[inline(never)]
-pub fn ff1aes_list_with_startingindex_20(
-    sk: &[u8; 32],
+pub fn diversifier_get_list_large(
+    dk: &[u8; 32],
     start_diversifier: &Diversifier,
     result: &mut DiversifierList20,
 ) {
     let diversifier_list_size = 20;
 
-    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
+    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(dk));
 
     let mut scratch = [0u8; 12];
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
 
     let mut d: Diversifier;
+
     let mut counter: Diversifier = diversifier_zero();
     counter.copy_from_slice(start_diversifier);
 
@@ -264,6 +269,7 @@ fn zip32_sapling_derive_child(
     let c = path_i & 0x7FFF_FFFF;
 
     let mut le_i = [0; 4];
+
     if hardened {
         if cfg!(test) {
             debug!("---- path_i: {:x} | HARDENED", path_i);
@@ -279,10 +285,6 @@ fn zip32_sapling_derive_child(
 
         ik.to_bytes_mut().copy_from_slice(&prf_result);
     } else {
-        if cfg!(test) {
-            debug!("---- path_i: {:x} | NORMAL", path_i);
-        }
-
         //non-hardened child
         // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
         LittleEndian::write_u32(&mut le_i, c);
@@ -311,7 +313,6 @@ fn zip32_sapling_derive_child(
     crate::bolos::heartbeat();
 
     // https://zips.z.cash/zip-0032#deriving-a-child-extended-spending-key
-
     zip32_sapling_ask_i_update(&ik.spending_key(), key_bundle_i.ask_mut());
     zip32_sapling_nsk_i_update(&ik.spending_key(), key_bundle_i.nsk_mut());
     zip32_sapling_ovk_i_update(&ik.spending_key(), key_bundle_i.ovk_mut());
@@ -356,39 +357,10 @@ pub(crate) fn diversifier_group_hash_light(tag: &[u8]) -> bool {
     false
 }
 
-#[inline(never)]
-pub fn diversifier_default_fromlist(list: &DiversifierList10) -> Diversifier {
-    let mut result = diversifier_zero();
-
-    for c in 0..10 {
-        result.copy_from_slice(&list[c * 11..(c + 1) * 11]);
-        //c[1] += 1;
-        if diversifier_group_hash_light(&result) {
-            //if diversifier_group_hash_light(&x[0..11]) {
-            return result;
-        }
-    }
-    //return a value that indicates that diversifier not found
-    // FIXME: this seems a problem
-    result
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
-
-#[cfg(test)]
-fn zip32_sapling_derive_master(seed: &Zip32Seed) -> SaplingKeyBundle {
-    let master_key = zip32_master_key_i(seed);
-
-    let ask = zip32_sapling_ask_m(&master_key.spending_key());
-    let nsk = zip32_sapling_nsk_m(&master_key.spending_key());
-    let dk = zip32_sapling_dk_m(&master_key.spending_key());
-    let ovk = zip32_sapling_ovk_m(&master_key.spending_key());
-
-    SaplingKeyBundle::new(ask, nsk, ovk, dk)
-}
 
 #[cfg(test)]
 mod tests {
@@ -396,9 +368,34 @@ mod tests {
 
     use crate::constants::ZIP32_HARDENED;
     use crate::sapling::{sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_nsk_to_nk};
-    use crate::types::diversifier_list10_zero;
+    use crate::types::diversifier_list20_zero;
 
     use super::*;
+
+    fn zip32_sapling_derive_master(seed: &Zip32Seed) -> SaplingKeyBundle {
+        let master_key = zip32_master_key_i(seed);
+
+        let ask = zip32_sapling_ask_m(&master_key.spending_key());
+        let nsk = zip32_sapling_nsk_m(&master_key.spending_key());
+        let dk = zip32_sapling_dk_m(&master_key.spending_key());
+        let ovk = zip32_sapling_ovk_m(&master_key.spending_key());
+
+        SaplingKeyBundle::new(ask, nsk, ovk, dk)
+    }
+
+    pub fn find_valid_diversifier(list: &DiversifierList20) -> Option<Diversifier> {
+        let mut result = diversifier_zero();
+
+        for c in 0..20 {
+            result.copy_from_slice(&list[c * 11..(c + 1) * 11]);
+            //c[1] += 1;
+            if diversifier_is_valid(&result) {
+                return Some(result);
+            }
+        }
+
+        None
+    }
 
     // Based on test vectors at
     // https://github.com/zcash/zcash-test-vectors/blob/master/zcash_test_vectors/sapling/zip32.py
@@ -750,9 +747,11 @@ mod tests {
             "f71c77c659a641f59a2c8ed0df0c55febd8243a69f09cc39f6024deeeb30fc00"
         );
 
-        let mut listbytes = diversifier_list10_zero();
-        ff1aes_list_10(&k.dk(), &mut listbytes);
-        let default_d = diversifier_default_fromlist(&listbytes);
+        let mut listbytes = diversifier_list20_zero();
+        let div_start = diversifier_zero();
+        diversifier_get_list_large(&k.dk(), &div_start, &mut listbytes);
+
+        let default_d = find_valid_diversifier(&listbytes).unwrap();
 
         let pk_d = pkd_default(&ivk, &default_d);
 
@@ -780,9 +779,11 @@ mod tests {
             "0daa34a185ad9e97219390dac6df6cd14c26163462de20856fbc50e3c0cadc05"
         );
 
-        let mut list = diversifier_list10_zero();
-        ff1aes_list_10(&k.dk(), &mut list);
-        let default_d = diversifier_default_fromlist(&list);
+        let mut listbytes = diversifier_list20_zero();
+        let div_start = diversifier_zero();
+        diversifier_get_list_large(&k.dk(), &div_start, &mut listbytes);
+
+        let default_d = find_valid_diversifier(&listbytes).unwrap();
 
         let pk_d = pkd_default(&ivk, &default_d);
 
@@ -799,19 +800,20 @@ mod tests {
             .expect("error");
         let seed: [u8; 32] = s.as_slice().try_into().expect("er");
 
-        let keys = zip32_sapling_derive_master(&seed);
+        let k = zip32_sapling_derive_master(&seed);
 
-        let dk = keys.dk();
-        let ask = keys.ask();
-        let nsk = keys.nsk();
+        let ask = k.ask();
+        let nsk = k.nsk();
         let nk: [u8; 32] = sapling_nsk_to_nk(&nsk);
         let ak: [u8; 32] = sapling_ask_to_ak(&ask);
 
         let ivk = sapling_aknk_to_ivk(&ak, &nk);
 
-        let mut list = diversifier_list10_zero();
-        ff1aes_list_10(&dk, &mut list);
-        let default_d = diversifier_default_fromlist(&list);
+        let mut listbytes = diversifier_list20_zero();
+        let div_start = diversifier_zero();
+        diversifier_get_list_large(&k.dk(), &div_start, &mut listbytes);
+
+        let default_d = find_valid_diversifier(&listbytes).unwrap();
 
         let pk_d = pkd_default(&ivk, &default_d);
 
@@ -826,18 +828,20 @@ mod tests {
     fn test_zip32_master_address_allzero() {
         let seed = [0u8; 32];
 
-        let keys = zip32_sapling_derive_master(&seed);
+        let k = zip32_sapling_derive_master(&seed);
 
-        let dk = keys.dk();
-        let ask = keys.ask();
-        let nsk = keys.nsk();
+        let ask = k.ask();
+        let nsk = k.nsk();
         let nk = sapling_nsk_to_nk(&nsk);
         let ak = sapling_ask_to_ak(&ask);
 
         let ivk = sapling_aknk_to_ivk(&ak, &nk);
-        let mut list = diversifier_list10_zero();
-        ff1aes_list_10(&dk, &mut list);
-        let default_d = diversifier_default_fromlist(&list);
+
+        let mut listbytes = diversifier_list20_zero();
+        let div_start = diversifier_zero();
+        diversifier_get_list_large(&k.dk(), &div_start, &mut listbytes);
+
+        let default_d = find_valid_diversifier(&listbytes).unwrap();
 
         let pk_d = pkd_default(&ivk, &default_d);
 
@@ -881,9 +885,12 @@ mod tests {
     #[test]
     fn test_default_diversifier_fromlist() {
         let seed = [0u8; 32];
-        let mut list = diversifier_list10_zero();
-        ff1aes_list_10(&seed, &mut list);
-        let default_d = diversifier_default_fromlist(&list);
+
+        let mut list = diversifier_list20_zero();
+        let div_start = diversifier_zero();
+        diversifier_get_list_large(&seed, &div_start, &mut list);
+
+        let default_d = find_valid_diversifier(&list).unwrap();
         let expected_d = "dce77ebcec0a26afd6998c";
         assert_eq!(hex::encode(default_d), expected_d);
     }

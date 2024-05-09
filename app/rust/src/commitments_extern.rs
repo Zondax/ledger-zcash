@@ -2,7 +2,7 @@ use crate::bolos::c_zemu_log_stack;
 use crate::cryptoops::{add_to_point, extended_to_bytes, extended_to_u_bytes};
 use crate::pedersen::multiply_with_pedersen_base;
 use crate::sapling::sapling_nsk_to_nk;
-use crate::types::Diversifier;
+use crate::types::{Diversifier, NfBytes, NskBytes};
 use crate::{commitments, cryptoops};
 use jubjub::Fr;
 
@@ -12,8 +12,8 @@ use jubjub::Fr;
 pub extern "C" fn compute_nullifier(
     ncm_ptr: *const [u8; 32],
     note_pos: u64,
-    nsk_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
+    nsk_ptr: *const NskBytes,
+    output_ptr: *mut NfBytes,
 ) {
     c_zemu_log_stack(b"compute_nullifier\x00".as_ref());
     let ncm = unsafe { *ncm_ptr };

@@ -943,7 +943,10 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         CHECK_APP_CANARY()
         // encode (div, value rseed and memotype) into step2.compactout ready to be
         // encrypted
-        prepare_enccompact_input((uint8_t *) item->div, item->value, (uint8_t *) item->rseed, item->memotype,
+        prepare_enccompact_input((uint8_t *) item->div,
+                                 item->value,
+                                 (uint8_t *) item->rseed,
+                                 item->memotype,
                                  tmp->step2.compactout);
         CHECK_APP_CANARY()
         MEMZERO(tmp->step2.chachanonce, CHACHA_NONCE_SIZE);
@@ -965,7 +968,8 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             // copy ovk, the value commitment and note-commitment from flash memory
             // and transaction to local tmp structure so as to hash
             MEMCPY(tmp->step3.ovk, item->ovk + 1, OVK_SIZE);
-            MEMCPY(tmp->step3.valuecmt, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,
+            MEMCPY(tmp->step3.valuecmt,
+                    start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,
                    VALUE_COMMITMENT_SIZE);
             MEMCPY(tmp->step3.notecmt, start_outputdata + INDEX_OUTPUT_NOTECMT + i * OUTPUT_TX_LEN,
                    NOTE_COMMITMENT_SIZE);
@@ -1408,8 +1412,6 @@ zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer, uint16_t outputBufferLen
 zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t p, const uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
     uint8_t zip32_seed[ZIP32_SEED_SIZE] = {0};
 
     // Temporarily get sk from Ed25519
