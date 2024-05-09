@@ -13,7 +13,7 @@ export var SPEND_PATH = resolve(__dirname, "..", "params/sapling-spend.params");
 export var OUTPUT_PATH = resolve(__dirname, "..", "params/sapling-output.params");
 
 export class ZcashBuilderBridge {
-    private boxed: ZcashBuilder;
+    private readonly boxed: ZcashBuilder;
 
     constructor(fee: number) {
         this.boxed = addon.builderNew(fee)
@@ -37,7 +37,6 @@ export class ZcashBuilderBridge {
     add_signatures(signatures: TransactionSignatures) {
         return addon.builderAddSignatures.call(this.boxed, signatures);
     }
-
     finalize() {
         return addon.builderFinalize.call(this.boxed);
     }

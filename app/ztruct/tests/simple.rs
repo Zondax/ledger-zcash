@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn test_to_bytes() {
-        let instance = SimpleStruct::new(0x01020304, 0x05060708);   
+        let instance = SimpleStruct::new(0x01020304, 0x05060708);
         let bytes = instance.to_bytes();
         assert_eq!(bytes, &[0x04, 0x03, 0x02, 0x01, 0x08, 0x07, 0x06, 0x05]);
     }
@@ -51,8 +51,8 @@ mod tests {
     #[test]
     fn test_mutate_fields() {
         let mut instance = SimpleStruct::new(0x12345678, 0x9ABCDEF0);
-        instance.f1_mut() = 0x87654321;
-        instance.f2_mut() = 0x0FEDCBA9;
+        *instance.f1_mut() = 0x87654321;
+        *instance.f2_mut() = 0x0FEDCBA9;
         assert_eq!(instance.f1(), 0x87654321);
         assert_eq!(instance.f2(), 0x0FEDCBA9);
     }
@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn test_partial_updates() {
         let mut instance = SimpleStruct::new(0x12345678, 0x9ABCDEF0);
-        instance.f1_mut() = 0x11111111;
+        *instance.f1_mut() = 0x11111111;
         assert_eq!(instance.to_bytes(), &[0x11, 0x11, 0x11, 0x11, 0xF0, 0xDE, 0xBC, 0x9A]);
     }
 
