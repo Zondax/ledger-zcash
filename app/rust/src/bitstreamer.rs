@@ -95,7 +95,7 @@ mod tests {
             shift: 8,
             carry: 0,
         };
-        assert_eq!(streamer.peek(), true);
+        assert!(streamer.peek());
     }
 
     #[test]

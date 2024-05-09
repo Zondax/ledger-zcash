@@ -43,7 +43,7 @@ pub extern "C" fn get_default_diversifier_without_start_index(
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
     let div_out = unsafe { &mut *div_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
     let dk = key_bundle.dk();
 
     let start = diversifier_zero();
@@ -59,7 +59,7 @@ pub extern "C" fn zip32_ovk(seed_ptr: *const Zip32Seed, account: u32, ovk_ptr: *
 
     crate::bolos::heartbeat();
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
 
     ovk.copy_from_slice(&key_bundle.ovk());
 }
@@ -75,11 +75,11 @@ pub extern "C" fn zip32_fvk(
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
     let fvk_out = unsafe { &mut *fvk_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
 
     let fvk = zip32_sapling_fvk(&key_bundle);
 
-    fvk_out.to_bytes_mut().copy_from_slice(&fvk.to_bytes());
+    fvk_out.to_bytes_mut().copy_from_slice(fvk.to_bytes());
 }
 
 #[no_mangle]
@@ -94,7 +94,7 @@ pub extern "C" fn zip32_child_proof_key(
     let ak = unsafe { &mut *ak_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
 
-    let k = zip32_sapling_derive(&seed, &path);
+    let k = zip32_sapling_derive(seed, &path);
 
     ak.copy_from_slice(&sapling_ask_to_ak(&k.ask()));
     nsk.copy_from_slice(&k.nsk());
@@ -112,7 +112,7 @@ pub extern "C" fn zip32_child_ask_nsk(
     let ask = unsafe { &mut *ask_ptr };
     let nsk = unsafe { &mut *nsk_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
 
     ask.copy_from_slice(&key_bundle.ask());
     nsk.copy_from_slice(&key_bundle.nsk());
@@ -128,7 +128,7 @@ pub extern "C" fn zip32_nsk_from_seed(
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
     let nsk = unsafe { &mut *nsk_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
 
     nsk.copy_from_slice(&key_bundle.nsk());
 }
@@ -147,7 +147,7 @@ pub extern "C" fn get_diversifier_list_withstartindex(
     let start = unsafe { &*start_index };
     let diversifier = unsafe { &mut *diversifier_list_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
 
     zip32::diversifier_get_list_large(&key_bundle.dk(), start, diversifier);
 }
@@ -165,7 +165,7 @@ pub extern "C" fn get_pkd_from_seed(
     let start = unsafe { &mut *start_diversifier };
     let div_out = unsafe { &mut *div_ptr };
 
-    let key_bundle = zip32_sapling_derive(&seed, &path);
+    let key_bundle = zip32_sapling_derive(seed, &path);
     let dk = key_bundle.dk();
 
     div_out.copy_from_slice(&diversifier_find_valid(&dk, start));
@@ -190,7 +190,7 @@ pub extern "C" fn get_pkd(
 
     zip32_ivk(seed_ptr, account, ivk_ptr);
 
-    let tmp_pkd = zip32::pkd_default(ivk_ptr, &diversifier);
+    let tmp_pkd = zip32::pkd_default(ivk_ptr, diversifier);
     pkd.copy_from_slice(&tmp_pkd)
 }
 
@@ -209,7 +209,7 @@ pub extern "C" fn randomized_secret_from_seed(
     zip32_child_ask_nsk(seed_ptr, account, &mut ask, &mut nsk);
 
     let mut skfr = Fr::from_bytes(&ask).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
+    let alphafr = Fr::from_bytes(alpha).unwrap();
     skfr += alphafr;
     output.copy_from_slice(&skfr.to_bytes());
 }

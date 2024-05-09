@@ -45,8 +45,8 @@ pub fn ka_agree(esk: &[u8; 32], pk_d: &[u8; 32]) -> [u8; 32] {
 #[inline(never)]
 pub fn sapling_kdf(dh_secret: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
     let mut input = [0u8; 64];
-    (&mut input[..32]).copy_from_slice(dh_secret);
-    (&mut input[32..]).copy_from_slice(epk);
+    input[..32].copy_from_slice(dh_secret);
+    input[32..].copy_from_slice(epk);
     crate::bolos::heartbeat();
     blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
 }

@@ -45,14 +45,14 @@ pub fn sign_compute_rbar(r: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] {
-    let s = r + h_star(&rbar, msg) * sfr;
+    let s = r + h_star(rbar, msg) * sfr;
     s.to_bytes()
 }
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
     crate::bolos::heartbeat();
-    let r = sign_generate_r(&msg);
+    let r = sign_generate_r(msg);
 
     crate::bolos::heartbeat();
     let rbar = sign_compute_rbar(&r.to_bytes());
@@ -78,8 +78,8 @@ pub fn randomized_secret(
     let alpha = unsafe { &*alpha_ptr };
     let sk = unsafe { &*sk_ptr };
     let output = unsafe { &mut *output_ptr };
-    let mut skfr = Fr::from_bytes(&sk).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
+    let mut skfr = Fr::from_bytes(sk).unwrap();
+    let alphafr = Fr::from_bytes(alpha).unwrap();
     skfr += alphafr;
     output.copy_from_slice(&skfr.to_bytes());
 }

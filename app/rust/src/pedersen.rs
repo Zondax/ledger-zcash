@@ -45,7 +45,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
 
     {
         let mut cur = Fr::one();
-        let mut b = Bitstreamer {
+        let b = Bitstreamer {
             input_bytes: m,
             byte_index: 0,
             bitsize,
@@ -55,7 +55,7 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
             carry: 0,
         };
 
-        while let Some(bits) = b.next() {
+        for bits in b {
             handle_chunk(bits, &mut cur, &mut acc);
 
             counter += 1;
@@ -81,14 +81,19 @@ pub fn pedersen_hash_to_point(m: &[u8], bitsize: u32) -> ExtendedPoint {
 
 #[inline(never)]
 pub fn pedersen_hash(m: &[u8], bitsize: u32) -> [u8; 32] {
-    let result_point = pedersen_hash_to_point(&m, bitsize);
+    let result_point = pedersen_hash_to_point(m, bitsize);
     cryptoops::extended_to_u_bytes(&result_point)
 }
 
 #[inline(never)]
 pub fn pedersen_hash_pointbytes(m: &[u8], bitsize: u32) -> [u8; 32] {
-    let result_point = pedersen_hash_to_point(&m, bitsize);
+    let result_point = pedersen_hash_to_point(m, bitsize);
     cryptoops::extended_to_bytes(&result_point)
+}
+
+#[inline(never)]
+pub fn multiply_with_pedersen_base(val: &[u8; 32]) -> ExtendedPoint {
+    PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }
 
 #[cfg(test)]
@@ -300,9 +305,4 @@ mod tests {
             ]
         );
     }
-}
-
-#[inline(never)]
-pub fn multiply_with_pedersen_base(val: &[u8; 32]) -> ExtendedPoint {
-    PEDERSEN_RANDOMNESS_BASE.multiply_bits(val)
 }

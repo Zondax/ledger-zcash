@@ -31,19 +31,25 @@ pub fn aes256_encrypt_block(k: &[u8], a: &[u8]) -> [u8; 16] {
     out
 }
 
-pub struct AesSDK {
+pub struct AesBOLOS {
     key: [u8; 32],
 }
 
-impl BlockCipher for AesSDK {
+impl AesBOLOS {
+    pub fn new(k: &[u8; 32]) -> AesBOLOS {
+        AesBOLOS { key: *k }
+    }
+}
+
+impl BlockCipher for AesBOLOS {
     type KeySize = U32;
     type BlockSize = U16;
     type ParBlocks = U8;
 
     #[inline(never)]
-    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesSDK {
+    fn new(k: &GenericArray<u8, Self::KeySize>) -> AesBOLOS {
         let v: [u8; 32] = k.as_slice().try_into().expect("Wrong length");
-        AesSDK { key: v }
+        AesBOLOS { key: v }
     }
     #[inline(never)]
     fn encrypt_block(&self, block: &mut GenericArray<u8, Self::BlockSize>) {

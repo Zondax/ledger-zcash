@@ -52,7 +52,7 @@ pub fn blake2b32_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 32
         .personal(person)
         .hash(data);
     let mut hash = [0u8; 32];
-    hash.copy_from_slice(&h.as_bytes());
+    hash.copy_from_slice(h.as_bytes());
     hash
 }
 
@@ -77,7 +77,7 @@ pub fn blake2b64_with_personalization(person: &[u8; 16], data: &[u8]) -> [u8; 64
         .personal(person)
         .hash(data);
     let mut hash = [0u8; 64];
-    hash.copy_from_slice(&h.as_bytes());
+    hash.copy_from_slice(h.as_bytes());
     hash
 }
 
@@ -225,7 +225,7 @@ pub fn blake2b_expand_vec_two(sk: &[u8], a: &[u8], b: &[u8]) -> [u8; 64] {
     h.update(a);
     h.update(b);
     let mut hash = [0u8; 64];
-    hash.copy_from_slice(&h.finalize().as_bytes());
+    hash.copy_from_slice(h.finalize().as_bytes());
     hash
 }
 
@@ -247,6 +247,6 @@ pub fn blake2b_expand_v4(
     blake2b_state.update(in_d);
     blake2b_state.update(in_e);
     let mut hash = [0u8; 64];
-    hash.copy_from_slice(&blake2b_state.finalize().as_bytes());
+    hash.copy_from_slice(blake2b_state.finalize().as_bytes());
     hash
 }

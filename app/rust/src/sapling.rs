@@ -17,7 +17,7 @@ pub fn sapling_ask_to_ak(ask: &AskBytes) -> AkBytes {
 
 #[inline(never)]
 pub fn sapling_nsk_to_nk(nsk: &NskBytes) -> NkBytes {
-    let nk = PROVING_KEY_BASE.multiply_bits(&nsk);
+    let nk = PROVING_KEY_BASE.multiply_bits(nsk);
     AffinePoint::from(nk).to_bytes()
 }
 

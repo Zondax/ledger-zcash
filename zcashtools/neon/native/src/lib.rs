@@ -104,7 +104,7 @@ impl ZcashBuilderBridge {
                 }
                 res
             }
-            AuthorisationStatus::Authorized { .. } => return Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Authorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::SaplingAuthorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::Taken => Err(Error::UnknownAuthorization),

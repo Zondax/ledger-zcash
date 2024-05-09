@@ -1,13 +1,11 @@
 use core::convert::TryInto;
 
-use aes::block_cipher_trait::generic_array::GenericArray;
-use aes::block_cipher_trait::BlockCipher;
 use binary_ff1::BinaryFF1;
 use byteorder::{ByteOrder, LittleEndian};
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use log::debug;
 
-use crate::bolos::aes::AesSDK;
+use crate::bolos::aes::AesBOLOS;
 use crate::bolos::blake2b;
 use crate::bolos::blake2b::{
     blake2b64_with_personalization, blake2b_expand_v4, blake2b_expand_vec_two,
@@ -41,7 +39,7 @@ fn zip32_master_key_i(seed: &Zip32Seed) -> Zip32MasterKey {
 #[inline(never)]
 // As per ask_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
 fn zip32_sapling_ask_m(sk_m: &[u8]) -> AskBytes {
-    let t = cryptoops::prf_expand(&sk_m, &[0x00]);
+    let t = cryptoops::prf_expand(sk_m, &[0x00]);
     let ask = Fr::from_bytes_wide(&t);
     ask.to_bytes()
 }
@@ -49,7 +47,7 @@ fn zip32_sapling_ask_m(sk_m: &[u8]) -> AskBytes {
 #[inline(never)]
 // As per nsk_m formula at https://zips.z.cash/zip-0032#sapling-master-key-generation
 fn zip32_sapling_nsk_m(sk_m: &[u8]) -> NskBytes {
-    let t = cryptoops::prf_expand(&sk_m, &[0x01]);
+    let t = cryptoops::prf_expand(sk_m, &[0x01]);
     let nsk = Fr::from_bytes_wide(&t);
     nsk.to_bytes()
 }
@@ -78,14 +76,14 @@ fn zip32_sapling_dk_m(sk_m: &[u8; 32]) -> DkBytes {
 
 #[inline(never)]
 fn zip32_sapling_i_ask(sk_m: &[u8]) -> AskBytes {
-    let t = cryptoops::prf_expand(&sk_m, &[0x13]);
+    let t = cryptoops::prf_expand(sk_m, &[0x13]);
     let ask = Fr::from_bytes_wide(&t);
     ask.to_bytes()
 }
 
 #[inline(never)]
 fn zip32_sapling_i_nsk(sk_m: &[u8]) -> NskBytes {
-    let t = cryptoops::prf_expand(&sk_m, &[0x14]);
+    let t = cryptoops::prf_expand(sk_m, &[0x14]);
     let nsk = Fr::from_bytes_wide(&t);
     nsk.to_bytes()
 }
@@ -94,14 +92,14 @@ fn zip32_sapling_i_nsk(sk_m: &[u8]) -> NskBytes {
 
 #[inline(never)]
 fn zip32_sapling_ask_i_update(sk_m: &[u8], ask_i: &mut AskBytes) {
-    let i_ask = zip32_sapling_i_ask(&sk_m);
-    *ask_i = (Fr::from_bytes(&ask_i).unwrap() + Fr::from_bytes(&i_ask).unwrap()).to_bytes();
+    let i_ask = zip32_sapling_i_ask(sk_m);
+    *ask_i = (Fr::from_bytes(ask_i).unwrap() + Fr::from_bytes(&i_ask).unwrap()).to_bytes();
 }
 
 #[inline(never)]
 fn zip32_sapling_nsk_i_update(sk_m: &[u8], nsk_i: &mut NskBytes) {
-    let i_nsk = zip32_sapling_i_nsk(&sk_m);
-    *nsk_i = (Fr::from_bytes(&nsk_i).unwrap() + Fr::from_bytes(&i_nsk).unwrap()).to_bytes();
+    let i_nsk = zip32_sapling_i_nsk(sk_m);
+    *nsk_i = (Fr::from_bytes(nsk_i).unwrap() + Fr::from_bytes(&i_nsk).unwrap()).to_bytes();
 }
 
 #[inline(never)]
@@ -147,7 +145,7 @@ pub fn diversifier_find_valid(dk: &DkBytes, start: &Diversifier) -> Diversifier 
     let mut found = false;
     while !found {
         // we get some small list
-        diversifier_get_list(&dk, &mut cur_div, &mut div_list);
+        diversifier_get_list(dk, &mut cur_div, &mut div_list);
 
         for i in 0..DIV_DEFAULT_LIST_LEN {
             let tmp = &div_list[i * DIV_SIZE..(i + 1) * DIV_SIZE]
@@ -175,9 +173,9 @@ pub fn diversifier_get_list(
 ) {
     let diversifier_list_size = 4;
 
-    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(sk));
-
     let mut scratch = [0u8; 12];
+
+    let cipher = AesBOLOS::new(sk);
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
 
     let mut d: Diversifier;
@@ -204,9 +202,8 @@ pub fn diversifier_get_list_large(
 ) {
     let diversifier_list_size = 20;
 
-    let cipher: AesSDK = BlockCipher::new(GenericArray::from_slice(dk));
-
     let mut scratch = [0u8; 12];
+    let cipher = AesBOLOS::new(dk);
     let mut ff1 = BinaryFF1::new(&cipher, 11, &[], &mut scratch).unwrap();
 
     let mut d: Diversifier;
@@ -247,8 +244,7 @@ pub fn pkd_default(ivk: &IvkBytes, d: &Diversifier) -> [u8; 32] {
     cryptoops::mul_by_cofactor(&mut y);
     cryptoops::niels_multbits(&mut y, ivk);
 
-    let tmp = extended_to_bytes(&y);
-    tmp
+    extended_to_bytes(&y)
 }
 
 #[inline(never)]
@@ -281,7 +277,7 @@ fn zip32_sapling_derive_child(
         //zip32 child derivation
         let c_i = &ik.chain_code();
 
-        let prf_result = blake2b_expand_v4(c_i, &[0x11], &key_bundle_i.to_bytes(), &[], &le_i);
+        let prf_result = blake2b_expand_v4(c_i, &[0x11], key_bundle_i.to_bytes(), &[], &le_i);
 
         ik.to_bytes_mut().copy_from_slice(&prf_result);
     } else {
@@ -303,7 +299,7 @@ fn zip32_sapling_derive_child(
         let prf_result = blake2b_expand_v4(
             &ik.chain_code(),
             &[0x12],
-            &fvk.to_bytes(),
+            fvk.to_bytes(),
             &key_bundle_i.dk(),
             &le_i,
         );
@@ -316,7 +312,7 @@ fn zip32_sapling_derive_child(
     zip32_sapling_ask_i_update(&ik.spending_key(), key_bundle_i.ask_mut());
     zip32_sapling_nsk_i_update(&ik.spending_key(), key_bundle_i.nsk_mut());
     zip32_sapling_ovk_i_update(&ik.spending_key(), key_bundle_i.ovk_mut());
-    zip32_sapling_dk_i_update(&ik.spending_key(), &mut key_bundle_i.dk_mut());
+    zip32_sapling_dk_i_update(&ik.spending_key(), key_bundle_i.dk_mut());
 }
 
 #[inline(never)]

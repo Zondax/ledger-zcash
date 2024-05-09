@@ -26,6 +26,7 @@ pub fn into_fixed_array<T: Into<u128>>(value: T) -> [u8; 32] {
 
     scalar
 }
+
 #[inline(never)]
 pub fn shiftsixbits(input: &mut [u8; 73]) {
     for i in (1..73).rev() {
@@ -71,9 +72,9 @@ mod tests {
         assert_eq!(
             result,
             expected,
-            "Result: {}, Expected: {}",
-            format!("{:X?}", result),
-            format!("{:X?}", expected)
+            "Result: {:X?}, Expected: {:X?}",
+            result,
+            expected
         );
     }
 
@@ -85,9 +86,9 @@ mod tests {
         assert_eq!(
             result,
             expected,
-            "Result: {}, Expected: {}",
-            format!("{:X?}", result),
-            format!("{:X?}", expected)
+            "Result: {:X?}, Expected: {:X?}",
+            result,
+            expected
         );
     }
 
@@ -99,9 +100,9 @@ mod tests {
         assert_eq!(
             result,
             expected,
-            "Result: {}, Expected: {}",
-            format!("{:X?}", result),
-            format!("{:X?}", expected)
+            "Result: {:X?}, Expected: {:X?}",
+            result,
+            expected
         );
     }
 
@@ -113,9 +114,9 @@ mod tests {
         assert_eq!(
             result,
             expected,
-            "Result: {}, Expected: {}",
-            format!("{:X?}", result),
-            format!("{:X?}", expected)
+            "Result: {:X?}, Expected: {:X?}",
+            result,
+            expected
         );
     }
 
@@ -127,9 +128,9 @@ mod tests {
         assert_eq!(
             result,
             expected,
-            "Result: {}, Expected: {}",
-            format!("{:X?}", result),
-            format!("{:X?}", expected)
+            "Result: {:X?}, Expected: {:X?}",
+            result,
+            expected
         );
     }
 

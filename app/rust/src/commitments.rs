@@ -230,7 +230,7 @@ mod tests {
 
         let h = note_commitment(value, &g_d, &pk_d, &rcm);
 
-        let mp = mixed_pedersen(&h, jubjub::Fr::from_bytes(&into_fixed_array(pos)).unwrap());
+        let mp = mixed_pedersen(&h, Fr::from_bytes(&into_fixed_array(pos)).unwrap());
 
         let nf = prf_nf(&nk, &mp);
 
@@ -276,7 +276,7 @@ mod tests {
         let scalar = into_fixed_array(v);
         let mp = mixed_pedersen(
             &ExtendedPoint::identity(),
-            jubjub::Fr::from_bytes(&scalar).unwrap(),
+            Fr::from_bytes(&scalar).unwrap(),
         );
         assert_eq!(
             mp,
