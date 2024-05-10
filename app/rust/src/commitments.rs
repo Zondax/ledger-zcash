@@ -1,18 +1,18 @@
+use blake2s_simd::Params as Blake2sParams;
+use jubjub::{AffinePoint, ExtendedPoint, Fr};
+
 use crate::bolos::c_zemu_log_stack;
 use crate::constants::{
     NOTE_POSITION_BASE, PEDERSEN_RANDOMNESS_BASE, VALUE_COMMITMENT_RANDOM_BASE,
     VALUE_COMMITMENT_VALUE_BASE,
 };
 use crate::cryptoops::{add_to_point, extended_to_bytes};
-use blake2s_simd::Params as Blake2sParams;
-use jubjub::{AffinePoint, ExtendedPoint, Fr};
-
 use crate::pedersen::*;
 use crate::personalization::CRH_NF;
 use crate::types::Diversifier;
 use crate::utils::{into_fixed_array, shiftsixbits};
 use crate::zip32_extern::zip32_nsk_from_seed;
-use crate::{utils, zip32}; // #[inline(never)]
+use crate::{utils, zip32};
 
 #[inline(never)]
 pub fn group_hash_from_diversifier(diversifier_ptr: *const Diversifier, gd_ptr: *mut [u8; 32]) {
@@ -100,6 +100,7 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
 
 #[cfg(test)]
 mod tests {
+    use crate::bolos::seed::with_device_seed_context;
     use crate::commitments_extern::{compute_note_commitment, compute_nullifier};
     use crate::types::{diversifier_zero, NskBytes};
     use crate::utils::into_fixed_array;
@@ -244,30 +245,31 @@ mod tests {
 
     #[test]
     fn test_get_nf() {
-        let account = 0;
-        let pos: u64 = 2578461368;
-
         let seed: [u8; 32] = [
             176, 142, 61, 152, 218, 67, 28, 239, 69, 102, 161, 60, 27, 179, 72, 185, 130, 247, 216,
             231, 67, 180, 59, 182, 37, 87, 186, 81, 153, 75, 18, 87,
         ];
 
-        let cm: [u8; 32] = [
-            0x21, 0xc9, 0x46, 0x98, 0xca, 0x32, 0x4b, 0x4c, 0xba, 0xce, 0x29, 0x1d, 0x27, 0xab,
-            0xb6, 0x8a, 0xa, 0xaf, 0x27, 0x37, 0xdc, 0x45, 0x56, 0x54, 0x1c, 0x7f, 0xcd, 0xe8,
-            0xce, 0x11, 0xdd, 0xe8,
-        ];
+        with_device_seed_context(seed, || {
+            let account = 0;
+            let pos: u64 = 2578461368;
+            let cm: [u8; 32] = [
+                0x21, 0xc9, 0x46, 0x98, 0xca, 0x32, 0x4b, 0x4c, 0xba, 0xce, 0x29, 0x1d, 0x27, 0xab,
+                0xb6, 0x8a, 0xa, 0xaf, 0x27, 0x37, 0xdc, 0x45, 0x56, 0x54, 0x1c, 0x7f, 0xcd, 0xe8,
+                0xce, 0x11, 0xdd, 0xe8,
+            ];
 
-        let mut nsk: NskBytes = [0u8; 32];
-        let mut nf = [0u8; 32];
+            let mut nsk: NskBytes = [0u8; 32];
+            let mut nf = [0u8; 32];
 
-        zip32_nsk_from_seed(&seed, account, &mut nsk);
-        compute_nullifier(&cm, pos, &nsk, &mut nf);
+            zip32_nsk_from_seed(account, &mut nsk);
+            compute_nullifier(&cm, pos, &nsk, &mut nf);
 
-        assert_eq!(
-            hex::encode(nf),
-            "ce0df155d652565ccab59ae392a569c4f2283df4dc8a26bfd48e178bfceed436"
-        );
+            assert_eq!(
+                hex::encode(nf),
+                "ce0df155d652565ccab59ae392a569c4f2283df4dc8a26bfd48e178bfceed436"
+            );
+        })
     }
 
     #[test]

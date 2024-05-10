@@ -11,7 +11,7 @@
 void blake2b_prf(uint8_t *inputptr, uint8_t *outptr);
 
 void random_fr(uint8_t *alpha_ptr);
-void randomized_secret_from_seed(uint8_t *seed_ptr, uint32_t pos, uint8_t *alpha_ptr, uint8_t *output_ptr);
+void randomized_secret_from_seed(uint32_t account, uint8_t *alpha_ptr, uint8_t *output_ptr);
 
 void get_rk(uint8_t *ask_ptr, uint8_t *alpha_ptr, uint8_t *output_ptr);
 void rsk_to_rk(const uint8_t *rsk_ptr, uint8_t *rk_ptr);

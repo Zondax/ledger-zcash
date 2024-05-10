@@ -4,11 +4,6 @@ use crate::cryptoops;
 use core::convert::TryInto;
 use jubjub::{ExtendedPoint, Fr};
 
-// #[inline(never)]
-// fn return_bytes(point: &mut ExtendedPoint) -> [u8; 32] {
-//     AffinePoint::from(*point).get_u().to_bytes()
-// }
-
 #[inline(never)]
 fn squarings(cur: &mut Fr) {
     *cur = cur.double();
