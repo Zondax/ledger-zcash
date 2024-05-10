@@ -1,11 +1,11 @@
 #pragma once
 
+void compute_nullifier(uint8_t *ncm_ptr, uint64_t note_pos, const uint8_t *nsk_ptr, uint8_t *out_ptr);
+
 void compute_note_commitment(
-    uint8_t *inputptr, const uint8_t *rcmptr, const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd);
+    const uint8_t *rcm_ptr, const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd, uint8_t *out_ptr);
 
 void compute_note_commitment_fullpoint(
-    uint8_t *inputptr, const uint8_t *rcmptr, const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd);
+    const uint8_t *rcm_ptr, const uint64_t value, const uint8_t *diversifier_ptr, const uint8_t *pkd, uint8_t *out_ptr);
 
-void compute_value_commitment(const uint64_t value, const uint8_t *rcmptr, uint8_t *output);
-
-void compute_nullifier(uint8_t *ncmptr, uint64_t pos, const uint8_t *nsk_ptr, uint8_t *outputptr);
+void compute_value_commitment(const uint8_t *rcm_ptr, const uint64_t value, uint8_t *out_ptr);

@@ -195,16 +195,12 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
     };
     MEMZERO(device_seed, ED25519_SK_SIZE);
 
-    uint8_t  raw_privkey[64];  // Allocate 64 bytes to respect Syscall API but only 32 will be used
+    uint8_t raw_privkey[64];  // Allocate 64 bytes to respect Syscall API but only 32 will be used
 
     zxerr_t error = zxerr_unknown;
     io_seproxyhal_io_heartbeat();
-    CATCH_CXERROR(
-        os_derive_bip32_with_seed_no_throw(
-            HDW_NORMAL,
-            CX_CURVE_Ed25519,
-            path, HDPATH_LEN_DEFAULT,
-            raw_privkey, NULL, NULL, 0));
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519, path, HDPATH_LEN_DEFAULT, raw_privkey,
+                                                     NULL, NULL, 0));
 
     io_seproxyhal_io_heartbeat();
     error = zxerr_ok;
@@ -213,7 +209,6 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
 catch_cx_error:
     if (error != zxerr_ok) {
         MEMZERO(raw_privkey, 64);
-
     }
 
     return error;
@@ -687,15 +682,14 @@ zxerr_t crypto_checkspend_sapling(
         }
 
         // step4.cv = step3.rk.
-        compute_value_commitment(item->value, item->rcmvalue, tmp.step4.cv);
+        compute_value_commitment(item->rcmvalue, item->value, tmp.step4.cv);
         if (MEMCMP(tmp.step4.cv, start_spenddata + INDEX_SPEND_VALUECMT + i * SPEND_TX_LEN, VALUE_COMMITMENT_SIZE) != 0) {
             CHECK_ZXERROR_AND_CLEAN(zxerr_unknown)
         }
         io_seproxyhal_io_heartbeat();
 
-        compute_note_commitment_fullpoint(tmp_buf->pedersen_hash,
-                                          start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN, item->value,
-                                          item->div, item->pkd);
+        compute_note_commitment_fullpoint(start_spendolddata + INDEX_SPEND_OLD_RCM + i * SPEND_OLD_TX_LEN, item->value,
+                                          item->div, item->pkd, tmp_buf->pedersen_hash);
 
         uint64_t notepos = 0;
         {
@@ -801,10 +795,10 @@ zxerr_t crypto_checkoutput_sapling(
         rseed_get_rcm(item->rseed, rcm);
         io_seproxyhal_io_heartbeat();
 
-        compute_note_commitment(ncm.step4.notecommitment, rcm, item->value, item->div, item->pkd);
+        compute_note_commitment(rcm, item->value, item->div, item->pkd, ncm.step4.notecommitment);
         io_seproxyhal_io_heartbeat();
 
-        compute_value_commitment(item->value, item->rcmvalue, ncm.step4.valuecommitment);
+        compute_value_commitment(item->rcmvalue, item->value, ncm.step4.valuecommitment);
         io_seproxyhal_io_heartbeat();
 
         if (MEMCMP(ncm.step4.valuecommitment, start_outputdata + INDEX_OUTPUT_VALUECMT + i * OUTPUT_TX_LEN,
@@ -1392,7 +1386,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(
     }
 
     // Initialize pkd
-    get_pkd( p, out->diversifier, out->pkd);
+    get_pkd(p, out->diversifier, out->pkd);
     CHECK_APP_CANARY()
 
     // To simplify the code and avoid making copies, read the 'address_raw' variable.

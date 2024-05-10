@@ -167,11 +167,11 @@ mod tests {
         );
 
         compute_note_commitment(
-            output.as_ptr() as *mut [u8; 32],
             rcm.as_ptr() as *const [u8; 32],
             v,
             div.as_ptr() as *const Diversifier,
             pkd.as_ptr() as *const [u8; 32],
+            output.as_ptr() as *mut [u8; 32],
         );
 
         assert_eq!(
