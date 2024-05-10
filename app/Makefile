@@ -71,6 +71,9 @@ INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
+# Existing CFLAGS
+CFLAGS += -Werror
+CXXFLAGS += -Werror
 
 # Building Rust
 LDFLAGS += -z muldefs
