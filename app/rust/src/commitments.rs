@@ -11,7 +11,6 @@ use crate::pedersen::*;
 use crate::personalization::CRH_NF;
 use crate::types::Diversifier;
 use crate::utils::{into_fixed_array, shiftsixbits};
-use crate::zip32_extern::zip32_nsk_from_seed;
 use crate::{utils, zip32};
 
 #[inline(never)]
@@ -104,6 +103,7 @@ mod tests {
     use crate::commitments_extern::{compute_note_commitment, compute_nullifier};
     use crate::types::{diversifier_zero, NskBytes};
     use crate::utils::into_fixed_array;
+    use crate::zip32_extern::zip32_nsk;
 
     use super::*;
 
@@ -262,7 +262,7 @@ mod tests {
             let mut nsk: NskBytes = [0u8; 32];
             let mut nf = [0u8; 32];
 
-            zip32_nsk_from_seed(account, &mut nsk);
+            zip32_nsk(account, &mut nsk);
             compute_nullifier(&cm, pos, &nsk, &mut nf);
 
             assert_eq!(

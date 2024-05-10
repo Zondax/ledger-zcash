@@ -101,7 +101,7 @@ pub extern "C" fn zip32_child_ask_nsk(
 }
 
 #[no_mangle]
-pub extern "C" fn zip32_nsk_from_seed(account: u32, nsk_ptr: *mut NskBytes) {
+pub extern "C" fn zip32_nsk(account: u32, nsk_ptr: *mut NskBytes) {
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
     let nsk = unsafe { &mut *nsk_ptr };
 

@@ -191,10 +191,10 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
 
     // Generate randomness using a fixed path related to the device mnemonic
     const uint32_t path[HDPATH_LEN_DEFAULT] = {
-        0x8000002c, 0x80000085, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
+        HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
     };
-    MEMZERO(device_seed, ED25519_SK_SIZE);
 
+    MEMZERO(device_seed, ED25519_SK_SIZE);
     uint8_t raw_privkey[64];  // Allocate 64 bytes to respect Syscall API but only 32 will be used
 
     zxerr_t error = zxerr_unknown;
@@ -213,6 +213,11 @@ catch_cx_error:
 
     return error;
 }
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
 // handleInitTX step 1/2
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
@@ -375,17 +380,8 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
 }
 
 typedef struct {
-    union {
-        // STEP 1
-        struct {
-            uint8_t sk[ED25519_SK_SIZE];
-        } step1;
-
-        struct {
-            uint8_t ask[ASK_SIZE];
-            uint8_t nsk[NSK_SIZE];
-        } step2;
-    };
+    uint8_t ask[ASK_SIZE];
+    uint8_t nsk[NSK_SIZE];
 } tmp_spendinfo_s;
 
 // handleExtractSpendData
@@ -662,8 +658,6 @@ zxerr_t crypto_checkspend_sapling(
 
     tmp_checkspend tmp = {0};
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
     const uint8_t spendListSize = spendlist_len();
 
     for (uint8_t i = 0; i < spendListSize; i++) {
@@ -782,8 +776,6 @@ zxerr_t crypto_checkoutput_sapling(
 
     uint8_t rcm[RCM_SIZE] = {0};
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
     const uint8_t outputListLen = outputlist_len();
     for (uint8_t i = 0; i < outputListLen; i++) {
         const output_item_t *item = outputlist_retrieve_item(i);
@@ -908,8 +900,6 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
 
     const uint8_t *start_outputdata = (uint8_t *)(txdata + length_t_in_data() + length_spenddata());
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
     for (uint8_t i = 0; i < outputlist_len(); i++) {
         // retrieve info on list of outputs stored in flash
         const output_item_t *item = outputlist_retrieve_item(i);
@@ -931,8 +921,9 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         CHECK_APP_CANARY()
         // encode (div, value rseed and memotype) into step2.compactout ready to be
         // encrypted
-        prepare_enccompact_input((uint8_t *)item->div, item->value, (uint8_t *)item->rseed, item->memotype,
-                                 tmp->step2.compactout);
+        prepare_compact_note((uint8_t *)item->div, item->value, (uint8_t *)item->rseed, item->memotype,
+                             tmp->step2.compactout);
+
         CHECK_APP_CANARY()
         MEMZERO(tmp->step2.chachanonce, CHACHA_NONCE_SIZE);
         // encrypt the previously obtained encoding, and store it in
@@ -1192,8 +1183,6 @@ zxerr_t crypto_signspends_sapling(
     signature_hash(txdata, start_signdata, SAPLING_LENGTH_HASH_DATA, tx_version, message + 32);
     tmp_sign_s tmp = {0};
 
-    // the path in zip32 is [FIRST_VALUE, COIN_TYPE, p] where p is u32 and last
-    // part of hdPath
     //  Temporarily get sk from Ed25519
     const uint8_t spendListLen = spendlist_len();
     for (uint8_t i = 0; i < spendListLen; i++) {
@@ -1314,7 +1303,7 @@ zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
 // handleGetNullifier
 zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer,
                                  uint16_t outputBufferLen,
-                                 uint32_t zip32_path,
+                                 uint32_t zip32_account,
                                  uint64_t notepos,
                                  uint8_t *cm,
                                  uint16_t *replyLen) {
@@ -1324,7 +1313,7 @@ zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer,
 
     // nk can be computed from nsk which itself can be computed from the seed.
     uint8_t nsk[NSK_SIZE] = {0};
-    zip32_nsk_from_seed(zip32_path, nsk);
+    zip32_nsk(zip32_account, nsk);
 
     compute_nullifier(cm, notepos, nsk, outputBuffer);
     CHECK_APP_CANARY()

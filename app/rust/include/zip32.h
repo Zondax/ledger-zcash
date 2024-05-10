@@ -10,13 +10,15 @@ void diversifier_get_list(uint32_t zip32_account, const uint8_t *startindex, uin
 
 void diversifier_find_valid(uint32_t zip32_account, uint8_t *default_diversifier);
 
-void zip32_child_ask_nsk(uint32_t pos, uint8_t *ask, uint8_t *nsk);
+//////////////////////////////////
 
-void zip32_nsk_from_seed(uint32_t zip32_account, uint8_t *nsk);
-
-void zip32_ovk(uint32_t zip32_account, uint8_t *ovk);
+void zip32_child_ask_nsk(uint32_t account, uint8_t *ask, uint8_t *nsk);
 
 void zip32_child_proof_key(uint32_t account, uint8_t *ak_ptr, uint8_t *nsk_ptr);
+
+void zip32_nsk(uint32_t zip32_account, uint8_t *nsk);
+
+void zip32_ovk(uint32_t zip32_account, uint8_t *ovk);
 
 void zip32_ivk(uint32_t zip32_account, uint8_t *ivk);
 

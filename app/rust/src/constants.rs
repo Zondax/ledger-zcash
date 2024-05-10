@@ -246,15 +246,6 @@ pub const ZIP32_HARDENED: u32 = 0x8000_0000;
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 
-pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
-//52
-pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
-pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
-pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
-//68
-pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
-pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
-
 pub const DIV_SIZE: usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
-pub const MAX_SIZE_BUF_ADDR: usize = 143;
+// pub const MAX_SIZE_BUF_ADDR: usize = 143;

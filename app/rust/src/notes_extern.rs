@@ -1,9 +1,8 @@
 use byteorder::{ByteOrder, LittleEndian};
 
-use crate::constants::COMPACT_NOTE_SIZE;
 use crate::notes;
 use crate::notes::{get_epk, rseed_generate_rcm, rseed_get_esk};
-use crate::types::Diversifier;
+use crate::types::{CompactNoteExt, Diversifier};
 
 #[no_mangle]
 pub extern "C" fn rseed_get_esk_epk(
@@ -52,27 +51,20 @@ pub extern "C" fn ka_to_key(
 }
 
 #[no_mangle]
-pub extern "C" fn prepare_enccompact_input(
+pub extern "C" fn prepare_compact_note(
     d_ptr: *const Diversifier,
     value: u64,
     rcm_ptr: *const [u8; 32],
     memotype: u8,
-    output_ptr: *mut [u8; COMPACT_NOTE_SIZE + 1],
+    out_ptr: *mut CompactNoteExt,
 ) {
     let d = unsafe { &*d_ptr };
     let rcm = unsafe { &*rcm_ptr };
+    let out = unsafe { &mut *out_ptr };
 
-    let output = unsafe { &mut *output_ptr };
-
-    let mut input = [0; COMPACT_NOTE_SIZE + 1];
-    input[0] = 2;
-    input[1..12].copy_from_slice(d);
-
-    let mut vbytes = [0u8; 8];
-    LittleEndian::write_u64(&mut vbytes, value);
-
-    input[12..20].copy_from_slice(&vbytes);
-    input[20..COMPACT_NOTE_SIZE].copy_from_slice(rcm);
-    input[COMPACT_NOTE_SIZE] = memotype;
-    output.copy_from_slice(&input);
+    *out.version_mut() = 2u8;
+    out.diversifier_mut().copy_from_slice(d);
+    LittleEndian::write_u64(out.value_mut(), value);
+    out.rcm_mut().copy_from_slice(rcm);
+    *out.memotype_mut() = memotype;
 }

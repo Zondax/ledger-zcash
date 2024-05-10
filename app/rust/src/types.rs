@@ -98,3 +98,14 @@ create_ztruct! {
         pub chain_code: Zip32MasterChainCode,
     }
 }
+
+create_ztruct! {
+    pub struct CompactNoteExt {
+        pub version: u8,
+        pub diversifier: Diversifier,
+        pub value: [u8; 8],
+        pub rcm: DkBytes,
+        // FIXME: why an additional byte?
+        pub memotype: u8
+    }
+}

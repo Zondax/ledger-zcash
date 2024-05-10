@@ -113,5 +113,5 @@ pub fn create_ztruct(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         }
     };
 
-    proc_macro::TokenStream::from(proc_macro2::TokenStream::from(expanded))
+    proc_macro::TokenStream::from(expanded)
 }
