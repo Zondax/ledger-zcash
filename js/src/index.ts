@@ -14,7 +14,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import GenericApp, { INSGeneric, LedgerError, Transport, processErrorResponse, processResponse } from '@zondax/ledger-js'
+import GenericApp, {
+  INSGeneric,
+  LedgerError,
+  Transport,
+  processErrorResponse,
+  processResponse,
+} from '@zondax/ledger-js'
 import { serializePath } from '@zondax/ledger-js/dist/bip32'
 
 import {
@@ -32,13 +38,21 @@ import {
   SAPLING_OVK_LEN,
   TRANSPARENT_PK_LEN,
 } from './consts'
-import { AddressResponse, DiversifierListResponse, IvkResponse, NullifierResponse } from './types'
+import {
+  AddressResponse,
+  DiversifierListResponse,
+  FvkResponse,
+  IvkResponse,
+  NullifierResponse,
+  OvkResponse,
+} from './types'
 import { prepareChunks, saplingPrepareChunks, saplingSendChunkv1, signSendChunkv1 } from './utils'
+import { ResponseError } from '@zondax/ledger-js/dist/responseError'
 
 export default class ZCashApp extends GenericApp {
   constructor(transport: Transport) {
     super(transport, {
-      cla: 0x85,
+      cla: CLA,
       ins: { ...INS } as INSGeneric,
       p1Values: {
         ONLY_RETRIEVE: 0x00,
@@ -53,11 +67,16 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  async getAddressTransparent(path: any): Promise<AddressResponse> {
+  ////////////////////////////////////////////
+  ////////////////////////////////////////////
+  ////////////////////////////////////////////
+
+  async getAddressTransparent(path: string, showInScreen = true): Promise<AddressResponse> {
     try {
       const sentToDevice = serializePath(path)
 
-      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, sentToDevice)
+      const p1 = showInScreen ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SECP256K1, p1, 0, sentToDevice)
       const response = processResponse(responseBuffer)
 
       // FIXME: probably incorrect.. and this should be pk
@@ -73,12 +92,13 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  async getAddressSapling(zip32Account: number): Promise<AddressResponse> {
+  async getAddressSapling(zip32Account: number, showInScreen = true): Promise<AddressResponse> {
     const sentToDevice = Buffer.alloc(4)
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, sentToDevice)
+      const p1 = showInScreen ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING, p1, 0, sentToDevice)
       const response = processResponse(responseBuffer)
 
       const addressRaw = response.readBytes(SAPLING_ADDR_LEN)
@@ -93,7 +113,36 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  async getIvk(zip32Account: any): Promise<IvkResponse> {
+  async getAddressSamplingFromDiversifier(zip32Account: number, diversifier: Buffer, showInScreen = true): Promise<AddressResponse> {
+    if (diversifier?.length !== 11) {
+      throw new ResponseError(LedgerError.IncorrectData, 'diversifier Buffer must be exactly 11 bytes')
+    }
+
+    const sentToDevice = Buffer.alloc(4 + 11)
+    sentToDevice.writeUInt32LE(zip32Account, 0)
+    diversifier.copy(sentToDevice, 4)
+
+    try {
+      const p1 = showInScreen ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING, p1, 0, sentToDevice)
+      const response = processResponse(responseBuffer)
+
+      const addressRaw = response.readBytes(SAPLING_ADDR_LEN)
+      const address = response.readBytes(response.length()).toString()
+
+      return {
+        address,
+        addressRaw: addressRaw,
+      }
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
+  }
+
+  ////////////////////////////////////////////
+  ////////////////////////////////////////////
+
+  async getIvkSapling(zip32Account: number): Promise<IvkResponse> {
     const sentToDevice = Buffer.alloc(4)
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
@@ -104,18 +153,18 @@ export default class ZCashApp extends GenericApp {
       const response = processResponse(responseBuffer)
 
       const ivkRaw = response.readBytes(SAPLING_IVK_LEN)
-      const defaultDiv = response.readBytes(SAPLING_DIV_LEN)
+      const defaultDiversifier = response.readBytes(SAPLING_DIV_LEN)
 
       return {
         ivkRaw,
-        defaultDiv,
+        defaultDiversifier: defaultDiversifier,
       }
     } catch (error) {
       throw processErrorResponse(error)
     }
   }
 
-  async getOvk(zip32Account: any) {
+  async getOvkSapling(zip32Account: number): Promise<OvkResponse> {
     const sentToDevice = Buffer.alloc(4)
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
@@ -135,7 +184,7 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  async getFvk(zip32Account: any) {
+  async getFvkSapling(zip32Account: number): Promise<FvkResponse> {
     const sentToDevice = Buffer.alloc(4)
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
@@ -161,9 +210,14 @@ export default class ZCashApp extends GenericApp {
 
   ////////////////////////////////////
 
-  async getDiversifierList(path: any, index: any): Promise<DiversifierListResponse> {
-    const sentToDevice = Buffer.alloc(4)
-    sentToDevice.writeUInt32LE(path, 0)
+  async getDiversifierList(zip32Account: number, startingDiversifier: Buffer): Promise<DiversifierListResponse> {
+    if (startingDiversifier?.length !== 11) {
+      throw new ResponseError(LedgerError.IncorrectData, 'startingDiversifier Buffer must be exactly 11 bytes')
+    }
+
+    const sentToDevice = Buffer.alloc(4 + 11)
+    sentToDevice.writeUInt32LE(zip32Account, 0)
+    startingDiversifier.copy(sentToDevice, 4)
 
     try {
       const responseBuffer = await this.transport.send(
@@ -171,7 +225,7 @@ export default class ZCashApp extends GenericApp {
         INS.GET_DIV_LIST,
         P1_VALUES.ONLY_RETRIEVE,
         0,
-        Buffer.concat([sentToDevice, index])
+        Buffer.concat([sentToDevice, startingDiversifier]),
       )
       const response = processResponse(responseBuffer)
 
@@ -189,59 +243,17 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  // FIXME: What is this used for?
-  async getAddrDiv(path: any, div: any) {
-    const buf = Buffer.alloc(4)
-    buf.writeUInt32LE(path, 0)
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, div]), [0x9000])
-      .then(function (response: any): AddressResponse {
-        let partialResponse = response
-
-        const errorCodeData = partialResponse.slice(-2)
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN))
-        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN)
-
-        const address = Buffer.from(partialResponse.slice(0, -2)).toString()
-
-        return {
-          address,
-          addressRaw: addressRaw,
-        }
-      }, processErrorResponse)
-  }
-
-  // FIXME: What is this used for?
-  async showAddrDiv(path: any, div: any) {
-    const buf = Buffer.alloc(4)
-    buf.writeUInt32LE(path, 0)
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, div]), [0x9000])
-      .then(function (response: any): AddressResponse {
-        let partialResponse = response
-
-        const errorCodeData = partialResponse.slice(-2)
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN))
-        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN)
-
-        const address = Buffer.from(partialResponse.slice(0, -2)).toString()
-
-        return {
-          address,
-          addressRaw: addressRaw,
-        }
-      }, processErrorResponse)
-  }
-
   ////////////////////////////////////
 
-  async getNullifier(zip32Account: any, pos: any, cm: any): Promise<NullifierResponse> {
-    const sentToDevice = Buffer.alloc(4)
+  async getNullifierSapling(zip32Account: number, notePosition: bigint, ncm: Buffer): Promise<NullifierResponse> {
+    if (ncm.length !== 32) {
+      throw new ResponseError(LedgerError.IncorrectData, 'ncm Buffer must be exactly 32 bytes')
+    }
+
+    const sentToDevice = Buffer.alloc(4 + 8 + 32)
     sentToDevice.writeUInt32LE(zip32Account, 0)
+    sentToDevice.writeBigUInt64LE(notePosition, 8)
+    ncm.copy(sentToDevice, 12)
 
     try {
       const responseBuffer = await this.transport.send(
@@ -249,8 +261,7 @@ export default class ZCashApp extends GenericApp {
         INS.GET_NF_SAPLING,
         P1_VALUES.ONLY_RETRIEVE,
         0,
-        Buffer.concat([sentToDevice, pos, cm])
-      )
+        sentToDevice)
       const response = processResponse(responseBuffer)
 
       const nfraw = Buffer.from(response.readBytes(SAPLING_NF_LEN))
@@ -291,8 +302,8 @@ export default class ZCashApp extends GenericApp {
   }
 
   async extractSpendSignature() {
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function (
-      response: any
+    return this.transport.send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
+      response: any,
     ) {
       const partialResponse = response
 
@@ -308,8 +319,8 @@ export default class ZCashApp extends GenericApp {
   }
 
   async extractTransparentSig() {
-    return this.transport.send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function (
-      response: any
+    return this.transport.send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
+      response: any,
     ) {
       const partialResponse = response
 
@@ -325,8 +336,8 @@ export default class ZCashApp extends GenericApp {
   }
 
   async extractOutputData() {
-    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function (
-      response: any
+    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
+      response: any,
     ) {
       const partialResponse = response
 
@@ -351,8 +362,8 @@ export default class ZCashApp extends GenericApp {
   }
 
   async extractSpendData() {
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function (
-      response: any
+    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
+      response: any,
     ) {
       const partialResponse = response
 
@@ -375,8 +386,8 @@ export default class ZCashApp extends GenericApp {
     if (!unshielded) {
       const buf = Buffer.alloc(4)
       buf.writeUInt32LE(path, 0)
-      return this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(function (
-        response: any
+      return this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(function(
+        response: any,
       ): AddressResponse {
         let partialResponse = response
 
@@ -395,8 +406,8 @@ export default class ZCashApp extends GenericApp {
       }, processErrorResponse)
     }
     const serializedPath = this.serializePath(path)
-    return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(function (
-      response: any
+    return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(function(
+      response: any,
     ): AddressResponse {
       let partialResponse = response
 

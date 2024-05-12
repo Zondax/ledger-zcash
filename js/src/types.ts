@@ -21,12 +21,11 @@ export type AddressResponse = {
 
 export type IvkResponse = {
   ivkRaw: Buffer
-  defaultDiv: Buffer
+  defaultDiversifier: Buffer
 }
 
 export type OvkResponse = {
   ovkRaw: Buffer
-  defaultDiv: Buffer
 }
 
 export type FvkResponse = {
