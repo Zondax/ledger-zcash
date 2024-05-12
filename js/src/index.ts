@@ -15,253 +15,43 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import GenericApp, { INSGeneric, LedgerError, ResponseBase, Transport, errorCodeToString, processErrorResponse } from "@zondax/ledger-js";
+import GenericApp, {
+  INSGeneric,
+  LedgerError,
+  processErrorResponse,
+  processResponse,
+  Transport
+} from "@zondax/ledger-js";
 import {
   CHUNK_SIZE,
   CLA,
   ERROR_CODE,
   INS,
   P1_VALUES,
-  PKLEN,
   SAPLING_ADDR_LEN,
   SAPLING_AK_LEN,
   SAPLING_DIV_LEN,
   SAPLING_IVK_LEN,
   SAPLING_NF_LEN,
   SAPLING_NK_LEN,
-  SAPLING_OVK_LEN,
-} from "./common";
+  SAPLING_OVK_LEN, TRANSPARENT_PK_LEN
+} from "./consts";
 
-import { saplingSendChunkv1, signSendChunkv1 } from "./helper";
-
-type AddressResponse = ResponseBase & (
-  ResponseBase['returnCode'] extends LedgerError.NoErrors ? {
-    address: string;
-    addressRaw: Buffer;
-  } : {}
-);
-
-function processGetUnshieldedAddrResponse(response: any): AddressResponse {
-  let partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const addressRaw = Buffer.from(partialResponse.slice(0, PKLEN));
-  partialResponse = partialResponse.slice(PKLEN);
-
-  const address = Buffer.from(partialResponse.slice(0, -2)).toString();
-
-  return {
-    address,
-    addressRaw: addressRaw,
-    returnCode: LedgerError.NoErrors,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processDivListResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const divlist = [];
-  const data = partialResponse.slice(0, 220);
-  if (response.length > 2) {
-    let i;
-    let div;
-    for (i = 0; i < 20; i += 1) {
-      div = data.slice(i * 11, (i + 1) * 11).toString("hex");
-      if (div !== "0000000000000000000000") {
-        divlist.push(div);
-      }
-    }
-  }
-
-  return {
-    divlist,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processNullifierResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const nfraw = Buffer.from(partialResponse.slice(0, SAPLING_NF_LEN));
-
-  return {
-    nfRaw: nfraw,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processIVKResponse(response: any) {
-  let partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const ivkraw = Buffer.from(partialResponse.slice(0, SAPLING_IVK_LEN));
-  // "advance" buffer
-
-  partialResponse = partialResponse.slice(SAPLING_IVK_LEN);
-  const defaultdiv = Buffer.from(partialResponse.slice(0, SAPLING_DIV_LEN));
-
-  return {
-    ivkRaw: ivkraw,
-    default_div: defaultdiv,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processOVKResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const ovkraw = Buffer.from(partialResponse.slice(0, SAPLING_OVK_LEN));
-
-  return {
-    ovkRaw: ovkraw,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processFVKResponse(response: any) {
-  let partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const akraw = Buffer.from(partialResponse.slice(0, SAPLING_AK_LEN));
-  partialResponse = partialResponse.slice(SAPLING_AK_LEN);
-
-  const nkraw = Buffer.from(partialResponse.slice(0, SAPLING_NK_LEN));
-  partialResponse = partialResponse.slice(SAPLING_NK_LEN);
-
-  const ovkraw = Buffer.from(partialResponse.slice(0, SAPLING_OVK_LEN));
-
-  return {
-    akRaw: akraw,
-    nkRaw: nkraw,
-    ovkRaw: ovkraw,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processOutputResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const rcv = Buffer.from(partialResponse.slice(0, 32));
-  const rseed = Buffer.from(partialResponse.slice(32, 64));
-  let hashseed;
-  if (partialResponse.byteLength === 96 + 2) {
-    hashseed = Buffer.from(partialResponse.slice(64, 96)).toString("hex");
-  } else {
-    hashseed = null;
-  }
-
-  return {
-    rcvRaw: rcv.toString("hex"),
-    rseedRaw: rseed.toString("hex"),
-    hashSeed: hashseed,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processSpendResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const keyraw = Buffer.from(partialResponse.slice(0, 64));
-  const rcv = Buffer.from(partialResponse.slice(64, 96));
-  const alpha = Buffer.from(partialResponse.slice(96, 128));
-
-  return {
-    keyRaw: keyraw.toString("hex"),
-    rcvRaw: rcv.toString("hex"),
-    alphaRaw: alpha.toString("hex"),
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processSIGResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const sigraw = Buffer.from(partialResponse.slice(0, 64));
-
-  return {
-    signatureRaw: sigraw.toString("hex"),
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processTRANSIGResponse(response: any) {
-  const partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const sigraw = Buffer.from(partialResponse.slice(0, 64));
-
-  return {
-    signatureRaw: sigraw.toString("hex"),
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
-
-function processGetShieldedAddrResponse(response: any) : AddressResponse {
-  let partialResponse = response;
-
-  const errorCodeData = partialResponse.slice(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
-
-  const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN));
-  partialResponse = partialResponse.slice(SAPLING_ADDR_LEN);
-
-  const address = Buffer.from(partialResponse.slice(0, -2)).toString();
-
-  return {
-    address,
-    addressRaw: addressRaw,
-    returnCode: returnCode,
-    errorMessage: errorCodeToString(returnCode),
-  };
-}
+import { prepareChunks, saplingPrepareChunks, saplingSendChunkv1, signSendChunkv1 } from "./utils";
+import { AddressResponse, DiversifierListResponse, IvkResponse, NullifierResponse } from './types'
+import { serializePath } from '@zondax/ledger-js/dist/bip32'
 
 export default class ZCashApp extends GenericApp {
   constructor(transport: Transport) {
     super(transport, {
-      cla: 0xb0,
+      cla: 0x85,
       ins: { ...INS } as INSGeneric,
       p1Values: {
         ONLY_RETRIEVE: 0x00,
-        SHOW_ADDRESS_IN_DEVICE: 0x01,
+        SHOW_ADDRESS_IN_DEVICE: 0x01
       },
       acceptedPathLengths: [5],
-      chunkSize: CHUNK_SIZE,
+      chunkSize: CHUNK_SIZE
     });
 
     if (!this.transport) {
@@ -269,204 +59,213 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  static saplingprepareChunks(message: any) {
-    const chunks = [];
-    chunks.push(Buffer.from([]));
-    const buffer = Buffer.from(message);
-    for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
-      let end = i + CHUNK_SIZE;
-      if (i > buffer.length) {
-        end = buffer.length;
-      }
-      chunks.push(buffer.subarray(i, end));
+  async getAddressTransparent(path: any): Promise<AddressResponse> {
+    try {
+      const sentToDevice = serializePath(path);
+
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, sentToDevice);
+      const response = processResponse(responseBuffer);
+
+      // FIXME: probably incorrect.. and this should be pk
+      const addressRaw = response.readBytes(TRANSPARENT_PK_LEN);
+      const address = response.readBytes(response.length()).toString();
+
+      return {
+        address,
+        addressRaw
+      };
+
+    } catch (error) {
+      throw processErrorResponse(error);
     }
-
-    return chunks;
   }
 
-  static prepareChunks(serializedPathBuffer: any, message: any) {
-    const chunks = [];
+  async getAddressSapling(zip32Account: number): Promise<AddressResponse> {
+    const sentToDevice = Buffer.alloc(4);
+    sentToDevice.writeUInt32LE(zip32Account, 0);
 
-    // First chunk (only path)
-    chunks.push(serializedPathBuffer);
+    try {
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, sentToDevice);
+      const response = processResponse(responseBuffer);
 
-    const messageBuffer = Buffer.from(message);
+      const addressRaw = response.readBytes(SAPLING_ADDR_LEN);
+      const address = response.readBytes(response.length()).toString();
 
-    const buffer = Buffer.concat([messageBuffer]);
-    for (let i = 0; i < buffer.length; i += CHUNK_SIZE) {
-      let end = i + CHUNK_SIZE;
-      if (i > buffer.length) {
-        end = buffer.length;
-      }
-      chunks.push(buffer.subarray(i, end));
+      return {
+        address,
+        addressRaw: addressRaw
+      };
+
+    } catch (error) {
+      throw processErrorResponse(error);
     }
-
-    return chunks;
   }
 
-  async signGetChunks(path: any, message: any) {
-    return ZCashApp.prepareChunks(this.serializePath(path), message);
-  }
+  async getIvk(zip32Account: any): Promise<IvkResponse> {
+    const sentToDevice = Buffer.alloc(4);
+    sentToDevice.writeUInt32LE(zip32Account, 0);
 
-  
-  /**
-   * Retrieves the address and public key for a given path.
-   * If `unshielded` is false, it retrieves a shielded address and public key.
-   * 
-   * @param path - The derivation path for the address.
-   * @param unshielded - Flag to indicate if an unshielded address should be retrieved.
-   * @returns A promise that resolves to an object containing the address and raw address buffer, along with standard response details.
-   */
-  async getAddressAndPubKey(path: any, unshielded = false): Promise<ResponseBase | AddressResponse> {
-    if (!unshielded) {
-      const buf = Buffer.alloc(4);
-      buf.writeUInt32LE(path, 0);
-      return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.ONLY_RETRIEVE, 0, buf, [0x9000])
-        .then(processGetShieldedAddrResponse, processErrorResponse);
+    try {
+      const responseBuffer = await this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [0x9000]);
+      const response = processResponse(responseBuffer);
+
+      const ivkRaw = response.readBytes(SAPLING_IVK_LEN);
+      const defaultDiv = response.readBytes(SAPLING_DIV_LEN);
+
+      return {
+        ivkRaw,
+        defaultDiv
+      };
+
+    } catch (error) {
+      throw processErrorResponse(error);
     }
-    const serializedPath = this.serializePath(path);
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.ONLY_RETRIEVE, 0, serializedPath, [0x9000])
-      .then(processGetUnshieldedAddrResponse, processErrorResponse);
   }
 
-  async getivk(path: any) {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-      .send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
-      .then(processIVKResponse, processErrorResponse);
+  async getOvk(zip32Account: any) {
+    const sentToDevice = Buffer.alloc(4);
+    sentToDevice.writeUInt32LE(zip32Account, 0);
+
+    try {
+      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [0x9000]);
+      const response = processResponse(responseBuffer);
+
+      const ovkRaw = response.readBytes(SAPLING_OVK_LEN);
+
+      return {
+        ovkRaw
+      };
+
+    } catch (error) {
+      throw processErrorResponse(error);
+    }
   }
 
-  async getovk(path: any) {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-      .send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
-      .then(processOVKResponse, processErrorResponse);
+  async getFvk(zip32Account: any) {
+    const sentToDevice = Buffer.alloc(4);
+    sentToDevice.writeUInt32LE(zip32Account, 0);
+
+    try {
+      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [0x9000]);
+      const response = processResponse(responseBuffer);
+
+      const akRaw = response.readBytes(SAPLING_AK_LEN);
+      const nkRaw = response.readBytes(SAPLING_NK_LEN);
+      const ovkRaw = response.readBytes(SAPLING_OVK_LEN);
+
+      return {
+        akRaw,
+        nkRaw,
+        ovkRaw
+      };
+
+    } catch (error) {
+      throw processErrorResponse(error);
+    }
   }
 
-  async getNullifier(path: any, pos: any, cm: any) {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, pos, cm]), [0x9000])
-      .then(processNullifierResponse, processErrorResponse);
-  }
+  ////////////////////////////////////
 
-  async getFVK(path: any) {
-    const buf = Buffer.alloc(4);
-    buf.writeUInt32LE(path, 0);
-    return this.transport
-      .send(CLA, INS.GET_FVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
-      .then(processFVKResponse, processErrorResponse);
-  }
-
-  async extractSpendSignature() {
-    return this.transport
-      .send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
-      .then(processSIGResponse, processErrorResponse);
-  }
-
-  async extracttranssig() {
-    return this.transport
-      .send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
-      .then(processTRANSIGResponse, processErrorResponse);
-  }
-
-  async extractoutputdata() {
-    return this.transport
-      .send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
-      .then(processOutputResponse, processErrorResponse);
-  }
-
-  async extractSpendData() {
-    return this.transport
-      .send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
-      .then(processSpendResponse, processErrorResponse);
-  }
-
-  async getDivList(path: any, index: any) {
+  async getDiversifierList(path: any, index: any): Promise<DiversifierListResponse> {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
     return this.transport
       .send(CLA, INS.GET_DIV_LIST, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, index]), [0x9000])
-      .then(processDivListResponse, processErrorResponse);
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const divlist = [];
+        const data = partialResponse.slice(0, 220);
+        if (response.length > 2) {
+          let i;
+          let div;
+          for (i = 0; i < 20; i += 1) {
+            div = data.slice(i * 11, (i + 1) * 11).toString("hex");
+            if (div !== "0000000000000000000000") {
+              divlist.push(div);
+            }
+          }
+        }
+
+        return {
+          divlist
+        };
+      }, processErrorResponse);
   }
 
+// FIXME: What is this used for?
   async getAddrDiv(path: any, div: any) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
     return this.transport
       .send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.concat([buf, div]), [0x9000])
-      .then(processGetShieldedAddrResponse, processErrorResponse);
+      .then(function(response: any): AddressResponse {
+        let partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN));
+        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN);
+
+        const address = Buffer.from(partialResponse.slice(0, -2)).toString();
+
+        return {
+          address,
+          addressRaw: addressRaw
+        };
+      }, processErrorResponse);
   }
 
+// FIXME: What is this used for?
   async showAddrDiv(path: any, div: any) {
     const buf = Buffer.alloc(4);
     buf.writeUInt32LE(path, 0);
     return this.transport
       .send(CLA, INS.GET_ADDR_SAPLING_DIV, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, div]), [0x9000])
-      .then(processGetShieldedAddrResponse, processErrorResponse);
-  }
+      .then(function(response: any): AddressResponse {
+        let partialResponse = response;
 
-  async showAddressAndPubKey(path: any, unshielded = false) {
-    if (!unshielded) {
-      const buf = Buffer.alloc(4);
-      buf.writeUInt32LE(path, 0);
-      return this.transport
-        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
-        .then(processGetShieldedAddrResponse, processErrorResponse);
-    }
-    const serializedPath = this.serializePath(path);
-    return this.transport
-      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
-      .then(processGetUnshieldedAddrResponse, processErrorResponse);
-  }
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
 
-  async signSendChunk(chunkIdx: any, chunkNum: any, chunk: any) {
-    return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
-  }
+        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN));
+        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN);
 
-  async saplingGetChunks(message: any) {
-    return ZCashApp.saplingprepareChunks(message);
-  }
-
-  async checkSpendsGetChunks(path: any, message: any) {
-    return ZCashApp.prepareChunks(this.serializePath(path), message);
-  }
-
-  async saplingSendChunk(version: any, chunkIdx: any, chunkNum: any, chunk: any, p2: any, acceptErrors?: any) {
-    return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk, p2, acceptErrors);
-  }
-
-  async checkAndSign(message: any, txVersion: any) {
-    return this.saplingGetChunks(message).then((chunks) => {
-      return this.saplingSendChunk(INS.CHECK_AND_SIGN, 1, chunks.length, chunks[0], txVersion, ).then(async (response) => {
-        let result = {
-          returnCode: response.returnCode,
-          errorMessage: response.errorMessage,
-          signdata: null,
-        };
-
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.CHECK_AND_SIGN, 1 + i, chunks.length, chunks[i], txVersion);
-          if (result.returnCode !== ERROR_CODE.NoError) {
-            break;
-          }
-        }
+        const address = Buffer.from(partialResponse.slice(0, -2)).toString();
 
         return {
-          returnCode: result.returnCode,
-          errorMessage: result.errorMessage,
-          // ///
-          signdata: result.signdata,
+          address,
+          addressRaw: addressRaw
         };
       }, processErrorResponse);
-    }, processErrorResponse);
   }
+
+  ////////////////////////////////////
+
+  async getNullifier(zip32Account: any, pos: any, cm: any): Promise<NullifierResponse> {
+    const buf = Buffer.alloc(4);
+    buf.writeUInt32LE(zip32Account, 0);
+    return this.transport
+      .send(CLA, INS.GET_NF_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, Buffer.concat([buf, pos, cm]), [0x9000])
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const nfraw = Buffer.from(partialResponse.slice(0, SAPLING_NF_LEN));
+
+        return {
+          nfRaw: nfraw
+        };
+      }, processErrorResponse);
+  }
+
+  ////////////////////////////////////
 
   async initNewTx(message: any) {
     return this.saplingGetChunks(message).then((chunks) => {
@@ -475,7 +274,7 @@ export default class ZCashApp extends GenericApp {
           let result = {
             returnCode: response.returnCode,
             errorMessage: response.errorMessage,
-            txdata: null,
+            txdata: null
           };
 
           for (let i = 1; i < chunks.length; i += 1) {
@@ -490,11 +289,183 @@ export default class ZCashApp extends GenericApp {
             returnCode: result.returnCode,
             errorMessage: result.errorMessage,
             // ///
-            txdata: result.txdata,
+            txdata: result.txdata
           };
         },
-        processErrorResponse,
+        processErrorResponse
       );
     }, processErrorResponse);
   }
+
+  async extractSpendSignature() {
+    return this.transport
+      .send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const sigraw = Buffer.from(partialResponse.slice(0, 64));
+
+        return {
+          signatureRaw: sigraw.toString("hex")
+        };
+      }, processErrorResponse);
+  }
+
+  async extractTransparentSig() {
+    return this.transport
+      .send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const sigraw = Buffer.from(partialResponse.slice(0, 64));
+
+        return {
+          signatureRaw: sigraw.toString("hex")
+        };
+      }, processErrorResponse);
+  }
+
+  async extractOutputData() {
+    return this.transport
+      .send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const rcv = Buffer.from(partialResponse.slice(0, 32));
+        const rseed = Buffer.from(partialResponse.slice(32, 64));
+        let hashseed;
+        if (partialResponse.byteLength === 96 + 2) {
+          hashseed = Buffer.from(partialResponse.slice(64, 96)).toString("hex");
+        } else {
+          hashseed = null;
+        }
+
+        return {
+          rcvRaw: rcv.toString("hex"),
+          rseedRaw: rseed.toString("hex"),
+          hashSeed: hashseed
+        };
+      }, processErrorResponse);
+  }
+
+  async extractSpendData() {
+    return this.transport
+      .send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000])
+      .then(function(response: any) {
+        const partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const keyraw = Buffer.from(partialResponse.slice(0, 64));
+        const rcv = Buffer.from(partialResponse.slice(64, 96));
+        const alpha = Buffer.from(partialResponse.slice(96, 128));
+
+        return {
+          keyRaw: keyraw.toString("hex"),
+          rcvRaw: rcv.toString("hex"),
+          alphaRaw: alpha.toString("hex")
+        };
+      }, processErrorResponse);
+  }
+
+  async showAddressAndPubKey(path: any, unshielded = false) {
+    if (!unshielded) {
+      const buf = Buffer.alloc(4);
+      buf.writeUInt32LE(path, 0);
+      return this.transport
+        .send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000])
+        .then(function(response: any): AddressResponse {
+          let partialResponse = response;
+
+          const errorCodeData = partialResponse.slice(-2);
+          const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+          const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN));
+          partialResponse = partialResponse.slice(SAPLING_ADDR_LEN);
+
+          const address = Buffer.from(partialResponse.slice(0, -2)).toString();
+
+          return {
+            address,
+            addressRaw: addressRaw
+          };
+        }, processErrorResponse);
+    }
+    const serializedPath = this.serializePath(path);
+    return this.transport
+      .send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000])
+      .then(function(response: any): AddressResponse {
+        let partialResponse = response;
+
+        const errorCodeData = partialResponse.slice(-2);
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+
+        const addressRaw = Buffer.from(partialResponse.slice(0, TRANSPARENT_PK_LEN));
+        partialResponse = partialResponse.slice(TRANSPARENT_PK_LEN);
+
+        const address = Buffer.from(partialResponse.slice(0, -2)).toString();
+
+        return {
+          address,
+          addressRaw: addressRaw
+        };
+      }, processErrorResponse);
+  }
+
+  async signSendChunk(chunkIdx: any, chunkNum: any, chunk: any) {
+    return signSendChunkv1(this, chunkIdx, chunkNum, chunk);
+  }
+
+  async saplingGetChunks(message: any) {
+    return saplingPrepareChunks(message);
+  }
+
+  async checkSpendsGetChunks(path: any, message: any) {
+    return prepareChunks(serializePath(path), message);
+  }
+
+  async saplingSendChunk(version: any, chunkIdx: any, chunkNum: any, chunk: any, p2: any, acceptErrors?: any) {
+    return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk, p2, acceptErrors);
+  }
+
+  async checkAndSign(message: any, txVersion: any) {
+    return this.saplingGetChunks(message).then((chunks) => {
+      return this.saplingSendChunk(INS.CHECK_AND_SIGN, 1, chunks.length, chunks[0], txVersion).then(
+        async (response) => {
+          let result = {
+            returnCode: response.returnCode,
+            errorMessage: response.errorMessage,
+            signdata: null
+          };
+
+          for (let i = 1; i < chunks.length; i += 1) {
+            // eslint-disable-next-line no-await-in-loop
+            result = await this.saplingSendChunk(INS.CHECK_AND_SIGN, 1 + i, chunks.length, chunks[i], txVersion);
+            if (result.returnCode !== ERROR_CODE.NoError) {
+              break;
+            }
+          }
+
+          return {
+            returnCode: result.returnCode,
+            errorMessage: result.errorMessage,
+            // ///
+            signdata: result.signdata
+          };
+        },
+        processErrorResponse
+      );
+    }, processErrorResponse);
+  }
+
 }

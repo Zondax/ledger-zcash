@@ -16,9 +16,9 @@
 
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models } from './common'
+import { APP_SEED, models } from './_config'
 import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
-import { fee_for, TX_INPUT_DATA } from './vectors'
+import { fee_for, TX_INPUT_DATA } from './_vectors'
 
 const crypto = require('crypto')
 const tx_version = 0x05
@@ -36,6 +36,74 @@ async function takeLastSnapshot(testname: string, index: number, sim: Zemu) {
   await sim.takeSnapshotAndOverwrite('.', testname, index)
   sim.compareSnapshots('.', testname, index)
 }
+
+describe('Nullifier', function() {
+  test.concurrent.each(models)('get nullifier account 0x01', async function(m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      const path = 0x01
+      const pos = Buffer.alloc(8)
+      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+
+      const promise_resp = app.getNullifier(path, pos, cmu)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+
+      const resp = await promise_resp
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
+
+      if ('nfRaw' in resp) {
+        const nfRaw = resp.nfRaw.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } else {
+        fail('Expected property nfRaw is missing in the response.')
+      }
+    } finally {
+      await sim.close()
+    }
+  })
+
+  test.concurrent.each(models)('get nullifier account 0xFF', async function(m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      const path = 0xFF
+      const pos = Buffer.alloc(8)
+      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+
+      const promise_resp = app.getNullifier(path, pos, cmu)
+      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+      await sim.clickRight()
+      await sim.clickRight()
+      await sim.clickBoth()
+
+      const resp = await promise_resp
+      expect(resp.returnCode).toEqual(0x9000)
+
+      const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
+
+      if ('nfRaw' in resp) {
+        const nfRaw = resp.nfRaw.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } else {
+        fail('Expected property nfRaw is missing in the response.')
+      }
+    } finally {
+      await sim.close()
+    }
+  })
+})
 
 describe('Get keys', function () {
   test.concurrent.each(models)('get ivk', async function (m) {
@@ -73,7 +141,7 @@ describe('Get keys', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const ovkreq = app.getovk(1000)
+      const ovkreq = app.getOvk(1000)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 

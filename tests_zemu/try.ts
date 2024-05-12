@@ -5,7 +5,7 @@ import { get_inittx_data, ZcashBuilderBridge } from '@zondax/zcashtools'
 import assert from 'node:assert'
 import { createHash } from 'node:crypto'
 import { resolve as Resolve } from 'node:path'
-import { TX_INPUT_DATA, TxInputData } from './tests/vectors'
+import { TX_INPUT_DATA, TxInputData } from './tests/_vectors'
 
 const SPEND_PATH = Resolve('../zcashtools/params/sapling-spend.params')
 const OUTPUT_PATH = Resolve('../zcashtools/params/sapling-output.params')

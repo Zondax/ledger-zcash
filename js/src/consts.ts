@@ -1,3 +1,18 @@
+/******************************************************************************
+ *  (c) 2018 - 2024 Zondax AG
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *****************************************************************************/
 export const CLA = 0x85;
 export const CHUNK_SIZE = 250;
 
@@ -25,7 +40,6 @@ export const INS = {
   EXTRACT_TRANS_SIGNATURE: 0xa5,
 };
 
-
 export const P1_VALUES = {
   ONLY_RETRIEVE: 0x00,
   SHOW_ADDRESS_IN_DEVICE: 0x01,
@@ -40,7 +54,7 @@ export const ERROR_CODE = {
   NoError: 0x9000,
 };
 
-export const PKLEN = 33;
+export const TRANSPARENT_PK_LEN = 33;
 export const SAPLING_ADDR_LEN = 43;
 export const SAPLING_DIV_LEN = 11;
 export const SAPLING_IVK_LEN = 32;
@@ -49,7 +63,7 @@ export const SAPLING_NF_LEN = 32;
 export const SAPLING_AK_LEN = 32;
 export const SAPLING_NK_LEN = 32;
 export const SAPLING_PGK_LEN = 64;
-export const SAPLING_SPENDDATA_LEN = 128;
-export const SAPLING_OUTPUTDATA_LEN = 96;
+export const SAPLING_SPEND_DATA_LEN = 128;
+export const SAPLING_OUTPUT_DATA_LEN = 96;
 export const SAPLING_RND_LEN = 192; // fixme
 export const SAPLING_SIGN_LEN = 64;

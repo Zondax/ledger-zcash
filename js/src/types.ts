@@ -13,7 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *****************************************************************************/
-/* eslint-disable no-console */
-import { expect, test } from "./jest";
-import { serializePathv1 } from "../src/helperV1";
+export type AddressResponse = {
+  address: string;
+  addressRaw: Buffer;
+};
 
+export type IvkResponse = {
+  ivkRaw: Buffer,
+  defaultDiv: Buffer
+}
+
+export type OvkResponse = {
+  ovkRaw: Buffer,
+  defaultDiv: Buffer
+}
+
+export type FvkResponse = {
+  akRaw: Buffer,
+  nkRaw: Buffer,
+  ovkRaw: Buffer,
+}
+
+export type DiversifierListResponse = {
+  diversifiers: Buffer[];
+}
+
+export type NullifierResponse = {
+  nfRaw: Buffer,
+}
