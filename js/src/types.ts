@@ -13,31 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *****************************************************************************/
+
 export type AddressResponse = {
-  address: string;
-  addressRaw: Buffer;
-};
+  address: string
+  addressRaw: Buffer
+}
 
 export type IvkResponse = {
-  ivkRaw: Buffer,
+  ivkRaw: Buffer
   defaultDiv: Buffer
 }
 
 export type OvkResponse = {
-  ovkRaw: Buffer,
+  ovkRaw: Buffer
   defaultDiv: Buffer
 }
 
 export type FvkResponse = {
-  akRaw: Buffer,
-  nkRaw: Buffer,
-  ovkRaw: Buffer,
+  akRaw: Buffer
+  nkRaw: Buffer
+  ovkRaw: Buffer
 }
 
 export type DiversifierListResponse = {
-  diversifiers: Buffer[];
+  diversifiers: Buffer[]
 }
 
 export type NullifierResponse = {
-  nfRaw: Buffer,
+  nfRaw: Buffer
 }

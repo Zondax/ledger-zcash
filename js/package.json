@@ -30,9 +30,7 @@
     "format:check": "FORCE_COLOR=1 prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "supported": "ts-node src/cmd/cli.ts supported",
-    "test:integration": "yarn build && jest -t 'Integration'",
-    "test:key-derivation": "yarn build && jest -t 'KeyDerivation'",
+    "test": "yarn build && ts-jest",
     "upgrade": "bunx npm-check-updates -i"
   },
   "dependencies": {
