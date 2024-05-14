@@ -58,7 +58,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
                     return zxerr_ok;
 
                 case addr_sapling_div:
-                    snprintf(outKey, outKeyLen, "Shielded with div");
+                    snprintf(outKey, outKeyLen, "Shielded w/div");
                     pageString(outVal, outValLen, (char *)(G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
                                pageCount);
                     return zxerr_ok;
@@ -71,6 +71,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
                 return zxerr_no_data;
             }
 
+            // FIXME: in the case of sapling, the path should be ZIP32 (3, elements, etc..)
             snprintf(outKey, outKeyLen, "Your Path");
             char buffer[300];
             bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);

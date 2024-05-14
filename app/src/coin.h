@@ -58,10 +58,11 @@ extern "C" {
 #define INS_GET_VERSION                   0x00
 #define INS_GET_ADDR_SECP256K1            0x01
 #define INS_SIGN_SECP256K1                0x02
-#define INS_GET_DIV_LIST                  0x09
 #define INS_GET_ADDR_SAPLING_DIV          0x10
 #define INS_GET_ADDR_SAPLING              0x11
 #define INS_SIGN_SAPLING                  0x12
+
+#define INS_GET_DIV_LIST                  0x09
 
 #define INS_INIT_TX                       0xa0
 #define INS_KEY_EXCHANGE                  0xaa

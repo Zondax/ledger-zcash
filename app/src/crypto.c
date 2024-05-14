@@ -1355,7 +1355,6 @@ typedef struct {
     };
 } tmp_buf_addr_s;
 
-// handleGetAddrSaplingDiv
 zxerr_t crypto_fillAddress_with_diversifier_sapling(
     uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_addr_s)) {
