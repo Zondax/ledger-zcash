@@ -147,7 +147,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_IVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [
+      const responseBuffer = await this.transport.send(CLA, INS.GET_IVK_SAPLING, 0, 0, sentToDevice, [
         0x9000,
       ])
       const response = processResponse(responseBuffer)
@@ -169,7 +169,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [
+      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, 0, 0, sentToDevice, [
         0x9000,
       ])
       const response = processResponse(responseBuffer)
@@ -189,10 +189,12 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, sentToDevice, [
+      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, 0, 0, sentToDevice, [
         0x9000,
       ])
       const response = processResponse(responseBuffer)
+
+      console.log(response.length())
 
       const akRaw = response.readBytes(SAPLING_AK_LEN)
       const nkRaw = response.readBytes(SAPLING_NK_LEN)
@@ -252,14 +254,14 @@ export default class ZCashApp extends GenericApp {
 
     const sentToDevice = Buffer.alloc(4 + 8 + 32)
     sentToDevice.writeUInt32LE(zip32Account, 0)
-    sentToDevice.writeBigUInt64LE(notePosition, 8)
+    sentToDevice.writeBigUInt64LE(notePosition, 4)
     ncm.copy(sentToDevice, 12)
 
     try {
       const responseBuffer = await this.transport.send(
         CLA,
         INS.GET_NF_SAPLING,
-        P1_VALUES.ONLY_RETRIEVE,
+        0, // ignored
         0,
         sentToDevice)
       const response = processResponse(responseBuffer)

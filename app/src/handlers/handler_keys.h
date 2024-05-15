@@ -16,8 +16,6 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-// FIXME: we need to add a paranoid mode, where every request is shown
-
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)
 // to decrypt the note (so that she can subsequently send it).
@@ -96,7 +94,12 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.kind = key_fvk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
+    zxerr_t err = crypto_fvk_sapling(
+            G_io_apdu_buffer,
+
+            IO_APDU_BUFFER_SIZE - 2,
+            hdPath.sapling_path[2], &replyLen);
+
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -114,11 +117,9 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
 // (nk is part of the full viewing key fvk = (ak, nk, ovk) )
 __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     *tx = 0;
-    // TODO: review this.. there is too much copy-paste. Move into a single configurable function
 
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_NF ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_NF || G_io_apdu_buffer[OFFSET_P1] == 0) {
-        zemu_log("Wrong length!\n");
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_NF) {
+        ZEMU_LOGF(100, "Wrong length! %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 

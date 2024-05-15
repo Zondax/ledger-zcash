@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind, zondaxMainmenuNavigation } from '@zondax/zemu'
+import Zemu, { zondaxMainmenuNavigation } from '@zondax/zemu'
 import { defaultOptions, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 

@@ -60,7 +60,7 @@ __Z_INLINE void extractHDPathSapling(uint32_t rx, uint32_t offset) {
 
     // Validate data
     if ((hdPath.sapling_path[2] & MASK_HARDENED) == 0) {
-        ZEMU_LOGF(100, "error validating hardning\n");
+        ZEMU_LOGF(100, "error validating hardening\n");
         THROW(APDU_CODE_DATA_INVALID);
     }
 

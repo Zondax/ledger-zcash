@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind, zondaxMainmenuNavigation } from '@zondax/zemu'
+import Zemu, { ButtonKind } from '@zondax/zemu'
 import { defaultOptions, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 
@@ -127,4 +127,80 @@ describe('Addresses', function() {
       await sim.close()
     }
   })
+
+    test.concurrent.each(models)('get shielded address with div', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({ ...defaultOptions, model: m.name })
+        const app = new ZCashApp(sim.getTransport())
+  
+        const path = 1000
+        const div = Buffer.from('c69e979c6763c1b09238dc', 'hex')
+  
+        const addr = await app.getAddrDivSapling(path, div)
+        console.log(addr)
+        expect(addr.returnCode).toEqual(0x9000)
+  
+        const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
+        const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
+  
+        const addrRaw = addr.addressRaw.toString('hex')
+        expect(addrRaw).toEqual(expected_addrRaw)
+        expect(addr.address).toEqual(expected_addr)
+      } finally {
+        await sim.close()
+      }
+    })
+  
+    test.concurrent.each(models)('show shielded address with div', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions,
+          model: m.name,
+          approveKeyword: m.name === 'stax' ? 'QR' : '',
+          approveAction: ButtonKind.ApproveTapButton,
+        })
+        const app = new ZCashApp(sim.getTransport())
+  
+        const path = 1000
+        const div = Buffer.from('c69e979c6763c1b09238dc', 'hex')
+  
+        const addrreq = app.showAddrDiv(path, div)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show-shielded-addr`)
+        const addr = await addrreq
+  
+        console.log(addr)
+        expect(addr.returnCode).toEqual(0x9000)
+  
+        const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
+  
+        const addrRaw = addr.addressRaw.toString('hex')
+        expect(addrRaw).toEqual(expected_addrRaw)
+      } finally {
+        await sim.close()
+      }
+    })
+  
+    test.concurrent.each(models)('get div list with startindex', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({ ...defaultOptions, model: m.name })
+        const app = new ZCashApp(sim.getTransport())
+  
+        const startindex = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+  
+        const divlist = await app.getDivListSapling(1000, startindex)
+        console.log(divlist)
+        expect(divlist.returnCode).toEqual(0x9000)
+  
+        const first_div = 'c69e979c6763c1b09238dc'
+  
+        const first_divRaw = divlist.divlist[0]
+        expect(first_div).toEqual(first_divRaw)
+      } finally {
+        await sim.close()
+      }
+    })  
 })
