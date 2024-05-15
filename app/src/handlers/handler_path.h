@@ -87,6 +87,8 @@ __Z_INLINE void extractHDPathSaplingDiv(uint32_t rx, uint32_t offset) {
         THROW(APDU_CODE_DATA_INVALID);
     }
 
+    MEMCPY(hdPath.saplingdiv_div, ctx.buffer + ctx.offset, DIV_SIZE);
+
     // Validate data
     if ((hdPath.saplingdiv_path[2] & MASK_HARDENED) == 0) {
         THROW(APDU_CODE_DATA_INVALID);

@@ -1309,7 +1309,7 @@ typedef struct {
 } tmp_sapling_fvk;
 
 // handleGetKeyFVK: return the full viewing key for a given path
-zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen) {
+zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Account, uint16_t *replyLen) {
     zemu_log_stack("crypto_fvk_sapling");
 
     MEMZERO(buffer, bufferLen);
@@ -1320,7 +1320,7 @@ zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint
     }
 
     // get full viewing key
-    zip32_fvk(p, out->fvk);
+    zip32_fvk(zip32Account, out->fvk);
     CHECK_APP_CANARY()
 
     *replyLen = AK_SIZE + NK_SIZE + OVK_SIZE;
@@ -1385,7 +1385,9 @@ typedef struct {
 
 zxerr_t crypto_fillAddress_with_diversifier_sapling(
         uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Account, uint8_t *div, uint16_t *replyLen) {
+
     if (bufferLen < sizeof(tmp_buf_addr_s)) {
+        ZEMU_LOGF(100, "cannot fit response\n");
         return zxerr_unknown;
     }
 
@@ -1398,6 +1400,13 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(
     // Initialize diversifier
     MEMCPY(out->diversifier, div, DIV_SIZE);
     if (!diversifier_is_valid(out->diversifier)) {
+        char tmpBuf[40];
+        array_to_hexstr(tmpBuf, 40, out->diversifier, 11);
+        ZEMU_LOGF(100, "input diversifier is not valid: %s\n", tmpBuf);
+        array_to_hexstr(tmpBuf, 40, div, 11);
+        ZEMU_LOGF(100, "input diversifier is not valid: %s\n", tmpBuf);
+        array_to_hexstr(tmpBuf, 40, hdPath.saplingdiv_div, 11);
+        ZEMU_LOGF(100, "input diversifier is not valid: %s\n", tmpBuf);
         return zxerr_unknown;
     }
 

@@ -25,9 +25,8 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyIVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_IVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_IVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
-        zemu_log("Wrong length!\n");
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_IVK) {
+        ZEMU_LOGF(100, "Wrong length! %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -45,7 +44,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_TXN);
+    view_review_show(REVIEW_KEYS);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -55,9 +54,8 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyOVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_OVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_OVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
-        zemu_log("Wrong length!\n");
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_OVK) {
+        ZEMU_LOGF(100, "Wrong length! %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -74,7 +72,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_TXN);
+    view_review_show(REVIEW_KEYS);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -83,9 +81,8 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zemu_log("----[handleGetKeyFVK]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_FVK ||
-        G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_FVK || G_io_apdu_buffer[OFFSET_P1] == 0) {
-        zemu_log("Wrong length!\n");
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_FVK) {
+        ZEMU_LOGF(100, "Wrong length! %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -107,7 +104,7 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_TXN);
+    view_review_show(REVIEW_KEYS);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -151,7 +148,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_TXN);
+    view_review_show(REVIEW_KEYS);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -159,15 +156,13 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetDiversifierList]\n");
 
     *tx = 0;
-    if (rx < APDU_MIN_LENGTH) {
-        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-    }
-
     if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_DIV_LIST) {
+        ZEMU_LOGF(100, "incorrect input size %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_DIV_LIST) {
+        zemu_log_stack("payload too small");
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 

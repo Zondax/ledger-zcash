@@ -18,7 +18,7 @@
 
 
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("----[handleGetAddrSecp256K1]\n");
+    ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");
     *tx = 0;
 
     extractHDPathTransparent(rx, OFFSET_DATA);
@@ -28,6 +28,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32
 
     zxerr_t err = crypto_fillAddress_secp256k1(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, &replyLen);
     if (err != zxerr_ok) {
+        ZEMU_LOGF(100, "Err: %d\n", err);
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -45,21 +46,21 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32
 }
 
 __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("----[handleGetAddrSapling]\n");
+    ZEMU_LOGF(100, "----[handleGetAddrSapling]\n");
     *tx = 0;
 
     if (rx < APDU_MIN_LENGTH) {
-        zemu_log("Missing data!\n");
+        ZEMU_LOGF(100, "rx: %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx != (uint32_t)(APDU_DATA_LENGTH_GET_ADDR_SAPLING + APDU_MIN_LENGTH)) {
-        zemu_log("Wrong length!\n");
+        ZEMU_LOGF(100, "rx: %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_ADDR_SAPLING) {
-        zemu_log("Wrong offset data length!\n");
+        ZEMU_LOGF(100, "len: %d\n", G_io_apdu_buffer[OFFSET_DATA_LEN]);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -70,6 +71,7 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t
     uint16_t replyLen = 0;
     zxerr_t err = crypto_fillAddress_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
     if (err != zxerr_ok) {
+        ZEMU_LOGF(100, "Err: %d\n", err);
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }
@@ -87,18 +89,21 @@ __Z_INLINE void handleGetAddrSapling(volatile uint32_t *flags, volatile uint32_t
 }
 
 __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
-    zemu_log("----[handleGetAddrSapling_withdiv]\n");
+    ZEMU_LOGF(100, "----[handleGetAddrSapling_withdiv]\n");
 
     *tx = 0;
     if (rx < APDU_MIN_LENGTH) {
+        ZEMU_LOGF(100, "rx: %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_ADDR_DIV) {
+        ZEMU_LOGF(100, "rx: %d\n", rx);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
     if (G_io_apdu_buffer[OFFSET_DATA_LEN] != APDU_DATA_LENGTH_GET_ADDR_DIV) {
+        ZEMU_LOGF(100, "len: %d\n", G_io_apdu_buffer[OFFSET_DATA_LEN]);
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
@@ -111,9 +116,11 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint3
     zxerr_t err = crypto_fillAddress_with_diversifier_sapling(
         G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, 
         hdPath.saplingdiv_path[2],
-        hdPath.saplingdiv_div, &replyLen);
+        hdPath.saplingdiv_div,
+        &replyLen);
 
     if (err != zxerr_ok) {
+        ZEMU_LOGF(100, "Err: %d\n", err);
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
     }

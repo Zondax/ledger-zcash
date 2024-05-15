@@ -66,7 +66,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
                 }
 
                 case addr_sapling_div: {
-                    snprintf(outKey, outKeyLen, "Shielded w/div");
+                    snprintf(outKey, outKeyLen, "Shielded div");
                     pageString(outVal, outValLen, (char *)(G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
                                pageCount);
                     return zxerr_ok;

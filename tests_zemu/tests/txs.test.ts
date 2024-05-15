@@ -1,5 +1,5 @@
 /** ******************************************************************************
- *  (c) 2020 Zondax AG
+ *  (c) 2020-2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, models } from './_config'
 import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
 import { fee_for, TX_INPUT_DATA } from './_vectors'
+import crypto from 'crypto'
 
-const crypto = require('crypto')
 const tx_version = 0x05
 
 const defaultOptions = {
@@ -2260,4 +2260,5 @@ describe('Failing transactions', function () {
 function takeLastSnapshot(testname: string, last_index: number, sim: Zemu) {
   throw new Error('Function not implemented.')
 }
+
 

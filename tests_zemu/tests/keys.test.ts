@@ -1,5 +1,5 @@
 /** ******************************************************************************
- *  (c) 2020 Zondax AG
+ *  (c) 2020-2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -171,17 +171,64 @@ describe('Get keys', function () {
 
       console.log(fvk)
 
-      const expected_akRaw = '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a'
+      const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
       const akRaw = fvk.akRaw?.toString('hex')
       expect(akRaw).toEqual(expected_akRaw)
 
-      const expected_nkRaw = 'a93349ed31a96abd9b07fb04daaad69a51de16e4ac8dbcc7e001779668d08dc7'
+      const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
       const nkRaw = fvk.nkRaw?.toString('hex')
       expect(nkRaw).toEqual(expected_nkRaw)
 
-      const expected_ovkRaw = '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca'
+      const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
       const ovkRaw = fvk.ovkRaw?.toString('hex')
       expect(ovkRaw).toEqual(expected_ovkRaw)
+    } finally {
+      await sim.close()
+    }
+  })
+})
+
+describe('Diversifiers', function() {
+  test.concurrent.each(models)('Div list with startindex', async function (m) {
+    const sim = new Zemu(m.path)
+    try {
+      await sim.start({ ...defaultOptions, model: m.name })
+      const app = new ZCashApp(sim.getTransport())
+
+      const zip32Account = 1000 + 0x80000000
+      const startDiversifier = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      const divlistReq = app.getDiversifierList(zip32Account, startDiversifier)
+
+      const divlist = await divlistReq
+      console.log(divlist)
+
+      const expected_divs = [
+        '71635f26c1b4a2332abeb7',
+        '20fafaf8b4b763dbad872b',
+        '443e2f4876099656cac254',
+        'a42f8cd37e16759fcd921d',
+        '6dbd485ed3703834c6e396',
+        '702c42bb6dcda999dfff06',
+        'a67d8286346f3bb341c691',
+        '1fba2909f96a575c9208ac',
+        '349ced82af892988de95a7',
+        'ce8c5c7eacb06e7b7f6091',
+      ]
+
+      const errors: string[] = []
+
+      expect(divlist.diversifiers.length).toEqual(expected_divs.length)
+
+      divlist.diversifiers.forEach((diversifier, index) => {
+        const divRaw = diversifier.toString('hex')
+        if (divRaw !== expected_divs[index]) {
+          errors.push(`Mismatch at index ${index}: expected ${expected_divs[index]}, got ${divRaw}`)
+        }
+      })
+
+      if (errors.length > 0) {
+        throw new Error(`Diversifier mismatches:\n${errors.join('\n')}`)
+      }
     } finally {
       await sim.close()
     }

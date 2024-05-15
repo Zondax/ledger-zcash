@@ -124,7 +124,7 @@ export default class ZCashApp extends GenericApp {
 
     try {
       const p1 = showInScreen ? P1_VALUES.SHOW_ADDRESS_IN_DEVICE : P1_VALUES.ONLY_RETRIEVE
-      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING, p1, 0, sentToDevice)
+      const responseBuffer = await this.transport.send(CLA, INS.GET_ADDR_SAPLING_DIV, p1, 0, sentToDevice)
       const response = processResponse(responseBuffer)
 
       const addressRaw = response.readBytes(SAPLING_ADDR_LEN)
@@ -189,7 +189,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, 0, 0, sentToDevice, [
+      const responseBuffer = await this.transport.send(CLA, INS.GET_FVK_SAPLING, 0, 0, sentToDevice, [
         0x9000,
       ])
       const response = processResponse(responseBuffer)
@@ -225,9 +225,9 @@ export default class ZCashApp extends GenericApp {
       const responseBuffer = await this.transport.send(
         CLA,
         INS.GET_DIV_LIST,
-        P1_VALUES.ONLY_RETRIEVE,
         0,
-        Buffer.concat([sentToDevice, startingDiversifier]),
+        0,
+        sentToDevice,
       )
       const response = processResponse(responseBuffer)
 
