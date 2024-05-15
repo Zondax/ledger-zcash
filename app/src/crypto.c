@@ -33,8 +33,6 @@
 #include "zxformat.h"
 #include "zxmacros.h"
 
-uint32_t hdPath[HDPATH_LEN_DEFAULT];
-
 #define CHECK_ZXERROR_AND_CLEAN(CALL)   \
     do {                                \
         zxerr_t __zxerror = CALL;       \
@@ -119,12 +117,16 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
         return zxerr_invalid_crypto_settings;
     }
 
+    if (hdPath.addressKind != addr_secp256k1) {
+        return zxerr_invalid_crypto_settings;
+    }
+
     cx_ecfp_public_key_t cx_publicKey = {0};
     cx_ecfp_private_key_t cx_privateKey = {0};
     uint8_t privateKeyData[64] = {0};
 
     zxerr_t error = zxerr_unknown;
-    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath, HDPATH_LEN_DEFAULT, privateKeyData, NULL));
+    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, HDPATH_LEN_BIP44, privateKeyData, NULL));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
     CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1));
@@ -190,7 +192,7 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
     zemu_log_stack("crypto_fillDeviceSeed");
 
     // Generate randomness using a fixed path related to the device mnemonic
-    const uint32_t path[HDPATH_LEN_DEFAULT] = {
+    const uint32_t path[HDPATH_LEN_BIP44] = {
         HDPATH_0_DEFAULT, HDPATH_1_DEFAULT, MASK_HARDENED, MASK_HARDENED, MASK_HARDENED,
     };
 
@@ -199,7 +201,7 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
 
     zxerr_t error = zxerr_unknown;
     io_seproxyhal_io_heartbeat();
-    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519, path, HDPATH_LEN_DEFAULT, raw_privkey,
+    CATCH_CXERROR(os_derive_bip32_with_seed_no_throw(HDW_NORMAL, CX_CURVE_Ed25519, path, HDPATH_LEN_BIP44, raw_privkey,
                                                      NULL, NULL, 0));
 
     io_seproxyhal_io_heartbeat();
@@ -1083,7 +1085,7 @@ zxerr_t crypto_sign_and_check_transparent(
     for (uint8_t i = 0; i < tInListLen; i++) {
         const t_input_item_t *item = t_inlist_retrieve_item(i);
 
-        CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, item->path, HDPATH_LEN_DEFAULT, privateKeyData, NULL));
+        CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, item->path, HDPATH_LEN_BIP44, privateKeyData, NULL));
         CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
         CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
         CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1));
@@ -1324,10 +1326,10 @@ zxerr_t crypto_nullifier_sapling(uint8_t *outputBuffer,
 }
 
 // handleGetDiversifierList
-zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t p, const uint8_t *startindex, uint16_t *replylen) {
+zxerr_t crypto_diversifier_with_startindex(uint8_t *buffer, uint32_t zip32Account, const uint8_t *startindex, uint16_t *replylen) {
     zemu_log_stack("crypto_get_diversifiers_sapling");
 
-    diversifier_get_list(p, startindex, buffer);
+    diversifier_get_list(zip32Account, startindex, buffer);
     for (int i = 0; i < DIV_LIST_LENGTH; i++) {
         if (!diversifier_is_valid(buffer + i * DIV_SIZE)) {
             MEMZERO(buffer + i * DIV_SIZE, DIV_SIZE);
@@ -1356,7 +1358,7 @@ typedef struct {
 } tmp_buf_addr_s;
 
 zxerr_t crypto_fillAddress_with_diversifier_sapling(
-    uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint8_t *div, uint16_t *replyLen) {
+    uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Account, uint8_t *div, uint16_t *replyLen) {
     if (bufferLen < sizeof(tmp_buf_addr_s)) {
         return zxerr_unknown;
     }
@@ -1374,7 +1376,7 @@ zxerr_t crypto_fillAddress_with_diversifier_sapling(
     }
 
     // Initialize pkd
-    get_pkd(p, out->diversifier, out->pkd);
+    get_pkd(zip32Account, out->diversifier, out->pkd);
     CHECK_APP_CANARY()
 
     // To simplify the code and avoid making copies, read the 'address_raw' variable.

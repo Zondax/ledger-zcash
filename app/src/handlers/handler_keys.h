@@ -33,17 +33,13 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint32_t zip32_account = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_IVK, &zip32_account);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if (prserr != parser_ok) {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
+    extractHDPathSapling(rx, OFFSET_DATA);
+
     key_state.kind = key_ivk;
+
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32_account, &replyLen);
+    zxerr_t err = crypto_ivk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -67,17 +63,12 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_OVK, &zip32path);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if (prserr != parser_ok) {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
+    extractHDPathSapling(rx, OFFSET_DATA);
+
     key_state.kind = key_ovk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    zxerr_t err = crypto_ovk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -100,17 +91,12 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_FVK, &zip32path);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if (prserr != parser_ok) {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
+    extractHDPathSapling(rx, OFFSET_DATA);
+
     key_state.kind = key_fvk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, &replyLen);
+    zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
     if (err != zxerr_ok) {
         *tx = 0;
         THROW(APDU_CODE_DATA_INVALID);
@@ -136,14 +122,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    uint32_t zip32path = 0;
-    parser_error_t prserr = parser_sapling_path(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_NF, &zip32path);
-    if (prserr != parser_ok) {
-        MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-        *tx = 0;
-        zemu_log("Failed to get seed!\n");
-        THROW(APDU_CODE_DATA_INVALID);
-    }
+    extractHDPathSapling(rx, OFFSET_DATA);
 
     // get note position from payload
     uint64_t notepos = 0;
@@ -161,7 +140,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     // this needs to get Full viewing key = (ak, nk, ovk) and note position, to
     // then compute nullifier G_io_apdu_buffer contains zip32path, note position,
     // note commitment
-    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, zip32path, notepos, cm, &replyLen);
+    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], notepos, cm, &replyLen);
 
     if (err != zxerr_ok) {
         zemu_log("Failed to get nullifier!\n");
@@ -195,17 +174,9 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
 
     zemu_log_stack("handleGetDiversifierList");
 
-    parser_addr_div_t parser_addr;
-    MEMZERO(&parser_addr, sizeof(parser_addr_div_t));
+    extractHDPathSapling(rx, OFFSET_DATA);
 
-    parser_error_t prserr =
-        parser_sapling_path_with_div(G_io_apdu_buffer + OFFSET_DATA, APDU_DATA_LENGTH_GET_DIV_LIST, &parser_addr);
-    MEMZERO(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE);
-    if (prserr != parser_ok) {
-        *tx = 0;
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, parser_addr.path, parser_addr.div, &replyLen);
+    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, hdPath.saplingdiv_path[2], hdPath.saplingdiv_div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;

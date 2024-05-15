@@ -15,6 +15,7 @@
  ********************************************************************************/
 #pragma once
 #include "bolos_target.h"
+#include "inttypes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +23,7 @@ extern "C" {
 
 #define CLA                0x85
 
-#define HDPATH_LEN_DEFAULT 5
+#define HDPATH_LEN_MAX     5
 
 #define HDPATH_0_DEFAULT   (0x80000000u | 0x2cu)
 #define HDPATH_1_DEFAULT   (0x80000000u | 0x85)
@@ -32,6 +33,10 @@ extern "C" {
 
 #define HDPATH_0_TESTNET   (0x80000000u | 0x2cu)
 #define HDPATH_1_TESTNET   (0x80000000u | 0x1u)
+
+#define HDPATH_0_ZIP32     (0x80000000u | 0x20u)
+#define HDPATH_1_ZIP32     (0x80000000u | 0x85u)
+#define HDPATH_2_ZIP32     (0u)
 
 // compressed key
 #define PK_LEN_SECP256K1 33u
@@ -78,12 +83,6 @@ extern "C" {
 #define INS_GET_FVK                       0xf3
 #define INS_CRASH_TEST                    0xff
 
-typedef enum {
-    addr_secp256k1 = 0,
-    addr_sapling = 1,
-    addr_sapling_div = 2,
-} address_kind_e;
-
 typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 
 #define VIEW_ADDRESS_OFFSET_SECP256K1 PK_LEN_SECP256K1
@@ -99,6 +98,35 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 
 #define COIN_AMOUNT_DECIMAL_PLACES    18
 #define CRYPTO_BLOB_SKIP_BYTES        0
+
+
+#define HDPATH_LEN_BIP44     5
+#define HDPATH_LEN_SAPLING       3
+
+typedef enum {
+    addr_not_set = 0,
+    addr_secp256k1 = 1,
+    addr_sapling = 2,
+    addr_sapling_div = 3,
+} address_kind_e;
+
+typedef struct {
+    address_kind_e addressKind;
+    union {
+        struct {
+            uint32_t secp256k1_path[HDPATH_LEN_MAX];
+        };
+        struct {
+            uint32_t sapling_path[3];
+        };
+        struct {
+            uint32_t saplingdiv_path[3];
+            uint8_t saplingdiv_div[11];    
+        };
+    };
+} hdPath_t;
+
+extern hdPath_t hdPath;
 
 #ifdef __cplusplus
 }

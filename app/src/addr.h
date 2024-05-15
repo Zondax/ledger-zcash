@@ -25,7 +25,6 @@ extern "C" {
 #endif
 
 typedef struct {
-    address_kind_e kind;
     uint8_t len;
 } address_state_t;
 

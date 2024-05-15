@@ -27,9 +27,6 @@ extern "C" {
 #include "coin.h"
 #include "zxerror.h"
 
-extern uint32_t hdPath[HDPATH_LEN_DEFAULT];
-
-extern address_kind_e addressKind;
 
 zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed);
 

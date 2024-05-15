@@ -43,11 +43,17 @@ zxerr_t key_getItem(int8_t displayIdx,
     snprintf(outKey, outKeyLen, "?");
     snprintf(outVal, outValLen, "?");
 
+    if (hdPath.addressKind == addr_not_set || hdPath.addressKind == addr_secp256k1) {
+        // This should not be possible
+        return zxerr_unknown;
+    }
+
     zemu_log_stack("key_getItem");
+    char tmpBuffer[200];
+
     switch (displayIdx) {
         case 0: {
             zemu_log_stack("case 0");
-            char tmpBuffer[100];
             MEMZERO(tmpBuffer, sizeof(tmpBuffer));
             switch (key_state.kind) {
                 case key_ovk:
@@ -80,13 +86,29 @@ zxerr_t key_getItem(int8_t displayIdx,
                 return zxerr_no_data;
             }
 
-            snprintf(outKey, outKeyLen, "Your Path");
-            char buffer[300];
-            bip32_to_str(buffer, sizeof(buffer), hdPath, HDPATH_LEN_DEFAULT);
-            pageString(outVal, outValLen, buffer, pageIdx, pageCount);
-            return zxerr_ok;
-        }
-        default:
+            switch (hdPath.addressKind) {
+                case addr_sapling: {
+                    snprintf(outKey, outKeyLen, "ZIP32 Path");
+
+                    bip32_to_str(tmpBuffer, sizeof(tmpBuffer), hdPath.sapling_path, HDPATH_LEN_SAPLING);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+
+                    return zxerr_ok;
+                }
+
+                case addr_sapling_div: {
+                    snprintf(outKey, outKeyLen, "ZIP32 Path");
+
+                    bip32_to_str(tmpBuffer, sizeof(tmpBuffer), hdPath.sapling_path, HDPATH_LEN_SAPLING);
+                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+
+                    return zxerr_ok;                    
+                } 
+
+                default:
+                    return zxerr_no_data;
+            }
+        }        default:
             return zxerr_no_data;
     }
 }

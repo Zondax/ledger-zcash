@@ -27,6 +27,11 @@
 #include "app_mode.h"
 #include "coin.h"
 #include "crypto.h"
+#include "handlers/handler_path.h"
+#include "handlers/handler_addr.h"
+#include "handlers/handler_keys.h"
+#include "handlers/handler_signing.h"
+#include "handlers/handler_version.h"
 #include "key.h"
 #include "nvdata.h"
 #include "parser.h"
@@ -35,10 +40,7 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-#include "handlers/handler_addr.h"
-#include "handlers/handler_keys.h"
-#include "handlers/handler_signing.h"
-#include "handlers/handler_version.h"
+hdPath_t hdPath;
 
 void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     uint16_t sw = 0;

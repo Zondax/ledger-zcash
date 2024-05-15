@@ -45,10 +45,10 @@ describe('Nullifier', function() {
       const app = new ZCashApp(sim.getTransport())
 
       const path = 0x01
-      const pos = Buffer.alloc(8)
+      const pos = BigInt(0)
       const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
-      const promise_resp = app.getNullifier(path, pos, cmu)
+      const promise_resp = app.getNullifierSapling(path, pos, cmu)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.clickRight()
       await sim.clickRight()
@@ -78,10 +78,10 @@ describe('Nullifier', function() {
       const app = new ZCashApp(sim.getTransport())
 
       const path = 0xFF
-      const pos = Buffer.alloc(8)
+      const pos = BigInt(0)
       const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
-      const promise_resp = app.getNullifier(path, pos, cmu)
+      const promise_resp = app.getNullifierSapling(path, pos, cmu)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.clickRight()
       await sim.clickRight()
@@ -112,7 +112,7 @@ describe('Get keys', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const ivkreq = app.getivk(1000)
+      const ivkreq = app.getIvkSapling(1000)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
@@ -126,7 +126,7 @@ describe('Get keys', function () {
       const expected_div = 'c69e979c6763c1b09238dc'
 
       const ivkRaw = ivk.ivkRaw.toString('hex')
-      const default_div = ivk.default_div.toString('hex')
+      const default_div = ivk.defaultDiversifier.toString('hex')
 
       expect(ivkRaw).toEqual(expected_ivkRaw)
       expect(default_div).toEqual(expected_div)
@@ -141,7 +141,7 @@ describe('Get keys', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const ovkreq = app.getOvk(1000)
+      const ovkreq = app.getOvkSapling(1000)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
@@ -164,7 +164,7 @@ describe('Get keys', function () {
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
-      const fvkreq = app.getfvk(1000)
+      const fvkreq = app.getFvkSapling(1000)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
@@ -203,8 +203,8 @@ describe('Get keys', function () {
       ])
 
       //const pos = Uint8Array.from([2578461368])
-      const pos = Uint8Array.from([184, 50, 176, 153, 0, 0, 0, 0])
-      const nfreq = app.getNullifier(1000, pos, cm)
+      const pos = BigInt(2578461368)
+      const nfreq = app.getNullifierSapling(1000, pos, cm)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 60000)
 
@@ -237,7 +237,7 @@ describe('Addresses and diversifiers', function () {
       const path = 1000
       const div = Buffer.from('c69e979c6763c1b09238dc', 'hex')
 
-      const addr = await app.getAddrDiv(path, div)
+      const addr = await app.getAddrDivSapling(path, div)
       console.log(addr)
       expect(addr.returnCode).toEqual(0x9000)
 
@@ -291,7 +291,7 @@ describe('Addresses and diversifiers', function () {
 
       const startindex = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-      const divlist = await app.getDivList(1000, startindex)
+      const divlist = await app.getDivListSapling(1000, startindex)
       console.log(divlist)
       expect(divlist.returnCode).toEqual(0x9000)
 
@@ -519,7 +519,7 @@ describe('End to end transactions', function () {
         */
       //      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
       expect(req6.returnCode).toEqual(0x9000)
 
@@ -538,11 +538,11 @@ describe('End to end transactions', function () {
        So we first gather all signatures we need.
         */
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSig()
       console.log(req7)
       expect(req7.returnCode).toEqual(0x9000)
 
-      const req8 = await app.extractspendsig()
+      const req8 = await app.extractSpendSig()
       console.log(req8)
       expect(req8.returnCode).toEqual(0x9000)
 

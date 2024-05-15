@@ -47,42 +47,6 @@ typedef struct {
     uint8_t index;
 } parser_sapling_t;
 
-parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs) {
-    if (dataLen != 15) {
-        return parser_context_unexpected_size;
-    }
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = data;
-    pars_ctx.bufferLen = 4;
-    uint32_t p = 0;
-    pars_err = _readUInt32(&pars_ctx, &p);
-    if (pars_err != parser_ok) {
-        return pars_err;
-    }
-    prs->path = p | 0x80000000;
-    memcpy(prs->div, data + 4, DIV_SIZE);
-    return parser_ok;
-}
-
-parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t *p) {
-    if (dataLen < 4) {
-        return parser_context_unexpected_size;
-    }
-    parser_context_t pars_ctx;
-    parser_error_t pars_err;
-    pars_ctx.offset = 0;
-    pars_ctx.buffer = data;
-    pars_ctx.bufferLen = 4;
-    pars_err = _readUInt32(&pars_ctx, p);
-    if (pars_err != parser_ok) {
-        return pars_err;
-    }
-    *p |= 0x80000000;
-    return parser_ok;
-}
-
 void view_tx_state() {
 #if !defined(TARGET_STAX)
     uint8_t state = get_state();
