@@ -22,12 +22,34 @@ endif
 
 MY_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.installer_script
-
 include $(BOLOS_SDK)/Makefile.defines
 
+# # Set the default value for HAVE_SWAP to undefined if not already defined
+# HAVE_SWAP ?=
+
+# Set the default value for PRODUCTION_BUILD to 0 if not already defined
+PRODUCTION_BUILD ?= 0
+
+# Display the target name
 $(info ************ TARGET_NAME  = [$(TARGET_NAME)])
 
+# Display whether this is a production build or for internal use
+ifeq ($(PRODUCTION_BUILD), 1)
+    $(info ************ PRODUCTION_BUILD  = [PRODUCTION BUILD])
+else
+    $(info ************ PRODUCTION_BUILD  = [INTERNAL USE])
+endif
+
+# Display whether swap functionality is enabled or not
+ifdef HAVE_SWAP
+    $(info ************ HAVE_SWAP  = [ENABLED])
+    DEFINES += HAVE_SWAP=$(HAVE_SWAP)
+else
+    $(info ************ HAVE_SWAP  = [DISABLED])
+endif
+
+# Add the PRODUCTION_BUILD definition to the compiler flags
+DEFINES += PRODUCTION_BUILD=$(PRODUCTION_BUILD)
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.app_testing
 
 ifndef COIN
@@ -45,16 +67,24 @@ APPPATH = "44'/133'" --path "44'/1'"
 
 else
 define error_message
-
 COIN value not supported: [$(COIN)]
-
 endef
 $(error "$(error_message)")
 endif
 
+include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.installer_script
+
+$(info PATHS LIST = $(APPPATH))
+
 APP_LOAD_PARAMS = --curve secp256k1 --curve ed25519 $(COMMON_LOAD_PARAMS) --path $(APPPATH)
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.devices
+
+DEFAULT_ICON = nanos_$(ICON_NAME).gif
+copy_icon:
+	cp $(DEFAULT_ICON) glyphs/icon_app.gif
+
+all: copy_icon
 
 $(info TARGET_NAME  = [$(TARGET_NAME)])
 $(info ICONNAME  = [$(ICONNAME)])
@@ -101,6 +131,7 @@ include $(BOLOS_SDK)/Makefile.rules
 #add dependency on custom makefile filename
 dep/%.d: %.c Makefile
 
+.PHONY: listvariants
 listvariants:
 	@echo VARIANTS COIN ZEC
 

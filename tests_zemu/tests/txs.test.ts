@@ -32,10 +32,15 @@ const defaultOptions = {
 jest.setTimeout(600000)
 
 describe('End to end transactions', function () {
-  test.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start({
+        ...defaultOptions,
+        model: m.name,
+        approveKeyword: m.name === 'stax' ? 'QR' : '',
+        approveAction: ButtonKind.ApproveTapButton,
+      })
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -82,7 +87,6 @@ describe('End to end transactions', function () {
       const req = await reqinit
 
       console.log(req)
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -108,10 +112,9 @@ describe('End to end transactions', function () {
 
       const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -143,8 +146,7 @@ describe('End to end transactions', function () {
 
       const req3 = await app.extractSpendData()
       console.log(req3)
-      expect(req3.returnCode).toEqual(0x9000)
-      expect(req3.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
 
       const spendj2 = {
         proofkey: req3.keyRaw,
@@ -174,9 +176,8 @@ describe('End to end transactions', function () {
       The ledger already knows how much data it needs to send after the inittx call.
       */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
        The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -191,10 +192,10 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hashSeed: req4.hashSeed,
+        hashSeed: req4.hashSeedRaw,
       }
 
-      console.log(req4.hashSeed)
+      console.log(req4.hashSeedRaw)
       /*
        The builder adds the shielded output to its state.
         */
@@ -209,11 +210,10 @@ describe('End to end transactions', function () {
        The UI needs to take care of this before initializing a transaction to the ledger.
         */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
-      console.log(req5.hashSeed)
+      console.log(req5.hashSeedRaw)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -222,7 +222,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -247,7 +247,6 @@ describe('End to end transactions', function () {
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       /*
        Check the hash of the return
@@ -264,13 +263,11 @@ describe('End to end transactions', function () {
        So we first gather all signatures we need.
         */
 
-      const req7 = await app.extractSpendSig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).toEqual(0x9000)
 
-      const req8 = await app.extractSpendSig()
+      const req8 = await app.extractSpendSignature()
       console.log(req8)
-      expect(req8.returnCode).toEqual(0x9000)
 
       /*
       At this point we gathered all signatures.
@@ -280,7 +277,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.sigRaw, req8.sigRaw],
+        spend_sigs: [req7.signatureRaw, req8.signatureRaw],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -342,7 +339,7 @@ describe('End to end transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-spend-2-sh-out`
@@ -351,9 +348,8 @@ describe('End to end transactions', function () {
 
       const req = await reqinit
 
-      // const req = await app.inittx(ledgerblob_initdata);
+      // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -393,12 +389,11 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -438,9 +433,8 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -455,7 +449,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -470,9 +464,8 @@ describe('End to end transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -481,7 +474,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -503,9 +496,8 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       /*
       Check the hash of the return
@@ -522,17 +514,15 @@ describe('End to end transactions', function () {
       So we first gather all signatures we need.
        */
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).toEqual(0x9000)
 
       /*
       The builder also needs the transparent signature for the transparent input.
        */
 
-      const req9 = await app.extracttranssig()
+      const req9 = await app.extractTransparentSig()
       console.log(req9)
-      expect(req9.returnCode).toEqual(0x9000)
 
       /*
       At this point we gathered all signatures.
@@ -541,8 +531,8 @@ describe('End to end transactions', function () {
        */
 
       const signatures = {
-        transparent_sigs: [req9.sigRaw],
-        spend_sigs: [req7.sigRaw],
+        transparent_sigs: [req9.signatureRaw],
+        spend_sigs: [req7.signatureRaw],
       }
 
       console.log(signatures)
@@ -606,7 +596,7 @@ describe('End to end transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
@@ -616,9 +606,9 @@ describe('End to end transactions', function () {
 
       const req = await reqinit
 
-      // const req = await app.inittx(ledgerblob_initdata);
+      // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.returnCode).toEqual(0x9000)
+
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -653,12 +643,12 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
+
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -698,9 +688,8 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -715,7 +704,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -730,9 +719,8 @@ describe('End to end transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -741,7 +729,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -763,9 +751,8 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       /*
       Check the hash of the return
@@ -782,9 +769,8 @@ describe('End to end transactions', function () {
       So we first gather all signatures we need.
        */
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).toEqual(0x9000)
 
       /*
      At this point we gathered all signatures (only for shielded inputs as there are no transparent ones)
@@ -794,7 +780,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.sigRaw],
+        spend_sigs: [req7.signatureRaw],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -857,7 +843,7 @@ describe('End to end transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
@@ -867,9 +853,8 @@ describe('End to end transactions', function () {
 
       const req = await reqinit
 
-      // const req = await app.inittx(ledgerblob_initdata);
+      // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -920,12 +905,11 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -965,9 +949,8 @@ describe('End to end transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -982,7 +965,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -997,9 +980,8 @@ describe('End to end transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -1008,7 +990,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1030,9 +1012,8 @@ describe('End to end transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       /*
       Check the hash of the return
@@ -1049,17 +1030,15 @@ describe('End to end transactions', function () {
       So we first gather all signatures we need.
        */
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).toEqual(0x9000)
 
       /*
       The builder also needs the transparent signature for the transparent input.
        */
 
-      const req9 = await app.extracttranssig()
+      const req9 = await app.extractTransparentSig()
       console.log(req9)
-      expect(req9.returnCode).toEqual(0x9000)
 
       /*
       At this point we gathered all signatures.
@@ -1068,8 +1047,8 @@ describe('End to end transactions', function () {
        */
 
       const signatures = {
-        transparent_sigs: [req9.sigRaw],
-        spend_sigs: [req7.sigRaw],
+        transparent_sigs: [req9.signatureRaw],
+        spend_sigs: [req7.signatureRaw],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -1109,7 +1088,7 @@ describe('End to end transactions', function () {
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
@@ -1118,7 +1097,6 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       let hash = crypto.createHash('sha256')
@@ -1162,22 +1140,19 @@ describe('End to end transactions', function () {
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
       expect(req6.signdata.toString('hex')).toEqual(h)
 
-      const req9 = await app.extracttranssig()
+      const req9 = await app.extractTransparentSig()
       console.log(req9)
-      expect(req9.returnCode).toEqual(0x9000)
 
-      const req10 = await app.extracttranssig()
+      const req10 = await app.extractTransparentSig()
       console.log(req10)
-      expect(req10.returnCode).toEqual(0x9000)
 
       /*
       At this point we gathered all signatures.
@@ -1186,7 +1161,7 @@ describe('End to end transactions', function () {
        */
 
       const signatures = {
-        transparent_sigs: [req9.sigRaw, req10.sigRaw],
+        transparent_sigs: [req9.signatureRaw, req10.signatureRaw],
         spend_sigs: [],
       }
 
@@ -1222,7 +1197,7 @@ describe('End to end transactions', function () {
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       const testname = `${m.prefix.toLowerCase()}-ext-sig-without-checkandsign`
@@ -1230,37 +1205,30 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      const req3 = await app.extractspenddata()
+      const req3 = await app.extractSpendData()
       console.log(req3)
-      expect(req3.returnCode).toEqual(0x9000)
-      expect(req3.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).not.toEqual(0x9000)
 
-      const req8 = await app.extracttranssig()
+      const req8 = await app.extractTransparentSig()
       console.log(req8)
-      expect(req8.returnCode).not.toEqual(0x9000)
 
       await takeLastSnapshot(testname, last_index, sim)
     } finally {
@@ -1276,9 +1244,8 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const req = await app.extractspenddata()
-      expect(req.returnCode).not.toEqual(0x9000)
-      expect(req.proofkey).toEqual(undefined)
+      const req = await app.extractSpendData()
+      expect(req.keyRaw).toEqual(undefined)
     } finally {
       await sim.close()
     }
@@ -1301,7 +1268,7 @@ describe('Failing transactions', function () {
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
@@ -1309,12 +1276,10 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -1364,14 +1329,13 @@ describe('Failing transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
 
       const req = await reqinit
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -1410,12 +1374,12 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
+
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -1456,9 +1420,8 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -1473,7 +1436,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -1488,9 +1451,8 @@ describe('Failing transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -1499,7 +1461,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1521,9 +1483,8 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the spend signatures to add it to the transaction blob.
@@ -1531,17 +1492,15 @@ describe('Failing transactions', function () {
       So we first gather all signatures we need.
        */
 
-      const req7 = await app.extractspendsig()
+      const req7 = await app.extractSpendSignature()
       console.log(req7)
-      expect(req7.returnCode).toEqual(0x9000)
 
       /*
       The builder also needs the transparent signature for the transparent input.
        */
 
-      const req9 = await app.extracttranssig()
+      const req9 = await app.extractTransparentSig()
       console.log(req9)
-      expect(req9.returnCode).toEqual(0x9000)
 
       /*
       At this point we gathered all signatures.
@@ -1553,13 +1512,11 @@ describe('Failing transactions', function () {
       Below are the failing extractions
        */
 
-      const req10 = await app.extractspendsig()
+      const req10 = await app.extractSpendSignature()
       console.log(req10)
-      expect(req10.returnCode).not.toEqual(0x9000)
 
-      const req11 = await app.extracttranssig()
+      const req11 = await app.extractTransparentSig()
       console.log(req11)
-      expect(req11.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -1609,7 +1566,7 @@ describe('Failing transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
@@ -1623,7 +1580,6 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`)
 
       const req = await reqinit
-      expect(req.returnCode).toEqual(0x9000)
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -1662,12 +1618,11 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -1708,9 +1663,8 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -1725,7 +1679,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -1740,9 +1694,8 @@ describe('Failing transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       /*
       Here we use the wrong rseed!!
@@ -1755,7 +1708,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1777,9 +1730,8 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -1830,14 +1782,14 @@ describe('Failing transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
 
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-builder-addr-diff-to-inittx-addr`)
 
       const req = await reqinit
-      expect(req.returnCode).toEqual(0x9000)
+
       expect(req.txdata.byteLength).toEqual(32)
 
       /*
@@ -1876,12 +1828,12 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
+
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       /*
@@ -1922,9 +1874,8 @@ describe('Failing transactions', function () {
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -1939,7 +1890,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hash_seed,
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -1954,9 +1905,8 @@ describe('Failing transactions', function () {
       Note that this output address belongs to Alice.
        */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
       /*
       Here we use the wrong address and send the change funds to Bob instead.
@@ -1969,7 +1919,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hash_seed,
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1991,9 +1941,8 @@ describe('Failing transactions', function () {
       If all checks are ok, the ledger signs the transaction.
        */
 
-      const req6 = await app.checkandsign(ledgerblob_txdata, tx_version)
+      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
-      expect(req6.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -2025,12 +1974,11 @@ describe('Failing transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       const req = await reqinit
 
       console.log(req)
-      expect(req.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -2069,7 +2017,7 @@ describe('Failing transactions', function () {
           - the shielded outputs
        */
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`)
@@ -2077,19 +2025,16 @@ describe('Failing transactions', function () {
       const req = await reqinit
 
       console.log(req)
-      expect(req.returnCode).not.toEqual(0x9000)
 
       /*
       Try to extract data after a rejection of a transaction
        */
 
-      const req0 = await app.extractspenddata()
+      const req0 = await app.extractSpendData()
       console.log(req0)
-      expect(req0.returnCode).not.toEqual(0x9000)
 
-      const req1 = await app.extractoutputdata()
+      const req1 = await app.extractOutputData()
       console.log(req1)
-      expect(req1.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }
@@ -2114,7 +2059,7 @@ describe('Failing transactions', function () {
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
-      const reqinit = app.inittx(ledgerblob_initdata)
+      const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.navigateUntilText('', '', sim.startOptions.approveKeyword, true, false) // we don't take snapshots here
@@ -2123,7 +2068,7 @@ describe('Failing transactions', function () {
       const req = await reqinit
 
       console.log(req)
-      expect(req.returnCode).toEqual(0x9000)
+
       expect(req.txdata.byteLength).toEqual(32)
 
       const hash = crypto.createHash('sha256')
@@ -2131,12 +2076,12 @@ describe('Failing transactions', function () {
       const h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
 
-      const req2 = await app.extractspenddata()
+      const req2 = await app.extractSpendData()
       console.log(req2)
-      expect(req2.returnCode).toEqual(0x9000)
+
       const expected_proofkeyRaw =
         '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       const spendj1 = {
@@ -2160,10 +2105,9 @@ describe('Failing transactions', function () {
        We need to repeat the above process for the second spend.
         */
 
-      const req3 = await app.extractspenddata()
+      const req3 = await app.extractSpendData()
       console.log(req3)
-      expect(req3.returnCode).toEqual(0x9000)
-      expect(req3.keyRaw.toString('hex')).toEqual(expected_proofkeyRaw)
+      expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
 
       const spendj2 = {
         proofkey: req3.keyRaw,
@@ -2193,9 +2137,8 @@ describe('Failing transactions', function () {
       The ledger already knows how much data it needs to send after the inittx call.
       */
 
-      const req4 = await app.extractoutputdata()
+      const req4 = await app.extractOutputData()
       console.log(req4)
-      expect(req4.returnCode).toEqual(0x9000)
 
       /*
        The builder needs the data retrieved from the ledger (rcv, rcm, esk)
@@ -2210,10 +2153,10 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hashSeed: req4.hashSeed,
+        hashSeed: req4.hashSeedRaw,
       }
 
-      console.log(req4.hashSeed)
+      console.log(req4.hashSeedRaw)
       /*
        The builder adds the shielded output to its state.
         */
@@ -2228,11 +2171,10 @@ describe('Failing transactions', function () {
        The UI needs to take care of this before initializing a transaction to the ledger.
         */
 
-      const req5 = await app.extractoutputdata()
+      const req5 = await app.extractOutputData()
       console.log(req5)
-      expect(req5.returnCode).toEqual(0x9000)
 
-      console.log(req5.hash_seed)
+      console.log(req5.hashSeedRaw)
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -2241,7 +2183,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hashSeed: req5.hashSeed,
+        hashSeed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -2250,8 +2192,6 @@ describe('Failing transactions', function () {
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, bad_tx_version)
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, bad_tx_version)
-      console.log(req6)
-      expect(req6.returnCode).not.toEqual(0x9000)
     } finally {
       await sim.close()
     }

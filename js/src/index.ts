@@ -14,14 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import GenericApp, {
-  INSGeneric,
-  LedgerError,
-  ResponsePayload,
-  Transport,
-  processErrorResponse,
-  processResponse,
-} from '@zondax/ledger-js'
+import GenericApp, { INSGeneric, LedgerError, ResponsePayload, Transport, processErrorResponse, processResponse } from '@zondax/ledger-js'
 import { serializePath } from '@zondax/ledger-js/dist/bip32'
 import { ResponseError } from '@zondax/ledger-js/dist/responseError'
 
@@ -42,11 +35,16 @@ import {
 import {
   AddressResponse,
   DiversifierListResponse,
+  ExtractSpendResponse,
   FvkResponse,
   InitTxResponse,
   IvkResponse,
   NullifierResponse,
+  OutputDataResponse,
   OvkResponse,
+  SignResponse,
+  SpendSignatureResponse,
+  TransaparentSignatureResponse,
 } from './types'
 import { signSendChunkv1 } from './utils'
 
@@ -138,6 +136,50 @@ export default class ZCashApp extends GenericApp {
     } catch (error) {
       throw processErrorResponse(error)
     }
+  }
+
+  async showAddressAndPubKey(path: any, unshielded = false) {
+    if (!unshielded) {
+      const buf = Buffer.alloc(4)
+      buf.writeUInt32LE(path, 0)
+      return this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(function (
+        response: any
+      ): AddressResponse {
+        let partialResponse = response
+
+        const errorCodeData = partialResponse.slice(-2)
+        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+
+        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN))
+        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN)
+
+        const address = Buffer.from(partialResponse.slice(0, -2)).toString()
+
+        return {
+          address,
+          addressRaw: addressRaw,
+        }
+      }, processErrorResponse)
+    }
+    const serializedPath = this.serializePath(path)
+    return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(function (
+      response: any
+    ): AddressResponse {
+      let partialResponse = response
+
+      const errorCodeData = partialResponse.slice(-2)
+      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
+
+      const addressRaw = Buffer.from(partialResponse.slice(0, TRANSPARENT_PK_LEN))
+      partialResponse = partialResponse.slice(TRANSPARENT_PK_LEN)
+
+      const address = Buffer.from(partialResponse.slice(0, -2)).toString()
+
+      return {
+        address,
+        addressRaw: addressRaw,
+      }
+    }, processErrorResponse)
   }
 
   ////////////////////////////////////////////
@@ -248,7 +290,7 @@ export default class ZCashApp extends GenericApp {
         INS.GET_NF_SAPLING,
         0, // ignored
         0,
-        sentToDevice,
+        sentToDevice
       )
       const response = processResponse(responseBuffer)
 
@@ -290,140 +332,75 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  async extractSpendSignature() {
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
-      response: any,
-    ) {
-      const partialResponse = response
-
-      const errorCodeData = partialResponse.slice(-2)
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-      const sigraw = Buffer.from(partialResponse.slice(0, 64))
+  async extractSpendSignature(): Promise<SpendSignatureResponse> {
+    try {
+      const empty = Buffer.alloc(0)
+      const responseBuffer = await this.transport.send(CLA, INS.EXTRACT_SPEND_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, empty, [0x9000])
+      const response = processResponse(responseBuffer)
 
       return {
-        signatureRaw: sigraw.toString('hex'),
-      }
-    }, processErrorResponse)
+        signatureRaw: response.getCompleteBuffer().toString('hex'),
+      } as SpendSignatureResponse
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
   }
 
-  async extractTransparentSig() {
-    return this.transport.send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
-      response: any,
-    ) {
-      const partialResponse = response
-
-      const errorCodeData = partialResponse.slice(-2)
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-      const sigraw = Buffer.from(partialResponse.slice(0, 64))
+  async extractTransparentSig(): Promise<TransaparentSignatureResponse> {
+    try {
+      const empty = Buffer.alloc(0)
+      const responseBuffer = await this.transport.send(CLA, INS.EXTRACT_TRANS_SIGNATURE, P1_VALUES.ONLY_RETRIEVE, 0, empty, [0x9000])
+      const response = processResponse(responseBuffer)
 
       return {
-        signatureRaw: sigraw.toString('hex'),
-      }
-    }, processErrorResponse)
+        signatureRaw: response.getCompleteBuffer().toString('hex'),
+      } as TransaparentSignatureResponse
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
   }
 
-  async extractOutputData() {
-    return this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
-      response: any,
-    ) {
-      const partialResponse = response
+  async extractOutputData(): Promise<OutputDataResponse> {
+    try {
+      const empty = Buffer.alloc(0)
+      const responseBuffer = await this.transport.send(CLA, INS.EXTRACT_OUTPUT_DATA, P1_VALUES.ONLY_RETRIEVE, 0, empty, [0x9000])
+      const response = processResponse(responseBuffer)
 
-      const errorCodeData = partialResponse.slice(-2)
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-      const rcv = Buffer.from(partialResponse.slice(0, 32))
-      const rseed = Buffer.from(partialResponse.slice(32, 64))
-      let hashseed
-      if (partialResponse.byteLength === 96 + 2) {
-        hashseed = Buffer.from(partialResponse.slice(64, 96)).toString('hex')
-      } else {
-        hashseed = null
-      }
+      const rcv = response.readBytes(32)
+      const rseed = response.readBytes(32)
+      const hashseed = response.getAvailableBuffer()
 
       return {
         rcvRaw: rcv.toString('hex'),
         rseedRaw: rseed.toString('hex'),
-        hashSeed: hashseed,
-      }
-    }, processErrorResponse)
+        hashSeedRaw: hashseed.toString('hex'),
+      } as OutputDataResponse
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
   }
 
-  async extractSpendData() {
-    return this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, Buffer.from([]), [0x9000]).then(function(
-      response: any,
-    ) {
-      const partialResponse = response
+  async extractSpendData(): Promise<ExtractSpendResponse> {
+    try {
+      const empty = Buffer.alloc(0)
+      const responseBuffer = await this.transport.send(CLA, INS.EXTRACT_SPEND_DATA, P1_VALUES.ONLY_RETRIEVE, 0, empty, [0x9000])
+      const response = processResponse(responseBuffer)
 
-      const errorCodeData = partialResponse.slice(-2)
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-      const keyraw = Buffer.from(partialResponse.slice(0, 64))
-      const rcv = Buffer.from(partialResponse.slice(64, 96))
-      const alpha = Buffer.from(partialResponse.slice(96, 128))
+      const key = response.readBytes(64)
+      const rcv = response.readBytes(32)
+      const alpha = response.readBytes(32)
 
       return {
-        keyRaw: keyraw.toString('hex'),
+        keyRaw: rcv.toString('hex'),
         rcvRaw: rcv.toString('hex'),
         alphaRaw: alpha.toString('hex'),
-      }
-    }, processErrorResponse)
-  }
-
-  async showAddressAndPubKey(path: any, unshielded = false) {
-    if (!unshielded) {
-      const buf = Buffer.alloc(4)
-      buf.writeUInt32LE(path, 0)
-      return this.transport.send(CLA, INS.GET_ADDR_SAPLING, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, buf, [0x9000]).then(function(
-        response: any,
-      ): AddressResponse {
-        let partialResponse = response
-
-        const errorCodeData = partialResponse.slice(-2)
-        const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-        const addressRaw = Buffer.from(partialResponse.slice(0, SAPLING_ADDR_LEN))
-        partialResponse = partialResponse.slice(SAPLING_ADDR_LEN)
-
-        const address = Buffer.from(partialResponse.slice(0, -2)).toString()
-
-        return {
-          address,
-          addressRaw: addressRaw,
-        }
-      }, processErrorResponse)
+      } as ExtractSpendResponse
+    } catch (error) {
+      throw processErrorResponse(error)
     }
-    const serializedPath = this.serializePath(path)
-    return this.transport.send(CLA, INS.GET_ADDR_SECP256K1, P1_VALUES.SHOW_ADDRESS_IN_DEVICE, 0, serializedPath, [0x9000]).then(function(
-      response: any,
-    ): AddressResponse {
-      let partialResponse = response
-
-      const errorCodeData = partialResponse.slice(-2)
-      const returnCode = errorCodeData[0] * 256 + errorCodeData[1]
-
-      const addressRaw = Buffer.from(partialResponse.slice(0, TRANSPARENT_PK_LEN))
-      partialResponse = partialResponse.slice(TRANSPARENT_PK_LEN)
-
-      const address = Buffer.from(partialResponse.slice(0, -2)).toString()
-
-      return {
-        address,
-        addressRaw: addressRaw,
-      }
-    }, processErrorResponse)
   }
 
-  async signSendChunk(chunkIdx: any, chunkNum: any, chunk: any) {
-    return signSendChunkv1(this, chunkIdx, chunkNum, chunk)
-  }
-
-  async checkSpendsGetChunks(path: any, message: any) {
-    return this.prepareChunks(path, message)
-  }
-
-  async checkAndSign(message: any, txVersion: any) {
+  async checkAndSign(message: any, txVersion: any): Promise<SignResponse> {
     try {
       const chunks = this.messageToChunks(message)
 
@@ -445,5 +422,19 @@ export default class ZCashApp extends GenericApp {
     } catch (error) {
       throw processErrorResponse(error)
     }
+  }
+
+  ///////////////////////////////////////
+  ///////////////////////////////////////
+  ///////////////////////////////////////
+  ///////////////////////////////////////
+  ///////////////////////////////////////
+
+  async signSendChunk(chunkIdx: any, chunkNum: any, chunk: any) {
+    return signSendChunkv1(this, chunkIdx, chunkNum, chunk)
+  }
+
+  async checkSpendsGetChunks(path: any, message: any) {
+    return this.prepareChunks(path, message)
   }
 }
