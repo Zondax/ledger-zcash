@@ -44,6 +44,18 @@ zcashtools_test: zcashtools_build
 
 zemu_install: zcashtools_build
 
+ts_upgrade:
+	cd js && bun run upgrade
+	cd tests_zemu && bun run upgrade
+
+ts_format:
+	cd js && bun run format
+	cd tests_zemu && bun run format
+
+ts_lint:
+	cd js && bun run lint
+	cd tests_zemu && bun run lint
+
 test_all:
 	make
 	make zemu_install

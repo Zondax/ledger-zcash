@@ -17,14 +17,7 @@
 /* eslint-disable no-console */
 import { MockTransport } from '@ledgerhq/hw-transport-mocker'
 
-import {
-  SAPLING_ADDR_LEN,
-  SAPLING_AK_LEN,
-  SAPLING_DIV_LEN,
-  SAPLING_IVK_LEN,
-  SAPLING_NK_LEN,
-  SAPLING_OVK_LEN,
-} from '../consts'
+import { SAPLING_AK_LEN, SAPLING_DIV_LEN, SAPLING_IVK_LEN, SAPLING_NK_LEN, SAPLING_OVK_LEN } from '../consts'
 import ZCashApp from '../index'
 
 describe('ZCashApp', () => {
@@ -112,7 +105,7 @@ describe('ZCashApp', () => {
   describe('getDiversifierList', () => {
     it('should correctly handle the getDiversifierList command', async () => {
       const mockResponse = Buffer.concat([
-        Buffer.alloc( 11 * 20 ).fill(0x01),
+        Buffer.alloc(11 * 20).fill(0x01),
         Buffer.from([0x90, 0x00]), // Status word (SW) for success
       ])
       const transport = new MockTransport(mockResponse)

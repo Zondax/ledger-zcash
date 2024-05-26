@@ -43,7 +43,7 @@
         }                               \
     } while (0);
 
-// NOTE: this are supposed to be error stages to track progress?
+// This are supposed to be error stages to track progress?
 typedef enum {
     EXTRACT_SAPLING_E0 = 0xE0,
     EXTRACT_SAPLING_E1 = 0xE1,
@@ -225,21 +225,31 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed) {
 
 // handleInitTX step 1/2
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
-    zemu_log_stack("crypto_extracttx_sapling");
+    ZEMU_LOGF(100, "crypto_extracttx_sapling\n");
+
     MEMZERO(buffer, bufferLen);
     uint8_t t_in_len = *txdata;
     uint8_t t_out_len = *(txdata + 1);
     uint8_t spend_len = *(txdata + 2);
     uint8_t output_len = *(txdata + 3);
 
+    ZEMU_LOGF(100, "txdatalen=%d\n", txdatalen);
+    ZEMU_LOGF(100, "t_in_len=%d\n", t_in_len);
+    ZEMU_LOGF(100, "t_out_len=%d\n", t_out_len);
+    ZEMU_LOGF(100, "spend_len=%d\n", spend_len);
+    ZEMU_LOGF(100, "output_len=%d\n", output_len);
     transaction_reset();
 
     if ((spend_len > 0 && output_len < 2) || (spend_len == 0 && output_len == 1)) {
         return (zxerr_t) EXTRACT_SAPLING_E0;
     }
 
-    if (txdatalen < 4 || txdatalen - 4 != t_in_len * T_IN_INPUT_LEN + t_out_len * T_OUT_INPUT_LEN +
-                                          spend_len * SPEND_INPUT_LEN + output_len * OUTPUT_INPUT_LEN) {
+    if (txdatalen < 4 || txdatalen - 4 !=
+        t_in_len * T_IN_INPUT_LEN +
+        t_out_len * T_OUT_INPUT_LEN +
+        spend_len * SPEND_INPUT_LEN +
+        output_len * OUTPUT_INPUT_LEN) {
+
         return (zxerr_t) EXTRACT_SAPLING_E1;
     }
 

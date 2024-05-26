@@ -17,7 +17,6 @@ module.exports = {
     'unused-imports': require('eslint-plugin-unused-imports'),
     '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
     'eslint-plugin-tsdoc': require('eslint-plugin-tsdoc'),
-    promise: require('eslint-plugin-promise'),
   },
   rules: {
     curly: 'warn',
@@ -30,7 +29,6 @@ module.exports = {
     'no-useless-catch': 'error',
     'require-await': 'warn',
     'no-continue': 'warn',
-    'promise/prefer-await-to-then': 'warn',
     'no-console': 'warn',
     'unused-imports/no-unused-imports': 'warn',
     'no-magic-numbers': 'off',

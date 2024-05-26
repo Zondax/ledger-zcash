@@ -9,7 +9,7 @@ readme = "README.md"
 python = "3.11.9"
 setuptools = "*"
 Cython = "*"
-ledgerblue = "^0.1.49"
+ledgerblue = "*"
 hidapi = "*"
 
 [build-system]

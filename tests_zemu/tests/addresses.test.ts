@@ -20,13 +20,12 @@ import ZCashApp from '@zondax/ledger-zcash'
 
 jest.setTimeout(60000)
 
-describe('Addresses', function() {
-  test.concurrent.each(models)('get unshielded address', async function(m) {
+describe('Addresses', function () {
+  test.concurrent.each(models)('get unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
-
       const expectedAddrRaw = '031f6d238009787c20d5d7becb6b6ad54529fc0a3fd35088e85c2c3966bfec050e'
       const expectedAddr = 't1KHG39uhsssPkYcAXkzZ5Bk2w1rnFukZvx'
 
@@ -40,7 +39,7 @@ describe('Addresses', function() {
     }
   })
 
-  test.concurrent.each(models)('show unshielded address', async function(m) {
+  test.concurrent.each(models)('show unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -66,13 +65,13 @@ describe('Addresses', function() {
     }
   })
 
-  test.concurrent.each(models)('get shielded address', async function(m) {
+  test.concurrent.each(models)('get shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const zip32Account = 1000 + 0x80000000;
+      const zip32Account = 1000 + 0x80000000
       const addr = await app.getAddressSapling(zip32Account, false)
 
       const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
@@ -85,21 +84,20 @@ describe('Addresses', function() {
     }
   })
 
-  test.concurrent.each(models)('get invalid shielded address', async function(m) {
+  test.concurrent.each(models)('get invalid shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const zip32Account = 1000;
+      const zip32Account = 1000
       await expect(app.getAddressSapling(zip32Account, false)).rejects.toThrow()
-
     } finally {
       await sim.close()
     }
   })
 
-  test.concurrent.each(models)('show shielded address', async function(m) {
+  test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -110,7 +108,7 @@ describe('Addresses', function() {
       })
       const app = new ZCashApp(sim.getTransport())
 
-      const zip32Account = 1000 + 0x80000000;
+      const zip32Account = 1000 + 0x80000000
       const addrRequest = app.getAddressSapling(zip32Account)
       // Wait until we are not in the main menu
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot(), 600000)
@@ -128,7 +126,7 @@ describe('Addresses', function() {
     }
   })
 
-  test.concurrent.each(models)('get shielded address with div', async function(m) {
+  test.concurrent.each(models)('get shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({

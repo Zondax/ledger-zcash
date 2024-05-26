@@ -359,7 +359,8 @@ s_output:
 | P1    | byte (1) | Payload desc           | 0 = init  |
 |       |          |                        | 1 = add   |
 |       |          |                        | 2 = last  |
-| P2    | byte (1) | ----                   | not used  |
+| P2    | byte (1) | TxVersion              | 4 = Sapling |
+|       |          |                        | 5 = NU5     |
 | L     | byte (1) | Bytes in payload       | (depends) |
 
 The first packet/chunk includes only the derivation path

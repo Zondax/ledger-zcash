@@ -17,18 +17,10 @@
 /* eslint-disable no-console */
 import { MockTransport } from '@ledgerhq/hw-transport-mocker'
 
-import {
-  SAPLING_ADDR_LEN,
-  SAPLING_AK_LEN,
-  SAPLING_DIV_LEN,
-  SAPLING_IVK_LEN,
-  SAPLING_NK_LEN,
-  SAPLING_OVK_LEN,
-} from '../consts'
+import { SAPLING_ADDR_LEN, SAPLING_DIV_LEN } from '../consts'
 import ZCashApp from '../index'
 
 describe('ZCashApp', () => {
-
   describe('getAddressSamplingFromDiversifier', () => {
     it('should correctly handle the getAddrDiv command', async () => {
       const mockResponse = Buffer.concat([
@@ -61,5 +53,4 @@ describe('ZCashApp', () => {
       expect(response.addressRaw).toEqual(Buffer.alloc(SAPLING_ADDR_LEN))
     })
   })
-
 })

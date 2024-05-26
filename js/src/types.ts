@@ -41,3 +41,7 @@ export type DiversifierListResponse = {
 export type NullifierResponse = {
   nfRaw: Buffer
 }
+
+export type InitTxResponse = {
+  txdata: Buffer
+}

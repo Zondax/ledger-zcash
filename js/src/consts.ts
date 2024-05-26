@@ -50,10 +50,6 @@ export const P2_VALUES = {
   TX_VERSION_NU5: 0x05,
 }
 
-export const ERROR_CODE = {
-  NoError: 0x9000,
-}
-
 export const TRANSPARENT_PK_LEN = 33
 export const SAPLING_ADDR_LEN = 43
 export const SAPLING_DIV_LEN = 11

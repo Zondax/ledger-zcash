@@ -2260,5 +2260,3 @@ describe('Failing transactions', function () {
 function takeLastSnapshot(testname: string, last_index: number, sim: Zemu) {
   throw new Error('Function not implemented.')
 }
-
-

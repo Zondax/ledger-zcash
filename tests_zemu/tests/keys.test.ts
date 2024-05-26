@@ -26,8 +26,8 @@ const defaultOptions = {
 
 jest.setTimeout(600000)
 
-describe('Nullifier', function() {
-  test.concurrent.each(models)('get nullifier account 0x01', async function(m) {
+describe('Nullifier', function () {
+  test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -57,7 +57,7 @@ describe('Nullifier', function() {
     }
   })
 
-  test.concurrent.each(models)('get nullifier account 0xFF', async function(m) {
+  test.concurrent.each(models)('get nullifier account 0xFF', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -68,7 +68,7 @@ describe('Nullifier', function() {
       })
       const app = new ZCashApp(sim.getTransport())
 
-      const path = 0xFF + 0x80000000
+      const path = 0xff + 0x80000000
       const pos = BigInt(0)
       const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
@@ -134,7 +134,7 @@ describe('Get keys', function () {
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
-      const ovkreq = app.getOvkSapling( zip32Account)
+      const ovkreq = app.getOvkSapling(zip32Account)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
@@ -188,7 +188,7 @@ describe('Get keys', function () {
   })
 })
 
-describe('Diversifiers', function() {
+describe('Diversifiers', function () {
   test.concurrent.each(models)('Div list with startindex', async function (m) {
     const sim = new Zemu(m.path)
     try {

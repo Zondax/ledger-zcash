@@ -17,16 +17,17 @@
 import GenericApp, {
   INSGeneric,
   LedgerError,
+  ResponsePayload,
   Transport,
   processErrorResponse,
   processResponse,
 } from '@zondax/ledger-js'
 import { serializePath } from '@zondax/ledger-js/dist/bip32'
+import { ResponseError } from '@zondax/ledger-js/dist/responseError'
 
 import {
   CHUNK_SIZE,
   CLA,
-  ERROR_CODE,
   INS,
   P1_VALUES,
   SAPLING_ADDR_LEN,
@@ -42,12 +43,12 @@ import {
   AddressResponse,
   DiversifierListResponse,
   FvkResponse,
+  InitTxResponse,
   IvkResponse,
   NullifierResponse,
   OvkResponse,
 } from './types'
-import { prepareChunks, saplingPrepareChunks, saplingSendChunkv1, signSendChunkv1 } from './utils'
-import { ResponseError } from '@zondax/ledger-js/dist/responseError'
+import { signSendChunkv1 } from './utils'
 
 export default class ZCashApp extends GenericApp {
   constructor(transport: Transport) {
@@ -147,9 +148,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_IVK_SAPLING, 0, 0, sentToDevice, [
-        0x9000,
-      ])
+      const responseBuffer = await this.transport.send(CLA, INS.GET_IVK_SAPLING, 0, 0, sentToDevice, [0x9000])
       const response = processResponse(responseBuffer)
 
       const ivkRaw = response.readBytes(SAPLING_IVK_LEN)
@@ -169,9 +168,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, 0, 0, sentToDevice, [
-        0x9000,
-      ])
+      const responseBuffer = await this.transport.send(CLA, INS.GET_OVK_SAPLING, 0, 0, sentToDevice, [0x9000])
       const response = processResponse(responseBuffer)
 
       const ovkRaw = response.readBytes(SAPLING_OVK_LEN)
@@ -189,9 +186,7 @@ export default class ZCashApp extends GenericApp {
     sentToDevice.writeUInt32LE(zip32Account, 0)
 
     try {
-      const responseBuffer = await this.transport.send(CLA, INS.GET_FVK_SAPLING, 0, 0, sentToDevice, [
-        0x9000,
-      ])
+      const responseBuffer = await this.transport.send(CLA, INS.GET_FVK_SAPLING, 0, 0, sentToDevice, [0x9000])
       const response = processResponse(responseBuffer)
 
       console.log(response.length())
@@ -210,8 +205,6 @@ export default class ZCashApp extends GenericApp {
     }
   }
 
-  ////////////////////////////////////
-
   async getDiversifierList(zip32Account: number, startingDiversifier: Buffer): Promise<DiversifierListResponse> {
     if (startingDiversifier?.length !== 11) {
       throw new ResponseError(LedgerError.IncorrectData, 'startingDiversifier Buffer must be exactly 11 bytes')
@@ -222,13 +215,7 @@ export default class ZCashApp extends GenericApp {
     startingDiversifier.copy(sentToDevice, 4)
 
     try {
-      const responseBuffer = await this.transport.send(
-        CLA,
-        INS.GET_DIV_LIST,
-        0,
-        0,
-        sentToDevice,
-      )
+      const responseBuffer = await this.transport.send(CLA, INS.GET_DIV_LIST, 0, 0, sentToDevice)
       const response = processResponse(responseBuffer)
 
       const diversifiers: Buffer[] = []
@@ -244,8 +231,6 @@ export default class ZCashApp extends GenericApp {
       throw processErrorResponse(error)
     }
   }
-
-  ////////////////////////////////////
 
   async getNullifierSapling(zip32Account: number, notePosition: bigint, ncm: Buffer): Promise<NullifierResponse> {
     if (ncm.length !== 32) {
@@ -263,7 +248,8 @@ export default class ZCashApp extends GenericApp {
         INS.GET_NF_SAPLING,
         0, // ignored
         0,
-        sentToDevice)
+        sentToDevice,
+      )
       const response = processResponse(responseBuffer)
 
       const nfraw = Buffer.from(response.readBytes(SAPLING_NF_LEN))
@@ -275,32 +261,33 @@ export default class ZCashApp extends GenericApp {
   }
 
   ////////////////////////////////////
+  ////////////////////////////////////
+  ////////////////////////////////////
+  ////////////////////////////////////
+  ////////////////////////////////////
 
-  async initNewTx(message: any) {
-    return this.saplingGetChunks(message).then(chunks => {
-      return this.saplingSendChunk(INS.INIT_TX, 1, chunks.length, chunks[0], 0x00, [LedgerError.NoErrors]).then(async response => {
-        let result = {
-          returnCode: response.returnCode,
-          errorMessage: response.errorMessage,
-          txdata: null,
-        }
+  async initNewTx(message: any): Promise<InitTxResponse> {
+    try {
+      const chunks = this.messageToChunks(message)
 
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.INIT_TX, 1 + i, chunks.length, chunks[i], 0x00)
-          if (result.returnCode !== ERROR_CODE.NoError) {
-            break
-          }
-        }
+      // Add empty chunk to trigger the init/reset
+      chunks.unshift(Buffer.alloc(0))
 
+      let result: ResponsePayload | undefined
+      for (const [idx, chunk] of chunks.entries()) {
+        result = await this.sendGenericChunk(INS.INIT_TX, 0x00, idx + 1, chunks.length, chunk)
+      }
+
+      if (result) {
         return {
-          returnCode: result.returnCode,
-          errorMessage: result.errorMessage,
-          // ///
-          txdata: result.txdata,
+          txdata: result.getCompleteBuffer(),
         }
-      }, processErrorResponse)
-    }, processErrorResponse)
+      }
+
+      throw new ResponseError(LedgerError.UnknownError, 'Unknown error')
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
   }
 
   async extractSpendSignature() {
@@ -432,42 +419,31 @@ export default class ZCashApp extends GenericApp {
     return signSendChunkv1(this, chunkIdx, chunkNum, chunk)
   }
 
-  async saplingGetChunks(message: any) {
-    return saplingPrepareChunks(message)
-  }
-
   async checkSpendsGetChunks(path: any, message: any) {
-    return prepareChunks(serializePath(path), message)
-  }
-
-  async saplingSendChunk(version: any, chunkIdx: any, chunkNum: any, chunk: any, p2: any, acceptErrors?: any) {
-    return saplingSendChunkv1(this, version, chunkIdx, chunkNum, chunk, p2, acceptErrors)
+    return this.prepareChunks(path, message)
   }
 
   async checkAndSign(message: any, txVersion: any) {
-    return this.saplingGetChunks(message).then(chunks => {
-      return this.saplingSendChunk(INS.CHECK_AND_SIGN, 1, chunks.length, chunks[0], txVersion).then(async response => {
-        let result = {
-          returnCode: response.returnCode,
-          errorMessage: response.errorMessage,
-          signdata: null,
-        }
+    try {
+      const chunks = this.messageToChunks(message)
 
-        for (let i = 1; i < chunks.length; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          result = await this.saplingSendChunk(INS.CHECK_AND_SIGN, 1 + i, chunks.length, chunks[i], txVersion)
-          if (result.returnCode !== ERROR_CODE.NoError) {
-            break
-          }
-        }
+      // Add empty chunk to trigger the init/reset
+      chunks.unshift(Buffer.alloc(0))
 
+      let result: ResponsePayload | undefined
+      for (const [idx, chunk] of chunks.entries()) {
+        result = await this.sendGenericChunk(INS.CHECK_AND_SIGN, txVersion, idx + 1, chunks.length, chunk)
+      }
+
+      if (result) {
         return {
-          returnCode: result.returnCode,
-          errorMessage: result.errorMessage,
-          // ///
-          signdata: result.signdata,
+          signdata: result.getCompleteBuffer(),
         }
-      }, processErrorResponse)
-    }, processErrorResponse)
+      }
+
+      throw new ResponseError(LedgerError.UnknownError, 'Unknown error')
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
   }
 }

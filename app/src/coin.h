@@ -23,6 +23,10 @@ extern "C" {
 
 #define CLA                0x85
 
+#define P1_INIT                         0  //< P1
+#define P1_ADD                          1  //< P1
+#define P1_LAST                         2  //< P1
+
 #define HDPATH_LEN_MAX     5
 
 #define HDPATH_0_DEFAULT   (0x80000000u | 0x2cu)

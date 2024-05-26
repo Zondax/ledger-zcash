@@ -35,6 +35,8 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
+static bool tx_initialized = false;
+
 __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
     // FIXME: correct/improve this. Move to common?
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
@@ -43,26 +45,42 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
 
-    uint32_t added;
+    uint32_t added = 0;
     switch (payloadType) {
-        case 0:
+        case P1_INIT: {
+            ZEMU_LOGF(100, "CHUNK: Reset\n");
             tx_initialize();
             tx_reset();
+            tx_initialized = true;
             return false;
-        case 1:
+        }
+        case P1_ADD: {
+            if (!tx_initialized) {
+                THROW(APDU_CODE_TX_NOT_INITIALIZED);
+            }
+            ZEMU_LOGF(100, "CHUNK: Add %d\n", rx - OFFSET_DATA);
             added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);
             if (added != rx - OFFSET_DATA) {
+                tx_initialized = false;
                 THROW(APDU_CODE_OUTPUT_BUFFER_TOO_SMALL);
             }
             return false;
-        case 2:
+        }
+        case P1_LAST:{
+            if (!tx_initialized) {
+                THROW(APDU_CODE_TX_NOT_INITIALIZED);
+            }
+            ZEMU_LOGF(100, "CHUNK: Last %d\n", rx - OFFSET_DATA);
             added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);
+            tx_initialized = false;
             if (added != rx - OFFSET_DATA) {
                 THROW(APDU_CODE_OUTPUT_BUFFER_TOO_SMALL);
             }
             return true;
+        }
     }
     THROW(APDU_CODE_INVALIDP1P2);
+    // NOLINTNEXTLINE: we don't need to return a value after throwing
 }
 
 __Z_INLINE void handleExtractSpendSignature(volatile uint32_t *tx, uint32_t rx) {
