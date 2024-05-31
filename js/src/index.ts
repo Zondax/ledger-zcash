@@ -322,7 +322,8 @@ export default class ZCashApp extends GenericApp {
 
       if (result) {
         return {
-          txdata: result.getCompleteBuffer(),
+          txdataRaw: result.getCompleteBuffer(),
+          txdata: result.getCompleteBuffer().toString('hex'),
         }
       }
 
@@ -339,7 +340,8 @@ export default class ZCashApp extends GenericApp {
       const response = processResponse(responseBuffer)
 
       return {
-        signatureRaw: response.getCompleteBuffer().toString('hex'),
+        signatureRaw: response.getCompleteBuffer(),
+        signature: response.getCompleteBuffer().toString('hex'),
       } as SpendSignatureResponse
     } catch (error) {
       throw processErrorResponse(error)
@@ -353,7 +355,8 @@ export default class ZCashApp extends GenericApp {
       const response = processResponse(responseBuffer)
 
       return {
-        signatureRaw: response.getCompleteBuffer().toString('hex'),
+        signatureRaw: response.getCompleteBuffer(),
+        signature: response.getCompleteBuffer().toString('hex'),
       } as TransaparentSignatureResponse
     } catch (error) {
       throw processErrorResponse(error)
@@ -371,9 +374,12 @@ export default class ZCashApp extends GenericApp {
       const hashseed = response.getAvailableBuffer()
 
       return {
-        rcvRaw: rcv.toString('hex'),
-        rseedRaw: rseed.toString('hex'),
-        hashSeedRaw: hashseed.toString('hex'),
+        rcvRaw: rcv,
+        rseedRaw: rseed,
+        hashSeedRaw: hashseed,
+        rcv: rcv.toString('hex'),
+        rseed: rseed.toString('hex'),
+        hashSeed: hashseed.toString('hex'),
       } as OutputDataResponse
     } catch (error) {
       throw processErrorResponse(error)
@@ -391,9 +397,13 @@ export default class ZCashApp extends GenericApp {
       const alpha = response.readBytes(32)
 
       return {
-        keyRaw: key.toString('hex'),
-        rcvRaw: rcv.toString('hex'),
-        alphaRaw: alpha.toString('hex'),
+        key: key.toString('hex'),
+        rcv: rcv.toString('hex'),
+        alpha: alpha.toString('hex'),
+
+        keyRaw: key,
+        rcvRaw: rcv,
+        alphaRaw: alpha,
       } as ExtractSpendResponse
     } catch (error) {
       throw processErrorResponse(error)
@@ -414,7 +424,8 @@ export default class ZCashApp extends GenericApp {
 
       if (result) {
         return {
-          signdata: result.getCompleteBuffer(),
+          signdataRaw: result.getCompleteBuffer(),
+          signdata: result.getCompleteBuffer().toString('hex'),
         }
       }
 

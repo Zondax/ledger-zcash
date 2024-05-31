@@ -43,29 +43,41 @@ export type NullifierResponse = {
 }
 
 export type InitTxResponse = {
-  txdata: Buffer
+  txdataRaw: Buffer
+  txdata: string
 }
 
 export type SpendSignatureResponse = {
-  signatureRaw: string
+  signatureRaw: Buffer
+  signature: string
 }
 
 export type TransaparentSignatureResponse = {
-  signatureRaw: string
+  signatureRaw: Buffer
+  signature: string
 }
 
 export type OutputDataResponse = {
-  rcvRaw: string
-  rseedRaw: string
-  hashSeedRaw: string
+  rcvRaw: Buffer
+  rseedRaw: Buffer
+  hashSeedRaw: Buffer
+
+  rcv: string
+  rseed: string
+  hashSeed: string
 }
 
 export type ExtractSpendResponse = {
-  keyRaw: string
-  rcvRaw: string
-  alphaRaw: string
+  keyRaw: Buffer
+  rcvRaw: Buffer
+  alphaRaw: Buffer
+
+  key: string
+  rcv: string
+  alpha: string
 }
 
 export type SignResponse = {
-  signdata: Buffer
+  signdataRaw: Buffer
+  signdata: string
 }

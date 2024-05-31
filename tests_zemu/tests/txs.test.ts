@@ -20,6 +20,7 @@ import { APP_SEED, models } from './_config'
 import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
+import { takeLastSnapshot } from './utils'
 
 const tx_version = 0x05
 
@@ -77,13 +78,13 @@ describe('End to end transactions', function () {
       const req = await reqinit
 
       console.log(req)
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdataRaw.length).toEqual(32)
 
-      // Create a SHA-256 hash instance
+      // Create the SHA-256 hash instance
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       // Begin transaction construction using the builder.
 
@@ -96,19 +97,19 @@ describe('End to end transactions', function () {
 
       const req2 = await app.extractSpendData()
       console.log(req2)
-      const expected_proofkeyRaw =
-        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
-      expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
+      const expected_proofkey =
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+      expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
       // It also uses the spend address and value from the UI.
       // We also need the witness from the blockchain, which is now a fake/incorrect one.
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -122,12 +123,12 @@ describe('End to end transactions', function () {
       // Repeat the process for the second spend.
       const req3 = await app.extractSpendData()
       console.log(req3)
-      expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
+      expect(req3.keyRaw).toEqual(expected_proofkey)
 
       const spendj2 = {
-        proofkey: req3.keyRaw,
-        rcv: req3.rcvRaw,
-        alpha: req3.alphaRaw,
+        proofkey: req3.key,
+        rcv: req3.rcv,
+        alpha: req3.alpha,
         address: s_spend2.address,
         value: s_spend2.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -155,13 +156,13 @@ describe('End to end transactions', function () {
       // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       console.log(req4.hashSeedRaw)
@@ -180,13 +181,13 @@ describe('End to end transactions', function () {
       console.log(req5.hashSeedRaw)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -212,7 +213,7 @@ describe('End to end transactions', function () {
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
-      expect(req6.signdata.toString('hex')).toEqual(h)
+      expect(req6.signdata).toEqual(h)
 
       // The builder needs these signatures to add it to the transaction blob.
       // We need to do this one by one.
@@ -230,7 +231,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.signatureRaw, req8.signatureRaw],
+        spend_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -294,13 +295,13 @@ describe('End to end transactions', function () {
 
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       // Check the hash of the return
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       // Now we start building the transaction using the builder.
 
@@ -336,9 +337,9 @@ describe('End to end transactions', function () {
       // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -369,13 +370,13 @@ describe('End to end transactions', function () {
       // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
@@ -390,13 +391,13 @@ describe('End to end transactions', function () {
       console.log(req5)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -422,7 +423,7 @@ describe('End to end transactions', function () {
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
-      expect(req6.signdata.toString('hex')).toEqual(h)
+      expect(req6.signdata).toEqual(h)
 
       // The builder needs the spend signatures to add it to the transaction blob.
       // We need to do this one by one.
@@ -441,8 +442,8 @@ describe('End to end transactions', function () {
       // Note that for this transaction, we do not have any transparent signatures.
 
       const signatures = {
-        transparent_sigs: [req9.signatureRaw],
-        spend_sigs: [req7.signatureRaw],
+        transparent_sigs: [req9.signature],
+        spend_sigs: [req7.signature],
       }
 
       console.log(signatures)
@@ -517,7 +518,7 @@ describe('End to end transactions', function () {
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
 
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       /*
       Check the hash of the return
@@ -525,7 +526,7 @@ describe('End to end transactions', function () {
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       /*
       Now we start building the transaction using the builder.
@@ -565,9 +566,9 @@ describe('End to end transactions', function () {
        */
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -606,13 +607,13 @@ describe('End to end transactions', function () {
       */
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
@@ -631,13 +632,13 @@ describe('End to end transactions', function () {
       console.log(req5)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -669,7 +670,7 @@ describe('End to end transactions', function () {
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
-      expect(req6.signdata.toString('hex')).toEqual(h)
+      expect(req6.signdata).toEqual(h)
 
       /*
       The builder needs the spend signatures to add it to the transaction blob.
@@ -688,7 +689,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.signatureRaw],
+        spend_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -757,13 +758,13 @@ describe('End to end transactions', function () {
 
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       // Check the hash of the return
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       // Now we start building the transaction using the builder.
       //
@@ -809,9 +810,9 @@ describe('End to end transactions', function () {
       // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -842,13 +843,13 @@ describe('End to end transactions', function () {
       // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
@@ -863,13 +864,13 @@ describe('End to end transactions', function () {
       console.log(req5)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -895,7 +896,7 @@ describe('End to end transactions', function () {
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
-      expect(req6.signdata.toString('hex')).toEqual(h)
+      expect(req6.signdata).toEqual(h)
 
       // The builder needs the spend signatures to add it to the transaction blob.
       // We need to do this one by one.
@@ -914,8 +915,8 @@ describe('End to end transactions', function () {
       // Note that for this transaction, we do not have any transparent signatures.
 
       const signatures = {
-        transparent_sigs: [req9.signatureRaw],
-        spend_sigs: [req7.signatureRaw],
+        transparent_sigs: [req9.signature],
+        spend_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -961,12 +962,12 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       // Now we start building the transaction using the builder.
       
@@ -1008,7 +1009,7 @@ describe('End to end transactions', function () {
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
-      expect(req6.signdata.toString('hex')).toEqual(h)
+      expect(req6.signdata).toEqual(h)
 
       const req9 = await app.extractTransparentSig()
       console.log(req9)
@@ -1022,7 +1023,7 @@ describe('End to end transactions', function () {
        
 
       const signatures = {
-        transparent_sigs: [req9.signatureRaw, req10.signatureRaw],
+        transparent_sigs: [req9.signature, req10.signature],
         spend_sigs: [],
       }
 
@@ -1064,7 +1065,7 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -1134,7 +1135,7 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       const req4 = await app.extractOutputData()
       console.log(req4)
@@ -1191,7 +1192,7 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
 
       const req = await reqinit
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1239,9 +1240,9 @@ describe('Failing transactions', function () {
        
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -1276,13 +1277,13 @@ describe('Failing transactions', function () {
       
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
@@ -1299,13 +1300,13 @@ describe('Failing transactions', function () {
       console.log(req5)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1415,7 +1416,7 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`)
 
       const req = await reqinit
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1462,9 +1463,9 @@ describe('Failing transactions', function () {
        
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -1499,13 +1500,13 @@ describe('Failing transactions', function () {
       
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
@@ -1525,13 +1526,13 @@ describe('Failing transactions', function () {
        
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rcvRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1604,7 +1605,7 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1648,9 +1649,9 @@ describe('Failing transactions', function () {
       // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -1682,13 +1683,13 @@ describe('Failing transactions', function () {
       // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: null,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
@@ -1705,13 +1706,13 @@ describe('Failing transactions', function () {
       // Here we use the wrong address and send the change funds to Bob instead.
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1839,12 +1840,12 @@ describe('Failing transactions', function () {
 
       console.log(req)
 
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdata.length).toEqual(32)
 
       const hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       const h = hash.digest('hex')
-      expect(req.txdata.toString('hex')).toEqual(h)
+      expect(req.txdata).toEqual(h)
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -1855,9 +1856,9 @@ describe('Failing transactions', function () {
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
       const spendj1 = {
-        proofkey: req2.keyRaw,
-        rcv: req2.rcvRaw,
-        alpha: req2.alphaRaw,
+        proofkey: req2.key,
+        rcv: req2.rcv,
+        alpha: req2.alpha,
         address: s_spend1.address,
         value: s_spend1.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -1874,9 +1875,9 @@ describe('Failing transactions', function () {
       expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
 
       const spendj2 = {
-        proofkey: req3.keyRaw,
-        rcv: req3.rcvRaw,
-        alpha: req3.alphaRaw,
+        proofkey: req3.key,
+        rcv: req3.rcv,
+        alpha: req3.alpha,
         address: s_spend2.address,
         value: s_spend2.value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -1903,13 +1904,13 @@ describe('Failing transactions', function () {
       // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
       // It furthermore uses the output address, value and memo from the UI.
       const outj1 = {
-        rcv: req4.rcvRaw,
-        rseed: req4.rseedRaw,
+        rcv: req4.rcv,
+        rseed: req4.rseed,
         ovk: s_out1.ovk,
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: Buffer.from(req4.hashSeedRaw),
+        hash_seed: req4.hashSeedRaw,
       }
 
       console.log(req4.hashSeedRaw)
@@ -1927,13 +1928,13 @@ describe('Failing transactions', function () {
       console.log(req5.hashSeedRaw)
 
       const outj2 = {
-        rcv: req5.rcvRaw,
-        rseed: req5.rseedRaw,
+        rcv: req5.rcv,
+        rseed: req5.rseed,
         ovk: s_out2.ovk,
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: Buffer.from(req5.hashSeedRaw),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1947,8 +1948,5 @@ describe('Failing transactions', function () {
     }
   })
 })
-function takeLastSnapshot(testname: string, last_index: number, sim: Zemu) {
-  throw new Error('Function not implemented.')
-}
 
 
