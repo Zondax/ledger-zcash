@@ -192,7 +192,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hashSeed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       console.log(req4.hashSeedRaw)
@@ -222,7 +222,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -449,7 +449,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -474,7 +474,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -704,7 +704,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -729,7 +729,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -965,7 +965,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -990,7 +990,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1436,7 +1436,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -1461,7 +1461,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1679,7 +1679,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -1708,7 +1708,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1890,7 +1890,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       /*
@@ -1919,7 +1919,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -2153,7 +2153,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hashSeed: req4.hashSeedRaw,
+        hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
       console.log(req4.hashSeedRaw)
@@ -2183,7 +2183,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hashSeed: req5.hashSeedRaw,
+        hash_seed: Buffer.from(req5.hashSeedRaw),
       }
 
       const b4 = builder.add_sapling_output(outj2)
