@@ -391,7 +391,7 @@ export default class ZCashApp extends GenericApp {
       const alpha = response.readBytes(32)
 
       return {
-        keyRaw: rcv.toString('hex'),
+        keyRaw: key.toString('hex'),
         rcvRaw: rcv.toString('hex'),
         alphaRaw: alpha.toString('hex'),
       } as ExtractSpendResponse

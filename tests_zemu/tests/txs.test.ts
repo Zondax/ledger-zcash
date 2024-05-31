@@ -45,13 +45,11 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-       In this test, Alice wants to send 55000 ZEC to Bob.
-       For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
-       The inputs to the initialization is therefore two spend notes and two output notes.
-       She takes a transaction fee according to ZIP-0317.
-       All this info is gathered from the UI and put in the correct jsons.
-        */
+      // Simulate a transaction where Alice sends 55000 ZEC to Bob. Includes:
+      // - Two spend notes of 50000 ZEC each, associated with Alice's address at path: 1000.
+      // - Two output notes for transaction distribution.
+      // - A transaction fee compliant with ZIP-0317.
+      // Transaction data is collected from the UI and formatted into JSON structures.
 
       const tx_input_data = TX_INPUT_DATA[0]
       const {
@@ -61,21 +59,13 @@ describe('End to end transactions', function () {
 
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-       The inputs to the get_inittx_data function are the inputs to the transaction.
-       The output is a blob that can be sent to the ledger device.
-       */
-
+      // get_inittx_data function takes transaction inputs and returns a blob for the ledger device.
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).byteLength)
 
-      /*
-  //     The output of the get_inittx_data can be sent to the ledger.
-  //     The ledger will check this data and show the inputs on screen for verification.
-  //     If confirmed, the ledger also computes the randomness needed for :
-  //         - The shielded spends
-  //         - the shielded outputs
-  //      */
+      // Transmit the output from get_inittx_data to the ledger for validation.
+      // The ledger displays the transaction inputs for user verification.
+      // Upon confirmation, it calculates the necessary randomness for shielded spends and outputs.
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -89,26 +79,20 @@ describe('End to end transactions', function () {
       console.log(req)
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-       Check the hash of the return
-        */
+      // Create a SHA-256 hash instance
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
 
-      /*
-       Now we start building the transaction using the builder.
-       /*
+      // Begin transaction construction using the builder.
 
-        /*
-       To add a shielded spend to the builder, we need:
-           - the proof generation key belonging to the spend address (proofkey)
-           - the randomness needed for the value commitment (rcv)
-           - the randomness needed for the random verification key (alpha)
-       All this is retrieved from the ledger using a extractspenddata call with no inputs.
-       The ledger already knows how much data it needs to send after the inittx call.
-       */
+      // For each shielded spend, the builder requires:
+      // - Proof generation key (proofkey)
+      // - Randomness for value commitment (rcv)
+      // - Randomness for the random verification key (alpha)
+      // These are obtained from the ledger via an extractSpendData call, which requires no inputs.
+      // The ledger is pre-informed of the required data size post-initial transaction setup.
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -117,11 +101,9 @@ describe('End to end transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-       The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-       It furthermore uses the spend address and value from the UI.
-       We also need the witness from the blockchain, which is now a fake/incorrect one.
-        */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It also uses the spend address and value from the UI.
+      // We also need the witness from the blockchain, which is now a fake/incorrect one.
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -133,17 +115,11 @@ describe('End to end transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-       The builder adds the spend to its state.
-        */
-
+      // The builder adds the spend to its state.
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-       We need to repeat the above process for the second spend.
-        */
-
+      // Repeat the process for the second spend.
       const req3 = await app.extractSpendData()
       console.log(req3)
       expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
@@ -161,29 +137,22 @@ describe('End to end transactions', function () {
       const b2 = builder.add_sapling_spend(spendj2)
       console.log(b2)
 
-      /*
-       At this point we added all spends.
-       We cannot get more spend data from the ledger.
-       We now start the shielded output process.
-        */
+      // All spends added. No more spend data can be retrieved from the ledger.
+      // Start the shielded output process.
 
-      /*
-      To add a shielded output to the builder, we need:
-          - the randomness needed for the value commitment (rcv)
-          - the randomness needed for the note commitment (rcm)
-          - the randomness needed for the random encryption key (esk)
-      All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-      The ledger already knows how much data it needs to send after the inittx call.
-      */
+      // To add a shielded output to the builder, we need:
+      // - the randomness needed for the value commitment (rcv)
+      // - the randomness needed for the note commitment (rcm)
+      // - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-       It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-       It furthermore uses the output address, value and memo from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -196,19 +165,14 @@ describe('End to end transactions', function () {
       }
 
       console.log(req4.hashSeedRaw)
-      /*
-       The builder adds the shielded output to its state.
-        */
-
+      // The builder adds the shielded output to its state.
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-       This process needs to be repeated for the second output.
-       Note that this output address belongs to Alice.
-       There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
-       The UI needs to take care of this before initializing a transaction to the ledger.
-        */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
+      // There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
+      // The UI needs to take care of this before initializing a transaction to the ledger.
 
       const req5 = await app.extractOutputData()
       console.log(req5)
@@ -228,40 +192,31 @@ describe('End to end transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-       We are now done with adding the shielded outputs to the builder.
-       In fact, we are done adding all inputs the builder needs for this transaction.
-       We now let the builder build the transaction, including the ZK proofs.
-       The builder returns a txdata blob.
-       The ledger needs this blob to validate the correctness of the tx.
-        */
+      // All shielded outputs added to the builder.
+      // All inputs the builder needs for this transaction are now added.
+      // Let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-       Now the ledger will validate the txdata blob.
-       For this, it uses the input from inittx to verify.
-       If all checks are ok, the ledger signs the transaction.
-        */
-      //      console.log(ledgerblob_txdata.slice(10 * 250 + 116))
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
+      // console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
 
-      /*
-       Check the hash of the return
-       */
-
+      // Check the hash of the return
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
       expect(req6.signdata.toString('hex')).toEqual(h)
 
-      /*
-       The builder needs these signatures to add it to the transaction blob.
-       We need to do this one by one.
-       So we first gather all signatures we need.
-        */
+      // The builder needs these signatures to add it to the transaction blob.
+      // We need to do this one by one.
+      // So we first gather all signatures we need.
 
       const req7 = await app.extractSpendSignature()
       console.log(req7)
@@ -269,11 +224,9 @@ describe('End to end transactions', function () {
       const req8 = await app.extractSpendSignature()
       console.log(req8)
 
-      /*
-      At this point we gathered all signatures.
-      We now add these signaturs to the builder.
-      Note that for this transaction, we do not have any transparent signatures.
-      */
+      // At this point we gathered all signatures.
+      // We now add these signatures to the builder.
+      // Note that for this transaction, we do not have any transparent signatures.
 
       const signatures = {
         transparent_sigs: [],
@@ -285,10 +238,7 @@ describe('End to end transactions', function () {
 
       await takeLastSnapshot(testname, last_index, sim)
 
-      /*
-       The builder is now done and the transaction is complete.
-        */
-
+      // The builder is now done and the transaction is complete.
       const b6 = builder.finalize()
       console.log(b6)
     } finally {
@@ -304,16 +254,14 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
+      // In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+      // For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+      // She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+      // The inputs to the initialization is therefore:
+      // - one transparent input and one transparent output
+      // - one shielded spend notes and two shielded output notes.
+      // She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
+      // All this info is gathered from the UI and put in the correct jsons.
 
       const tx_input_data = TX_INPUT_DATA[1]
       const {
@@ -323,21 +271,17 @@ describe('End to end transactions', function () {
       } = tx_input_data
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -352,23 +296,17 @@ describe('End to end transactions', function () {
       console.log(req)
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-      Check the hash of the return
-      */
+      // Check the hash of the return
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
 
-      /*
-      Now we start building the transaction using the builder.
-      /*
+      // Now we start building the transaction using the builder.
 
-      /*
-      To add transparent inputs to the builder, we dont need fresh information from the ledger.
-      The builder does need the secp256k1 public key belonging to the address.
-       The builder also need outpoint from the blockchain.
-       */
+      // To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      // The builder does need the secp256k1 public key belonging to the address.
+      // The builder also need outpoint from the blockchain.
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -380,14 +318,12 @@ describe('End to end transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-      /*
-     To add a shielded spend to the builder, we need:
-         - the proof generation key belonging to the spend address (proofkey)
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded spend to the builder, we need:
+      //     - the proof generation key belonging to the spend address (proofkey)
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the random verification key (alpha)
+      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -396,10 +332,8 @@ describe('End to end transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-      The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-      It furthermore uses the spend address and value from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -411,36 +345,28 @@ describe('End to end transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-      The builder adds the spend to its state.
-       */
+      // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-      At this point we added all spends.
-      We cannot get more spend data from the ledger.
-      We now start the shielded output process.
-       */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
 
-      /*
-     To add a shielded output to the builder, we need:
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the note commitment (rcm)
-         - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-      The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the output address, value and memo from the UI.
-      */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -452,17 +378,13 @@ describe('End to end transactions', function () {
         hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
-      /*
-      The builder adds the shielded output to its state.
-       */
+      // The builder adds the shielded output to its state.
 
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-      This process needs to be repeated for the second output.
-      Note that this output address belongs to Alice.
-       */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
 
       const req5 = await app.extractOutputData()
       console.log(req5)
@@ -480,55 +402,43 @@ describe('End to end transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-      We are now done with adding the shielded outputs to the builder.
-      In fact, we are done adding all inputs the builder needs for this transaction.
-      We now let the builder build the transaction, including the ZK proofs.
-      The builder returns a txdata blob.
-      The ledger needs this blob to validate the correctness of the tx.
-       */
+      // We are now done with adding the shielded outputs to the builder.
+      // In fact, we are done adding all inputs the builder needs for this transaction.
+      // We now let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-      Now the ledger will validate the txdata blob.
-      For this, it uses the input from inittx to verify.
-      If all checks are ok, the ledger signs the transaction.
-       */
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
 
-      /*
-      Check the hash of the return
-      */
+      // Check the hash of the return
 
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
       expect(req6.signdata.toString('hex')).toEqual(h)
 
-      /*
-      The builder needs the spend signatures to add it to the transaction blob.
-      We need to do this one by one.
-      So we first gather all signatures we need.
-       */
+      // The builder needs the spend signatures to add it to the transaction blob.
+      // We need to do this one by one.
+      // So we first gather all signatures we need.
 
       const req7 = await app.extractSpendSignature()
       console.log(req7)
 
-      /*
-      The builder also needs the transparent signature for the transparent input.
-       */
+      // The builder also needs the transparent signature for the transparent input.
 
       const req9 = await app.extractTransparentSig()
       console.log(req9)
 
-      /*
-      At this point we gathered all signatures.
-      We now add these signaturs to the builder.
-      Note that for this transaction, we do not have any transparent signatures.
-       */
+      // At this point we gathered all signatures.
+      // We now add these signaturs to the builder.
+      // Note that for this transaction, we do not have any transparent signatures.
 
       const signatures = {
         transparent_sigs: [req9.signatureRaw],
@@ -541,9 +451,7 @@ describe('End to end transactions', function () {
       console.log(b5)
 
       await takeLastSnapshot(testname, last_index, sim)
-      /*
-      The builder is now done and the transaction is complete.
-       */
+      // The builder is now done and the transaction is complete.
 
       const b6 = builder.finalize()
       console.log(b6)
@@ -807,16 +715,14 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
+      // In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+      // For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+      // She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+      // The inputs to the initialization is therefore:
+      // - one transparent input and one transparent output
+      // - one shielded spend notes and two shielded output notes.
+      // She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
+      // All this info is gathered from the UI and put in the correct jsons.
 
       const tx_input_data = TX_INPUT_DATA[3]
       const {
@@ -827,21 +733,17 @@ describe('End to end transactions', function () {
       } = tx_input_data
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -857,23 +759,18 @@ describe('End to end transactions', function () {
       console.log(req)
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-      Check the hash of the return
-      */
+      // Check the hash of the return
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
 
-      /*
-      Now we start building the transaction using the builder.
-      /*
+      // Now we start building the transaction using the builder.
+      //
 
-      /*
-      To add transparent inputs to the builder, we don't need fresh information from the ledger.
-      The builder does need the secp256k1 public key belonging to the address.
-       The builder also need outpoint from the blockchain.
-       */
+      // To add transparent inputs to the builder, we don't need fresh information from the ledger.
+      // The builder does need the secp256k1 public key belonging to the address.
+      // The builder also need outpoint from the blockchain.
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -885,9 +782,7 @@ describe('End to end transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-      /*
-      To add a transparent output, the builder does not need anything other than the input to the inittx.
-       */
+      // To add a transparent output, the builder does not need anything other than the input to the inittx.
       const t_out_data = {
         address: tout1.address,
         value: tout1.value,
@@ -896,14 +791,12 @@ describe('End to end transactions', function () {
       const bt1 = builder.add_transparent_output(t_out_data)
       console.log(bt1)
 
-      /*
-     To add a shielded spend to the builder, we need:
-         - the proof generation key belonging to the spend address (proofkey)
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded spend to the builder, we need:
+      //     - the proof generation key belonging to the spend address (proofkey)
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the random verification key (alpha)
+      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -912,10 +805,8 @@ describe('End to end transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-      The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-      It furthermore uses the spend address and value from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -927,36 +818,28 @@ describe('End to end transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-      The builder adds the spend to its state.
-       */
+      // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-      At this point we added all spends.
-      We cannot get more spend data from the ledger.
-      We now start the shielded output process.
-       */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
 
-      /*
-     To add a shielded output to the builder, we need:
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the note commitment (rcm)
-         - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-      The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the output address, value and memo from the UI.
-      */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -968,17 +851,13 @@ describe('End to end transactions', function () {
         hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
-      /*
-      The builder adds the shielded output to its state.
-       */
+      // The builder adds the shielded output to its state.
 
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-      This process needs to be repeated for the second output.
-      Note that this output address belongs to Alice.
-       */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
 
       const req5 = await app.extractOutputData()
       console.log(req5)
@@ -996,55 +875,43 @@ describe('End to end transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-      We are now done with adding the shielded outputs to the builder.
-      In fact, we are done adding all inputs the builder needs for this transaction.
-      We now let the builder build the transaction, including the ZK proofs.
-      The builder returns a txdata blob.
-      The ledger needs this blob to validate the correctness of the tx.
-       */
+      // We are now done with adding the shielded outputs to the builder.
+      // In fact, we are done adding all inputs the builder needs for this transaction.
+      // We now let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-      Now the ledger will validate the txdata blob.
-      For this, it uses the input from inittx to verify.
-      If all checks are ok, the ledger signs the transaction.
-       */
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
 
-      /*
-      Check the hash of the return
-      */
+      // Check the hash of the return
 
       hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_txdata))
       h = hash.digest('hex')
       expect(req6.signdata.toString('hex')).toEqual(h)
 
-      /*
-      The builder needs the spend signatures to add it to the transaction blob.
-      We need to do this one by one.
-      So we first gather all signatures we need.
-       */
+      // The builder needs the spend signatures to add it to the transaction blob.
+      // We need to do this one by one.
+      // So we first gather all signatures we need.
 
       const req7 = await app.extractSpendSignature()
       console.log(req7)
 
-      /*
-      The builder also needs the transparent signature for the transparent input.
-       */
+      // The builder also needs the transparent signature for the transparent input.
 
       const req9 = await app.extractTransparentSig()
       console.log(req9)
 
-      /*
-      At this point we gathered all signatures.
-      We now add these signatures to the builder.
-      Note that for this transaction, we do not have any transparent signatures.
-       */
+      // At this point we gathered all signatures.
+      // We now add these signatures to the builder.
+      // Note that for this transaction, we do not have any transparent signatures.
 
       const signatures = {
         transparent_sigs: [req9.signatureRaw],
@@ -1055,9 +922,7 @@ describe('End to end transactions', function () {
       console.log(b5)
 
       await takeLastSnapshot(testname, last_index, sim)
-      /*
-      The builder is now done and the transaction is complete.
-       */
+      // The builder is now done and the transaction is complete.
 
       const b6 = builder.finalize()
       console.log(b6)
@@ -1074,9 +939,8 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
-       */
+      // In this test, Alice wants to send 10000 ZEC to Bob transparent and send the change back to herself.
+      
 
       const tx_input_data = TX_INPUT_DATA[4]
       const {
@@ -1104,9 +968,8 @@ describe('End to end transactions', function () {
       let h = hash.digest('hex')
       expect(req.txdata.toString('hex')).toEqual(h)
 
-      /*
-      Now we start building the transaction using the builder.
-      */
+      // Now we start building the transaction using the builder.
+      
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1128,9 +991,8 @@ describe('End to end transactions', function () {
       bt0 = builder.add_transparent_input(t_data2)
       console.log(bt0)
 
-      /*
-      To add a transparent output, the builder does not need anything other than the input to the inittx.
-       */
+      // To add a transparent output, the builder does not need anything other than the input to the inittx.
+       
 
       const bt1 = builder.add_transparent_output(tout1)
       console.log(bt1)
@@ -1154,11 +1016,10 @@ describe('End to end transactions', function () {
       const req10 = await app.extractTransparentSig()
       console.log(req10)
 
-      /*
-      At this point we gathered all signatures.
-      We now add these signatures to the builder.
-      Note that for this transaction, we do not have any transparent signatures.
-       */
+      // At this point we gathered all signatures.
+      // We now add these signatures to the builder.
+      // Note that for this transaction, we do not have any transparent signatures.
+       
 
       const signatures = {
         transparent_sigs: [req9.signatureRaw, req10.signatureRaw],
@@ -1170,9 +1031,8 @@ describe('End to end transactions', function () {
 
       await takeLastSnapshot(testname, last_index, sim)
 
-      /*
-      The builder is now done and the transaction is complete.
-       */
+      // The builder is now done and the transaction is complete.
+       
 
       const b6 = builder.finalize()
       console.log(b6)
@@ -1189,9 +1049,8 @@ describe('End to end transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, we try to extract signatures without having done the checks and signing.
-       */
+      // In this test, we try to extract signatures without having done the checks and signing.
+      
       const tx_input_data = TX_INPUT_DATA[5]
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
@@ -1259,9 +1118,8 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, we try to extract signatures without having done the checks and signing.
-       */
+      // In this test, we try to extract signatures without having done the checks and signing.
+      
 
       const tx_input_data = TX_INPUT_DATA[5]
 
@@ -1293,16 +1151,15 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
+      // In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+      // For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+      // She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+      // The inputs to the initialization is therefore:
+      // - one transparent input and one transparent output
+      // - one shielded spend notes and two shielded output notes.
+      // She takes a transaction fee accorind to ZIP-0317 and all leftovers is sent shielded to her own address.
+      // All this info is gathered from the UI and put in the correct jsons.
+      
 
       const tx_input_data = TX_INPUT_DATA[3]
       const {
@@ -1313,21 +1170,19 @@ describe('Failing transactions', function () {
       } = tx_input_data
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
+      
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
+       
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -1338,15 +1193,13 @@ describe('Failing transactions', function () {
       const req = await reqinit
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-      Now we start building the transaction using the builder.
-      /*
+      // Now we start building the transaction using the builder.
+      //
 
-      /*
-      To add transparent inputs to the builder, we don't need fresh information from the ledger.
-      The builder does need the secp256k1 public key belonging to the address.
-       The builder also need outpoint from the blockchain.
-       */
+      // To add transparent inputs to the builder, we don't need fresh information from the ledger.
+      // The builder does need the secp256k1 public key belonging to the address.
+      // The builder also need outpoint from the blockchain.
+       
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1358,21 +1211,19 @@ describe('Failing transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-      /*
-      To add a transparent output, the builder does not need anything other than the input to the inittx.
-       */
+      // To add a transparent output, the builder does not need anything other than the input to the inittx.
+       
 
       const bt1 = builder.add_transparent_output(tout1)
       console.log(bt1)
 
-      /*
-     To add a shielded spend to the builder, we need:
-         - the proof generation key belonging to the spend address (proofkey)
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded spend to the builder, we need:
+      //     - the proof generation key belonging to the spend address (proofkey)
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the random verification key (alpha)
+      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
+       
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -1382,11 +1233,10 @@ describe('Failing transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-      The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the spend address and value from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the spend address and value from the UI.
+       
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -1398,36 +1248,32 @@ describe('Failing transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-      The builder adds the spend to its state.
-       */
+      // The builder adds the spend to its state.
+       
 
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-      At this point we added all spends.
-      We cannot get more spend data from the ledger.
-      We now start the shielded output process.
-       */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
+       
 
-      /*
-     To add a shielded output to the builder, we need:
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the note commitment (rcm)
-         - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
+       
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-      The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the output address, value and memo from the UI.
-      */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
+      
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -1439,17 +1285,15 @@ describe('Failing transactions', function () {
         hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
-      /*
-      The builder adds the shielded output to its state.
-       */
+      // The builder adds the shielded output to its state.
+       
 
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-      This process needs to be repeated for the second output.
-      Note that this output address belongs to Alice.
-       */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
+       
 
       const req5 = await app.extractOutputData()
       console.log(req5)
@@ -1467,50 +1311,44 @@ describe('Failing transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-      We are now done with adding the shielded outputs to the builder.
-      In fact, we are done adding all inputs the builder needs for this transaction.
-      We now let the builder build the transaction, including the ZK proofs.
-      The builder returns a txdata blob.
-      The ledger needs this blob to validate the correctness of the tx.
-       */
+      // We are now done with adding the shielded outputs to the builder.
+      // In fact, we are done adding all inputs the builder needs for this transaction.
+      // We now let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
+       
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-      Now the ledger will validate the txdata blob.
-      For this, it uses the input from inittx to verify.
-      If all checks are ok, the ledger signs the transaction.
-       */
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
+       
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
 
-      /*
-      The builder needs the spend signatures to add it to the transaction blob.
-      We need to do this one by one.
-      So we first gather all signatures we need.
-       */
+      // The builder needs the spend signatures to add it to the transaction blob.
+      // We need to do this one by one.
+      // So we first gather all signatures we need.
+       
 
       const req7 = await app.extractSpendSignature()
       console.log(req7)
 
-      /*
-      The builder also needs the transparent signature for the transparent input.
-       */
+      // The builder also needs the transparent signature for the transparent input.
+       
 
       const req9 = await app.extractTransparentSig()
       console.log(req9)
 
-      /*
-      At this point we gathered all signatures.
-      We now add these signaturs to the builder.
-      Note that for this transaction, we do not have any transparent signatures.
-       */
+      // At this point we gathered all signatures.
+      // We now add these signaturs to the builder.
+      // Note that for this transaction, we do not have any transparent signatures.
+       
 
-      /*
-      Below are the failing extractions
-       */
+      // Below are the failing extractions
+       
 
       const req10 = await app.extractSpendSignature()
       console.log(req10)
@@ -1530,16 +1368,15 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
+      // In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+      // For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+      // She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+      // The inputs to the initialization is therefore:
+      // - one transparent input and one transparent output
+      // - one shielded spend notes and two shielded output notes.
+      // She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
+      // All this info is gathered from the UI and put in the correct jsons.
+      
 
       const tx_input_data = TX_INPUT_DATA[3]
       const {
@@ -1550,21 +1387,19 @@ describe('Failing transactions', function () {
       } = tx_input_data
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
+      
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(Buffer.from(ledgerblob_initdata).toString('hex'))
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
+       
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -1582,15 +1417,13 @@ describe('Failing transactions', function () {
       const req = await reqinit
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-      Now we start building the transaction using the builder.
-      /*
+      // Now we start building the transaction using the builder.
+      //
 
-      /*
-      To add transparent inputs to the builder, we dont need fresh information from the ledger.
-      The builder does need the secp256k1 public key belonging to the address.
-       The builder also need outpoint from the blockchain.
-       */
+      // To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      // The builder does need the secp256k1 public key belonging to the address.
+      // The builder also need outpoint from the blockchain.
+       
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1602,21 +1435,19 @@ describe('Failing transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-      /*
-      To add a transparent output, the builder does not need anything other than the input to the inittx.
-       */
+      // To add a transparent output, the builder does not need anything other than the input to the inittx.
+       
 
       const bt1 = builder.add_transparent_output(tout1)
       console.log(bt1)
 
-      /*
-     To add a shielded spend to the builder, we need:
-         - the proof generation key belonging to the spend address (proofkey)
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded spend to the builder, we need:
+      //     - the proof generation key belonging to the spend address (proofkey)
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the random verification key (alpha)
+      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
+       
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -1625,11 +1456,10 @@ describe('Failing transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-      The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the spend address and value from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the spend address and value from the UI.
+       
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -1641,36 +1471,32 @@ describe('Failing transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-      The builder adds the spend to its state.
-       */
+      // The builder adds the spend to its state.
+       
 
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-      At this point we added all spends.
-      We cannot get more spend data from the ledger.
-      We now start the shielded output process.
-       */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
+       
 
-      /*
-     To add a shielded output to the builder, we need:
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the note commitment (rcm)
-         - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
+       
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-      The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the output address, value and memo from the UI.
-      */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
+      
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -1682,24 +1508,21 @@ describe('Failing transactions', function () {
         hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
-      /*
-      The builder adds the shielded output to its state.
-       */
+      // The builder adds the shielded output to its state.
+       
 
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-      This process needs to be repeated for the second output.
-      Note that this output address belongs to Alice.
-       */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
+       
 
       const req5 = await app.extractOutputData()
       console.log(req5)
 
-      /*
-      Here we use the wrong rseed!!
-       */
+      // Here we use the wrong rseed!!
+       
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -1714,21 +1537,19 @@ describe('Failing transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-      We are now done with adding the shielded outputs to the builder.
-      In fact, we are done adding all inputs the builder needs for this transaction.
-      We now let the builder build the transaction, including the ZK proofs.
-      The builder returns a txdata blob.
-      The ledger needs this blob to validate the correctness of the tx.
-       */
+      // We are now done with adding the shielded outputs to the builder.
+      // In fact, we are done adding all inputs the builder needs for this transaction.
+      // We now let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
+       
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-      Now the ledger will validate the txdata blob.
-      For this, it uses the input from inittx to verify.
-      If all checks are ok, the ledger signs the transaction.
-       */
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
+       
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
@@ -1745,16 +1566,14 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
-      For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
-      She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
-      The inputs to the initialization is therefore:
-      - one transparent input and one transparent output
-      - one shielded spend notes and two shielded output notes.
-      She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
+      // In this test, Alice wants to send 55000 ZEC to Bob shielded and 10000 ZEC to Charlie transparent.
+      // For this she needs one notes of 40000 ZEC sent to her address belonging to path: 1000.
+      // She also uses a transparent input with 60000 ZEC belonging to transparent path: 0.
+      // The inputs to the initialization is therefore:
+      // - one transparent input and one transparent output
+      // - one shielded spend notes and two shielded output notes.
+      // She takes a transaction fee according to ZIP-0317 and all leftovers is sent shielded to her own address.
+      // All this info is gathered from the UI and put in the correct jsons.
 
       const tx_input_data = TX_INPUT_DATA[3]
       const {
@@ -1766,21 +1585,16 @@ describe('Failing transactions', function () {
 
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
-
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
 
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
@@ -1792,15 +1606,12 @@ describe('Failing transactions', function () {
 
       expect(req.txdata.byteLength).toEqual(32)
 
-      /*
-      Now we start building the transaction using the builder.
-      /*
+      // Now we start building the transaction using the builder.
+      //
 
-      /*
-      To add transparent inputs to the builder, we dont need fresh information from the ledger.
-      The builder does need the secp256k1 public key belonging to the address.
-       The builder also need outpoint from the blockchain.
-       */
+      // To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      // The builder does need the secp256k1 public key belonging to the address.
+      // The builder also need outpoint from the blockchain.
 
       const t_data = {
         outp: '000000000000000000000000000000000000000000000000000000000000000000000000',
@@ -1812,21 +1623,17 @@ describe('Failing transactions', function () {
       const bt0 = builder.add_transparent_input(t_data)
       console.log(bt0)
 
-      /*
-      To add a transparent output, the builder does not need anything other than the input to the inittx.
-       */
+      // To add a transparent output, the builder does not need anything other than the input to the inittx.
 
       const bt1 = builder.add_transparent_output(tout1)
       console.log(bt1)
 
-      /*
-     To add a shielded spend to the builder, we need:
-         - the proof generation key belonging to the spend address (proofkey)
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded spend to the builder, we need:
+      //     - the proof generation key belonging to the spend address (proofkey)
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the random verification key (alpha)
+      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -1836,11 +1643,9 @@ describe('Failing transactions', function () {
       expect(req2.keyRaw).toEqual(expected_proofkeyRaw)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
 
-      /*
-      The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the spend address and value from the UI.
-       */
+      // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the spend address and value from the UI.
 
       const spendj1 = {
         proofkey: req2.keyRaw,
@@ -1852,36 +1657,29 @@ describe('Failing transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-      The builder adds the spend to its state.
-       */
+      // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-      At this point we added all spends.
-      We cannot get more spend data from the ledger.
-      We now start the shielded output process.
-       */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
+      //
 
-      /*
-     To add a shielded output to the builder, we need:
-         - the randomness needed for the value commitment (rcv)
-         - the randomness needed for the note commitment (rcm)
-         - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-     The ledger already knows how much data it needs to send after the inittx call.
-     */
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-      The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-      It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-      It furthermore uses the output address, value and memo from the UI.
-      */
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
 
       const outj1 = {
         rcv: req4.rcvRaw,
@@ -1893,24 +1691,18 @@ describe('Failing transactions', function () {
         hash_seed: Buffer.from(req4.hashSeedRaw),
       }
 
-      /*
-      The builder adds the shielded output to its state.
-       */
+      // The builder adds the shielded output to its state.
 
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-      This process needs to be repeated for the second output.
-      Note that this output address belongs to Alice.
-       */
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
 
       const req5 = await app.extractOutputData()
       console.log(req5)
 
-      /*
-      Here we use the wrong address and send the change funds to Bob instead.
-       */
+      // Here we use the wrong address and send the change funds to Bob instead.
 
       const outj2 = {
         rcv: req5.rcvRaw,
@@ -1925,21 +1717,17 @@ describe('Failing transactions', function () {
       const b4 = builder.add_sapling_output(outj2)
       console.log(b4)
 
-      /*
-      We are now done with adding the shielded outputs to the builder.
-      In fact, we are done adding all inputs the builder needs for this transaction.
-      We now let the builder build the transaction, including the ZK proofs.
-      The builder returns a txdata blob.
-      The ledger needs this blob to validate the correctness of the tx.
-       */
+      // We are now done with adding the shielded outputs to the builder.
+      // In fact, we are done adding all inputs the builder needs for this transaction.
+      // We now let the builder build the transaction, including the ZK proofs.
+      // The builder returns a txdata blob.
+      // The ledger needs this blob to validate the correctness of the tx.
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
 
-      /*
-      Now the ledger will validate the txdata blob.
-      For this, it uses the input from inittx to verify.
-      If all checks are ok, the ledger signs the transaction.
-       */
+      // Now the ledger will validate the txdata blob.
+      // For this, it uses the input from inittx to verify.
+      // If all checks are ok, the ledger signs the transaction.
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       console.log(req6)
@@ -1958,22 +1746,16 @@ describe('Failing transactions', function () {
       const tx_input_data = JSON.parse(JSON.stringify(TX_INPUT_DATA[3]))
       tx_input_data.s_output[1].value -= 500 //change fee to something invalid
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
-
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
-
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       const req = await reqinit
@@ -1992,31 +1774,22 @@ describe('Failing transactions', function () {
 
       console.log(SPEND_PATH)
 
-      /*
-      In this test, Alice wants to send 55000 ZEC to Bob.
-      For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
-      The inputs to the initialization is therefore two spend notes and two output notes.
-      All this info is gathered from the UI and put in the correct jsons.
-       */
-
+      // In this test, Alice wants to send 55000 ZEC to Bob.
+      // For this she needs two notes of 50000 ZEC sent to her address belonging to path: 1000.
+      // The inputs to the initialization is therefore two spend notes and two output notes.
+      // All this info is gathered from the UI and put in the correct jsons.
       const tx_input_data = TX_INPUT_DATA[5]
 
-      /*
-      The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
-      */
-
+      // The inputs to the get_inittx_data function are the inputs to the transaction.
+      // The output is a blob that can be send to the ledger device.
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
-      /*
-      The output of the get_inittx_data can be send to the ledger.
-      The ledger will check this data and show the inputs on screen for verification.
-      If confirmed, the ledger also computes the randomness needed for :
-          - The shielded spends
-          - the shielded outputs
-       */
-
+      // The output of the get_inittx_data can be send to the ledger.
+      // The ledger will check this data and show the inputs on screen for verification.
+      // If confirmed, the ledger also computes the randomness needed for :
+      //     - The shielded spends
+      //     - the shielded outputs
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
@@ -2026,10 +1799,7 @@ describe('Failing transactions', function () {
 
       console.log(req)
 
-      /*
-      Try to extract data after a rejection of a transaction
-       */
-
+      // Try to extract data after a rejection of a transaction
       const req0 = await app.extractSpendData()
       console.log(req0)
 
@@ -2094,17 +1864,11 @@ describe('Failing transactions', function () {
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
 
-      /*
-       The builder adds the spend to its state.
-        */
-
+      // The builder adds the spend to its state.
       const b1 = builder.add_sapling_spend(spendj1)
       console.log(b1)
 
-      /*
-       We need to repeat the above process for the second spend.
-        */
-
+      // We need to repeat the above process for the second spend.
       const req3 = await app.extractSpendData()
       console.log(req3)
       expect(req3.keyRaw).toEqual(expected_proofkeyRaw)
@@ -2122,30 +1886,22 @@ describe('Failing transactions', function () {
       const b2 = builder.add_sapling_spend(spendj2)
       console.log(b2)
 
-      /*
-       At this point we added all spends.
-       We cannot get more spend data from the ledger.
-       We now start the shielded output process.
-        */
+      // At this point we added all spends.
+      // We cannot get more spend data from the ledger.
+      // We now start the shielded output process.
 
-      /*
-      To add a shielded output to the builder, we need:
-          - the randomness needed for the value commitment (rcv)
-          - the randomness needed for the note commitment (rcm)
-          - the randomness needed for the random encryption key (esk)
-      All this is retrieved from the ledger using a extractoutputdata call with no inputs.
-      The ledger already knows how much data it needs to send after the inittx call.
-      */
-
+      // To add a shielded output to the builder, we need:
+      //     - the randomness needed for the value commitment (rcv)
+      //     - the randomness needed for the note commitment (rcm)
+      //     - the randomness needed for the random encryption key (esk)
+      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // The ledger already knows how much data it needs to send after the inittx call.
       const req4 = await app.extractOutputData()
       console.log(req4)
 
-      /*
-       The builder needs the data retrieved from the ledger (rcv, rcm, esk)
-       It CAN send along an outgoing viewing key (OVK), can also be all zero's.
-       It furthermore uses the output address, value and memo from the UI.
-       */
-
+      // The builder needs the data retrieved from the ledger (rcv, rcm, esk)
+      // It CAN send along an outgoing viewing key (OVK), can also be all zero's.
+      // It furthermore uses the output address, value and memo from the UI.
       const outj1 = {
         rcv: req4.rcvRaw,
         rseed: req4.rseedRaw,
@@ -2157,20 +1913,14 @@ describe('Failing transactions', function () {
       }
 
       console.log(req4.hashSeedRaw)
-      /*
-       The builder adds the shielded output to its state.
-        */
-
+      // The builder adds the shielded output to its state.
       const b3 = builder.add_sapling_output(outj1)
       console.log(b3)
 
-      /*
-       This process needs to be repeated for the second output.
-       Note that this output address belongs to Alice.
-       There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
-       The UI needs to take care of this before initializing a transaction to the ledger.
-        */
-
+      // This process needs to be repeated for the second output.
+      // Note that this output address belongs to Alice.
+      // There is no concept of a "change address" as all inputs and outputs need to be known in advance for the ledger verification on screen.
+      // The UI needs to take care of this before initializing a transaction to the ledger.
       const req5 = await app.extractOutputData()
       console.log(req5)
 
@@ -2200,3 +1950,5 @@ describe('Failing transactions', function () {
 function takeLastSnapshot(testname: string, last_index: number, sim: Zemu) {
   throw new Error('Function not implemented.')
 }
+
+
