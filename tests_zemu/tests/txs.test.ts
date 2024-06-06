@@ -231,7 +231,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.signature, req8.signature],
+        sapling_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -443,7 +443,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature],
-        spend_sigs: [req7.signature],
+        sapling_sigs: [req7.signature],
       }
 
       console.log(signatures)
@@ -689,7 +689,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        spend_sigs: [req7.signature],
+        sapling_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -916,7 +916,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature],
-        spend_sigs: [req7.signature],
+        sapling_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -1024,7 +1024,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature, req10.signature],
-        spend_sigs: [],
+        sapling_sigs: [],
       }
 
       const b5 = builder.add_signatures(signatures)
