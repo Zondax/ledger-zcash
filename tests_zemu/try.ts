@@ -5,7 +5,9 @@ import { get_inittx_data, ZcashBuilderBridge } from '@zondax/zcashtools'
 import assert from 'node:assert'
 import { createHash } from 'node:crypto'
 import { resolve as Resolve } from 'node:path'
-import { TX_INPUT_DATA, TxInputData } from './tests/_vectors'
+import { TX_INPUT_DATA } from './tests/_vectors'
+import type { InitData as TxInputData } from '@zondax/zcashtools'
+import { Signatures } from '@zondax/zcashtools/build/native'
 
 const SPEND_PATH = Resolve('../zcashtools/params/sapling-spend.params')
 const OUTPUT_PATH = Resolve('../zcashtools/params/sapling-output.params')
@@ -21,7 +23,7 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
   hasher.update(Buffer.from(tx_init_data_blob))
 
   var hash = hasher.digest('hex')
-  assert.equal(init.txdata.toString('hex'), hash)
+  assert.equal(init.txdata, hash)
 
   for (const tinData of tx_init_data.t_in) {
     const input = {
@@ -41,18 +43,18 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
     builder.add_transparent_output(output)
   }
 
-  const expected_proofkeyRaw =
+  const expected_proofkey =
     '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
 
   for (const spendData of tx_init_data.s_spend) {
     const spend = await app.extractSpendData()
-    assert.equal(spend.keyRaw, expected_proofkeyRaw)
+    assert.equal(spend.keyRaw, expected_proofkey)
     assert.notEqual(spend.rcvRaw, spend.alphaRaw)
 
     const spendj = {
-      proofkey: spend.keyRaw,
-      rcv: spend.rcvRaw,
-      alpha: spend.alphaRaw,
+      proofkey: spend.key,
+      rcv: spend.rcv,
+      alpha: spend.alpha,
       address: spendData.address,
       value: spendData.value,
       witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
@@ -65,13 +67,13 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
     const out = await app.extractOutputData()
 
     const outj = {
-      rcv: out.rcvRaw,
-      rseed: out.rseedRaw,
+      rcv: out.rcv,
+      rseed: out.rseed,
       ovk: outData.ovk,
       address: outData.address,
       value: outData.value,
       memo: '0000',
-      hash_seed: out.hash_seed,
+      hash_seed: out.hashSeed,
     }
     builder.add_sapling_output(outj)
   }
@@ -83,25 +85,26 @@ async function test(app: ZCashApp, tx_init_data: TxInputData): Promise<Buffer> {
   hasher = createHash('sha256')
   hasher.update(Buffer.from(txdata_blob))
   hash = hasher.digest('hex')
-  assert.equal(checkAndSign.signdata.toString('hex'), hash)
+  assert.equal(checkAndSign.signdata, hash)
 
-  var signatures = { transparent_sigs: [] as string[], spend_sigs: [] as string[] }
+  var signatures: Signatures = { transparent_sigs: [] as string[], sapling_sigs: [] as string[] }
 
   for (let i = 0; i < tx_init_data.t_in.length; i++) {
     const sig = await app.extractTransparentSig()
-    signatures.transparent_sigs[i] = sig.signatureRaw
+    signatures.transparent_sigs[i] = sig.signature
   }
 
   for (let i = 0; i < tx_init_data.s_spend.length; i++) {
     const sig = await app.extractSpendSignature()
-    signatures.spend_sigs[i] = sig.signatureRaw
+    signatures.sapling_sigs[i] = sig.signature
   }
 
   builder.add_signatures(signatures)
 
   const tx = builder.finalize()
   console.log(`Final transaction payload: ${tx}`)
-  return tx
+
+  return Buffer.from(tx)
 }
 
 async function main() {

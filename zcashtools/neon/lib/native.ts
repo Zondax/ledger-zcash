@@ -67,7 +67,7 @@ export interface SaplingOutputInfo {
     memo: string | null,
     rcv: string,
     rseed: string,
-    hash_seed: string,
+    hash_seed?: string,
 }
 
 export interface Signatures {

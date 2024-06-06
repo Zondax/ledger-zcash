@@ -371,15 +371,15 @@ export default class ZCashApp extends GenericApp {
 
       const rcv = response.readBytes(32)
       const rseed = response.readBytes(32)
-      const hashseed = response.getAvailableBuffer()
 
+      const hashseed = response.getAvailableBuffer().length > 0 ? response.getAvailableBuffer() : undefined
       return {
         rcvRaw: rcv,
         rseedRaw: rseed,
         hashSeedRaw: hashseed,
         rcv: rcv.toString('hex'),
         rseed: rseed.toString('hex'),
-        hashSeed: hashseed.toString('hex'),
+        hashSeed: hashseed ? hashseed.toString('hex') : undefined,
       } as OutputDataResponse
     } catch (error) {
       throw processErrorResponse(error)
