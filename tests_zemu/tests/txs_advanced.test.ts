@@ -118,7 +118,7 @@ describe('End to end transactions', function () {
 
       // The builder adds the spend to its state.
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // Repeat the process for the second spend.
       const req3 = await app.extractSpendData()
@@ -145,7 +145,7 @@ describe('End to end transactions', function () {
       // - the randomness needed for the value commitment (rcv)
       // - the randomness needed for the note commitment (rcm)
       // - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -303,7 +303,7 @@ describe('End to end transactions', function () {
 
       // Now we start building the transaction using the builder.
 
-      // To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      // To add transparent inputs to the builder, we do not need fresh information from the ledger.
       // The builder does need the secp256k1 public key belonging to the address.
       // The builder also need outpoint from the blockchain.
 
@@ -321,7 +321,7 @@ describe('End to end transactions', function () {
       //     - the proof generation key belonging to the spend address (proofkey)
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the random verification key (alpha)
-      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // All this is retrieved from the ledger using an extractspenddata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
@@ -347,7 +347,7 @@ describe('End to end transactions', function () {
       // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // At this point we added all spends.
       // We cannot get more spend data from the ledger.
@@ -357,7 +357,7 @@ describe('End to end transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -546,7 +546,7 @@ describe('End to end transactions', function () {
          - the proof generation key belonging to the spend address (proofkey)
          - the randomness needed for the value commitment (rcv)
          - the randomness needed for the random verification key (alpha)
-     All this is retrieved from the ledger using a extractspenddata call with no inputs.
+     All this is retrieved from the ledger using an extractspenddata call with no inputs.
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
@@ -578,7 +578,7 @@ describe('End to end transactions', function () {
        */
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       /*
       At this point we added all spends.
@@ -591,7 +591,7 @@ describe('End to end transactions', function () {
          - the randomness needed for the value commitment (rcv)
          - the randomness needed for the note commitment (rcm)
          - the randomness needed for the random encryption key (esk)
-     All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+     All this is retrieved from the ledger using an extractoutputdata call with no inputs.
      The ledger already knows how much data it needs to send after the inittx call.
      */
 
@@ -751,6 +751,7 @@ describe('End to end transactions', function () {
       const testname = `${m.prefix.toLowerCase()}-1-tr-in-1-tr-out-1-spend-2-sh-out`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
+      expect(last_index).toEqual(1)
 
       const req = await reqinit
 
@@ -794,7 +795,7 @@ describe('End to end transactions', function () {
       //     - the proof generation key belonging to the spend address (proofkey)
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the random verification key (alpha)
-      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // All this is retrieved from the ledger using an extractspenddata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
@@ -820,7 +821,7 @@ describe('End to end transactions', function () {
       // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // At this point we added all spends.
       // We cannot get more spend data from the ledger.
@@ -830,7 +831,7 @@ describe('End to end transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -1209,7 +1210,7 @@ describe('Failing transactions', function () {
       //     - the proof generation key belonging to the spend address (proofkey)
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the random verification key (alpha)
-      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // All this is retrieved from the ledger using an extractspenddata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
@@ -1237,7 +1238,7 @@ describe('Failing transactions', function () {
       // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // At this point we added all spends.
       // We cannot get more spend data from the ledger.
@@ -1247,7 +1248,7 @@ describe('Failing transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -1414,7 +1415,7 @@ describe('Failing transactions', function () {
       //     - the proof generation key belonging to the spend address (proofkey)
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the random verification key (alpha)
-      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // All this is retrieved from the ledger using an extractspenddata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
@@ -1441,7 +1442,7 @@ describe('Failing transactions', function () {
       // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // At this point we added all spends.
       // We cannot get more spend data from the ledger.
@@ -1451,7 +1452,7 @@ describe('Failing transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -1567,7 +1568,7 @@ describe('Failing transactions', function () {
       // Now we start building the transaction using the builder.
       //
 
-      // To add transparent inputs to the builder, we dont need fresh information from the ledger.
+      // To add transparent inputs to the builder, we do not need fresh information from the ledger.
       // The builder does need the secp256k1 public key belonging to the address.
       // The builder also need outpoint from the blockchain.
 
@@ -1590,7 +1591,7 @@ describe('Failing transactions', function () {
       //     - the proof generation key belonging to the spend address (proofkey)
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the random verification key (alpha)
-      // All this is retrieved from the ledger using a extractspenddata call with no inputs.
+      // All this is retrieved from the ledger using an extractspenddata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req2 = await app.extractSpendData()
@@ -1618,7 +1619,7 @@ describe('Failing transactions', function () {
       // The builder adds the spend to its state.
 
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // At this point we added all spends.
       // We cannot get more spend data from the ledger.
@@ -1629,7 +1630,7 @@ describe('Failing transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -1824,7 +1825,7 @@ describe('Failing transactions', function () {
 
       // The builder adds the spend to its state.
       const b1 = builder.add_sapling_spend(spendj1)
-      console.log(b1)
+      expect(b1).toBeTruthy()
 
       // We need to repeat the above process for the second spend.
       const req3 = await app.extractSpendData()
@@ -1852,7 +1853,7 @@ describe('Failing transactions', function () {
       //     - the randomness needed for the value commitment (rcv)
       //     - the randomness needed for the note commitment (rcm)
       //     - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
       const req4 = await app.extractOutputData()
       console.log(req4)
@@ -1900,6 +1901,7 @@ describe('Failing transactions', function () {
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, bad_tx_version)
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, bad_tx_version)
+      expect(req6).toBeDefined()
     } finally {
       await sim.close()
     }

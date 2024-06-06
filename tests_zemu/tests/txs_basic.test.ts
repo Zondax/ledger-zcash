@@ -21,6 +21,7 @@ import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@z
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
+import { Signatures } from '@zondax/zcashtools/build/native'
 jest.setTimeout(60000)
 
 const tx_version = 0x05
@@ -38,10 +39,6 @@ describe('tx methods', function () {
       const app = new ZCashApp(sim.getTransport())
 
       const tx_input_data = TX_INPUT_DATA[0]
-      const {
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       const reqinit = app.initNewTx(ledgerblob_initdata)
@@ -79,10 +76,10 @@ describe('tx methods', function () {
       // Transaction data is collected from the UI and formatted into JSON structures.
 
       const tx_input_data = TX_INPUT_DATA[0]
-      const {
-        s_spend: [s_spend1, s_spend2],
-        s_output: [s_out1, s_out2],
-      } = tx_input_data
+      // const {
+      //   s_spend: [s_spend1, s_spend2],
+      //   s_output: [s_out1, s_out2],
+      // } = tx_input_data
 
       const builder = new ZcashBuilderBridge(fee_for(tx_input_data))
 
@@ -100,6 +97,7 @@ describe('tx methods', function () {
       const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
+      expect(last_index).toEqual(23)
 
       const req = await reqinit
 
@@ -137,8 +135,8 @@ describe('tx methods', function () {
         proofkey: req2.key,
         rcv: req2.rcv,
         alpha: req2.alpha,
-        address: s_spend1.address,
-        value: s_spend1.value,
+        address: tx_input_data.s_spend[0].address,
+        value: tx_input_data.s_spend[0].value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
@@ -156,8 +154,8 @@ describe('tx methods', function () {
         proofkey: req3.key,
         rcv: req3.rcv,
         alpha: req3.alpha,
-        address: s_spend2.address,
-        value: s_spend2.value,
+        address: tx_input_data.s_spend[1].address,
+        value: tx_input_data.s_spend[1].value,
         witness: '01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000',
         rseed: '0000000000000000000000000000000000000000000000000000000000000000',
       }
@@ -283,7 +281,7 @@ describe('tx methods', function () {
       // - the randomness needed for the value commitment (rcv)
       // - the randomness needed for the note commitment (rcm)
       // - the randomness needed for the random encryption key (esk)
-      // All this is retrieved from the ledger using a extractoutputdata call with no inputs.
+      // All this is retrieved from the ledger using an extractoutputdata call with no inputs.
       // The ledger already knows how much data it needs to send after the inittx call.
 
       const req4 = await app.extractOutputData()
@@ -337,7 +335,8 @@ describe('tx methods', function () {
       // The builder returns a txdata blob.
       // The ledger needs this blob to validate the correctness of the tx.
 
-      const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, tx_version)
+      const ledgerblob_txdata = Buffer.from(builder.build(SPEND_PATH, OUTPUT_PATH, tx_version))
+      expect(ledgerblob_txdata).toBeDefined()
 
       // Now the ledger will validate the txdata blob.
       // For this, it uses the input from inittx to verify.
@@ -345,6 +344,7 @@ describe('tx methods', function () {
       // console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
+      expect(req6).toBeDefined()
       console.log(req6)
 
       // Check the hash of the return
@@ -367,18 +367,20 @@ describe('tx methods', function () {
       // We now add these signatures to the builder.
       // Note that for this transaction, we do not have any transparent signatures.
 
-      const signatures = {
+      const signatures: Signatures = {
         transparent_sigs: [] as string[],
         sapling_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
-      console.log(b5)
+      expect(b5).toBeTruthy()
 
       await takeLastSnapshot(testname, last_index, sim)
 
       // The builder is now done and the transaction is complete.
       const b6 = builder.finalize()
+      expect(b6).toBeDefined()
+
       console.log(b6)
     } finally {
       await sim.close()
