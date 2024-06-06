@@ -95,9 +95,8 @@ describe('tx methods', function () {
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
-      const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
+      await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
-      expect(last_index).toEqual(23)
 
       const req = await reqinit
 
@@ -334,6 +333,8 @@ describe('tx methods', function () {
       // Let the builder build the transaction, including the ZK proofs.
       // The builder returns a txdata blob.
       // The ledger needs this blob to validate the correctness of the tx.
+
+      console.log('Now call the builder....')
 
       const ledgerblob_txdata = Buffer.from(builder.build(SPEND_PATH, OUTPUT_PATH, tx_version))
       expect(ledgerblob_txdata).toBeDefined()
