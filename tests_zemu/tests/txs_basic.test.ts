@@ -48,7 +48,8 @@ describe('tx methods', function () {
       const req = await reqinit
 
       console.log(req)
-      expect(req.txdata.byteLength).toEqual(32)
+      expect(req.txdataRaw.length).toEqual(32)
+      expect(req.txdata.length).toEqual(64)
     } finally {
       await sim.close()
     }

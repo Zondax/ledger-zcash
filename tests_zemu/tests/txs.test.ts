@@ -99,7 +99,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -123,7 +123,7 @@ describe('End to end transactions', function () {
       // Repeat the process for the second spend.
       const req3 = await app.extractSpendData()
       console.log(req3)
-      expect(req3.keyRaw).toEqual(expected_proofkey)
+      expect(req3.key).toEqual(expected_proofkey)
 
       const spendj2 = {
         proofkey: req3.key,

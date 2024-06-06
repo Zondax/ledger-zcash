@@ -60,10 +60,11 @@ include $(CURDIR)/Makefile.version
 
 $(info COIN  = [$(COIN)])
 
+APPPATH = "44'/133'" --path "44'/1'"
+
 ifeq ($(COIN),ZEC)
 # Main app configuration
 APPNAME = "Zcash Shielded"
-APPPATH = "44'/133'" --path "44'/1'"
 
 else
 define error_message
