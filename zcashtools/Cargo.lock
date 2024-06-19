@@ -430,6 +430,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_filter"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a009aa4810eb158359dda09d0c87378e4bbb89b5a801f016885a4707ba24f7ea"
+dependencies = [
+ "log",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b35839ba51819680ba087cd351788c9a3c476841207e0b8cee0b04722343b9"
+dependencies = [
+ "env_filter",
+ "log",
+]
+
+[[package]]
 name = "equihash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -591,6 +610,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
+
+[[package]]
 name = "js-sys"
 version = "0.3.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -642,9 +667,7 @@ dependencies = [
 
 [[package]]
 name = "ledger-zcash"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "526f7edef0d9fd925ed3edd695d43b5bbc35f7d828d3efd332d091648735b554"
+version = "0.11.2"
 dependencies = [
  "arrayvec",
  "byteorder",
@@ -672,9 +695,7 @@ dependencies = [
 
 [[package]]
 name = "ledger-zcash-builder"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290ba7f480820d0627bc2bd3900a63b929c797332bf7118acbaa33903b4ffc5a"
+version = "0.11.2"
 dependencies = [
  "bellman",
  "blake2b_simd",
@@ -1188,6 +1209,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "719b953e2095829ee67db738b3bfa9fa368c94900df327b3f07fe6e794d2fe1f"
 
 [[package]]
+name = "ryu"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
+
+[[package]]
 name = "secp256k1"
 version = "0.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1256,6 +1283,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.61",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.117"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
+dependencies = [
+ "itoa",
+ "ryu",
+ "serde",
 ]
 
 [[package]]
@@ -1682,6 +1720,7 @@ dependencies = [
 name = "zcashtool"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "ledger-zcash",
  "ledger-zcash-builder",
  "log",
@@ -1690,8 +1729,10 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_derive",
+ "serde_json",
  "snafu",
  "zcash_primitives",
+ "zcashtool",
 ]
 
 [[package]]
@@ -1723,11 +1764,3 @@ dependencies = [
  "byteorder",
  "thiserror",
 ]
-
-[[patch.unused]]
-name = "ledger-zcash"
-version = "0.11.2"
-
-[[patch.unused]]
-name = "ledger-zcash-builder"
-version = "0.11.2"

@@ -1,9 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = [
-    "neon/native",
-]
+members = ["neon/native"]
 
 [profile.release]
 opt-level = "s"

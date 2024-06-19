@@ -1,14 +1,21 @@
+use ledger_zcash_builder::data::{
+    HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures,
+    TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
+};
+use ledger_zcash_builder::errors::Error;
+use ledger_zcash_builder::{hsmauth, txbuilder, txprover};
 use neon::prelude::*;
 use std::cell::RefCell;
 use std::path::Path;
-use ledger_zcash_builder::data::{HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures, TransparentInputBuilderInfo, TransparentOutputBuilderInfo};
-use ledger_zcash_builder::{hsmauth, txbuilder, txprover};
-use ledger_zcash_builder::errors::Error;
 
 use zcash_primitives::consensus::TestNetwork;
-use zcash_primitives::{consensus, sapling, transaction::components::{
-    sapling as sapling_ledger, transparent as transparent_ledger, TxOut,
-}, transaction::TxVersion};
+use zcash_primitives::{
+    consensus, sapling,
+    transaction::components::{
+        sapling as sapling_ledger, transparent as transparent_ledger, TxOut,
+    },
+    transaction::TxVersion,
+};
 
 use rand_core::OsRng;
 
@@ -24,9 +31,8 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     let arg0_value: InitData =
         neon_serde::from_value(&mut cx, arg0).expect("Error getting arg0_value");
     let output = arg0_value.to_hsm_bytes();
-    let js_value;
-    //js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
-    js_value = neon_serde::to_value(&mut cx, &output).expect("Error getting js_value");
+    //let js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
+    let js_value = neon_serde::to_value(&mut cx, &output).expect("Error getting js_value");
     Ok(js_value)
 }
 
@@ -84,6 +90,14 @@ pub struct ZcashBuilderBridge {
 }
 
 impl Finalize for ZcashBuilderBridge {}
+
+impl ZcashBuilderBridge {
+    pub fn new(builder: txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>) -> Self {
+        ZcashBuilderBridge {
+            zcashbuilder: AuthorisationStatus::Unauthorized(builder),
+        }
+    }
+}
 
 // Internal implementation
 impl ZcashBuilderBridge {
@@ -207,7 +221,9 @@ impl ZcashBuilderBridge {
                 let res = builder.build(consensus::BranchId::Nu5, tx_ver, &mut prover);
                 match res {
                     Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
-                    Err(_) => (),
+                    Err(ref e) => {
+                        log::error!("Error in build {:?}", e.to_string());
+                    }
                 }
                 res
             }
@@ -221,7 +237,7 @@ impl ZcashBuilderBridge {
     pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
         match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(builder) => {
-                let builder_authorize_z = builder.add_signatures_spend(input.spend_sigs);
+                let builder_authorize_z = builder.add_signatures_spend(input.sapling_sigs);
                 if builder_authorize_z.is_err() {
                     return Err(builder_authorize_z.err().unwrap());
                 }
@@ -444,12 +460,4 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function("builderFinalize", ZcashBuilderBridge::js_finalize)?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn empty() {
-        // Your test code goes here
-    }
 }
