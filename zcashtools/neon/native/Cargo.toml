@@ -26,7 +26,7 @@ neon-serde = { git = "https://github.com/Zondax/neon-serde", branch = "master", 
 ] }
 
 ledger-zcash-builder = "=0.11.2"
-ledger-zcash = "=0.11.2"
+ledger-zcash = "0.11.2"
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }

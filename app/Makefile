@@ -22,15 +22,13 @@ endif
 
 MY_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-include $(BOLOS_SDK)/Makefile.defines
+include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.installer_script
 
-# # Set the default value for HAVE_SWAP to undefined if not already defined
-# HAVE_SWAP ?=
+include $(BOLOS_SDK)/Makefile.defines
 
 # Set the default value for PRODUCTION_BUILD to 0 if not already defined
 PRODUCTION_BUILD ?= 0
 
-# Display the target name
 $(info ************ TARGET_NAME  = [$(TARGET_NAME)])
 
 # Display whether this is a production build or for internal use
@@ -50,6 +48,7 @@ endif
 
 # Add the PRODUCTION_BUILD definition to the compiler flags
 DEFINES += PRODUCTION_BUILD=$(PRODUCTION_BUILD)
+
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.app_testing
 
 ifndef COIN
@@ -60,20 +59,19 @@ include $(CURDIR)/Makefile.version
 
 $(info COIN  = [$(COIN)])
 
-APPPATH = "44'/133'" --path "44'/1'"
-
 ifeq ($(COIN),ZEC)
 # Main app configuration
 APPNAME = "Zcash Shielded"
+APPPATH = "44'/133'" --path "44'/1'"
 
 else
 define error_message
+
 COIN value not supported: [$(COIN)]
+
 endef
 $(error "$(error_message)")
 endif
-
-include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.installer_script
 
 $(info PATHS LIST = $(APPPATH))
 
@@ -94,15 +92,13 @@ ifndef ICONNAME
 $(error ICONNAME is not set)
 endif
 
-include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
-
-# Add SDK BLAKE2b
 DEFINES		  += HAVE_HASH HAVE_BLAKE2 HAVE_SHA256 HAVE_SHA512 HAVE_ZIP0317
 INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 APP_SOURCE_PATH += $(CURDIR)/rust/include
 APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
-# Existing CFLAGS
+include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
+CFLAGS += -Wvla
 CFLAGS += -Werror
 CXXFLAGS += -Werror
 

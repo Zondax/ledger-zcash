@@ -1,5 +1,5 @@
 #*******************************************************************************
-#*   (c) 2018 -2023 Zondax AG
+#*   (c) 2018 -2024 Zondax AG
 #*
 #*  Licensed under the Apache License, Version 2.0 (the "License");
 #*  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 #*  See the License for the specific language governing permissions and
 #*  limitations under the License.
 #********************************************************************************
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.28)
 include("cmake/HunterGate.cmake")
 HunterGate(
     URL "https://github.com/cpp-pm/hunter/archive/v0.25.5.tar.gz"
@@ -30,6 +30,7 @@ endif()
 ########################################################
 
 project(ledger-zcash VERSION 0.0.0)
+
 set(CMAKE_CXX_STANDARD 17)
 cmake_policy(SET CMP0025 NEW)
 cmake_policy(SET CMP0144 NEW)
@@ -43,7 +44,7 @@ option(ENABLE_FUZZING "Build with fuzzing instrumentation and build fuzz targets
 option(ENABLE_COVERAGE "Build with source code coverage instrumentation" OFF)
 option(ENABLE_SANITIZERS "Build with ASAN and UBSAN" OFF)
 
-string(APPEND CMAKE_C_FLAGS " -fno-omit-frame-pointer -g") 
+string(APPEND CMAKE_C_FLAGS " -fno-omit-frame-pointer -g")
 string(APPEND CMAKE_CXX_FLAGS " -fno-omit-frame-pointer -g")
 string(APPEND CMAKE_LINKER_FLAGS " -fno-omit-frame-pointer -g")
 
@@ -72,9 +73,10 @@ if(ENABLE_FUZZING)
 
     set(CMAKE_CXX_CLANG_TIDY clang-tidy -checks=-*,bugprone-*,cert-*,clang-analyzer-*,-cert-err58-cpp,misc-*)
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
-                message(FATAL_ERROR "Clang version must be at least 10.0!")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        # require at least clang 3.2
+        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+            message(FATAL_ERROR "Clang version must be at least 10.0!")
         endif()
     else()
         message(FATAL_ERROR
@@ -150,14 +152,13 @@ file(GLOB_RECURSE LIB_SRC
 add_library(app_lib STATIC ${LIB_SRC})
 
 target_include_directories(app_lib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/ledger-zxlib/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/common
         ###
         ${CMAKE_CURRENT_SOURCE_DIR}/app/rust/include
-        ###
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/ledger-zxlib/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref
         )
 
 ##############################################################
@@ -212,7 +213,6 @@ add_dependencies(rslib RustLibBuild)
 add_dependencies(app_lib rslib)
 
 ##############################################################
-##############################################################
 #  Fuzz Targets
 if(ENABLE_FUZZING)
     set(FUZZ_TARGETS
@@ -232,16 +232,12 @@ else()
 
     add_executable(unittests ${TESTS_SRC})
     target_include_directories(unittests PRIVATE
-            "${GTEST_ROOT}/include"
-            fmt::fmt
-            jsoncpp::jsoncpp
+            ${gtest_SOURCE_DIR}/include
+            ${gmock_SOURCE_DIR}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/app/src
             ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
             ${CMAKE_CURRENT_SOURCE_DIR}/deps/blake2/ref
     )
-
-    message(STATUS "${GTEST_ROOT}/include")
-
 
     # get_cmake_property(_variableNames VARIABLES)
     # foreach(_variableName ${_variableNames})
