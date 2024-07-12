@@ -9,11 +9,11 @@
 #include "key.h"
 #include "nvdata.h"
 #include "parser.h"
+#include "parser_impl.h"
 #include "tx.h"
 #include "view.h"
 #include "view_internal.h"
 #include "zxmacros.h"
-#include "parser_impl.h"
 
 __Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset) {
     if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_BIP44) {

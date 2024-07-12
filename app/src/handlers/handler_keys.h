@@ -91,11 +91,9 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.kind = key_fvk;
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_fvk_sapling(
-            G_io_apdu_buffer,
+    zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer,
 
-            IO_APDU_BUFFER_SIZE - 2,
-            hdPath.sapling_path[2], &replyLen);
+                                     IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
 
     if (err != zxerr_ok) {
         *tx = 0;
@@ -138,7 +136,8 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     // this needs to get Full viewing key = (ak, nk, ovk) and note position, to
     // then compute nullifier G_io_apdu_buffer contains zip32path, note position,
     // note commitment
-    zxerr_t err = crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], notepos, cm, &replyLen);
+    zxerr_t err =
+        crypto_nullifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], notepos, cm, &replyLen);
 
     if (err != zxerr_ok) {
         zemu_log("Failed to get nullifier!\n");
@@ -172,7 +171,8 @@ __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
 
     extractHDPathSapling(rx, OFFSET_DATA);
 
-    zxerr_t err = crypto_diversifier_with_startindex(G_io_apdu_buffer, hdPath.saplingdiv_path[2], hdPath.saplingdiv_div, &replyLen);
+    zxerr_t err =
+        crypto_diversifier_with_startindex(G_io_apdu_buffer, hdPath.saplingdiv_path[2], hdPath.saplingdiv_div, &replyLen);
 
     if (err == zxerr_ok) {
         *tx = replyLen;

@@ -102,13 +102,14 @@ zxerr_t key_getItem(int8_t displayIdx,
                     bip32_to_str(tmpBuffer, sizeof(tmpBuffer), hdPath.sapling_path, HDPATH_LEN_SAPLING);
                     pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
 
-                    return zxerr_ok;                    
-                } 
+                    return zxerr_ok;
+                }
 
                 default:
                     return zxerr_no_data;
             }
-        }        default:
+        }
+        default:
             return zxerr_no_data;
     }
 }

@@ -50,7 +50,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
     switch (displayIdx) {
         case 0:
             // Title
-            switch ( hdPath.addressKind) {
+            switch (hdPath.addressKind) {
                 case addr_secp256k1: {
                     snprintf(outKey, outKeyLen, "Unshielded");
                     pageString(outVal, outValLen, (char *)(G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SECP256K1), pageIdx,
@@ -89,7 +89,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
 
                     return zxerr_ok;
                 }
-                
+
                 case addr_sapling: {
                     snprintf(outKey, outKeyLen, "ZIP32 Path");
 
@@ -105,8 +105,8 @@ zxerr_t addr_getItem(int8_t displayIdx,
                     bip32_to_str(buffer, sizeof(buffer), hdPath.sapling_path, HDPATH_LEN_SAPLING);
                     pageString(outVal, outValLen, buffer, pageIdx, pageCount);
 
-                    return zxerr_ok;                    
-                } 
+                    return zxerr_ok;
+                }
 
                 default:
                     return zxerr_no_data;
@@ -117,13 +117,12 @@ zxerr_t addr_getItem(int8_t displayIdx,
             if (!app_mode_expert()) {
                 return zxerr_no_data;
             }
-            switch (hdPath.addressKind)
-            {
+            switch (hdPath.addressKind) {
                 case addr_sapling_div:
                     snprintf(outKey, outKeyLen, "Divisifier");
                     array_to_hexstr(outVal, outValLen, hdPath.saplingdiv_div, DIV_SIZE);
                     return zxerr_ok;
-                
+
                 default:
                     return zxerr_no_data;
             }
