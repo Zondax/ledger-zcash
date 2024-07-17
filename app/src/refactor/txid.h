@@ -16,6 +16,11 @@
 
 #pragma once
 
+#include <stdint.h>
+
+#include "zxerror.h"
+#include "sighash.h"
+
 zxerr_t nu5_transparent_prevouts_hash(const uint8_t *input, uint8_t *output);
 
 zxerr_t nu5_transparent_sequence_hash(const uint8_t *input, uint8_t *output);

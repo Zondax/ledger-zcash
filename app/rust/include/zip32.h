@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 void get_pkd(uint32_t zip32_account, const uint8_t *diversifier_ptr, uint8_t *pkd);
 
 void get_pkd_from_seed(uint32_t zip32_account, const uint8_t *start_index, uint8_t *diversifier_ptr, uint8_t *pkd);

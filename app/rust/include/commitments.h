@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 void compute_nullifier(uint8_t *ncm_ptr, uint64_t note_pos, const uint8_t *nsk_ptr, uint8_t *out_ptr);
 
 void compute_note_commitment(
