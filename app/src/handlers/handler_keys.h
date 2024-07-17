@@ -1,5 +1,5 @@
 /*******************************************************************************
-*   (c) Zondax AG
+ *   (c) Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include "app_mode.h"
 #include "coin.h"
 #include "crypto.h"
+#include "handler_path.h"
 #include "key.h"
 #include "nvdata.h"
 #include "parser.h"
@@ -32,7 +33,6 @@
 #include "view.h"
 #include "view_internal.h"
 #include "zxmacros.h"
-#include "handler_path.h"
 
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)

@@ -1,7 +1,7 @@
 import { PAYLOAD_TYPE, processErrorResponse } from '@zondax/ledger-js'
+import { errorCodeToString } from '@zondax/ledger-js/dist/errors'
 
 import { CLA, INS } from './consts'
-import {errorCodeToString} from "@zondax/ledger-js/dist/errors";
 
 /**
  * @deprecated This function is obsolete.
