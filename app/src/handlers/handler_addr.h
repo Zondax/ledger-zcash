@@ -1,6 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2024 Zondax AG
- *   (c) 2016 Ledger
+*   (c) Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +32,7 @@
 #include "view.h"
 #include "view_internal.h"
 #include "zxmacros.h"
-#include "handlers/handler_path.h"
+#include "handler_path.h"
 
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");
