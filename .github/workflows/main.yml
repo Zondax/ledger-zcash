@@ -31,6 +31,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Install CMake 3.28
         run: |
           wget https://github.com/Kitware/CMake/releases/download/v3.28.0/cmake-3.28.0-linux-x86_64.sh
@@ -99,11 +103,7 @@ jobs:
         with:
           submodules: true
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - name: Install node
+bu      - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 18
