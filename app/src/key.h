@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#include <inttypes.h>
+
+#include "coin.h"
+
 typedef struct {
     key_type_e kind;
     uint8_t len;
