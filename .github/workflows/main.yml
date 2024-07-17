@@ -6,12 +6,54 @@ on:
     branches:
       - main
       - develop
+      - master # for safety reasons
+      - dev  # for safety reasons
 
 jobs:
-  build_ledger_nano_S:
-    runs-on: ubuntu-latest
+  configure:
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
+    outputs:
+      uid_gid: ${{ steps.get-user.outputs.uid_gid }}
+    steps:
+      - id: get-user
+        run: echo "uid_gid=$(id -u):$(id -g)" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl protobuf-compiler build-essential git wget unzip python3 python3-pip \
+            libssl-dev libffi-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+            libgdbm-dev libnss3-dev liblzma-dev libxml2-dev libxmlsec1-dev libffi-dev libyaml-dev
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install CMake 3.28
+        run: |
+          wget https://github.com/Kitware/CMake/releases/download/v3.28.0/cmake-3.28.0-linux-x86_64.sh
+          sudo mkdir /opt/cmake
+          sudo sh cmake-3.28.0-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+          sudo ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+          sudo ln -s /opt/cmake/bin/ctest /usr/local/bin/ctest
+      - name: Verify CMake version
+        run: cmake --version
+      - name: Install deps
+        run: |
+          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+          make deps
+      - name: Run CMake
+        run: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
+      - run: make cpp_test
+
+  build_ledger:
+    needs: configure
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     container:
       image: zondax/ledger-app-builder:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanos-secure-sdk
     outputs:
@@ -28,68 +70,30 @@ jobs:
           make
           echo "size=$(python3 deps/ledger-zxlib/scripts/getSize.py s)" >> $GITHUB_OUTPUT
 
-  build_ledger_nano_X:
-    runs-on: ubuntu-latest
-    container:
-      image: zondax/ledger-app-builder:latest
-      env:
-        BOLOS_SDK: /opt/nanox-secure-sdk
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Build Standard app
-        shell: bash -l {0}
-        run: |
-          make
-
-  build_ledger_nano_SP:
-    runs-on: ubuntu-latest
-    container:
-      image: zondax/ledger-app-builder:latest
-      env:
-        BOLOS_SDK: /opt/nanosplus-secure-sdk
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Build Standard app
-        shell: bash -l {0}
-        run: |
-          make
-
   size_nano_s:
-    needs: build_ledger_nano_S
-    runs-on: ubuntu-latest
+    needs: build_ledger
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     env:
       NANOS_LIMIT_SIZE: 136
     steps:
       - run: |
-          echo "LNS app size: ${{needs.build_ledger_nano_S.outputs.size}} KiB"
-  # [ ${{needs.build_ledger_nano_S.outputs.size}} -le $NANOS_LIMIT_SIZE ]
-  rust_test:
-    runs-on: ubuntu-latest
-    container:
-      image: zondax/ledger-app-builder:latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-      - run: |
-          cd app/rust
-          cargo test
+          echo "LNS app size: ${{needs.build_ledger.outputs.size}} KiB"
+          [ ${{needs.build_ledger.outputs.size}} -le $NANOS_LIMIT_SIZE ]
 
   test_zemu:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     steps:
       - name: Test
         run: |
           id
           echo $HOME
           echo $DISPLAY
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl protobuf-compiler build-essential git wget unzip python3 python3-pip \
+            libssl-dev libffi-dev libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+            libgdbm-dev libnss3-dev liblzma-dev libxml2-dev libxmlsec1-dev libffi-dev libyaml-dev
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -100,38 +104,29 @@ jobs:
         with:
           toolchain: stable
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
       - name: Install yarn
         run: |
           npm install -g yarn
       - name: Build and run zemu tests
         run: |
           make test_all
-
-      - name: Tar Zemu snapshots
-        if: always()
-        run: tar -cvf snapshots_tmp.tar ./tests_zemu/snapshots-tmp
-      - name: Upload tmp snapshots
-        if: always()
+      - name: Upload Snapshots (only failure)
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: snapshots-tmp
-          path: snapshots_tmp.tar
-          #we don't need these snapshots for very long
-          retention-days: 3
+          path: tests_zemu/snapshots-tmp/
 
   build_package_nanos:
-    needs:
-      [
-        build_ledger_nano_S,
-        build_ledger_nano_X,
-        build_ledger_nano_SP,
-        test_zemu,
-      ]
+    needs: [configure, build, build_ledger, test_zemu]
     if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     container:
       image: zondax/ledger-app-builder:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanos-secure-sdk
     steps:
@@ -162,17 +157,12 @@ jobs:
           prerelease: false
 
   build_package_nanosp:
-    needs:
-      [
-        build_ledger_nano_S,
-        build_ledger_nano_X,
-        build_ledger_nano_SP,
-        test_zemu,
-      ]
+    needs: [configure, build, build_ledger, test_zemu]
     if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     container:
       image: zondax/ledger-app-builder:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/nanosplus-secure-sdk
     steps:
@@ -203,17 +193,12 @@ jobs:
           prerelease: false
 
   build_package_stax:
-    needs:
-      [
-        build_ledger_nano_S,
-        build_ledger_nano_X,
-        build_ledger_nano_SP,
-        test_zemu,
-      ]
+    needs: [configure, build, build_ledger, test_zemu]
     if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: zondax-runners
     container:
       image: zondax/ledger-app-builder:latest
+      options: --user ${{ needs.configure.outputs.uid_gid }}
       env:
         BOLOS_SDK: /opt/stax-secure-sdk
     steps:
@@ -226,7 +211,8 @@ jobs:
 
       - name: Build Stax
         shell: bash -l {0}
-        run: make
+        run: |
+          make
       - name: Set tag
         id: stax
         run: echo "tag_name=$(./app/pkg/installer_stax.sh version)" >> $GITHUB_OUTPUT
@@ -236,7 +222,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          files: ./app/pkg/installer_stax.sh
+          files: |
+            ./app/pkg/installer_stax.sh
           tag_name: ${{ steps.stax.outputs.tag_name }}
           draft: false
           prerelease: false

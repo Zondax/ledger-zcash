@@ -66,7 +66,7 @@ __Z_INLINE bool process_chunk(__Z_UNUSED volatile uint32_t *tx, uint32_t rx) {
             }
             return false;
         }
-        case P1_LAST:{
+        case P1_LAST: {
             if (!tx_initialized) {
                 THROW(APDU_CODE_TX_NOT_INITIALIZED);
             }

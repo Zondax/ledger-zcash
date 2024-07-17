@@ -1,14 +1,16 @@
 [workspace]
 resolver = "2"
 
-members = [
-    "neon/native",
-]
+members = ["neon/native"]
 
 [profile.release]
 opt-level = "s"
 overflow-checks = true
 
+# FIXME: disable this in production
 [patch.crates-io]
-ledger-zcash-builder = { path = "../../ledger-zcash-rs/ledger-zcash-builder" }
-ledger-zcash = { path = "../../ledger-zcash-rs/ledger-zcash" }
+ledger-zcash-builder = { git = "https://github.com/Zondax/ledger-zcash-rs", rev = "48b529fb41ed721e8c3bc943752b82b82d448cf3" }
+ledger-zcash = { git = "https://github.com/Zondax/ledger-zcash-rs", rev = "48b529fb41ed721e8c3bc943752b82b82d448cf3" }
+
+#ledger-zcash-builder = { path = "../../ledger-zcash-rs/ledger-zcash-builder" }
+#ledger-zcash = { path = "../../ledger-zcash-rs/ledger-zcash" }

@@ -21,26 +21,26 @@
 extern "C" {
 #endif
 
-#define CLA                0x85
+#define CLA              0x85
 
-#define P1_INIT                         0  //< P1
-#define P1_ADD                          1  //< P1
-#define P1_LAST                         2  //< P1
+#define P1_INIT          0  //< P1
+#define P1_ADD           1  //< P1
+#define P1_LAST          2  //< P1
 
-#define HDPATH_LEN_MAX     5
+#define HDPATH_LEN_MAX   5
 
-#define HDPATH_0_DEFAULT   (0x80000000u | 0x2cu)
-#define HDPATH_1_DEFAULT   (0x80000000u | 0x85)
-#define HDPATH_2_DEFAULT   (0x80000000u | 0u)
-#define HDPATH_3_DEFAULT   (0u)
-#define HDPATH_4_DEFAULT   (0u)
+#define HDPATH_0_DEFAULT (0x80000000u | 0x2cu)
+#define HDPATH_1_DEFAULT (0x80000000u | 0x85)
+#define HDPATH_2_DEFAULT (0x80000000u | 0u)
+#define HDPATH_3_DEFAULT (0u)
+#define HDPATH_4_DEFAULT (0u)
 
-#define HDPATH_0_TESTNET   (0x80000000u | 0x2cu)
-#define HDPATH_1_TESTNET   (0x80000000u | 0x1u)
+#define HDPATH_0_TESTNET (0x80000000u | 0x2cu)
+#define HDPATH_1_TESTNET (0x80000000u | 0x1u)
 
-#define HDPATH_0_ZIP32     (0x80000000u | 0x20u)
-#define HDPATH_1_ZIP32     (0x80000000u | 0x85u)
-#define HDPATH_2_ZIP32     (0u)
+#define HDPATH_0_ZIP32   (0x80000000u | 0x20u)
+#define HDPATH_1_ZIP32   (0x80000000u | 0x85u)
+#define HDPATH_2_ZIP32   (0u)
 
 // compressed key
 #define PK_LEN_SECP256K1 33u
@@ -103,9 +103,8 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 #define COIN_AMOUNT_DECIMAL_PLACES    18
 #define CRYPTO_BLOB_SKIP_BYTES        0
 
-
-#define HDPATH_LEN_BIP44     5
-#define HDPATH_LEN_SAPLING       3
+#define HDPATH_LEN_BIP44              5
+#define HDPATH_LEN_SAPLING            3
 
 typedef enum {
     addr_not_set = 0,
@@ -125,7 +124,7 @@ typedef struct {
         };
         struct {
             uint32_t saplingdiv_path[3];
-            uint8_t saplingdiv_div[11];    
+            uint8_t saplingdiv_div[11];
         };
     };
 } hdPath_t;

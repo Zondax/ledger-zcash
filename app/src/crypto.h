@@ -27,7 +27,6 @@ extern "C" {
 #include "coin.h"
 #include "zxerror.h"
 
-
 zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed);
 
 zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);

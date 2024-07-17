@@ -16,7 +16,6 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");
     *tx = 0;
@@ -113,11 +112,8 @@ __Z_INLINE void handleGetAddrSaplingDiv(volatile uint32_t *flags, volatile uint3
 
     uint16_t replyLen = 0;
 
-    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(
-        G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, 
-        hdPath.saplingdiv_path[2],
-        hdPath.saplingdiv_div,
-        &replyLen);
+    zxerr_t err = crypto_fillAddress_with_diversifier_sapling(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3,
+                                                              hdPath.saplingdiv_path[2], hdPath.saplingdiv_div, &replyLen);
 
     if (err != zxerr_ok) {
         ZEMU_LOGF(100, "Err: %d\n", err);
