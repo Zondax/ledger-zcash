@@ -67,10 +67,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - name: Build Standard app
         id: build
         shell: bash -l {0}
@@ -144,10 +140,6 @@ jobs:
           submodules: true
       - name: Install deps
         run: pip install ledgerblue
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - name: Build NanoS
         shell: bash -l {0}
         run: |
@@ -183,11 +175,6 @@ jobs:
           submodules: true
       - name: Install deps
         run: pip install ledgerblue
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - name: Build NanoSP
         shell: bash -l {0}
         run: |
@@ -210,7 +197,7 @@ jobs:
   build_package_stax:
     needs: [configure, build, build_ledger, test_zemu]
     if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: zondax-runners
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     container:
       image: zondax/ledger-app-builder:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
@@ -223,11 +210,6 @@ jobs:
           submodules: true
       - name: Install deps
         run: pip install ledgerblue
-
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - name: Build Stax
         shell: bash -l {0}
         run: |
