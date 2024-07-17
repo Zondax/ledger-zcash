@@ -94,6 +94,32 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
     VALUE_COMMITMENT_RANDOM_BASE.multiply_bits(rcm)
 }
 
+#[inline(never)]
+pub fn note_commitment(v: u64, g_d: &[u8; 32], pk_d: &[u8; 32], rcm: &[u8; 32]) -> ExtendedPoint {
+    c_zemu_log_stack("notecommit\x00");
+    let mut input_hash = [0u8; 73];
+
+    // Convert the value to bytes and reverse the bits as per protocol
+    let vbytes = utils::write_u64_tobytes(v);
+    input_hash[0..8].copy_from_slice(&vbytes);
+
+    // Reverse bits for g_d and pk_d and place them into the input hash
+    utils::reverse_bits(g_d, &mut input_hash[8..40]);
+    utils::reverse_bits(pk_d, &mut input_hash[40..72]);
+
+    // Perform a bit shift operation on the entire array
+    shiftsixbits(&mut input_hash);
+
+    // Compute the Pedersen hash to point
+    let mut p = pedersen_hash_to_point(&input_hash, 582);
+
+    // Multiply the randomness base by rcm and add to the point
+    let s = PEDERSEN_RANDOMNESS_BASE.multiply_bits(rcm);
+    p += s;
+
+    p
+}
+
 //////////////////////////////
 //////////////////////////////
 
@@ -101,42 +127,14 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
 mod tests {
     use crate::bolos::seed::with_device_seed_context;
     use crate::commitments_extern::{compute_note_commitment, compute_nullifier};
+    use crate::constants::{ZIP32_COIN_TYPE, ZIP32_PURPOSE};
+    use crate::sapling::*;
     use crate::types::{diversifier_zero, NskBytes};
     use crate::utils::into_fixed_array;
+    use crate::zip32::*;
     use crate::zip32_extern::zip32_nsk;
 
     use super::*;
-
-    #[inline(never)]
-    pub fn note_commitment(
-        v: u64,
-        g_d: &[u8; 32],
-        pk_d: &[u8; 32],
-        rcm: &[u8; 32],
-    ) -> ExtendedPoint {
-        c_zemu_log_stack(b"notecommit\x00".as_ref());
-        let mut input_hash = [0u8; 73];
-
-        // Convert the value to bytes and reverse the bits as per protocol
-        let vbytes = utils::write_u64_tobytes(v);
-        input_hash[0..8].copy_from_slice(&vbytes);
-
-        // Reverse bits for g_d and pk_d and place them into the input hash
-        utils::reverse_bits(g_d, &mut input_hash[8..40]);
-        utils::reverse_bits(pk_d, &mut input_hash[40..72]);
-
-        // Perform a bit shift operation on the entire array
-        shiftsixbits(&mut input_hash);
-
-        // Compute the Pedersen hash to point
-        let mut p = pedersen_hash_to_point(&input_hash, 582);
-
-        // Multiply the randomness base by rcm and add to the point
-        let s = PEDERSEN_RANDOMNESS_BASE.multiply_bits(rcm);
-        p += s;
-
-        p
-    }
 
     #[inline(never)]
     pub fn value_commitment(value: u64, rcm: &[u8; 32]) -> [u8; 32] {
@@ -270,6 +268,62 @@ mod tests {
                 "ce0df155d652565ccab59ae392a569c4f2283df4dc8a26bfd48e178bfceed436"
             );
         })
+    }
+
+    #[test]
+    fn check_nf_with_seed() {
+        let pos: u64 = 2578461368;
+        let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, 0];
+        let rcm: [u8; 32] = [
+            0x6e, 0xbb, 0xed, 0x74, 0x36, 0x19, 0xa2, 0x56, 0xf9, 0xad, 0x2e, 0x85, 0x88, 0x0c,
+            0xfa, 0xa9, 0x09, 0x8a, 0x5f, 0xdb, 0x16, 0x29, 0x99, 0x0d, 0x9a, 0x7d, 0x3b, 0xb9,
+            0x3f, 0xc9, 0x00, 0x03,
+        ];
+        let value: u64 = 17811330145809239872;
+
+        let key_bundle = zip32_sapling_derive(&path);
+        let mut nsk: NskBytes = [0u8; 32];
+
+        zip32_nsk(0, &mut nsk);
+
+        let ak = sapling_ask_to_ak(&key_bundle.ask());
+        let nsk = key_bundle.nsk();
+        let nk = sapling_nsk_to_nk(&key_bundle.nsk());
+        let ivk = sapling_aknk_to_ivk(&ak, &nk);
+        let diversifier = diversifier_find_valid(&key_bundle.dk(), &diversifier_zero());
+        let pk_d = pkd_default(&ivk, &diversifier);
+
+        let g_d = compute_g_d(&diversifier);
+        let h = note_commitment(value, &g_d, &pk_d, &rcm);
+
+        let cm1 = group::GroupEncoding::to_bytes(&h);
+
+        let mp = mixed_pedersen(&h, Fr::from_bytes(&into_fixed_array(pos)).unwrap());
+        let nf = prf_nf(&nk, &mp);
+
+        assert_eq!(
+            hex::encode(nf),
+            "a9f8bb1b242c5fef6d8f81cc4c5ce32d296fd69b27138c104ff8a652b00682a2"
+        );
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Bellow to check that both note_commitment and compute_note_commitment are working and
+        // gives the same note commitment
+
+        let mut cm2 = [0u8; 32];
+        compute_note_commitment(&rcm, value, &diversifier, &pk_d, &mut cm2);
+        println!("cm1: {}", hex::encode(cm1));
+        println!("cm2: {}", hex::encode(cm2));
+        assert_eq!(cm1, cm2);
+
+        let mut nf = [0u8; 32];
+
+        compute_nullifier(&cm2, pos, &nsk, &mut nf);
+
+        assert_eq!(
+            hex::encode(nf),
+            "a9f8bb1b242c5fef6d8f81cc4c5ce32d296fd69b27138c104ff8a652b00682a2"
+        );
     }
 
     #[test]
