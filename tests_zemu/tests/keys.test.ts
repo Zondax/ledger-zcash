@@ -122,7 +122,7 @@ describe('Get keys', function () {
     }
   })
 
-  test.concurrent.each(models)('get outgoing viewing key', async function (m) {
+  test.concurrent.each(models)('get ovk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -150,7 +150,7 @@ describe('Get keys', function () {
     }
   })
 
-  test.concurrent.each(models)('Get full viewing key', async function (m) {
+  test.concurrent.each(models)('Get fvk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({

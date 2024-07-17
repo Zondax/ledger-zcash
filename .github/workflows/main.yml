@@ -31,6 +31,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Install CMake 3.28
         run: |
           wget https://github.com/Kitware/CMake/releases/download/v3.28.0/cmake-3.28.0-linux-x86_64.sh
@@ -63,6 +67,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Build Standard app
         id: build
         shell: bash -l {0}
@@ -136,7 +144,10 @@ jobs:
           submodules: true
       - name: Install deps
         run: pip install ledgerblue
-
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Build NanoS
         shell: bash -l {0}
         run: |
@@ -173,6 +184,10 @@ jobs:
       - name: Install deps
         run: pip install ledgerblue
 
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Build NanoSP
         shell: bash -l {0}
         run: |
@@ -209,6 +224,10 @@ jobs:
       - name: Install deps
         run: pip install ledgerblue
 
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - name: Build Stax
         shell: bash -l {0}
         run: |
