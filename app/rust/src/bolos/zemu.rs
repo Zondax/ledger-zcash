@@ -5,9 +5,9 @@ extern "C" {
 }
 
 #[cfg(not(test))]
-pub fn c_zemu_log_stack(s: &[u8]) {
+pub fn c_zemu_log_stack(s: &str) {
     unsafe { zemu_log_stack(s.as_ptr()) }
 }
 
 #[cfg(test)]
-pub fn c_zemu_log_stack(_s: &[u8]) {}
+pub fn c_zemu_log_stack(_s: &str) {}

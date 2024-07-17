@@ -14,7 +14,7 @@ pub extern "C" fn sign_redjubjub(
     msg_ptr: *const [u8; 64],
     out_ptr: *mut [u8; 64],
 ) {
-    c_zemu_log_stack(b"sign_redjubjub\x00".as_ref());
+    c_zemu_log_stack("sign_redjubjub\x00");
     let key = unsafe { *key_ptr };
     let msg = unsafe { *msg_ptr };
     let output = unsafe { &mut *out_ptr };
