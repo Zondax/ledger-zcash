@@ -167,6 +167,13 @@ pub fn diversifier_find_valid(dk: &DkBytes, start: &Diversifier) -> Diversifier 
     div_out
 }
 
+pub fn compute_g_d(d: &[u8; 11]) -> [u8; 32] {
+    let h = blake2b::blake2s_diversification(d);
+    let v = AffinePoint::from_bytes(h).unwrap();
+    let g_d = v.mul_by_cofactor();
+    group::GroupEncoding::to_bytes(&g_d)
+}
+
 #[inline(never)]
 pub fn diversifier_get_list(
     dk: &DkBytes,
