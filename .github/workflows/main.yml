@@ -71,6 +71,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          default: true
+          override: true
       - name: Build Standard app
         id: build
         shell: bash -l {0}
@@ -148,6 +150,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          default: true
+          override: true
       - name: Build NanoS
         shell: bash -l {0}
         run: |
@@ -188,6 +192,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          default: true
+          override: true
       - name: Build NanoSP
         shell: bash -l {0}
         run: |
@@ -228,6 +234,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          default: true
+          override: true
       - name: Build Stax
         shell: bash -l {0}
         run: |
