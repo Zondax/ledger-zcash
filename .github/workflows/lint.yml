@@ -30,12 +30,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          override: true
       - name: Lint and format 💅
         uses: cpp-linter/cpp-linter-action@v2
         id: linter
