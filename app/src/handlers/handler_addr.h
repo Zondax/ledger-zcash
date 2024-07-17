@@ -1,3 +1,21 @@
+/*******************************************************************************
+ *   (c) 2018 -2024 Zondax AG
+ *   (c) 2016 Ledger
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
+#pragma once
+
 #include <os.h>
 #include <os_io_seproxyhal.h>
 
@@ -15,6 +33,7 @@
 #include "view.h"
 #include "view_internal.h"
 #include "zxmacros.h"
+#include "handlers/handler_path.h"
 
 __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");

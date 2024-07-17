@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2022 Zondax AG
+ *   (c) 2018 -2024 Zondax AG
  *   (c) 2016 Ledger
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+#pragma once
+
 
 #include <os.h>
 #include <os_io_seproxyhal.h>
