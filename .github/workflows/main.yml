@@ -32,7 +32,7 @@ jobs:
         with:
           submodules: true
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
       - name: Install CMake 3.28
@@ -104,7 +104,7 @@ jobs:
           submodules: true
       - run: sudo apt-get update -y && sudo apt-get install -y libusb-1.0.0 libudev-dev
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
       - name: Install node
