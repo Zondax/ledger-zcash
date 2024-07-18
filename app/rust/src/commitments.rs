@@ -253,26 +253,26 @@ mod tests {
 
         for test_case in test_cases {
             println!("{:?}", test_case);
-            let output = [0u8; 32];
 
-            let expected_output_vec = hex::decode(test_case.note_cmu).unwrap();
-            let mut expected_output = [0u8; 32];
-            expected_output.copy_from_slice(&expected_output_vec);
+            let computed_note_commitment = [0u8; 32];
+            let expected_note_commitment_vec = hex::decode(test_case.note_cmu).unwrap();
+            let mut expected_note_commitment = [0u8; 32];
+            expected_note_commitment.copy_from_slice(&expected_note_commitment_vec);
 
             compute_note_commitment(
                 hex::decode(test_case.note_r).unwrap().as_ptr() as *const [u8; 32],
                 test_case.note_v,
                 hex::decode(test_case.default_d).unwrap().as_ptr() as *const Diversifier,
                 hex::decode(test_case.default_pk_d).unwrap().as_ptr() as *const [u8; 32],
-                output.as_ptr() as *mut [u8; 32],
+                computed_note_commitment.as_ptr() as *mut [u8; 32],
             );
 
-            println!("output {:?}", output);
-            println!("expected_output {:?}", expected_output);
+            println!("computed_note_commitment {:?}", computed_note_commitment);
+            println!("expected_note_commitment {:?}", expected_note_commitment);
 
             assert_eq!(
-                output,
-                expected_output
+                computed_note_commitment,
+                expected_note_commitment
             );
         }
     }
