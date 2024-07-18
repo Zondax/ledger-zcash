@@ -274,6 +274,26 @@ mod tests {
                 computed_note_commitment,
                 expected_note_commitment
             );
+
+            let computed_nullifier = [0u8; 32];
+            let expected_nullifier_vec = hex::decode(test_case.note_nf).unwrap();
+            let mut expected_nullifier = [0u8; 32];
+            expected_nullifier.copy_from_slice(&expected_nullifier_vec);
+
+            compute_nullifier(
+                expected_note_commitment.as_ptr() as *const [u8; 32],
+                test_case.note_pos,
+                hex::decode(test_case.nsk).unwrap().as_ptr() as *const [u8; 32],
+                computed_nullifier.as_ptr() as *mut [u8; 32]
+            );
+
+            println!("computed_nullifier {:?}", computed_nullifier);
+            println!("expected_nullifier {:?}", expected_nullifier);
+
+            assert_eq!(
+                computed_nullifier,
+                expected_nullifier
+            );
         }
     }
 
