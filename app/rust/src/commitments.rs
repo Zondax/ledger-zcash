@@ -109,7 +109,7 @@ mod tests {
 
     use serde::Deserialize;
     use serde_json::Result;
-
+    use crate::sapling::sapling_nsk_to_nk;
     use super::*;
 
     #[derive(Deserialize, Debug)]
@@ -274,6 +274,21 @@ mod tests {
                 computed_note_commitment,
                 expected_note_commitment
             );
+
+
+
+            let expected_nk_vec = hex::decode(test_case.nk).unwrap();
+            let mut expected_nk = [0u8; 32];
+            expected_nk.copy_from_slice(&expected_nk_vec);
+
+            let nsk:NskBytes = hex::decode(test_case.nsk.clone()).unwrap().as_slice().try_into().unwrap();
+            let computed_nk = sapling_nsk_to_nk(&nsk);
+
+            assert_eq!(
+                computed_nk,
+                expected_nk
+            );
+
 
             let computed_nullifier = [0u8; 32];
             let expected_nullifier_vec = hex::decode(test_case.note_nf).unwrap();
