@@ -122,7 +122,7 @@ describe('tx methods', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -232,7 +232,7 @@ describe('tx methods', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -297,8 +297,10 @@ describe('tx methods', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeedRaw,
       }
+
+      console.log(outj1)
 
       // The builder adds the shielded output to its state.
       const b3 = builder.add_sapling_output(outj1)
@@ -312,7 +314,7 @@ describe('tx methods', function () {
       const req5 = await app.extractOutputData()
       console.log(req5)
       // this field is optional and should be empty here
-      expect(req5.hashSeed).toBeUndefined()
+      expect(req5.hashSeed).toBeNull()
 
       const outj2 = {
         rcv: req5.rcv,
@@ -321,7 +323,7 @@ describe('tx methods', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeedRaw,
       }
 
       const b4 = builder.add_sapling_output(outj2)

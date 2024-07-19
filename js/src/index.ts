@@ -376,10 +376,10 @@ export default class ZCashApp extends GenericApp {
       return {
         rcvRaw: rcv,
         rseedRaw: rseed,
-        hashSeedRaw: hashseed,
+        hashSeedRaw: hashseed ? new Uint8Array(hashseed) : null,
         rcv: rcv.toString('hex'),
         rseed: rseed.toString('hex'),
-        hashSeed: hashseed ? hashseed.toString('hex') : undefined,
+        hashSeed: hashseed ? hashseed.toString('hex') : null,
       } as OutputDataResponse
     } catch (error) {
       throw processErrorResponse(error)

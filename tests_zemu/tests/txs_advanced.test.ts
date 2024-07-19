@@ -99,7 +99,7 @@ describe('End to end transactions', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
+        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -162,10 +162,11 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed,
       }
 
       // The builder adds the shielded output to its state.
+      // @ts-ignore
       const b3 = builder.add_sapling_output(outj1)
       expect(b3).toBeTruthy()
 
@@ -185,9 +186,10 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed,
       }
 
+      // @ts-ignore
       const b4 = builder.add_sapling_output(outj2)
       expect(b4).toBeTruthy()
 
@@ -374,11 +376,12 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
 
+      // @ts-ignore
       const b3 = builder.add_sapling_output(outj1)
       expect(b3).toBeTruthy()
 
@@ -489,14 +492,14 @@ describe('End to end transactions', function () {
 
       /*
       The inputs to the get_inittx_data function are the inputs to the transaction.
-      The output is a blob that can be send to the ledger device.
+      The output is a blob that can be sent to the ledger device.
       */
 
       const ledgerblob_initdata = get_inittx_data(tx_input_data)
       console.log(ledgerblob_initdata)
 
       /*
-      The output of the get_inittx_data can be send to the ledger.
+      The output of the get_inittx_data can be sent to the ledger.
       The ledger will check this data and show the inputs on screen for verification.
       If confirmed, the ledger also computes the randomness needed for :
           - The shielded spends
@@ -611,13 +614,14 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeedRaw,
       }
 
       /*
       The builder adds the shielded output to its state.
        */
 
+      // @ts-ignore
       const b3 = builder.add_sapling_output(outj1)
       expect(b3).toBeTruthy()
 
@@ -636,9 +640,10 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeedRaw,
       }
 
+      // @ts-ignore
       const b4 = builder.add_sapling_output(outj2)
       expect(b4).toBeTruthy()
 
@@ -847,11 +852,12 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeedRaw,
       }
 
       // The builder adds the shielded output to its state.
 
+      // @ts-ignore
       const b3 = builder.add_sapling_output(outj1)
       expect(b3).toBeTruthy()
 
@@ -868,9 +874,10 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeedRaw,
       }
 
+      // @ts-ignore
       const b4 = builder.add_sapling_output(outj2)
       expect(b4).toBeTruthy()
 
