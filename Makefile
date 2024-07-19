@@ -1,5 +1,5 @@
 #*******************************************************************************
-#*   (c) 2018 -2022 Zondax AG
+#*   (c) 2019 - 2024 Zondax AG
 #*
 #*  Licensed under the Apache License, Version 2.0 (the "License");
 #*  you may not use this file except in compliance with the License.
@@ -22,8 +22,13 @@ TESTS_JS_PACKAGE = "@zondax/ledger-zcash"
 TESTS_JS_DIR = $(CURDIR)/js
 
 ifeq ($(BOLOS_SDK),)
+# In this case, there is not predefined SDK and we run dockerized
+# When not using the SDK, we override and build the XL complete app
+
 ZXLIB_COMPILE_STAX ?= 1
+PRODUCTION_BUILD ?= 0
 include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
+
 else
 default:
 	$(MAKE) -C app
@@ -41,7 +46,12 @@ zcashtools_test: zcashtools_build
 zemu_install: zcashtools_build
 
 test_all:
+	PRODUCTION_BUILD=1 make
 	make zemu_install
-	make zcashtools_test
-	make
 	make zemu_test
+	make zcashtools_test
+
+test_ledger_try:
+	make zemu_install
+	cd tests_zemu && yarn try
+

@@ -6,10 +6,11 @@ on:
     branches:
       - main
       - develop
+      - master # for safety reasons
 
 jobs:
   configure:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     outputs:
       uid_gid: ${{ steps.get-user.outputs.uid_gid }}
     steps:
@@ -18,15 +19,17 @@ jobs:
 
   get_version:
     needs: configure
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     container:
       image: zondax/ledger-app-builder:latest
       options: --user ${{ needs.configure.outputs.uid_gid }}
+    env:
+      SDK_VARNAME: NANOSP_SDK
     outputs:
       version: ${{ steps.store-version.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - run: make version
@@ -35,7 +38,7 @@ jobs:
 
   check_app_version:
     needs: get_version
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     steps:
       - id: checkTag
         uses: mukunku/tag-exists-action@v1.0.0

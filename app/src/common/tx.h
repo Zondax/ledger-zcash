@@ -20,10 +20,10 @@
 #include "zxerror.h"
 
 #if defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX)
-#define RAM_BUFFER_SIZE 8192
+#define RAM_BUFFER_SIZE   8192
 #define FLASH_BUFFER_SIZE 16384
 #elif defined(TARGET_NANOS)
-#define RAM_BUFFER_SIZE 0
+#define RAM_BUFFER_SIZE   0
 #define FLASH_BUFFER_SIZE 8192
 #endif
 
@@ -56,6 +56,10 @@ const char *tx_parse();
 zxerr_t tx_getNumItems(uint8_t *num_items);
 
 /// Gets an specific item from the transaction (including paging)
-zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen,
-                   char *outValue, uint16_t outValueLen, uint8_t pageIdx,
+zxerr_t tx_getItem(int8_t displayIdx,
+                   char *outKey,
+                   uint16_t outKeyLen,
+                   char *outValue,
+                   uint16_t outValueLen,
+                   uint8_t pageIdx,
                    uint8_t *pageCount);

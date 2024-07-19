@@ -4,4 +4,4 @@ sdk = "C"
 devices = ["nanos", "nanox", "nanos+", "stax"]
 
 [tests]
-unit_directory = ""
+unit_directory = "./tests/"

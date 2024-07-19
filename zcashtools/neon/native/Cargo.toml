@@ -1,24 +1,36 @@
 [package]
 name = "zcashtool"
 version = "0.1.0"
-authors = ["Zondax AG <info@zondax.ch>"]
+authors = ["Zondax AG <hello@zondax.ch>"]
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 exclude = ["artifacts.json", "index.node"]
+resolver = "2"
 
 [lib]
 name = "zcashtool"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
 
 [dependencies]
 neon = { version = "0.10.1", default-features = false, features = ["napi-6"] }
 rand_core = "0.6.4"
-zcash-hsmbuilder = { git = "https://github.com/Zondax/ledger-zcash-rs" , rev = "5585ccc6cdc9d1b6ef2fb5ad27c6bf7d1c170bb2"}
-ledger-zcash = { git = "https://github.com/Zondax/ledger-zcash-rs" , rev = "5585ccc6cdc9d1b6ef2fb5ad27c6bf7d1c170bb2"}
-neon-serde = { git = "https://github.com/Zondax/neon-serde" , branch = "refactor/napi", default-features = false, features =["napi-6"]}
-serde_derive = "1.0.192"
-serde = "1.0.192"
-log = "0.4.20"
+serde_derive = "1"
+serde = "1"
+log = "0.4"
+snafu = { version = "0.8.2" }
+zcash_primitives = { version = "0.7", features = ["transparent-inputs"] }
 
-#activate snafu backtraces
-snafu = { version = "0.7.5", features = ["backtraces"] }
+neon-serde = { git = "https://github.com/Zondax/neon-serde", branch = "master", default-features = false, features = [
+    "napi-6",
+] }
+
+ledger-zcash-builder = "=0.11.2"
+ledger-zcash = "0.11.2"
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.117"
+zcashtool = { path = "." }
+env_logger = { version = "0.11", default-features = false }
+log = "0.4"

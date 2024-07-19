@@ -15,17 +15,29 @@
  ********************************************************************************/
 
 #pragma once
+#include <stdint.h>
+
+#include "coin.h"
+#include "zxerror.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct {
+    uint8_t len;
+} address_state_t;
+
 /// Return the number of items in the address view
 zxerr_t addr_getNumItems(uint8_t *num_items);
 
 /// Gets an specific item from the address view (including paging)
-zxerr_t addr_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen,
-                     char *outValue, uint16_t outValueLen, uint8_t pageIdx,
+zxerr_t addr_getItem(int8_t displayIdx,
+                     char *outKey,
+                     uint16_t outKeyLen,
+                     char *outValue,
+                     uint16_t outValueLen,
+                     uint8_t pageIdx,
                      uint8_t *pageCount);
 
 #ifdef __cplusplus
