@@ -795,7 +795,7 @@ zxerr_t crypto_checkoutput_sapling(
         rseed_get_rcm(item->rseed, rcm);
         io_seproxyhal_io_heartbeat();
 
-        compute_note_commitment(rcm, item->value, item->div, item->pkd, ncm.step4.notecommitment);
+        compute_note_commitment_u(rcm, item->value, item->div, item->pkd, ncm.step4.notecommitment);
         io_seproxyhal_io_heartbeat();
 
         compute_value_commitment(item->rcmvalue, item->value, ncm.step4.valuecommitment);
