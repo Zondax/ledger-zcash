@@ -33,7 +33,7 @@ const defaultOptions = {
 jest.setTimeout(600000)
 
 describe('End to end transactions', function () {
-  test.concurrent.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
+  test.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({

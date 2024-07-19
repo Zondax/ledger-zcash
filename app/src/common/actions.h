@@ -22,7 +22,7 @@
 #include "nvdata.h"
 #include "parser.h"
 #include "tx.h"
-#include "zcash_apdu_errors.h"
+#include "apdu_errors.h"
 #include <os_io_seproxyhal.h>
 #include <stdint.h>
 

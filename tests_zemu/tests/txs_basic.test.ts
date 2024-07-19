@@ -26,7 +26,7 @@ jest.setTimeout(60000)
 const tx_version = 0x05
 
 describe('tx methods', function () {
-  test.concurrent.each(models)('txinit', async function (m) {
+  test.each(models)('txinit', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -55,7 +55,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.concurrent.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -165,7 +165,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.concurrent.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({

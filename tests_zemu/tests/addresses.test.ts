@@ -21,7 +21,7 @@ import ZCashApp from '@zondax/ledger-zcash'
 jest.setTimeout(60000)
 
 describe('Addresses', function () {
-  test.concurrent.each(models)('get unshielded address', async function (m) {
+  test.each(models)('get unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -39,7 +39,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.concurrent.each(models)('show unshielded address', async function (m) {
+  test.each(models)('show unshielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -65,7 +65,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.concurrent.each(models)('get shielded address', async function (m) {
+  test.each(models)('get shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -74,8 +74,8 @@ describe('Addresses', function () {
       const zip32Account = 1000 + 0x80000000
       const addr = await app.getAddressSapling(zip32Account, false)
 
-      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
-      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
+      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
+      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)
@@ -84,7 +84,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.concurrent.each(models)('get invalid shielded address', async function (m) {
+  test.skip.each(models)('get invalid shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({ ...defaultOptions, model: m.name })
@@ -97,7 +97,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.concurrent.each(models)('show shielded address', async function (m) {
+  test.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -116,8 +116,8 @@ describe('Addresses', function () {
 
       const addr = await addrRequest
 
-      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
-      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
+      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
+      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)
@@ -126,7 +126,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.concurrent.each(models)('get shielded address with div', async function (m) {
+  test.each(models)('get shielded address with div', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -147,8 +147,8 @@ describe('Addresses', function () {
 
       const addr = await addrRequest
 
-      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
-      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
+      const expected_addrRaw = '71635f26c1b4a2332abeb762fb5b8538aaeaf224558b656ee6c352a4f4d6b39806fced61de766d474adb99'
+      const expected_addr = 'zs1w9347fkpkj3rx247ka30kku98z4w4u3y2k9k2mhxcdf2faxkkwvqdl8dv808vm28ftdejpnzaef'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)

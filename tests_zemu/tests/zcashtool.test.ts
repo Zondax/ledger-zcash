@@ -38,7 +38,7 @@ async function takeLastSnapshot(testname: string, index: number, sim: Zemu) {
 }
 
 describe('Get keys', function () {
-    test.concurrent.each(models)('get ivk', async function (m) {
+    test.each(models)('get ivk', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
@@ -67,7 +67,7 @@ describe('Get keys', function () {
         }
     })
 
-    test.concurrent.each(models)('get outgoing viewing key', async function (m) {
+    test.each(models)('get outgoing viewing key', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
@@ -91,7 +91,7 @@ describe('Get keys', function () {
         }
     })
 
-    test.concurrent.each(models)('Get full viewing key', async function (m) {
+    test.each(models)('Get full viewing key', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
@@ -123,7 +123,7 @@ describe('Get keys', function () {
         }
     })
 
-    test.concurrent.each(models)('Get nullifier', async function (m) {
+    test.each(models)('Get nullifier', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
@@ -160,7 +160,7 @@ describe('Get keys', function () {
 })
 
 describe('Addresses and diversifiers', function () {
-    test.concurrent.each(models)('get shielded address with div', async function (m) {
+    test.each(models)('get shielded address with div', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
@@ -184,7 +184,7 @@ describe('Addresses and diversifiers', function () {
         }
     })
 
-    test.concurrent.each(models)('show shielded address with div', async function (m) {
+    test.each(models)('show shielded address with div', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({
@@ -215,7 +215,7 @@ describe('Addresses and diversifiers', function () {
         }
     })
 
-    test.concurrent.each(models)('get div list with startindex', async function (m) {
+    test.each(models)('get div list with startindex', async function (m) {
         const sim = new Zemu(m.path)
         try {
             await sim.start({ ...defaultOptions, model: m.name })
