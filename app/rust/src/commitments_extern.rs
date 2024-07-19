@@ -36,7 +36,7 @@ pub extern "C" fn compute_nullifier(
 //////////////////////////////
 //////////////////////////////
 #[no_mangle]
-pub extern "C" fn compute_note_commitment(
+pub extern "C" fn compute_note_commitment_u(
     rcm_ptr: *const [u8; 32],
     value: u64,
     diversifier_ptr: *const Diversifier,
