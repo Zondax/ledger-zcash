@@ -162,7 +162,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -185,7 +185,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -229,7 +229,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        sapling_sigs: [req7.signature, req8.signature],
+        spend_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -374,7 +374,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -395,7 +395,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -441,7 +441,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature],
-        sapling_sigs: [req7.signature],
+        spend_sigs: [req7.signature],
       }
 
       console.log(signatures)
@@ -611,7 +611,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       /*
@@ -636,7 +636,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -687,7 +687,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [],
-        sapling_sigs: [req7.signature],
+        spend_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -847,7 +847,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -868,7 +868,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -914,7 +914,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature],
-        sapling_sigs: [req7.signature],
+        spend_sigs: [req7.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -1018,7 +1018,7 @@ describe('End to end transactions', function () {
 
       const signatures = {
         transparent_sigs: [req9.signature, req10.signature],
-        sapling_sigs: [],
+        spend_sigs: [],
       }
 
       const b5 = builder.add_signatures(signatures)
@@ -1264,7 +1264,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -1285,7 +1285,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1468,7 +1468,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -1491,7 +1491,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1646,7 +1646,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -1669,7 +1669,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1867,7 +1867,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       console.log(req4.hashSeed)
@@ -1891,7 +1891,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)

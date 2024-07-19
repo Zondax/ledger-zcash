@@ -21,7 +21,6 @@ import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@z
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
-import { Signatures } from '@zondax/zcashtools/build/native'
 jest.setTimeout(60000)
 
 const tx_version = 0x05
@@ -298,7 +297,7 @@ describe('tx methods', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: new Uint8Array(req4.hashSeedRaw!),
       }
 
       // The builder adds the shielded output to its state.
@@ -322,7 +321,7 @@ describe('tx methods', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: new Uint8Array(req5.hashSeedRaw!),
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -368,9 +367,9 @@ describe('tx methods', function () {
       // We now add these signatures to the builder.
       // Note that for this transaction, we do not have any transparent signatures.
 
-      const signatures: Signatures = {
+      const signatures = {
         transparent_sigs: [] as string[],
-        sapling_sigs: [req7.signature, req8.signature],
+        spend_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
