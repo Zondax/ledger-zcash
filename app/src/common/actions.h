@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2022 Zondax AG
+ *   (c) 2018 -2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,24 +18,16 @@
 #include <os_io_seproxyhal.h>
 #include <stdint.h>
 
+#include "addr.h"
 #include "apdu_codes.h"
 #include "apdu_errors.h"
 #include "app_main.h"
 #include "coin.h"
 #include "crypto.h"
+#include "key.h"
 #include "nvdata.h"
 #include "parser.h"
 #include "tx.h"
-
-typedef struct {
-    address_kind_e kind;
-    uint8_t len;
-} address_state_t;
-
-typedef struct {
-    key_type_e kind;
-    uint8_t len;
-} key_state_t;
 
 extern address_state_t action_addrResponse;
 extern key_state_t key_state;

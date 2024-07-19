@@ -15,14 +15,18 @@
  ********************************************************************************/
 
 #pragma once
+#include <stdint.h>
+
+#include "coin.h"
+#include "zxerror.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-
-#include "zxerror.h"
+typedef struct {
+    uint8_t len;
+} address_state_t;
 
 /// Return the number of items in the address view
 zxerr_t addr_getNumItems(uint8_t *num_items);

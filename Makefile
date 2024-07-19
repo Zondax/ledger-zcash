@@ -54,3 +54,4 @@ test_all:
 test_ledger_try:
 	make zemu_install
 	cd tests_zemu && yarn try
+
