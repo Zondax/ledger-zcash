@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2023 Zondax AG
+*   (c) 2018 -2023 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ extern "C" {
 
 
 #define CHECK_CX_OK(CALL)      \
-  do {                         \
-    cx_err_t __cx_err = CALL;  \
-    if (__cx_err != CX_OK) {   \
-      return zxerr_unknown;    \
-    }                          \
-  } while (0)
+do {                         \
+cx_err_t __cx_err = CALL;  \
+if (__cx_err != CX_OK) {   \
+return zxerr_unknown;    \
+}                          \
+} while (0)
 
 
 #ifdef __cplusplus

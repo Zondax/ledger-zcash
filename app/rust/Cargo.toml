@@ -1,9 +1,10 @@
 [package]
-authors = ["Zondax AG <info@zondax.ch>"]
+authors = ["Zondax AG <hello@zondax.ch>"]
 name = "rslib"
-version = "0.1.0"
-edition = "2018"
+version = "0.0.0"
+edition = "2021"
 readme = "README.md"
+resolver = "2"
 
 [lib]
 name = "rslib"
@@ -51,3 +52,7 @@ overflow-checks = true
 
 [profile.dev]
 panic = "abort"
+[features]
+default = []
+# use when compiling this crate as a lib for the cpp_tests suite
+cpp_tests = []
