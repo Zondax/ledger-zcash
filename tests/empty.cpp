@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 -2023 Zondax AG
+ *   (c) 2018 - 2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-#pragma once
+#include <gtest/gtest.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "cx.h"
-#include "zxerror.h"
-
-
-#define CHECK_CX_OK(CALL)      \
-  do {                         \
-    cx_err_t __cx_err = CALL;  \
-    if (__cx_err != CX_OK) {   \
-      return zxerr_unknown;    \
-    }                          \
-  } while (0)
-
-
-#ifdef __cplusplus
+TEST(EmptyTest, TrivialEquality) {
+    EXPECT_EQ(1, 1);
 }
-#endif

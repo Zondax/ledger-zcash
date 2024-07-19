@@ -51,3 +51,7 @@ overflow-checks = true
 
 [profile.dev]
 panic = "abort"
+[features]
+default = []
+# use when compiling this crate as a lib for the cpp_tests suite
+cpp_tests = []
