@@ -99,19 +99,21 @@ pub fn value_commitment_step2(rcm: &[u8; 32]) -> ExtendedPoint {
 
 #[cfg(test)]
 mod tests {
-    use std::string::{String, ToString};
-    use std::vec::Vec;
     use crate::bolos::seed::with_device_seed_context;
-    use crate::commitments_extern::{compute_note_commitment_fullpoint, compute_note_commitment_u, compute_nullifier};
+    use crate::commitments_extern::{
+        compute_note_commitment_fullpoint, compute_note_commitment_u, compute_nullifier,
+    };
     use crate::types::{diversifier_zero, NskBytes};
     use crate::utils::into_fixed_array;
     use crate::zip32_extern::zip32_nsk;
+    use std::string::{String, ToString};
+    use std::vec::Vec;
 
-    use serde::Deserialize;
-    use serde_json::Result;
+    use super::*;
     use crate::cryptoops;
     use crate::sapling::sapling_nsk_to_nk;
-    use super::*;
+    use serde::Deserialize;
+    use serde_json::Result;
 
     #[derive(Deserialize, Debug)]
     struct TestCase {
@@ -207,9 +209,8 @@ mod tests {
             ]
         );
     }
-
     #[test]
-    fn test_compute_note_commitment() {
+    fn test_compute_nc_and_nf() {
         // Test cases taken from
         // https://github.com/zcash/zcash-test-vectors/blob/master/test-vectors/zcash/sapling_key_components.json
         let data = r#"
@@ -257,83 +258,108 @@ mod tests {
         for test_case in test_cases {
             println!("{:?}", test_case);
 
-            let computed_note_commitment_u = [0u8; 32];
-            let expected_note_commitment_u_vec = hex::decode(test_case.note_cmu).unwrap();
-            let mut expected_note_commitment_u = [0u8; 32];
-            expected_note_commitment_u.copy_from_slice(&expected_note_commitment_u_vec);
+            test_note_commitment_u(&test_case);
 
-            compute_note_commitment_u(
-                hex::decode(test_case.note_r.clone()).unwrap().as_ptr() as *const [u8; 32],
-                test_case.note_v,
-                hex::decode(test_case.default_d.clone()).unwrap().as_ptr() as *const Diversifier,
-                hex::decode(test_case.default_pk_d.clone()).unwrap().as_ptr() as *const [u8; 32],
-                computed_note_commitment_u.as_ptr() as *mut [u8; 32],
-            );
-
-            println!("computed_note_commitment_u {:?}", computed_note_commitment_u);
-            println!("expected_note_commitment_u {:?}", expected_note_commitment_u);
-
-            assert_eq!(
-                computed_note_commitment_u,
-                expected_note_commitment_u
-            );
-
-            let computed_note_commitment_fullpoint = [0u8; 32];
-
-            compute_note_commitment_fullpoint(
-                hex::decode(test_case.note_r).unwrap().as_ptr() as *const [u8; 32],
-                test_case.note_v,
-                hex::decode(test_case.default_d).unwrap().as_ptr() as *const Diversifier,
-                hex::decode(test_case.default_pk_d).unwrap().as_ptr() as *const [u8; 32],
-                computed_note_commitment_fullpoint.as_ptr() as *mut [u8; 32],
-            );
-
-            let expected_nk_vec = hex::decode(test_case.nk).unwrap();
-            let mut expected_nk = [0u8; 32];
-            expected_nk.copy_from_slice(&expected_nk_vec);
-
-            let nsk:NskBytes = hex::decode(test_case.nsk.clone()).unwrap().as_slice().try_into().unwrap();
-            let computed_nk = sapling_nsk_to_nk(&nsk);
-
-            assert_eq!(
-                computed_nk,
-                expected_nk
-            );
-
-            let expected_rho_vec = hex::decode(test_case.rho).unwrap();
-            let mut expected_rho = [0u8; 32];
-            expected_rho.copy_from_slice(&expected_rho_vec);
-
-            let scalar = Fr::from(test_case.note_pos);
-            let e = cryptoops::bytes_to_extended(computed_note_commitment_fullpoint);
-
-            let computed_rho = mixed_pedersen(&e, scalar);
-
-            assert_eq!(
-                computed_rho,
-                expected_rho
-            );
-
-            let computed_nullifier = [0u8; 32];
-            let expected_nullifier_vec = hex::decode(test_case.note_nf).unwrap();
-            let mut expected_nullifier = [0u8; 32];
-            expected_nullifier.copy_from_slice(&expected_nullifier_vec);
-
-            compute_nullifier(
-                computed_note_commitment_fullpoint.as_ptr() as *const [u8; 32],
-                test_case.note_pos,
-                hex::decode(test_case.nsk).unwrap().as_ptr() as *const [u8; 32],
-                computed_nullifier.as_ptr() as *mut [u8; 32]
-            );
-
-            println!("computed_nullifier {:?}", computed_nullifier);
-            println!("expected_nullifier {:?}", expected_nullifier);
-
-            assert_eq!(
-                computed_nullifier,
-                expected_nullifier
-            );
+            // Intermediate step for compute nullifier
+            test_nk(&test_case);
+            // Intermediate step for compute nullifier
+            test_rho(&test_case);
+            test_nullifier(&test_case);
         }
+    }
+
+    fn test_note_commitment_u(test_case: &TestCase) {
+        let computed_note_commitment_u = [0u8; 32];
+        let expected_note_commitment_u_vec = hex::decode(&test_case.note_cmu).unwrap();
+        let mut expected_note_commitment_u = [0u8; 32];
+        expected_note_commitment_u.copy_from_slice(&expected_note_commitment_u_vec);
+
+        compute_note_commitment_u(
+            hex::decode(&test_case.note_r).unwrap().as_ptr() as *const [u8; 32],
+            test_case.note_v,
+            hex::decode(&test_case.default_d).unwrap().as_ptr() as *const Diversifier,
+            hex::decode(&test_case.default_pk_d).unwrap().as_ptr() as *const [u8; 32],
+            computed_note_commitment_u.as_ptr() as *mut [u8; 32],
+        );
+
+        println!(
+            "computed_note_commitment_u {:?}",
+            computed_note_commitment_u
+        );
+        println!(
+            "expected_note_commitment_u {:?}",
+            expected_note_commitment_u
+        );
+
+        assert_eq!(computed_note_commitment_u, expected_note_commitment_u);
+    }
+
+    fn test_nk(test_case: &TestCase) {
+        let expected_nk_vec = hex::decode(&test_case.nk).unwrap();
+        let mut expected_nk = [0u8; 32];
+        expected_nk.copy_from_slice(&expected_nk_vec);
+
+        let nsk: NskBytes = hex::decode(&test_case.nsk)
+            .unwrap()
+            .as_slice()
+            .try_into()
+            .unwrap();
+        let computed_nk = sapling_nsk_to_nk(&nsk);
+
+        assert_eq!(computed_nk, expected_nk);
+    }
+
+    fn test_rho(test_case: &TestCase) {
+
+        let computed_note_commitment_fullpoint = [0u8; 32];
+
+        compute_note_commitment_fullpoint(
+            hex::decode(&test_case.note_r).unwrap().as_ptr() as *const [u8; 32],
+            test_case.note_v,
+            hex::decode(&test_case.default_d).unwrap().as_ptr() as *const Diversifier,
+            hex::decode(&test_case.default_pk_d).unwrap().as_ptr() as *const [u8; 32],
+            computed_note_commitment_fullpoint.as_ptr() as *mut [u8; 32],
+        );
+
+        let expected_rho_vec = hex::decode(&test_case.rho).unwrap();
+        let mut expected_rho = [0u8; 32];
+        expected_rho.copy_from_slice(&expected_rho_vec);
+
+        let scalar = Fr::from(test_case.note_pos);
+        let e = cryptoops::bytes_to_extended(computed_note_commitment_fullpoint);
+
+        let computed_rho = mixed_pedersen(&e, scalar);
+
+        assert_eq!(computed_rho, expected_rho);
+    }
+
+    fn test_nullifier(test_case: &TestCase) {
+        let computed_nullifier = [0u8; 32];
+        let expected_nullifier_vec = hex::decode(&test_case.note_nf).unwrap();
+        let mut expected_nullifier = [0u8; 32];
+        expected_nullifier.copy_from_slice(&expected_nullifier_vec);
+
+        let computed_note_commitment_fullpoint = [0u8; 32];
+
+        compute_note_commitment_fullpoint(
+            hex::decode(&test_case.note_r).unwrap().as_ptr() as *const [u8; 32],
+            test_case.note_v,
+            hex::decode(&test_case.default_d).unwrap().as_ptr() as *const Diversifier,
+            hex::decode(&test_case.default_pk_d).unwrap().as_ptr() as *const [u8; 32],
+            computed_note_commitment_fullpoint.as_ptr() as *mut [u8; 32],
+        );
+
+        compute_nullifier(
+            computed_note_commitment_fullpoint.as_ptr() as *const [u8; 32],
+            test_case.note_pos,
+            hex::decode(&test_case.nsk).unwrap().as_ptr() as *const [u8; 32],
+            computed_nullifier.as_ptr() as *mut [u8; 32],
+        );
+
+        println!("computed_nullifier {:?}", computed_nullifier);
+        println!("expected_nullifier {:?}", expected_nullifier);
+
+        assert_eq!(computed_nullifier, expected_nullifier);
     }
 
     #[test]
