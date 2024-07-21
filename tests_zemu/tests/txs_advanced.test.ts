@@ -71,7 +71,7 @@ describe('End to end transactions', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-complete`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -761,7 +761,8 @@ describe('End to end transactions', function () {
 
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.txdata.length).toEqual(32)
+      expect(req.txdata.length).toEqual(64)
+      expect(req.txdataRaw.length).toEqual(32)
 
       // Check the hash of the return
       let hash = crypto.createHash('sha256')
