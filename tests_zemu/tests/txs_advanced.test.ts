@@ -30,7 +30,7 @@ const defaultOptions = {
   custom: `-s "${APP_SEED}"`,
 }
 
-jest.setTimeout(600000)
+jest.setTimeout(240000)
 
 describe('End to end transactions', function () {
   test.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
@@ -71,7 +71,7 @@ describe('End to end transactions', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-complete`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -398,7 +398,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1271,7 +1271,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1292,7 +1292,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1475,7 +1475,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1498,7 +1498,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1653,7 +1653,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1676,7 +1676,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1874,7 +1874,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       console.log(req4.hashSeed)
@@ -1898,7 +1898,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
