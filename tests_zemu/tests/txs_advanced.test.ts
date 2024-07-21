@@ -376,7 +376,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       // The builder adds the shielded output to its state.
@@ -614,7 +614,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       /*
@@ -640,7 +640,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: req5.hashSeed,
       }
 
       // @ts-ignore
@@ -852,7 +852,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       // The builder adds the shielded output to its state.
@@ -874,7 +874,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: req5.hashSeed,
       }
 
       // @ts-ignore
