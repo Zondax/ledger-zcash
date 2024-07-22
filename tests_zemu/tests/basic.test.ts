@@ -21,7 +21,7 @@ import ZCashApp from '@zondax/ledger-zcash'
 jest.setTimeout(60000)
 
 describe('Basic', function () {
-  test.each(models)('can start and stop container', async function (m) {
+  test.concurrent.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -35,7 +35,7 @@ describe('Basic', function () {
     }
   })
 
-  test.each(models)('main menu', async function (m) {
+  test.concurrent.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -51,7 +51,7 @@ describe('Basic', function () {
     }
   })
 
-  test.each(models)('get app version', async function (m) {
+  test.concurrent.each(models)('get app version', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
