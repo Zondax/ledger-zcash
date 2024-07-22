@@ -1,10 +1,9 @@
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
-use crate::bolos::c_zemu_log_stack;
-use crate::bolos::{
-    blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base, Trng,
-};
+use crate::bolos::rng::Trng;
+use crate::bolos::{blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base};
+use crate::bolos::{c_zemu_log_stack, heartbeat};
 use crate::commitments::bytes_to_extended;
 use crate::constants;
 use crate::constants::*;
@@ -55,16 +54,16 @@ pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] 
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
-    crate::heart_beat();
+    heartbeat();
     let r = sign_generate_r(&msg);
-    crate::heart_beat();
+    heartbeat();
     let rbar = sign_compute_rbar(&r.to_bytes());
-    crate::heart_beat();
+    heartbeat();
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
     sig[..32].copy_from_slice(&rbar);
     sig[32..].copy_from_slice(&sbar);
-    crate::heart_beat();
+    heartbeat();
     sig
 }
 

@@ -1,8 +1,8 @@
-use aes::block_cipher_trait::generic_array::{GenericArray, GenericArrayImplEven};
 use byteorder::{ByteOrder, LittleEndian};
-use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
+// use chacha20poly1305::aead::heapless::{consts::U32, consts::*, Vec};
 
-use crate::bolos::{blake2b32_with_personalization, c_zemu_log_stack};
+use crate::bolos::blake2b::blake2b32_with_personalization;
+use crate::bolos::{c_zemu_log_stack, heartbeat};
 use crate::commitments::{bytes_to_extended, bytes_to_u64, note_commitment, write_u64_tobytes};
 use crate::constants::{
     COMPACT_NOTE_SIZE, ENC_CIPHERTEXT_SIZE, ENC_COMPACT_SIZE, NOTE_PLAINTEXT_SIZE,
@@ -37,7 +37,7 @@ pub extern "C" fn rseed_get_esk_epk(
     output_esk_ptr: *mut [u8; 32],
     output_epk_ptr: *mut [u8; 32],
 ) {
-    crate::heart_beat();
+    heartbeat();
     let rseed = unsafe { &*rseed_ptr };
     //    let d = unsafe { &*d_ptr };
     let output_esk = unsafe { &mut *output_esk_ptr };
@@ -46,7 +46,7 @@ pub extern "C" fn rseed_get_esk_epk(
 
     //let epk = multwithgd(output_esk, d);
     get_epk(output_esk, d_ptr, output_epk);
-    crate::heart_beat();
+    heartbeat();
     //output_epk.copy_from_slice(&epk);
 }
 
@@ -57,13 +57,13 @@ pub extern "C" fn ka_to_key(
     epk_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-    crate::heart_beat();
+    heartbeat();
     let esk = unsafe { &*esk_ptr }; //ovk, cv, cmu, epk
     let pkd = unsafe { &*pkd_ptr };
     let epk = unsafe { &*epk_ptr };
     let shared_secret = sapling_ka_agree(esk, pkd);
     let key = kdf_sapling(&shared_secret, epk);
-    crate::heart_beat();
+    heartbeat();
     let output = unsafe { &mut *output_ptr }; //ovk, cv, cmu, epk
     output.copy_from_slice(&key);
 }

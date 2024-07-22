@@ -29,12 +29,14 @@ use crate::bolos::{c_check_app_canary, c_zemu_log_stack};
 mod bolos;
 mod commitments;
 mod constants;
+mod cryptoops;
 mod errors;
 mod note_encryption;
 mod pedersen;
+mod personalization;
 mod redjubjub;
-mod zeccrypto;
 mod types;
+mod zeccrypto;
 mod zip32;
 mod zxformat;
 
@@ -44,17 +46,4 @@ fn debug(_msg: &str) {}
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
-}
-
-#[cfg(not(test))]
-extern "C" {
-    fn io_heart_beat();
-}
-
-// Lets the device breath between computations
-pub(crate) fn heart_beat() {
-    #[cfg(not(test))]
-    unsafe {
-        io_heart_beat()
-    }
 }

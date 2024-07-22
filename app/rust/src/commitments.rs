@@ -3,10 +3,11 @@ use byteorder::LittleEndian;
 use jubjub::{AffineNielsPoint, AffinePoint, ExtendedPoint, Fq, Fr};
 
 use crate::bolos::c_zemu_log_stack;
+use crate::bolos::heartbeat;
 use crate::pedersen::*;
 use crate::redjubjub::*;
 use crate::zeccrypto::prf_ock;
-use crate::zip32::{group_hash_from_div, nsk_to_nk,zip32_nsk_from_seed};
+use crate::zip32::{group_hash_from_div, nsk_to_nk, zip32_nsk_from_seed};
 
 pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     Fq::from_raw([
@@ -180,14 +181,13 @@ pub fn prepare_and_hash_input_commitment(
     g_d_ptr: *const [u8; 32],
     pkd_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
-)  {
+) {
     let gd = unsafe { &*g_d_ptr };
     let pkd = unsafe { &*pkd_ptr };
 
-    let mut prepared_msg =  [0u8; 73];
+    let mut prepared_msg = [0u8; 73];
     let mut input_hash = [0u8; 73];
     let output_msg = unsafe { &mut *output_ptr };
-
 
     let vbytes = write_u64_tobytes(value);
     input_hash[0..8].copy_from_slice(&vbytes);
@@ -271,23 +271,24 @@ pub extern "C" fn compute_nullifier(
     let nsk = unsafe { &*nsk_ptr };
     let mut nk = [0u8; 32];
     nsk_to_nk(nsk, &mut nk);
-    crate::heart_beat();
+    heartbeat();
     let scalar = Fr::from(pos);
     let e = bytes_to_extended(ncm);
-    crate::heart_beat();
+    heartbeat();
     let rho = mixed_pedersen(&e, scalar);
-    crate::heart_beat();
+    heartbeat();
     let output = unsafe { &mut *output_ptr };
     output.copy_from_slice(&prf_nf(&nk, &rho));
 }
 
 #[no_mangle]
-pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
-                                          rcm_ptr: *const [u8; 32],
-                                          value: u64,
-                                          diversifier_ptr: *const [u8; 11],
-                                          pkd_ptr: *const [u8; 32]) {
-
+pub extern "C" fn compute_note_commitment(
+    input_ptr: *mut [u8; 32],
+    rcm_ptr: *const [u8; 32],
+    value: u64,
+    diversifier_ptr: *const [u8; 11],
+    pkd_ptr: *const [u8; 32],
+) {
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
     group_hash_from_div(diversifier, &mut gd);
@@ -303,14 +304,14 @@ pub extern "C" fn compute_note_commitment(input_ptr: *mut [u8; 32],
     out.copy_from_slice(&extended_to_u_bytes(&e));
 }
 
-
 #[no_mangle]
 pub extern "C" fn compute_note_commitment_fullpoint(
     input_ptr: *mut [u8; 32],
     rcm_ptr: *const [u8; 32],
     value: u64,
     diversifier_ptr: *const [u8; 11],
-    pkd_ptr: *const [u8; 32]) {
+    pkd_ptr: *const [u8; 32],
+) {
     let mut gd = [0u8; 32];
     let diversifier = unsafe { &*diversifier_ptr };
 
@@ -333,7 +334,6 @@ pub extern "C" fn compute_value_commitment(
     rcm_ptr: *const [u8; 32],
     output_ptr: *mut [u8; 32],
 ) {
-
     let rc = unsafe { &*rcm_ptr };
     let output_msg = unsafe { &mut *output_ptr };
 
@@ -366,7 +366,7 @@ mod tests {
         let rcm = [0u8; 32];
         let output = [0u8; 32];
 
-        let div = &div_ptr ;
+        let div = &div_ptr;
 
         group_hash_from_div(div, &mut gd);
 
@@ -382,14 +382,14 @@ mod tests {
             rcm.as_ptr() as *const [u8; 32],
             v,
             div.as_ptr() as *const [u8; 11],
-            pkd.as_ptr() as *const [u8; 32]
+            pkd.as_ptr() as *const [u8; 32],
         );
 
         assert_eq!(
             output,
             [
-                51, 107, 65, 49, 174, 10, 181, 105, 255, 123, 174, 149, 217, 191, 95,
-                76, 7, 90, 151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
+                51, 107, 65, 49, 174, 10, 181, 105, 255, 123, 174, 149, 217, 191, 95, 76, 7, 90,
+                151, 132, 85, 143, 180, 30, 26, 35, 160, 160, 197, 140, 21, 95
             ]
         );
     }
@@ -512,26 +512,27 @@ mod tests {
         let pos: u64 = 2578461368;
 
         let seed: [u8; 32] = [
-            176,142,61,152,218,67,28,239,69,102,161,60,27,179,72,185,
-            130,247,216,231,67,180,59,182,37,87,186,81,153,75,18,87,
+            176, 142, 61, 152, 218, 67, 28, 239, 69, 102, 161, 60, 27, 179, 72, 185, 130, 247, 216,
+            231, 67, 180, 59, 182, 37, 87, 186, 81, 153, 75, 18, 87,
         ];
 
         let cm: [u8; 32] = [
             0x21, 0xc9, 0x46, 0x98, 0xca, 0x32, 0x4b, 0x4c, 0xba, 0xce, 0x29, 0x1d, 0x27, 0xab,
             0xb6, 0x8a, 0xa, 0xaf, 0x27, 0x37, 0xdc, 0x45, 0x56, 0x54, 0x1c, 0x7f, 0xcd, 0xe8,
-            0xce, 0x11, 0xdd, 0xe8];
+            0xce, 0x11, 0xdd, 0xe8,
+        ];
 
         let mut nsk = [0u8; 32];
-        zip32_nsk_from_seed(&seed,&mut nsk);
+        zip32_nsk_from_seed(&seed, &mut nsk);
 
         let mut nf = [0u8; 32];
-        compute_nullifier(&cm, pos, &nsk,&mut nf);
-
+        compute_nullifier(&cm, pos, &nsk, &mut nf);
 
         let nftest: [u8; 32] = [
-            0x25,0xf1,0xf2,0xcf,0x5e,0x2c,0x2b,0xc3,0x1d,0x7,0xb6,0x6f,
-            0x4d,0x54,0xf0,0x90,0xad,0x89,0xb1,0x98,0x89,0x3f,0x12,0xad,
-            0xae,0x44,0x7d,0xdf,0x84,0xe2,0x14,0x5a];
+            0x25, 0xf1, 0xf2, 0xcf, 0x5e, 0x2c, 0x2b, 0xc3, 0x1d, 0x7, 0xb6, 0x6f, 0x4d, 0x54,
+            0xf0, 0x90, 0xad, 0x89, 0xb1, 0x98, 0x89, 0x3f, 0x12, 0xad, 0xae, 0x44, 0x7d, 0xdf,
+            0x84, 0xe2, 0x14, 0x5a,
+        ];
         assert_eq!(nf, nftest);
     }
 

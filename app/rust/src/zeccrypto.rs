@@ -5,7 +5,9 @@ use group::{Group, GroupEncoding};
 use jubjub::{AffinePoint, Fr};
 use rand::RngCore;
 
-use crate::bolos::{c_zemu_log_stack, Trng};
+use crate::bolos::blake2b::blake2b32_with_personalization;
+use crate::bolos::rng::Trng;
+use crate::bolos::{c_zemu_log_stack, heartbeat};
 use crate::commitments::bytes_to_extended;
 use crate::constants;
 use crate::zip32::*;
@@ -14,7 +16,7 @@ use crate::{bolos, pedersen::extended_to_bytes, zip32};
 #[inline(never)]
 pub fn rseed_generate_rcm(rseed: &[u8; 32]) -> Fr {
     let bytes = zip32::prf_expand(rseed, &[0x04]);
-    crate::heart_beat();
+    heartbeat();
     jubjub::Fr::from_bytes_wide(&bytes)
 }
 
@@ -53,8 +55,8 @@ pub fn kdf_sapling(dhsecret: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
     (&mut input[..32]).copy_from_slice(dhsecret);
     (&mut input[32..]).copy_from_slice(epk);
     pub const KDF_SAPLING_PERSONALIZATION: &[u8; 16] = b"Zcash_SaplingKDF";
-    crate::heart_beat();
-    bolos::blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
+    heartbeat();
+    blake2b32_with_personalization(KDF_SAPLING_PERSONALIZATION, &input)
 }
 
 pub fn prf_ock(ovk: &[u8; 32], cv: &[u8; 32], cmu: &[u8; 32], epk: &[u8; 32]) -> [u8; 32] {
@@ -64,15 +66,15 @@ pub fn prf_ock(ovk: &[u8; 32], cv: &[u8; 32], cmu: &[u8; 32], epk: &[u8; 32]) ->
     ock_input[64..96].copy_from_slice(cmu);
     ock_input[96..128].copy_from_slice(epk);
     pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
-    crate::heart_beat();
-    bolos::blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, &ock_input)
+    heartbeat();
+    blake2b32_with_personalization(PRF_OCK_PERSONALIZATION, &ock_input)
 }
 
 #[inline(never)]
 pub fn prf_sessionkey(data: &[u8]) -> [u8; 32] {
     pub const PRF_SESSION_PERSONALIZATION: &[u8; 16] = b"Zcash_SessionKey";
-    crate::heart_beat();
-    bolos::blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
+    heartbeat();
+    blake2b32_with_personalization(PRF_SESSION_PERSONALIZATION, &data)
 }
 
 #[no_mangle]
