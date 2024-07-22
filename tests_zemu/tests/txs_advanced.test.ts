@@ -30,7 +30,7 @@ const defaultOptions = {
   custom: `-s "${APP_SEED}"`,
 }
 
-jest.setTimeout(600000)
+jest.setTimeout(240000)
 
 describe('End to end transactions', function () {
   test.each(models)('make a transaction with 2 spend 2 outputs', async function (m) {
@@ -376,7 +376,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       // The builder adds the shielded output to its state.
@@ -398,7 +398,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -614,7 +614,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       /*
@@ -640,7 +640,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: req5.hashSeed,
       }
 
       // @ts-ignore
@@ -761,7 +761,8 @@ describe('End to end transactions', function () {
 
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.txdata.length).toEqual(32)
+      expect(req.txdata.length).toEqual(64)
+      expect(req.txdataRaw.length).toEqual(32)
 
       // Check the hash of the return
       let hash = crypto.createHash('sha256')
@@ -852,7 +853,7 @@ describe('End to end transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeedRaw,
+        hash_seed: req4.hashSeed,
       }
 
       // The builder adds the shielded output to its state.
@@ -874,7 +875,7 @@ describe('End to end transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeedRaw,
+        hash_seed: req5.hashSeed,
       }
 
       // @ts-ignore
@@ -1084,11 +1085,8 @@ describe('End to end transactions', function () {
       const req5 = await app.extractOutputData()
       console.log(req5)
 
-      const req7 = await app.extractSpendSignature()
-      console.log(req7)
-
-      const req8 = await app.extractTransparentSig()
-      console.log(req8)
+      await expect(app.extractSpendSignature()).rejects.toThrow("Data is invalid");
+      await expect(app.extractTransparentSig()).rejects.toThrow("Data is invalid");
 
       await takeLastSnapshot(testname, last_index, sim)
     } finally {
@@ -1104,8 +1102,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      const req = await app.extractSpendData()
-      expect(req.keyRaw).toEqual(undefined)
+      await expect(app.extractSpendData()).rejects.toThrow("Data is invalid");
     } finally {
       await sim.close()
     }
@@ -1136,8 +1133,7 @@ describe('Failing transactions', function () {
 
       expect(req.txdata.length).toEqual(64)
 
-      const req4 = await app.extractOutputData()
-      console.log(req4)
+      await expect(app.extractOutputData()).rejects.toThrow("Data is invalid");
     } finally {
       await sim.close()
     }
@@ -1271,7 +1267,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1292,7 +1288,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1331,11 +1327,9 @@ describe('Failing transactions', function () {
 
       // Below are the failing extractions
 
-      const req10 = await app.extractSpendSignature()
-      console.log(req10)
 
-      const req11 = await app.extractTransparentSig()
-      console.log(req11)
+      await expect(app.extractSpendSignature()).rejects.toThrow("Data is invalid");
+      await expect(app.extractTransparentSig()).rejects.toThrow("Data is invalid");
     } finally {
       await sim.close()
     }
@@ -1393,7 +1387,8 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`)
 
       const req = await reqinit
-      expect(req.txdata.length).toEqual(32)
+      expect(req.txdata.length).toEqual(64)
+      expect(req.txdataRaw.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1475,7 +1470,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1498,7 +1493,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1569,7 +1564,8 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.txdata.length).toEqual(32)
+      expect(req.txdata.length).toEqual(64)
+      expect(req.txdataRaw.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1653,7 +1649,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       // The builder adds the shielded output to its state.
@@ -1676,7 +1672,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1694,8 +1690,8 @@ describe('Failing transactions', function () {
       // For this, it uses the input from inittx to verify.
       // If all checks are ok, the ledger signs the transaction.
 
-      const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
-      console.log(req6)
+
+      await expect(app.checkAndSign(ledgerblob_txdata, tx_version)).rejects.toThrow("Unknown Return Code: 0x6997");
     } finally {
       await sim.close()
     }
@@ -1721,11 +1717,9 @@ describe('Failing transactions', function () {
       // If confirmed, the ledger also computes the randomness needed for :
       //     - The shielded spends
       //     - the shielded outputs
-      const reqinit = app.initNewTx(ledgerblob_initdata)
+      const reqinit =
 
-      const req = await reqinit
-
-      console.log(req)
+      await expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow("Unknown Return Code: 0x6989");
     } finally {
       await sim.close()
     }
@@ -1755,21 +1749,18 @@ describe('Failing transactions', function () {
       // If confirmed, the ledger also computes the randomness needed for :
       //     - The shielded spends
       //     - the shielded outputs
-      const reqinit = app.initNewTx(ledgerblob_initdata)
+
+      // We do not wait here (on purpose) as the exception will be thrown the moment compareSnapshotsAndReject finishes.
+      // We execute the tx on the device, progress screens with compareSnapshotsAndReject, and the moment it rejects the tx,
+      // the exception will raise.
+      expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow("Transaction rejected");
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`)
 
-      const req = await reqinit
-
-      console.log(req)
-
       // Try to extract data after a rejection of a transaction
-      const req0 = await app.extractSpendData()
-      console.log(req0)
-
-      const req1 = await app.extractOutputData()
-      console.log(req1)
+      await expect(app.extractSpendData()).rejects.toThrow("Data is invalid");
+      await expect(app.extractOutputData()).rejects.toThrow("Data is invalid");
     } finally {
       await sim.close()
     }
@@ -1874,7 +1865,7 @@ describe('Failing transactions', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req4.hashSeedRaw!),
+        hash_seed: req4.hashSeed || null,
       }
 
       console.log(req4.hashSeed)
@@ -1898,7 +1889,7 @@ describe('Failing transactions', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: new Uint8Array(req5.hashSeedRaw!),
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -1906,8 +1897,7 @@ describe('Failing transactions', function () {
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, bad_tx_version)
 
-      const req6 = await app.checkAndSign(ledgerblob_txdata, bad_tx_version)
-      expect(req6).toBeDefined()
+      await expect(app.checkAndSign(ledgerblob_txdata, bad_tx_version)).rejects.toThrow("Unknown Return Code: 0x69A2");
     } finally {
       await sim.close()
     }

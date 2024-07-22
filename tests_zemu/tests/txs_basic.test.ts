@@ -21,7 +21,7 @@ import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@z
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
-jest.setTimeout(60000)
+jest.setTimeout(240000)
 
 const tx_version = 0x05
 
@@ -93,7 +93,7 @@ describe('tx methods', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-partial-1`
       await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -203,7 +203,7 @@ describe('tx methods', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-partial-2`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -297,7 +297,7 @@ describe('tx methods', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed,
+        hash_seed: req4.hashSeed || null,
       }
 
       console.log(outj1)
@@ -323,7 +323,7 @@ describe('tx methods', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed,
+        hash_seed: req5.hashSeed || null,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -345,6 +345,7 @@ describe('tx methods', function () {
       // If all checks are ok, the ledger signs the transaction.
       // console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
+      console.log('Checking and signing on the app....')
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       expect(req6).toBeDefined()
       console.log(req6)
