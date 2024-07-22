@@ -34,6 +34,7 @@ mod note_encryption;
 mod pedersen;
 mod redjubjub;
 mod zeccrypto;
+mod types;
 mod zip32;
 mod zxformat;
 
