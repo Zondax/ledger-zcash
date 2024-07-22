@@ -1,23 +1,23 @@
+use ledger_zcash_builder::data::{
+    HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures,
+    TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
+};
+use ledger_zcash_builder::errors::Error;
+use ledger_zcash_builder::{hsmauth, txbuilder, txprover};
 use neon::prelude::*;
 use std::cell::RefCell;
 use std::path::Path;
 
-use ledger_zcash::zcash::primitives::consensus::TestNetwork;
-use ledger_zcash::zcash::primitives::{
-    consensus,
+use zcash_primitives::consensus::TestNetwork;
+use zcash_primitives::{
+    consensus, sapling,
     transaction::components::{
         sapling as sapling_ledger, transparent as transparent_ledger, TxOut,
     },
     transaction::TxVersion,
 };
+
 use rand_core::OsRng;
-use zcash_hsmbuilder as ZcashBuilder;
-use zcash_hsmbuilder::data::{
-    HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures,
-    TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
-};
-use zcash_hsmbuilder::errors::Error;
-use zcash_hsmbuilder::{hsmauth, txprover};
 
 // reference
 // https://neon-bindings.com/docs/primitives
@@ -31,9 +31,8 @@ fn get_inittx_data(mut cx: FunctionContext) -> JsResult<JsValue> {
     let arg0_value: InitData =
         neon_serde::from_value(&mut cx, arg0).expect("Error getting arg0_value");
     let output = arg0_value.to_hsm_bytes();
-    let js_value;
-    //js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
-    js_value = neon_serde::to_value(&mut cx, &output).expect("Error getting js_value");
+    //let js_value = neon_serde::to_value(&mut cx, &output).throw(&mut cx)?;
+    let js_value = neon_serde::to_value(&mut cx, &output).expect("Error getting js_value");
     Ok(js_value)
 }
 
@@ -55,9 +54,9 @@ fn calculate_zip0317_fee(mut cx: FunctionContext) -> JsResult<JsNumber> {
 type BoxedBuilder = JsBox<RefCell<ZcashBuilderBridge>>;
 
 pub enum AuthorisationStatus {
-    Unauthorized(ZcashBuilder::txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>),
+    Unauthorized(txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>),
     TransparentAuthorized(
-        ZcashBuilder::txbuilder::Builder<
+        txbuilder::Builder<
             TestNetwork,
             OsRng,
             hsmauth::MixedAuthorization<
@@ -67,7 +66,7 @@ pub enum AuthorisationStatus {
         >,
     ),
     SaplingAuthorized(
-        ZcashBuilder::txbuilder::Builder<
+        txbuilder::Builder<
             TestNetwork,
             OsRng,
             hsmauth::MixedAuthorization<
@@ -77,7 +76,7 @@ pub enum AuthorisationStatus {
         >,
     ),
     Authorized(
-        ZcashBuilder::txbuilder::Builder<
+        txbuilder::Builder<
             TestNetwork,
             OsRng,
             hsmauth::MixedAuthorization<transparent_ledger::Authorized, sapling_ledger::Authorized>,
@@ -92,10 +91,18 @@ pub struct ZcashBuilderBridge {
 
 impl Finalize for ZcashBuilderBridge {}
 
+impl ZcashBuilderBridge {
+    pub fn new(builder: txbuilder::Builder<TestNetwork, OsRng, hsmauth::Unauthorized>) -> Self {
+        ZcashBuilderBridge {
+            zcashbuilder: AuthorisationStatus::Unauthorized(builder),
+        }
+    }
+}
+
 // Internal implementation
 impl ZcashBuilderBridge {
     pub fn add_transparent_input(&mut self, t: TransparentInputBuilderInfo) -> Result<(), Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let res = builder.add_transparent_input(
                     t.pk,
@@ -111,7 +118,7 @@ impl ZcashBuilderBridge {
                 }
                 res
             }
-            AuthorisationStatus::Authorized { .. } => return Err(Error::AlreadyAuthorized),
+            AuthorisationStatus::Authorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::SaplingAuthorized { .. } => Err(Error::AlreadyAuthorized),
             AuthorisationStatus::Taken => Err(Error::UnknownAuthorization),
@@ -122,7 +129,7 @@ impl ZcashBuilderBridge {
         &mut self,
         input: TransparentOutputBuilderInfo,
     ) -> Result<(), Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let res = builder.add_transparent_output(input.address, input.value);
                 match res {
@@ -139,11 +146,11 @@ impl ZcashBuilderBridge {
     }
 
     pub fn add_sapling_spend(&mut self, input: SpendBuilderInfo) -> Result<(), Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let div = *input.address.diversifier();
                 let pk_d = *input.address.pk_d();
-                let note = ledger_zcash::zcash::primitives::sapling::Note {
+                let note = sapling::Note {
                     value: u64::from(input.value),
                     g_d: div.g_d().unwrap(),
                     pk_d,
@@ -171,7 +178,7 @@ impl ZcashBuilderBridge {
     }
 
     pub fn add_sapling_output(&mut self, input: OutputBuilderInfo) -> Result<(), Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let res = builder.add_sapling_output(
                     input.ovk,
@@ -207,14 +214,16 @@ impl ZcashBuilderBridge {
             _ => None,
         };
         log::info!("tx_ver is {:#?}", tx_ver);
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
                 let res = builder.build(consensus::BranchId::Nu5, tx_ver, &mut prover);
                 match res {
                     Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
-                    Err(_) => (),
+                    Err(ref e) => {
+                        log::error!("Error in build {:?}", e.to_string());
+                    }
                 }
                 res
             }
@@ -226,9 +235,9 @@ impl ZcashBuilderBridge {
     }
 
     pub fn add_signatures(&mut self, input: TransactionSignatures) -> Result<(), Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Unauthorized(builder) => {
-                let builder_authorize_z = builder.add_signatures_spend(input.spend_sigs);
+                let builder_authorize_z = builder.add_signatures_spend(input.sapling_sigs);
                 if builder_authorize_z.is_err() {
                     return Err(builder_authorize_z.err().unwrap());
                 }
@@ -249,7 +258,7 @@ impl ZcashBuilderBridge {
     }
 
     pub fn finalize_builder(&mut self) -> Result<Vec<u8>, Error> {
-        match std::mem::replace(&mut self.zcashbuilder, self::AuthorisationStatus::Taken) {
+        match std::mem::replace(&mut self.zcashbuilder, AuthorisationStatus::Taken) {
             AuthorisationStatus::Authorized(mut builder) => builder.finalize_js(),
             AuthorisationStatus::Unauthorized { .. } => Err(Error::Unauthorized),
             AuthorisationStatus::TransparentAuthorized { .. } => Err(Error::Unauthorized),
@@ -263,7 +272,7 @@ impl ZcashBuilderBridge {
 impl ZcashBuilderBridge {
     fn js_create_builder(mut cx: FunctionContext) -> JsResult<BoxedBuilder> {
         let f = cx.argument::<JsNumber>(0)?.value(&mut cx);
-        let zcashbuilder = ZcashBuilder::txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
+        let zcashbuilder = txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
         let zcashbuilder = AuthorisationStatus::Unauthorized(zcashbuilder);
         let boxed_builder = RefCell::new(ZcashBuilderBridge { zcashbuilder });
         Ok(cx.boxed(boxed_builder))
@@ -272,7 +281,7 @@ impl ZcashBuilderBridge {
     fn js_add_transparent_input(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value: TransparentInputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for transparent builder");
+            .expect("Failed to get arg0_value for transparent builder");
         let value;
         {
             let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
@@ -292,7 +301,7 @@ impl ZcashBuilderBridge {
     fn js_add_transparent_output(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value: TransparentOutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for transparent output builder");
+            .expect("Failed to get arg0_value for transparent output builder");
 
         let value;
         {
@@ -316,7 +325,7 @@ impl ZcashBuilderBridge {
     fn js_add_sapling_spend(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value: SpendBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for sapling spend");
+            .expect("Failed to get arg0_value for sapling spend");
         let value;
         {
             let this = cx.this().downcast_or_throw::<BoxedBuilder, _>(&mut cx)?;
@@ -337,7 +346,7 @@ impl ZcashBuilderBridge {
     fn js_add_sapling_output(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         let arg0 = cx.argument::<JsValue>(0)?;
         let arg0_value: OutputBuilderInfo = neon_serde::from_value(&mut cx, arg0)
-            .expect("Failled to get arg0_value for sapling output");
+            .expect("Failed to get arg0_value for sapling output");
 
         let value;
         {
