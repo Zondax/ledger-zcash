@@ -1,3 +1,19 @@
+/*******************************************************************************
+*   (c) 2018 - 2024 Zondax AG
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+********************************************************************************/
+
 use jubjub::{AffineNielsPoint, AffinePoint, Fq};
 
 pub const SPENDING_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
@@ -57,15 +73,6 @@ pub const SESSION_KEY_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
     ]),
 )
 .to_niels();
-
-pub const COMPACT_NOTE_SIZE: usize = 1 /* version */ + 11 /*diversifier*/ + 8 /*value*/ + 32 /*rcv*/;
-//52
-pub const NOTE_PLAINTEXT_SIZE: usize = COMPACT_NOTE_SIZE + 512;
-pub const OUT_PLAINTEXT_SIZE: usize = 32 /*pk_d*/ + 32 /* esk */;
-pub const ENC_COMPACT_SIZE: usize = COMPACT_NOTE_SIZE + 16;
-//68
-pub const ENC_CIPHERTEXT_SIZE: usize = NOTE_PLAINTEXT_SIZE + 16;
-pub const OUT_CIPHERTEXT_SIZE: usize = OUT_PLAINTEXT_SIZE + 16;
 
 pub static NIELSPOINTS: [AffineNielsPoint; 6] = [
     AffinePoint::from_raw_unchecked(
@@ -160,18 +167,85 @@ pub static NIELSPOINTS: [AffineNielsPoint; 6] = [
     .to_niels(),
 ];
 
-pub const DIV_SIZE:             usize = 11;
+pub const PEDERSEN_RANDOMNESS_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0xa514_3b34_a8e3_6462,
+        0xf091_9d06_ffb1_ecda,
+        0xa140_9aa1_f33b_ec2c,
+        0x26eb_9f8a_9ec7_2a8c,
+    ]),
+    Fq::from_raw([
+        0xd4fc_6365_796c_77ac,
+        0x96b7_8bea_fa9c_c44c,
+        0x949d_7747_6e26_2c95,
+        0x114b_7501_ad10_4c57,
+    ]),
+)
+.to_niels();
+
+pub const VALUE_COMMITMENT_VALUE_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0x3618_3b2c_b4d7_ef51,
+        0x9472_c89a_c043_042d,
+        0xd861_8ed1_d15f_ef4e,
+        0x273f_910d_9ecc_1615,
+    ]),
+    Fq::from_raw([
+        0xa77a_81f5_0667_c8d7,
+        0xbc33_32d0_fa1c_cd18,
+        0xd322_94fd_8977_4ad6,
+        0x466a_7e3a_82f6_7ab1,
+    ]),
+)
+.to_niels();
+
+pub const VALUE_COMMITMENT_RANDOM_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0x3bce_3b77_9366_4337,
+        0xd1d8_da41_af03_744e,
+        0x7ff6_826a_d580_04b4,
+        0x6800_f4fa_0f00_1cfc,
+    ]),
+    Fq::from_raw([
+        0x3cae_fab9_380b_6a8b,
+        0xad46_f1b0_473b_803b,
+        0xe6fb_2a6e_1e22_ab50,
+        0x6d81_d3a9_cb45_dedb,
+    ]),
+)
+.to_niels();
+
+pub const NOTE_POSITION_BASE: AffineNielsPoint = AffinePoint::from_raw_unchecked(
+    Fq::from_raw([
+        0x2ce3_3921_888d_30db,
+        0xe81c_ee09_a561_229e,
+        0xdb56_b6db_8d80_75ed,
+        0x2400_c2e2_e336_2644,
+    ]),
+    Fq::from_raw([
+        0xa3f7_fa36_c72b_0065,
+        0xe155_b8e8_ffff_2e42,
+        0xfc9e_8a15_a096_ba8f,
+        0x6136_9d54_40bf_84a5,
+    ]),
+)
+.to_niels();
+
+/// https://zips.z.cash/zip-0032#key-path-levels
+/// m/PURPOSE/COIN/account
+pub const ZIP32_PURPOSE: u32 = 0x8000_0020;
+pub const ZIP32_COIN_TYPE: u32 = 0x8000_0085;
+pub const ZIP32_HARDENED: u32 = 0x8000_0000;
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+
+pub const DIV_SIZE: usize = 11;
 pub const DIV_DEFAULT_LIST_LEN: usize = 4;
-pub const MAX_SIZE_BUF_ADDR:    usize = 143;
-
-pub const FIRSTVALUE:   u32 = 32 ^ 0x8000_0000;
-pub const COIN_TYPE:    u32 = 133 ^ 0x8000_0000;
-
-pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk";
-
-// ZIP32 Child components
-pub const AK_NK: u8 = 0;
-pub const DK: u8 = 2;
-pub const AK_NSK: u8 = 3;
-pub const ASK_NSK: u8 = 4;
-pub const DK_AK_NK: u8 = 5;
+// pub const MAX_SIZE_BUF_ADDR: usize = 143;

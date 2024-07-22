@@ -1,36 +1,33 @@
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use rand::RngCore;
 
+use crate::bolos::blake2b::blake2b_redjubjub;
+use crate::bolos::jubjub::scalarmult_spending_base;
 use crate::bolos::rng::Trng;
-use crate::bolos::{blake2b_redjubjub, sdk_jubjub_scalarmult, sdk_jubjub_scalarmult_spending_base};
-use crate::bolos::{c_zemu_log_stack, heartbeat};
-use crate::commitments::bytes_to_extended;
-use crate::constants;
 use crate::constants::*;
-use crate::pedersen::extended_to_bytes;
-use crate::zip32::zip32_child_ask_nsk;
-
-#[inline(never)]
-pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
-    Fr::from_bytes_wide(&blake2b_redjubjub(a, b))
-}
+use crate::cryptoops::bytes_to_extended;
 
 #[inline(never)]
 pub fn jubjub_sk_to_pk(sk: &[u8; 32]) -> [u8; 32] {
     let mut point = [0u8; 32];
-    sdk_jubjub_scalarmult_spending_base(&mut point, &sk[..]);
+    scalarmult_spending_base(&mut point, &sk[..]);
     point
 }
 
 #[inline(never)]
-pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
-    sk + alpha
+pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
+    let sk = unsafe { &*sk_ptr };
+    let pk = unsafe { &mut *pk_ptr };
+    let pubkey = jubjub_sk_to_pk(sk);
+    pk.copy_from_slice(&pubkey);
 }
 
+//////////////////////////
+/////////////////////////.
+
 #[inline(never)]
-pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
-    let rndpk = jubjub_sk_to_pk(&alpha);
-    *pk += bytes_to_extended(rndpk);
+pub fn h_star(a: &[u8], b: &[u8]) -> Fr {
+    Fr::from_bytes_wide(&blake2b_redjubjub(a, b))
 }
 
 #[inline(never)]
@@ -48,44 +45,29 @@ pub fn sign_compute_rbar(r: &[u8; 32]) -> [u8; 32] {
 
 #[inline(never)]
 pub fn sign_compute_sbar(msg: &[u8], r: &Fr, rbar: &[u8], sfr: &Fr) -> [u8; 32] {
-    let s = r + h_star(&rbar, msg) * sfr;
+    let s = r + h_star(rbar, msg) * sfr;
     s.to_bytes()
 }
 
 #[inline(never)]
 pub fn sign_complete(msg: &[u8], sk: &Fr) -> [u8; 64] {
-    heartbeat();
-    let r = sign_generate_r(&msg);
-    heartbeat();
+    crate::bolos::heartbeat();
+    let r = sign_generate_r(msg);
+
+    crate::bolos::heartbeat();
     let rbar = sign_compute_rbar(&r.to_bytes());
-    heartbeat();
+
+    crate::bolos::heartbeat();
     let sbar = sign_compute_sbar(msg, &r, &rbar, sk);
     let mut sig = [0u8; 64];
     sig[..32].copy_from_slice(&rbar);
     sig[32..].copy_from_slice(&sbar);
-    heartbeat();
+    crate::bolos::heartbeat();
     sig
 }
 
-#[inline(never)]
-pub fn random_scalar() -> Fr {
-    let mut t = [0u8; 64];
-    Trng.fill_bytes(&mut t);
-    Fr::from_bytes_wide(&t)
-}
-
-#[inline(never)]
-pub fn sk_to_pk(sk_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    let sk = unsafe { &*sk_ptr };
-    let pk = unsafe { &mut *pk_ptr };
-    let pubkey = jubjub_sk_to_pk(sk);
-    pk.copy_from_slice(&pubkey);
-}
-
-#[no_mangle]
-pub extern "C" fn rsk_to_rk(rsk_ptr: *const [u8; 32], rk_ptr: *mut [u8; 32]) {
-    sk_to_pk(rsk_ptr, rk_ptr)
-}
+///////////////////////////
+///////////////////////////
 
 #[inline(never)]
 pub fn randomized_secret(
@@ -96,49 +78,8 @@ pub fn randomized_secret(
     let alpha = unsafe { &*alpha_ptr };
     let sk = unsafe { &*sk_ptr };
     let output = unsafe { &mut *output_ptr };
-    let mut skfr = Fr::from_bytes(&sk).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
-    skfr += alphafr;
-    output.copy_from_slice(&skfr.to_bytes());
-}
-
-#[no_mangle]
-pub extern "C" fn sign_redjubjub(
-    key_ptr: *const [u8; 32],
-    msg_ptr: *const [u8; 64],
-    out_ptr: *mut [u8; 64],
-) {
-    c_zemu_log_stack(b"sign_redjubjub\x00".as_ref());
-    let key = unsafe { *key_ptr };
-    let msg = unsafe { *msg_ptr };
-    let output = unsafe { &mut *out_ptr };
-    let sk = Fr::from_bytes(&key).unwrap();
-    output.copy_from_slice(&sign_complete(&msg, &sk));
-}
-
-#[no_mangle]
-pub extern "C" fn random_fr(alpha_ptr: *mut [u8; 32]) {
-    let alpha = unsafe { &mut *alpha_ptr };
-    let fr = random_scalar();
-    alpha.copy_from_slice(&fr.to_bytes());
-}
-
-#[no_mangle]
-pub extern "C" fn randomized_secret_from_seed(
-    seed_ptr: *const [u8; 32],
-    pos: u32,
-    alpha_ptr: *const [u8; 32],
-    output_ptr: *mut [u8; 32],
-) {
-    let mut ask = [0u8; 32];
-    let mut nsk = [0u8; 32];
-    let alpha = unsafe { &*alpha_ptr };
-    let output = unsafe { &mut *output_ptr };
-
-    zip32_child_ask_nsk(seed_ptr, &mut ask, &mut nsk, pos);
-
-    let mut skfr = Fr::from_bytes(&ask).unwrap();
-    let alphafr = Fr::from_bytes(&alpha).unwrap();
+    let mut skfr = Fr::from_bytes(sk).unwrap();
+    let alphafr = Fr::from_bytes(alpha).unwrap();
     skfr += alphafr;
     output.copy_from_slice(&skfr.to_bytes());
 }
@@ -157,18 +98,27 @@ pub extern "C" fn get_rk(
     sk_to_pk(&rsk, rk);
 }
 
-#[no_mangle]
-pub extern "C" fn randomize_pk(alpha_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
-    let alpha = unsafe { *alpha_ptr };
-    let pk = unsafe { &mut *pk_ptr };
-    let mut pubkey = bytes_to_extended(*pk);
-    jubjub_randomized_pk(&mut pubkey, alpha);
-    pk.copy_from_slice(&extended_to_bytes(&pubkey));
-}
+// #[no_mangle]
+// pub extern "C" fn randomize_pk(alpha_ptr: *const [u8; 32], pk_ptr: *mut [u8; 32]) {
+//     let alpha = unsafe { *alpha_ptr };
+//     let pk = unsafe { &mut *pk_ptr };
+//     let mut pubkey = bytes_to_extended(*pk);
+//     jubjub_randomized_pk(&mut pubkey, alpha);
+//     pk.copy_from_slice(&extended_to_bytes(&pubkey));
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    pub fn jubjub_randomized_pk(pk: &mut ExtendedPoint, alpha: [u8; 32]) {
+        let rndpk = jubjub_sk_to_pk(&alpha);
+        *pk += bytes_to_extended(rndpk);
+    }
+
+    pub fn jubjub_randomized_sk(sk: &Fr, alpha: &Fr) -> Fr {
+        sk + alpha
+    }
 
     #[test]
     pub fn test_jubjub_nonrandom() {
@@ -221,7 +171,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_jubjubrandom() {
+    pub fn test_jubjub_random() {
         let sk = [
             0x85, 0x83, 0x6f, 0x98, 0x32, 0xb2, 0x8d, 0xe7, 0xc6, 0x36, 0x13, 0xe2, 0xa6, 0xed,
             0x36, 0xfb, 0x1a, 0xb4, 0x4f, 0xb0, 0xc1, 0x3f, 0xa8, 0x79, 0x8c, 0xd9, 0xcd, 0x30,
