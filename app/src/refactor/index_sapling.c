@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2020-2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,17 +14,30 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#pragma once
+#include "index_sapling.h"
 
-#include <stdint.h>
+#include "nvdata.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+uint16_t length_t_in_data() {
+    return t_inlist_len() * T_IN_TX_LEN;
+};
 
-uint64_t zip_0317(uint64_t n_tin, uint64_t n_tout, uint64_t n_sapling_spends,
-                  uint64_t n_sapling_outs);
-
-#ifdef __cplusplus
+uint16_t length_spend_old_data() {
+    return spendlist_len() * SPEND_OLD_TX_LEN;
 }
-#endif
+
+uint16_t length_spenddata() {
+    return spendlist_len() * (SPEND_TX_LEN + SPEND_OLD_TX_LEN);
+};
+
+uint16_t length_outputdata() {
+    return outputlist_len() * OUTPUT_TX_LEN;
+};
+
+uint16_t length_spend_new_data() {
+    return spendlist_len() * SPEND_TX_LEN;
+};
+
+uint16_t start_sighashdata() {
+    return length_t_in_data() + length_spenddata() + length_outputdata();
+};
