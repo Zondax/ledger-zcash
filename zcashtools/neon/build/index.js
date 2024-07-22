@@ -23,11 +23,11 @@ class ZcashBuilderBridge {
     add_transparent_output(t_output) {
         return native_1.default.builderAddTransparentOutput.call(this.boxed, t_output);
     }
-    add_sapling_spend(z_spend) {
-        return native_1.default.builderAddSaplingSpend.call(this.boxed, z_spend);
+    add_sapling_spend(s_spend) {
+        return native_1.default.builderAddSaplingSpend.call(this.boxed, s_spend);
     }
-    add_sapling_output(z_output) {
-        return native_1.default.builderAddSaplingOutput.call(this.boxed, z_output);
+    add_sapling_output(s_output) {
+        return native_1.default.builderAddSaplingOutput.call(this.boxed, s_output);
     }
     build(spend_path, output_path, tx_version) {
         return native_1.default.builderBuild.call(this.boxed, spend_path, output_path, tx_version);
