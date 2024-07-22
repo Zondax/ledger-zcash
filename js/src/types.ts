@@ -58,13 +58,13 @@ export type TransaparentSignatureResponse = {
 }
 
 export type OutputDataResponse = {
-  rcv: string
-  rseed: string
-  hashSeed: string | null
-
   rcvRaw: Buffer
   rseedRaw: Buffer
-  hashSeedRaw: Uint8Array | null
+  rcv: string
+  rseed: string
+
+  hashSeedRaw?: Buffer
+  hashSeed?: string
 }
 
 export type ExtractSpendResponse = {
