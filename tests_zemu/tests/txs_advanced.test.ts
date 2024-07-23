@@ -1085,8 +1085,8 @@ describe('End to end transactions', function () {
       const req5 = await app.extractOutputData()
       console.log(req5)
 
-      await expect(app.extractSpendSignature()).rejects.toThrow("Data is invalid");
-      await expect(app.extractTransparentSig()).rejects.toThrow("Data is invalid");
+      await expect(app.extractSpendSignature()).rejects.toThrow('Data is invalid')
+      await expect(app.extractTransparentSig()).rejects.toThrow('Data is invalid')
 
       await takeLastSnapshot(testname, last_index, sim)
     } finally {
@@ -1102,7 +1102,7 @@ describe('Failing transactions', function () {
       await sim.start({ ...defaultOptions, model: m.name })
       const app = new ZCashApp(sim.getTransport())
 
-      await expect(app.extractSpendData()).rejects.toThrow("Data is invalid");
+      await expect(app.extractSpendData()).rejects.toThrow('Data is invalid')
     } finally {
       await sim.close()
     }
@@ -1133,7 +1133,7 @@ describe('Failing transactions', function () {
 
       expect(req.txdata.length).toEqual(64)
 
-      await expect(app.extractOutputData()).rejects.toThrow("Data is invalid");
+      await expect(app.extractOutputData()).rejects.toThrow('Data is invalid')
     } finally {
       await sim.close()
     }
@@ -1327,9 +1327,8 @@ describe('Failing transactions', function () {
 
       // Below are the failing extractions
 
-
-      await expect(app.extractSpendSignature()).rejects.toThrow("Data is invalid");
-      await expect(app.extractTransparentSig()).rejects.toThrow("Data is invalid");
+      await expect(app.extractSpendSignature()).rejects.toThrow('Data is invalid')
+      await expect(app.extractTransparentSig()).rejects.toThrow('Data is invalid')
     } finally {
       await sim.close()
     }
@@ -1690,8 +1689,7 @@ describe('Failing transactions', function () {
       // For this, it uses the input from inittx to verify.
       // If all checks are ok, the ledger signs the transaction.
 
-
-      await expect(app.checkAndSign(ledgerblob_txdata, tx_version)).rejects.toThrow("Unknown Return Code: 0x6997");
+      await expect(app.checkAndSign(ledgerblob_txdata, tx_version)).rejects.toThrow('Unknown Return Code: 0x6997')
     } finally {
       await sim.close()
     }
@@ -1717,9 +1715,7 @@ describe('Failing transactions', function () {
       // If confirmed, the ledger also computes the randomness needed for :
       //     - The shielded spends
       //     - the shielded outputs
-      const reqinit =
-
-      await expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow("Unknown Return Code: 0x6989");
+      const reqinit = await expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow('Unknown Return Code: 0x6989')
     } finally {
       await sim.close()
     }
@@ -1753,14 +1749,14 @@ describe('Failing transactions', function () {
       // We do not wait here (on purpose) as the exception will be thrown the moment compareSnapshotsAndReject finishes.
       // We execute the tx on the device, progress screens with compareSnapshotsAndReject, and the moment it rejects the tx,
       // the exception will raise.
-      expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow("Transaction rejected");
+      expect(app.initNewTx(ledgerblob_initdata)).rejects.toThrow('Transaction rejected')
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
       await sim.compareSnapshotsAndReject('.', `${m.prefix.toLowerCase()}-ext-data-after-tx-reject`)
 
       // Try to extract data after a rejection of a transaction
-      await expect(app.extractSpendData()).rejects.toThrow("Data is invalid");
-      await expect(app.extractOutputData()).rejects.toThrow("Data is invalid");
+      await expect(app.extractSpendData()).rejects.toThrow('Data is invalid')
+      await expect(app.extractOutputData()).rejects.toThrow('Data is invalid')
     } finally {
       await sim.close()
     }
@@ -1897,7 +1893,7 @@ describe('Failing transactions', function () {
 
       const ledgerblob_txdata = builder.build(SPEND_PATH, OUTPUT_PATH, bad_tx_version)
 
-      await expect(app.checkAndSign(ledgerblob_txdata, bad_tx_version)).rejects.toThrow("Unknown Return Code: 0x69A2");
+      await expect(app.checkAndSign(ledgerblob_txdata, bad_tx_version)).rejects.toThrow('Unknown Return Code: 0x69A2')
     } finally {
       await sim.close()
     }
