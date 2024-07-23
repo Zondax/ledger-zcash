@@ -21,12 +21,13 @@ import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@z
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
-jest.setTimeout(240000)
+import { Signatures } from '@zondax/zcashtools/build/native'
+jest.setTimeout(60000)
 
 const tx_version = 0x05
 
 describe('tx methods', function () {
-  test.each(models)('txinit', async function (m) {
+  test.concurrent.each(models)('txinit', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -55,7 +56,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -93,7 +94,7 @@ describe('tx methods', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-partial-1`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
       await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -122,7 +123,7 @@ describe('tx methods', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -165,7 +166,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start({
@@ -203,7 +204,7 @@ describe('tx methods', function () {
       const reqinit = app.initNewTx(ledgerblob_initdata)
 
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out-partial-2`
+      const testname = `${m.prefix.toLowerCase()}-2-spend-2-out`
       const last_index = await sim.navigateUntilText('.', testname, sim.startOptions.approveKeyword)
       await sim.deleteEvents()
 
@@ -232,7 +233,7 @@ describe('tx methods', function () {
       console.log(req2)
       expect(req2.rcvRaw).not.toEqual(req2.alphaRaw)
       const expected_proofkey =
-        '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a3caddba8e4daddf42f11ca89e4961ae3ddc41b3bdd08c36d5a7dfcc30839d405'
+        '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909'
       expect(req2.key).toEqual(expected_proofkey)
 
       // The builder needs the data retrieved from the ledger (proofkey, rcv, alpha)
@@ -297,10 +298,8 @@ describe('tx methods', function () {
         address: s_out1.address,
         value: s_out1.value,
         memo: '0000',
-        hash_seed: req4.hashSeed || null,
+        hash_seed: req4.hashSeed,
       }
-
-      console.log(outj1)
 
       // The builder adds the shielded output to its state.
       const b3 = builder.add_sapling_output(outj1)
@@ -314,7 +313,7 @@ describe('tx methods', function () {
       const req5 = await app.extractOutputData()
       console.log(req5)
       // this field is optional and should be empty here
-      expect(req5.hashSeed).toBeNull()
+      expect(req5.hashSeed).toBeUndefined()
 
       const outj2 = {
         rcv: req5.rcv,
@@ -323,7 +322,7 @@ describe('tx methods', function () {
         address: s_out2.address,
         value: s_out2.value,
         memo: '0000',
-        hash_seed: req5.hashSeed || null,
+        hash_seed: req5.hashSeed,
       }
 
       const b4 = builder.add_sapling_output(outj2)
@@ -345,7 +344,6 @@ describe('tx methods', function () {
       // If all checks are ok, the ledger signs the transaction.
       // console.log(ledgerblob_txdata.slice(10 * 250 + 116))
 
-      console.log('Checking and signing on the app....')
       const req6 = await app.checkAndSign(ledgerblob_txdata, tx_version)
       expect(req6).toBeDefined()
       console.log(req6)
@@ -370,9 +368,9 @@ describe('tx methods', function () {
       // We now add these signatures to the builder.
       // Note that for this transaction, we do not have any transparent signatures.
 
-      const signatures = {
+      const signatures: Signatures = {
         transparent_sigs: [] as string[],
-        spend_sigs: [req7.signature, req8.signature],
+        sapling_sigs: [req7.signature, req8.signature],
       }
 
       const b5 = builder.add_signatures(signatures)
