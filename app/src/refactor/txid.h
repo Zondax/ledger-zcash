@@ -18,8 +18,8 @@
 
 #include <stdint.h>
 
-#include "zxerror.h"
 #include "sighash.h"
+#include "zxerror.h"
 
 zxerr_t nu5_transparent_prevouts_hash(const uint8_t *input, uint8_t *output);
 

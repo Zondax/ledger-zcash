@@ -310,7 +310,6 @@ mod tests {
     }
 
     fn test_rho(test_case: &TestCase) {
-
         let computed_note_commitment_fullpoint = [0u8; 32];
 
         compute_note_commitment_fullpoint(
