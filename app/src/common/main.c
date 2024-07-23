@@ -14,25 +14,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+#include <os_io_seproxyhal.h>
+
 #include "app_main.h"
 #include "view.h"
 
-#include <os_io_seproxyhal.h>
-
 __attribute__((section(".boot"))) int main(void) {
-  // exit critical section
-  __asm volatile("cpsie i");
+    // exit critical section
+    __asm volatile("cpsie i");
 
-  view_init();
-  os_boot();
+    view_init();
+    os_boot();
 
-  BEGIN_TRY {
-    TRY {
-      app_init();
-      app_main();
+    BEGIN_TRY {
+        TRY {
+            app_init();
+            app_main();
+        }
+        CATCH_OTHER(e) {
+        }
+        FINALLY {
+        }
     }
-    CATCH_OTHER(e) {}
-    FINALLY {}
-  }
-  END_TRY;
+    END_TRY;
 }
