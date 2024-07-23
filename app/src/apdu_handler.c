@@ -29,7 +29,7 @@
 #include "crypto.h"
 #include "tx.h"
 #include "view.h"
-#include "zcash_apdu_errors.h"
+#include "apdu_errors.h"
 #include "zxmacros.h"
 
 #include "key.h"
@@ -243,8 +243,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
 
   *tx = 0;
   if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_IVK ||
-      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK ||
-      G_io_apdu_buffer[OFFSET_P1] == 0) {
+      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_IVK) {
     zemu_log("Wrong length!\n");
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
   }
@@ -281,8 +280,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
 
   *tx = 0;
   if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_OVK ||
-      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK ||
-      G_io_apdu_buffer[OFFSET_P1] == 0) {
+      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_OVK) {
     zemu_log("Wrong length!\n");
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
   }
@@ -318,8 +316,7 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
 
   *tx = 0;
   if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_FVK ||
-      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK ||
-      G_io_apdu_buffer[OFFSET_P1] == 0) {
+      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_FVK) {
     zemu_log("Wrong length!\n");
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
   }
@@ -358,8 +355,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags,
 
   *tx = 0;
   if (rx < APDU_MIN_LENGTH || rx - APDU_MIN_LENGTH != DATA_LENGTH_GET_NF ||
-      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF ||
-      G_io_apdu_buffer[OFFSET_P1] == 0) {
+      G_io_apdu_buffer[OFFSET_DATA_LEN] != DATA_LENGTH_GET_NF) {
     zemu_log("Wrong length!\n");
     THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
   }

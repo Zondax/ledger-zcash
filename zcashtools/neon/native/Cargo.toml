@@ -1,10 +1,11 @@
 [package]
 name = "zcashtool"
 version = "0.1.0"
-authors = ["Zondax AG <info@zondax.ch>"]
+authors = ["Zondax AG <hello@zondax.ch>"]
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 exclude = ["artifacts.json", "index.node"]
+resolver = "2"
 
 [lib]
 name = "zcashtool"

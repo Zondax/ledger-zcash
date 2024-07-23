@@ -7,12 +7,16 @@ on:
     tags:
       - "npm_v[0-9]+(\\.[0-9]+)*"
 
+concurrency:
+  group: ${{ github.ref_name }}
+  cancel-in-progress: true
+      
 jobs:
   publish_npm_package:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.repository_owner == 'zondax' && 'zondax-runners' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install node

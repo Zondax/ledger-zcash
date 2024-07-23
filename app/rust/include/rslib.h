@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "parser_common.h"
 #include "parser_txdef.h"
@@ -9,10 +10,10 @@
  * ********************************************************************************/
 
 // ZIP32 functions
-void get_pkd(const uint8_t *seed_ptr, const uint32_t pos,
+void get_pkd(const uint8_t *seed_ptr, uint32_t pos,
              const uint8_t *diversifier_ptr, uint8_t *pkd);
 
-void get_pkd_from_seed(const uint8_t *seed_ptr, const uint32_t pos,
+void get_pkd_from_seed(const uint8_t *seed_ptr, uint32_t pos,
                        const uint8_t *start_index, uint8_t *diversifier_ptr,
                        uint8_t *pkd);
 
@@ -24,17 +25,17 @@ void get_diversifier_fromlist(const uint8_t *diversifier_list,
 bool is_valid_diversifier(const uint8_t *diversifier);
 
 void get_diversifier_list_withstartindex(const uint8_t *seed_ptr,
-                                         const uint32_t pos,
+                                         uint32_t pos,
                                          const uint8_t *startindex,
                                          uint8_t *diversifier_list);
 
 void get_default_diversifier_list_withstartindex(const uint8_t *seed_ptr,
-                                                 const uint32_t pos,
+                                                 uint32_t pos,
                                                  uint8_t *startindex,
                                                  uint8_t *diversifier_list);
 
 void get_default_diversifier_without_start_index(const uint8_t *see_ptr,
-                                                 const uint32_t pos,
+                                                 uint32_t pos,
                                                  uint8_t *default_diversifier);
 
 void zip32_master(const uint8_t *seed_ptr, uint8_t *sk_ptr, uint8_t *dk_ptr);
@@ -44,14 +45,14 @@ void zip32_child_ask_nsk(const uint8_t *seed_ptr, uint8_t *ask, uint8_t *nsk,
 
 void zip32_nsk_from_seed(const uint8_t *seed_ptr, uint8_t *nsk);
 
-void zip32_ivk(const uint8_t *ak_ptr, uint8_t *ivk_ptr, const uint32_t pos);
+void zip32_ivk(const uint8_t *ak_ptr, uint8_t *ivk_ptr, uint32_t pos);
 
-void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, const uint32_t pos);
+void zip32_ovk(const uint8_t *seed_ptr, uint8_t *ovk, uint32_t pos);
 
-void zip32_fvk(const uint8_t *seed_ptr, uint8_t *fvk, const uint32_t pos);
+void zip32_fvk(const uint8_t *seed_ptr, uint8_t *fvk, uint32_t pos);
 
 void zip32_child_proof_key(const uint8_t *seed_ptr, uint8_t *ak_ptr,
-                           uint8_t *nsk_ptr, const uint32_t pos);
+                           uint8_t *nsk_ptr, uint32_t pos);
 
 // Rseed
 void rseed_get_esk_epk(const uint8_t *seed_ptr, uint8_t *d_ptr,
@@ -61,12 +62,12 @@ void rseed_get_rcm(const uint8_t *input, uint8_t *output_ptr);
 
 // Commitments
 void compute_note_commitment(uint8_t *inputptr, const uint8_t *rcmptr,
-                             const uint64_t value,
+                             uint64_t value,
                              const uint8_t *diversifier_ptr,
                              const uint8_t *pkd);
 
 void compute_note_commitment_fullpoint(uint8_t *inputptr, const uint8_t *rcmptr,
-                                       const uint64_t value,
+                                       uint64_t value,
                                        const uint8_t *diversifier_ptr,
                                        const uint8_t *pkd);
 
