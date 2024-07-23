@@ -18,8 +18,8 @@
 
 #include <stdint.h>
 
-#include "zxerror.h"
 #include "sighash.h"
+#include "zxerror.h"
 
 zxerr_t nu5_transparent_prevouts_hash(const uint8_t *input, uint8_t *output);
 
@@ -35,9 +35,8 @@ zxerr_t hash_header_txid_data(const uint8_t *input, uint8_t *output);
 
 zxerr_t hash_transparent_txid_data(const uint8_t *input, uint8_t *output);
 
-zxerr_t transparent_sig_digest(const uint8_t *input, uint8_t *start_signdata,
-                            uint8_t index, signable_input type,
-                            uint8_t *output);
+zxerr_t transparent_sig_digest(
+    const uint8_t *input, uint8_t *start_signdata, uint8_t index, signable_input type, uint8_t *output);
 
 zxerr_t hash_sapling_txid_data(const uint8_t *input, uint8_t *output);
 

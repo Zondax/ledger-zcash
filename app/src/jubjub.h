@@ -13,47 +13,47 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-#include <zxerror.h>
 #include <stdint.h>
+#include <zxerror.h>
 
 #define JUBJUB_SCALAR_BYTES 32
-#define JUBJUB_FIELD_BYTES 32
+#define JUBJUB_FIELD_BYTES  32
 
 typedef unsigned char jubjub_fr[JUBJUB_SCALAR_BYTES];
 typedef unsigned char jubjub_fq[JUBJUB_FIELD_BYTES];
 
 typedef struct {
-  jubjub_fq U;
-  jubjub_fq V;
-  jubjub_fq Z;
-  jubjub_fq T1;
-  jubjub_fq T2;
+    jubjub_fq U;
+    jubjub_fq V;
+    jubjub_fq Z;
+    jubjub_fq T1;
+    jubjub_fq T2;
 } jubjub_extendedpoint;
 
 extern const jubjub_extendedpoint JUBJUB_GEN;
 
-#define SWAP_BYTES(x, y, tmp)                                                  \
-  {                                                                            \
-    tmp = x;                                                                   \
-    x = y;                                                                     \
-    y = tmp;                                                                   \
-  }
+#define SWAP_BYTES(x, y, tmp) \
+    {                         \
+        tmp = x;              \
+        x = y;                \
+        y = tmp;              \
+    }
 
-#define SWAP_ENDIAN_U64(x, tmp)                                                \
-  {                                                                            \
-    SWAP_BYTES(*x, *(x + 7), tmp);                                             \
-    SWAP_BYTES(*(x + 1), *(x + 6), tmp);                                       \
-    SWAP_BYTES(*(x + 2), *(x + 5), tmp);                                       \
-    SWAP_BYTES(*(x + 3), *(x + 4), tmp);                                       \
-  }
+#define SWAP_ENDIAN_U64(x, tmp)              \
+    {                                        \
+        SWAP_BYTES(*x, *(x + 7), tmp);       \
+        SWAP_BYTES(*(x + 1), *(x + 6), tmp); \
+        SWAP_BYTES(*(x + 2), *(x + 5), tmp); \
+        SWAP_BYTES(*(x + 3), *(x + 4), tmp); \
+    }
 
-#define SWAP_ENDIAN_BYTES(x)                                                   \
-  {                                                                            \
-    uint8_t tmp = 0;                                                           \
-    for (int i = 0; i < 32 / 2; i++) {                                         \
-      SWAP_BYTES(*(x + i), *(x + (32 - 1 - i)), tmp);                          \
-    }                                                                          \
-  }
+#define SWAP_ENDIAN_BYTES(x)                                \
+    {                                                       \
+        uint8_t tmp = 0;                                    \
+        for (int i = 0; i < 32 / 2; i++) {                  \
+            SWAP_BYTES(*(x + i), *(x + (32 - 1 - i)), tmp); \
+        }                                                   \
+    }
 
 zxerr_t jubjub_extendedpoint_tobytes(uint8_t *s, jubjub_extendedpoint *p);
 

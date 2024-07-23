@@ -16,20 +16,20 @@
 
 #include <stdint.h>
 
-#define NU5_LENGTH_HASH_DATA 220
+#define NU5_LENGTH_HASH_DATA               220
 
-#define NU5_INDEX_HASH_VERSION 0
-#define NU5_INDEX_HASH_VERSION_GROUP_ID 4
+#define NU5_INDEX_HASH_VERSION             0
+#define NU5_INDEX_HASH_VERSION_GROUP_ID    4
 #define NU5_INDEX_HASH_CONSENSUS_BRANCH_ID 8
-#define NU5_INDEX_HASH_LOCK_TIME 12
-#define NU5_INDEX_EXPIRY_HEIGHT 16
+#define NU5_INDEX_HASH_LOCK_TIME           12
+#define NU5_INDEX_EXPIRY_HEIGHT            16
 
-#define NU5_INDEX_HASH_PREVOUTSHASH 20        // 32 bytes
-#define NU5_INDEX_HASH_SEQUENCEHASH 52        // 32 bytes
-#define NU5_INDEX_HASH_OUTPUTSHASH 84         // 32 bytes
-#define NU5_INDEX_HASH_SHIELDEDSPENDHASH 116  // 32 bytes
-#define NU5_INDEX_HASH_SHIELDEDOUTPUTHASH 148 // 32 bytes
-#define NU5_INDEX_HASH_VALUEBALANCE 180       // 64 bit
-#define NU5_INDEX_HASH_ORCHARDHASH 188        // of length 32
+#define NU5_INDEX_HASH_PREVOUTSHASH        20   // 32 bytes
+#define NU5_INDEX_HASH_SEQUENCEHASH        52   // 32 bytes
+#define NU5_INDEX_HASH_OUTPUTSHASH         84   // 32 bytes
+#define NU5_INDEX_HASH_SHIELDEDSPENDHASH   116  // 32 bytes
+#define NU5_INDEX_HASH_SHIELDEDOUTPUTHASH  148  // 32 bytes
+#define NU5_INDEX_HASH_VALUEBALANCE        180  // 64 bit
+#define NU5_INDEX_HASH_ORCHARDHASH         188  // of length 32
 
-#define NU5_VALUEBALANCE_SIZE 8 // 64 bit
+#define NU5_VALUEBALANCE_SIZE              8  // 64 bit
