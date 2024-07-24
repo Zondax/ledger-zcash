@@ -18,7 +18,7 @@ const SAPLING_SPEND_1: &str = r#"{
         "proofkey": "0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909",
         "rcv": "a8c2559a94a04143c7b0496ed9fff78ce6ef36dfa100890bc22a26f88e304206",
         "alpha": "12753fff4e914813542a267d89fd7d427d668da1a249f5d744f7416137a2e903",
-        "address": "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+        "address": "c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586",
         "value": 50000,
         "witness": "01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000",
         "rseed": "0000000000000000000000000000000000000000000000000000000000000000"
@@ -28,7 +28,7 @@ const SAPLING_SPEND_2: &str = r#"{
         "proofkey": "0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a53022d5db92c9dc180dd12e2d74162396f13513016719e38d2616f7730d09a909",
         "rcv": "102d58b50a3f5994d56fb39bdb32d9b9b15320186b28e64b925ffddbbbe53803",
         "alpha": "7f488788e73b5dc70749b5e851925363ddcb598766fd7b5234e1bb184ced4c00",
-        "address": "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+        "address": "c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586",
         "value": 50000,
         "witness": "01305aef35a6fa9dd43af22d2557f99268fbab70a53e963fa67fc762391510406000000000",
         "rseed": "0000000000000000000000000000000000000000000000000000000000000000"
@@ -48,14 +48,14 @@ const SAPLING_OUTPUT_2: &str = r#"{
     "rcv": "5a585948dc520f254321bc7e8be10e809ca2490758c2a601a32f170a2d132009",
     "rseed": "924ac4fd2b822c45bff8b2ef95c64508bf9c2e0c33e6d72bd5e97d3baa4f6b3c",
     "ovk": "6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca",
-    "address": "c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667",
+    "address": "c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586",
     "value": 35000,
     "memo": "0000",
     "hash_seed": null 
 }"#;
 
 fn init_logging() {
-    let _ = env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+    let _ = env_logger::Builder::from_env(Env::default().default_filter_or("trace"))
         .is_test(true)
         .try_init();
 }
@@ -84,7 +84,7 @@ fn should_error_empty_tx(data: &types::InitData) {
         .is_err());
 }
 
-fn make_tx_with_two_spend_two_outputs(data: &types::InitData) {
+fn build_tx(data: &types::InitData) {
     let n_tin = data.t_in.len();
     let n_tout = data.t_out.len();
     let n_spend = data.s_spend.len();
@@ -114,7 +114,7 @@ fn make_tx_with_two_spend_two_outputs(data: &types::InitData) {
 }
 
 #[test]
-fn test_tx_builder() {
+fn test_builder_fail() {
     init_logging();
     let json_data = std::fs::read_to_string("tests/data.json").expect("Failed to read JSON file");
     let test_data: Vec<types::InitData> =
@@ -122,7 +122,16 @@ fn test_tx_builder() {
 
     // Test No. 1
     should_error_empty_tx(&test_data[0]);
+}
+
+#[test]
+fn make_tx_with_two_spend_two_outputs() {
+    init_logging();
+    log::info!("Test: make_tx_with_two_spend_two_outputs");
+    let json_data = std::fs::read_to_string("tests/data.json").expect("Failed to read JSON file");
+    let test_data: Vec<types::InitData> =
+        serde_json::from_str(&json_data).expect("Failed to parse JSON data");
 
     // Test No. 2
-    make_tx_with_two_spend_two_outputs(&test_data[0]);
+    build_tx(&test_data[0]);
 }
