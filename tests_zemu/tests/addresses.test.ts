@@ -25,7 +25,7 @@ const defaultOptions = (model: any, is_address = false) => {
 }
 
 describe('Addresses', function () {
-  test.each(models)('get_unshielded_address', async function (m) {
+  test.concurrent.each(models)('get_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))
@@ -43,7 +43,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show_unshielded_address', async function (m) {
+  test.concurrent.each(models)('show_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -64,7 +64,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get_shielded_address', async function (m) {
+  test.concurrent.each(models)('get_shielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -83,7 +83,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get invalid shielded address', async function (m) {
+  test.concurrent.each(models)('get invalid shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))
@@ -96,7 +96,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show shielded address', async function (m) {
+  test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -120,7 +120,7 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show_shielded_address_with_div', async function (m) {
+  test.concurrent.each(models)('show_shielded_address_with_div', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))

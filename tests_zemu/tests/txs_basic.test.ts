@@ -31,7 +31,7 @@ const defaultOptions = (model: any) => {
 }
 
 describe('tx methods', function () {
-  test.each(models)('txinit', async function (m) {
+  test.concurrent.each(models)('txinit', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))
@@ -55,7 +55,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))
@@ -160,7 +160,7 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))

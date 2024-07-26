@@ -25,7 +25,7 @@ const defaultOptions = (model: any, is_address = false) => {
 }
 
 describe('Nullifier', function () {
-  test.each(models)('get nullifier account 0x01', async function (m) {
+  test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -50,7 +50,7 @@ describe('Nullifier', function () {
     }
   })
 
-  test.each(models)('get_nullifier_account_0xFF', async function (m) {
+  test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -77,7 +77,7 @@ describe('Nullifier', function () {
 })
 
 describe('Get_keys', function () {
-  test.each(models)('get ivk', async function (m) {
+  test.concurrent.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -105,7 +105,7 @@ describe('Get_keys', function () {
     }
   })
 
-  test.each(models)('get ovk', async function (m) {
+  test.concurrent.each(models)('get ovk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -128,7 +128,7 @@ describe('Get_keys', function () {
     }
   })
 
-  test.each(models)('Get fvk', async function (m) {
+  test.concurrent.each(models)('Get fvk', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m, true))
@@ -162,7 +162,7 @@ describe('Get_keys', function () {
 })
 
 describe('Diversifiers', function () {
-  test.each(models)('Div list with startindex', async function (m) {
+  test.concurrent.each(models)('Div list with startindex', async function (m) {
     const sim = new Zemu(m.path)
     try {
       await sim.start(defaultOptions(m))
