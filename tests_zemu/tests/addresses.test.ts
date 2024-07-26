@@ -15,16 +15,20 @@
  ******************************************************************************* */
 
 import Zemu, { ButtonKind } from '@zondax/zemu'
-import { defaultOptions, models } from './_config'
+import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 
 jest.setTimeout(60000)
+const defaultOptions = (model: any, is_address = false) => {
+  let opts = commonOpts(model, is_address)
+  return opts
+}
 
 describe('Addresses', function () {
-  test.each(models)('get unshielded address', async function (m) {
+  test.each(models)('get_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
       const expectedAddrRaw = '031f6d238009787c20d5d7becb6b6ad54529fc0a3fd35088e85c2c3966bfec050e'
       const expectedAddr = 't1KHG39uhsssPkYcAXkzZ5Bk2w1rnFukZvx'
@@ -39,15 +43,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show unshielded address', async function (m) {
+  test.each(models)('show_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const expectedAddrRaw = '026f27818e7426a10773226b3553d0afe50a3697bd02652f1b57d67bf648577d11'
@@ -65,10 +64,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address', async function (m) {
+  test.each(models)('get_shielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -87,7 +86,7 @@ describe('Addresses', function () {
   test.each(models)('get invalid shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000
@@ -100,12 +99,7 @@ describe('Addresses', function () {
   test.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -126,15 +120,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address with div', async function (m) {
+  test.each(models)('show_shielded_address_with_div', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000

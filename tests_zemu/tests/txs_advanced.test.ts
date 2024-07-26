@@ -16,7 +16,7 @@
 
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models } from './_config'
+import { APP_SEED, defaultOptions as commonOpts, models } from './_config'
 import { get_inittx_data, ZcashBuilderBridge, SPEND_PATH, OUTPUT_PATH } from '@zondax/zcashtools'
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
@@ -25,10 +25,9 @@ import { LedgerError } from '@zondax/ledger-js'
 
 const tx_version = 0x05
 
-const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
+const defaultOptions = (model: any) => {
+  let opts = commonOpts(model, false)
+  return opts
 }
 
 jest.setTimeout(600000)
@@ -37,7 +36,7 @@ describe('End to end transactions', function () {
   test.each(models)('tx_1transparent_input_1spend_input_2sapling_outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -251,7 +250,7 @@ describe('End to end transactions', function () {
   test.each(models)('tx_2_transparent_output_1_spend_2_shielded_outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -498,7 +497,7 @@ describe('End to end transactions', function () {
   test.each(models)('make_transaction_with_2_transparent_input_1transparent_output_1spend_2shielded_outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -722,7 +721,7 @@ describe('End to end transactions', function () {
   test.each(models)('make_transaction_with_2transparent_input_2transparent_output', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -839,7 +838,7 @@ describe('End to end transactions', function () {
   test.each(models)('ExtractingSignaturesWithoutCheckandsign', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -892,7 +891,7 @@ describe('Failing transactions', function () {
   test.each(models)('try_to_extract_spend_data_without_calling_inittx', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       await expect(app.extractSpendData()).rejects.toThrow('Data is invalid')
@@ -904,7 +903,7 @@ describe('Failing transactions', function () {
   test.each(models)('extractingOutputNoSpendData', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -935,7 +934,7 @@ describe('Failing transactions', function () {
   test.each(models)('extracting_more_signatures_than_needed', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -1139,7 +1138,7 @@ describe('Failing transactions', function () {
   test.each(models)('not_using_ledger_rand_for_tx', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -1315,7 +1314,7 @@ describe('Failing transactions', function () {
   test.each(models)('use_other_address_in_builder_than_inittx', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -1494,7 +1493,7 @@ describe('Failing transactions', function () {
   test.each(models)('tryNonZIP0317Fee', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       //use stringify+parse for deep copy
@@ -1520,7 +1519,7 @@ describe('Failing transactions', function () {
   test.skip.each(models)('extract_data_after_tx_reject', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name, rejectKeyword: m.name === 'stax' ? 'Hold' : '' })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -1559,7 +1558,7 @@ describe('Failing transactions', function () {
     const sim = new Zemu(m.path)
     const bad_tx_version = 7
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)

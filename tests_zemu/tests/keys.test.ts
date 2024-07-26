@@ -16,26 +16,19 @@
 
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models } from './_config'
-
-const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
-}
+import { APP_SEED, defaultOptions as commonOpts, models } from './_config'
 
 jest.setTimeout(600000)
+const defaultOptions = (model: any, is_address = false) => {
+  let opts = commonOpts(model, is_address)
+  return opts
+}
 
 describe('Nullifier', function () {
   test.each(models)('get nullifier account 0x01', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 0x01 + 0x80000000
@@ -57,15 +50,10 @@ describe('Nullifier', function () {
     }
   })
 
-  test.each(models)('get nullifier account 0xFF', async function (m) {
+  test.each(models)('get_nullifier_account_0xFF', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const path = 0xff + 0x80000000
@@ -88,16 +76,11 @@ describe('Nullifier', function () {
   })
 })
 
-describe('Get keys', function () {
+describe('Get_keys', function () {
   test.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -125,12 +108,7 @@ describe('Get keys', function () {
   test.each(models)('get ovk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -153,12 +131,7 @@ describe('Get keys', function () {
   test.each(models)('Get fvk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -192,7 +165,7 @@ describe('Diversifiers', function () {
   test.each(models)('Div list with startindex', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000

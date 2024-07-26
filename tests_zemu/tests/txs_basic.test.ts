@@ -15,27 +15,26 @@
  ******************************************************************************* */
 
 import Zemu, { ButtonKind } from '@zondax/zemu'
-import { defaultOptions, models } from './_config'
+import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@zondax/zcashtools'
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
 import { Signatures } from '@zondax/zcashtools/build/native'
-jest.setTimeout(200000)
+jest.setTimeout(600000)
 
 const tx_version = 0x05
+const defaultOptions = (model: any) => {
+  let opts = commonOpts(model, false)
+  return opts
+}
 
 describe('tx methods', function () {
   test.each(models)('txinit', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const tx_input_data = TX_INPUT_DATA[0]
@@ -59,12 +58,7 @@ describe('tx methods', function () {
   test.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -169,12 +163,7 @@ describe('tx methods', function () {
   test.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)

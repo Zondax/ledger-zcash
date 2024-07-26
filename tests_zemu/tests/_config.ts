@@ -1,4 +1,4 @@
-import { IDeviceModel, DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import { IDeviceModel, DEFAULT_START_OPTIONS, ButtonKind } from '@zondax/zemu'
 
 import { resolve } from 'path'
 
@@ -16,10 +16,21 @@ export const models: IDeviceModel[] = [
   { name: 'stax', prefix: 'ST', path: APP_PATH_ST },
 ]
 
-export const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  // startText: "DO NOT USE",
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
-  X11: false,
+export const defaultOptions = (m: IDeviceModel, is_address = false) => {
+  let approveAction = ButtonKind.ApproveHoldButton
+  let approveKeyword = ''
+
+  if (m.name == 'stax' && is_address) {
+    approveKeyword = 'Show as QR'
+    approveAction = ButtonKind.ApproveTapButton
+  }
+
+  return {
+    ...DEFAULT_START_OPTIONS,
+    logging: true,
+    custom: `-s "${APP_SEED}"`,
+    approveAction,
+    approveKeyword,
+    model: m.name,
+  }
 }
