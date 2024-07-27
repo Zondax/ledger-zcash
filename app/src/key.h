@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2020 Zondax AG
+ *   (c) 2020-2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 #pragma once
+#include "zxerror.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +23,12 @@ extern "C" {
 
 #include <inttypes.h>
 
-#include "zxerror.h"
+#include "coin.h"
+
+typedef struct {
+    key_type_e kind;
+    uint8_t len;
+} key_state_t;
 
 /// Return the number of items in the address view
 zxerr_t key_getNumItems(uint8_t *num_items);

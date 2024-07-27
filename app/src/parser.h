@@ -31,14 +31,6 @@ extern "C" {
 #define NUM_ITEMS_SOUT   4  // address, value, memotype, OVK?
 #define NUM_ITEMS_CONST  1  // txfee
 
-typedef struct {
-    uint32_t path;
-    uint8_t div[11];
-} parser_addr_div_t;
-
-parser_error_t parser_sapling_path_with_div(const uint8_t *data, size_t dataLen, parser_addr_div_t *prs);
-parser_error_t parser_sapling_path(const uint8_t *data, size_t dataLen, uint32_t *p);
-
 void view_tx_state();
 
 const char *parser_getErrorDescription(parser_error_t err);
@@ -60,8 +52,6 @@ parser_error_t parser_getItem(uint8_t displayIdx,
                               uint16_t outValueLen,
                               uint8_t pageIdx,
                               uint8_t *pageCount);
-
-void parser_resetState();
 
 #ifdef __cplusplus
 }

@@ -15,16 +15,20 @@
  ******************************************************************************* */
 
 import Zemu, { ButtonKind } from '@zondax/zemu'
-import { defaultOptions, models } from './_config'
+import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 
 jest.setTimeout(60000)
+const defaultOptions = (model: any, is_address = false) => {
+  let opts = commonOpts(model, is_address)
+  return opts
+}
 
 describe('Addresses', function () {
-  test.each(models)('get unshielded address', async function (m) {
+  test.concurrent.each(models)('get_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
       const expectedAddrRaw = '031f6d238009787c20d5d7becb6b6ad54529fc0a3fd35088e85c2c3966bfec050e'
       const expectedAddr = 't1KHG39uhsssPkYcAXkzZ5Bk2w1rnFukZvx'
@@ -39,15 +43,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show unshielded address', async function (m) {
+  test.concurrent.each(models)('show_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const expectedAddrRaw = '026f27818e7426a10773226b3553d0afe50a3697bd02652f1b57d67bf648577d11'
@@ -65,17 +64,17 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address', async function (m) {
+  test.concurrent.each(models)('get_shielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
       const addr = await app.getAddressSapling(zip32Account, false)
 
-      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
-      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
+      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
+      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)
@@ -84,10 +83,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.skip.each(models)('get invalid shielded address', async function (m) {
+  test.concurrent.each(models)('get invalid shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000
@@ -97,15 +96,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('show shielded address', async function (m) {
+  test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -116,8 +110,8 @@ describe('Addresses', function () {
 
       const addr = await addrRequest
 
-      const expected_addrRaw = 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667'
-      const expected_addr = 'zs1c60f08r8v0qmpy3cm34ath9lx5mqm72aet0ccrazth97m2hkq46n3wqj6pn9vunw5fmxwclltd3'
+      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
+      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)
@@ -126,15 +120,10 @@ describe('Addresses', function () {
     }
   })
 
-  test.each(models)('get shielded address with div', async function (m) {
+  test.concurrent.each(models)('show_shielded_address_with_div', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -147,8 +136,8 @@ describe('Addresses', function () {
 
       const addr = await addrRequest
 
-      const expected_addrRaw = '71635f26c1b4a2332abeb762fb5b8538aaeaf224558b656ee6c352a4f4d6b39806fced61de766d474adb99'
-      const expected_addr = 'zs1w9347fkpkj3rx247ka30kku98z4w4u3y2k9k2mhxcdf2faxkkwvqdl8dv808vm28ftdejpnzaef'
+      const expected_addrRaw = '71635f26c1b4a2332abeb70b1249e61ed4e40b1cc114c1ef994dcf304e2e5945748e879660550443161cda'
+      const expected_addr = 'zs1w9347fkpkj3rx247ku93yj0xrm2wgzcucy2vrmuefh8nqn3wt9zhfr58jes92pzrzcwd5rrjn0g'
 
       expect(addr?.addressRaw.toString('hex')).toEqual(expected_addrRaw)
       expect(addr?.address).toEqual(expected_addr)

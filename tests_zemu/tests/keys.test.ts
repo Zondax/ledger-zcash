@@ -16,26 +16,19 @@
 
 import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
-import { APP_SEED, models } from './_config'
-
-const defaultOptions = {
-  ...DEFAULT_START_OPTIONS,
-  logging: true,
-  custom: `-s "${APP_SEED}"`,
-}
+import { APP_SEED, defaultOptions as commonOpts, models } from './_config'
 
 jest.setTimeout(600000)
+const defaultOptions = (model: any, is_address = false) => {
+  let opts = commonOpts(model, is_address)
+  return opts
+}
 
 describe('Nullifier', function () {
-  test.each(models)('get nullifier account 0x01', async function (m) {
+  test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 0x01 + 0x80000000
@@ -48,7 +41,7 @@ describe('Nullifier', function () {
 
       const resp = await promise_resp
 
-      const expected_nfRaw = '3840188b5e05bced04ec715af62db7da39c06d643971a6748ee020c845427b95'
+      const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
       const nfRaw = resp.nfRaw?.toString('hex')
       console.log(nfRaw)
       expect(nfRaw).toEqual(expected_nfRaw)
@@ -57,15 +50,10 @@ describe('Nullifier', function () {
     }
   })
 
-  test.each(models)('get nullifier account 0xFF', async function (m) {
+  test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const path = 0xff + 0x80000000
@@ -78,7 +66,7 @@ describe('Nullifier', function () {
 
       const resp = await promise_resp
 
-      const expected_nfRaw = '3840188b5e05bced04ec715af62db7da39c06d643971a6748ee020c845427b95'
+      const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
       const nfRaw = resp.nfRaw?.toString('hex')
       console.log(nfRaw)
       expect(nfRaw).toEqual(expected_nfRaw)
@@ -88,16 +76,11 @@ describe('Nullifier', function () {
   })
 })
 
-describe('Get keys', function () {
-  test.each(models)('get ivk', async function (m) {
+describe('Get_keys', function () {
+  test.concurrent.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -109,8 +92,8 @@ describe('Get keys', function () {
       const ivk = await ivkreq
       console.log(ivk)
 
-      const expected_ivkRaw = '6dfadf175921e6fbfa093c8f7c704a0bdb07328474f56c833dfcfa5301082d03'
-      const expected_div = 'c69e979c6763c1b09238dc'
+      const expected_ivkRaw = 'd660cd8b883afbcc0c145d0bf4241d3b26fff391b0ad3389e39f717995202801'
+      const expected_div = '71635f26c1b4a2332abeb7'
 
       const ivkRaw = ivk.ivkRaw?.toString('hex')
       const default_div = ivk.defaultDiversifier?.toString('hex')
@@ -122,15 +105,10 @@ describe('Get keys', function () {
     }
   })
 
-  test.each(models)('get ovk', async function (m) {
+  test.concurrent.each(models)('get ovk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -142,7 +120,7 @@ describe('Get keys', function () {
       const ovk = await ovkreq
       console.log(ovk)
 
-      const expected_ovkRaw = '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca'
+      const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
       const ovkRaw = ovk.ovkRaw?.toString('hex')
       expect(ovkRaw).toEqual(expected_ovkRaw)
     } finally {
@@ -150,15 +128,10 @@ describe('Get keys', function () {
     }
   })
 
-  test.each(models)('Get fvk', async function (m) {
+  test.concurrent.each(models)('Get fvk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m, true))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -171,15 +144,15 @@ describe('Get keys', function () {
 
       console.log(fvk)
 
-      const expected_akRaw = '4e005f180dab2f445ab109574fd2695e705631cd274b4f58e2b53bb3bc73ed5a'
+      const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
       const akRaw = fvk.akRaw?.toString('hex')
       expect(akRaw).toEqual(expected_akRaw)
 
-      const expected_nkRaw = 'a93349ed31a96abd9b07fb04daaad69a51de16e4ac8dbcc7e001779668d08dc7'
+      const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
       const nkRaw = fvk.nkRaw?.toString('hex')
       expect(nkRaw).toEqual(expected_nkRaw)
 
-      const expected_ovkRaw = '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca'
+      const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
       const ovkRaw = fvk.ovkRaw?.toString('hex')
       expect(ovkRaw).toEqual(expected_ovkRaw)
     } finally {
@@ -189,10 +162,10 @@ describe('Get keys', function () {
 })
 
 describe('Diversifiers', function () {
-  test.each(models)('Div list with startindex', async function (m) {
+  test.concurrent.each(models)('Div list with startindex', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({ ...defaultOptions, model: m.name })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -203,12 +176,16 @@ describe('Diversifiers', function () {
       console.log(divlist)
 
       const expected_divs = [
-        'c69e979c6763c1b09238dc',
-        'ce702cb48ef2491d0b0745',
-        '10bb6a9c26aaffa4526573',
-        '9d50c5db5ff76a82cd742f',
-        '4adef20e22b65c533cf584',
-        '534acf5c55d62f35770b04',
+        '71635f26c1b4a2332abeb7',
+        '20fafaf8b4b763dbad872b',
+        '443e2f4876099656cac254',
+        'a42f8cd37e16759fcd921d',
+        '6dbd485ed3703834c6e396',
+        '702c42bb6dcda999dfff06',
+        'a67d8286346f3bb341c691',
+        '1fba2909f96a575c9208ac',
+        '349ced82af892988de95a7',
+        'ce8c5c7eacb06e7b7f6091',
       ]
 
       const errors: string[] = []

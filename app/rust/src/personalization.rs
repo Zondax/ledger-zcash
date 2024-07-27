@@ -1,0 +1,9 @@
+pub const PRF_OCK_PERSONALIZATION: &[u8; 16] = b"Zcash_Derive_ock";
+pub const KDF_SAPLING_PERSONALIZATION: &[u8; 16] = b"Zcash_SaplingKDF";
+pub const PRF_SESSION_PERSONALIZATION: &[u8; 16] = b"Zcash_SessionKey";
+pub const CRH_IVK_PERSONALIZATION: &[u8; 8] = b"Zcashivk";
+pub const CRH_NF: &[u8; 8] = b"Zcash_nf";
+pub const ZIP32_SAPLING_MASTER_PERSONALIZATION: &[u8; 16] = b"ZcashIP32Sapling";
+pub const KEY_DIVERSIFICATION_PERSONALIZATION: &[u8; 8] = b"Zcash_gd";
+pub const REDJUBJUB_PERSONALIZATION: &[u8; 16] = b"Zcash_RedJubjubH";
+pub const PRF_EXPAND_PERSONALIZATION: &[u8; 16] = b"Zcash_ExpandSeed";

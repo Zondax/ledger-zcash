@@ -11,12 +11,12 @@ const zero: TxInputData = {
   s_spend: [
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 50000,
     },
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 50000,
     },
   ],
@@ -28,10 +28,10 @@ const zero: TxInputData = {
       ovk: null,
     },
     {
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 100000 - 55000,
       memo_type: 0xf6,
-      ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
+      ovk: '8cc016f9e2ab4a8e7d2d8565deb4e33de50b75b617d344ef0589ba4ad61d566c',
     },
   ],
 }
@@ -49,7 +49,7 @@ const one: TxInputData = {
   s_spend: [
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 40000,
     },
   ],
@@ -61,10 +61,10 @@ const one: TxInputData = {
       ovk: null,
     },
     {
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 60000 + 40000 - 65000,
       memo_type: 0xf6,
-      ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
+      ovk: '8cc016f9e2ab4a8e7d2d8565deb4e33de50b75b617d344ef0589ba4ad61d566c',
     },
   ],
 }
@@ -81,7 +81,7 @@ const two: TxInputData = {
   s_spend: [
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 100000,
     },
   ],
@@ -93,10 +93,10 @@ const two: TxInputData = {
       ovk: null,
     },
     {
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 100000 - 55000 - 10000,
       memo_type: 0xf6,
-      ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
+      ovk: '8cc016f9e2ab4a8e7d2d8565deb4e33de50b75b617d344ef0589ba4ad61d566c',
     },
   ],
 }
@@ -119,7 +119,7 @@ const three: TxInputData = {
   s_spend: [
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 40000,
     },
   ],
@@ -131,10 +131,10 @@ const three: TxInputData = {
       ovk: null,
     },
     {
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 60000 + 40000 - 55000 - 10000,
       memo_type: 0xf6,
-      ovk: '6fc01eaa665e03a53c1e033ed0d77b670cf075ede4ada769997a2ed2ec225fca',
+      ovk: '8cc016f9e2ab4a8e7d2d8565deb4e33de50b75b617d344ef0589ba4ad61d566c',
     },
   ],
 }
@@ -174,12 +174,12 @@ const five: TxInputData = {
   s_spend: [
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 50000,
     },
     {
       path: 1000,
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 50000,
     },
   ],
@@ -191,7 +191,7 @@ const five: TxInputData = {
       ovk: null,
     },
     {
-      address: 'c69e979c6763c1b09238dc6bd5dcbf35360df95dcadf8c0fa25dcbedaaf6057538b812d06656726ea27667',
+      address: 'c69e979c6763c1b09238dc766ebfc0bf485aa5383d41e61ae67ad482fdf9bac257f7e868fd09d48e6d7586',
       value: 50000 + 50000 - 55000,
       memo_type: 0xf6,
       ovk: null,
