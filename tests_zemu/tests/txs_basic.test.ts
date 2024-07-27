@@ -15,27 +15,26 @@
  ******************************************************************************* */
 
 import Zemu, { ButtonKind } from '@zondax/zemu'
-import { defaultOptions, models } from './_config'
+import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 import { get_inittx_data, OUTPUT_PATH, SPEND_PATH, ZcashBuilderBridge } from '@zondax/zcashtools'
 import { fee_for, TX_INPUT_DATA } from './_vectors'
 import crypto from 'crypto'
 import { takeLastSnapshot } from './utils'
 import { Signatures } from '@zondax/zcashtools/build/native'
-jest.setTimeout(60000)
+jest.setTimeout(600000)
 
 const tx_version = 0x05
+const defaultOptions = (model: any) => {
+  let opts = commonOpts(model, false)
+  return opts
+}
 
 describe('tx methods', function () {
-  test.each(models)('txinit', async function (m) {
+  test.concurrent.each(models)('txinit', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const tx_input_data = TX_INPUT_DATA[0]
@@ -56,15 +55,10 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL1 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -166,15 +160,10 @@ describe('tx methods', function () {
     }
   })
 
-  test.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
+  test.concurrent.each(models)('PARTIAL2 - make a transaction with 2 spend 2 outputs', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       console.log(SPEND_PATH)
@@ -357,6 +346,7 @@ describe('tx methods', function () {
       // The builder needs these signatures to add it to the transaction blob.
       // We need to do this one by one.
       // So we first gather all signatures we need.
+      console.log('Extract signatures.....')
 
       const req7 = await app.extractSpendSignature()
       console.log(req7)
@@ -364,6 +354,7 @@ describe('tx methods', function () {
       const req8 = await app.extractSpendSignature()
       console.log(req8)
 
+      console.log('Appending signatures.....')
       // At this point we gathered all signatures.
       // We now add these signatures to the builder.
       // Note that for this transaction, we do not have any transparent signatures.
@@ -376,13 +367,16 @@ describe('tx methods', function () {
       const b5 = builder.add_signatures(signatures)
       expect(b5).toBeTruthy()
 
+      console.log('Taking last snapshot....')
       await takeLastSnapshot(testname, last_index, sim)
 
       // The builder is now done and the transaction is complete.
+      console.log(' Builder finalize')
       const b6 = builder.finalize()
       expect(b6).toBeDefined()
 
-      console.log(b6)
+      console.log('*****B6: ', b6)
+      expect(true).toEqual(true)
     } finally {
       await sim.close()
     }

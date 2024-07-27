@@ -37,21 +37,27 @@ default:
 	COIN=$(COIN) $(MAKE) -C app $@
 endif
 
+
+prod: 
+	PRODUCTION_BUILD=1 make
+
 zcashtools_build:
 	cd zcashtools/neon && yarn install
 
 zcashtools_test: zcashtools_build
 	cd zcashtools/neon && yarn test
 
+zcashtools_test_rs: zcashtools_build
+	cd zcashtools/neon && RUST_LOG=trace cargo test 
+
 zemu_install: zcashtools_build
 
-test_all:
-	PRODUCTION_BUILD=1 make
+test_all: prod
 	make zemu_install
-	make zemu_test
 	make zcashtools_test
+	make zcashtools_test_rs 
+	make zemu_test
 
 test_ledger_try:
 	make zemu_install
 	cd tests_zemu && yarn try
-

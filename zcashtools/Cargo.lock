@@ -668,7 +668,7 @@ dependencies = [
 [[package]]
 name = "ledger-zcash"
 version = "0.11.2"
-source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=48b529fb41ed721e8c3bc943752b82b82d448cf3#48b529fb41ed721e8c3bc943752b82b82d448cf3"
+source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=0dd05cee4427f2c7ff1bfc9fb11f62f878c0cfa8#0dd05cee4427f2c7ff1bfc9fb11f62f878c0cfa8"
 dependencies = [
  "arrayvec",
  "byteorder",
@@ -697,7 +697,7 @@ dependencies = [
 [[package]]
 name = "ledger-zcash-builder"
 version = "0.11.2"
-source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=48b529fb41ed721e8c3bc943752b82b82d448cf3#48b529fb41ed721e8c3bc943752b82b82d448cf3"
+source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=0dd05cee4427f2c7ff1bfc9fb11f62f878c0cfa8#0dd05cee4427f2c7ff1bfc9fb11f62f878c0cfa8"
 dependencies = [
  "bellman",
  "blake2b_simd",

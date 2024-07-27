@@ -15,21 +15,20 @@
  ******************************************************************************* */
 
 import Zemu, { ButtonKind, zondaxMainmenuNavigation } from '@zondax/zemu'
-import { defaultOptions, models } from './_config'
+import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 
 jest.setTimeout(60000)
+const defaultOptions = (model: any) => {
+  let opts = commonOpts(model, false)
+  return opts
+}
 
 describe('Basic', function () {
   test.each(models)('can start and stop container', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
     } finally {
       await sim.close()
     }
@@ -38,12 +37,7 @@ describe('Basic', function () {
   test.each(models)('main menu', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const nav = zondaxMainmenuNavigation(m.name, [1, 0, 0, 4, -5])
       await sim.navigateAndCompareSnapshots('.', `${m.prefix.toLowerCase()}-mainmenu`, nav.schedule)
     } finally {
@@ -54,12 +48,7 @@ describe('Basic', function () {
   test.each(models)('get app version', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start({
-        ...defaultOptions,
-        model: m.name,
-        approveKeyword: m.name === 'stax' ? 'QR' : '',
-        approveAction: ButtonKind.ApproveTapButton,
-      })
+      await sim.start(defaultOptions(m))
       const app = new ZCashApp(sim.getTransport())
 
       const resp = await app.getVersion()
