@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind } from '@zondax/zemu'
+import Zemu, {ButtonKind, isTouchDevice} from '@zondax/zemu'
 import { defaultOptions as commonOpts, models } from './_config'
 import ZCashApp from '@zondax/ledger-zcash'
 
@@ -46,7 +46,12 @@ describe('Addresses', function () {
   test.concurrent.each(models)('show_unshielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Confirm' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const expectedAddrRaw = '026f27818e7426a10773226b3553d0afe50a3697bd02652f1b57d67bf648577d11'
@@ -67,7 +72,12 @@ describe('Addresses', function () {
   test.concurrent.each(models)('get_shielded_address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Confirm' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -99,7 +109,12 @@ describe('Addresses', function () {
   test.concurrent.each(models)('show shielded address', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Confirm' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -123,7 +138,12 @@ describe('Addresses', function () {
   test.concurrent.each(models)('show_shielded_address_with_div', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Confirm' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
