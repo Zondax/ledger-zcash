@@ -62,7 +62,7 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_KEYS);
+    view_review_show(REVIEW_GENERIC);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -90,7 +90,7 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_KEYS);
+    view_review_show(REVIEW_GENERIC);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -120,7 +120,7 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_KEYS);
+    view_review_show(REVIEW_GENERIC);
     *flags |= IO_ASYNCH_REPLY;
 }
 
@@ -165,7 +165,7 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     key_state.len = (uint8_t)replyLen;
 
     view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_KEYS);
+    view_review_show(REVIEW_GENERIC);
     *flags |= IO_ASYNCH_REPLY;
 }
 
