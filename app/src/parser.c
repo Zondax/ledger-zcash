@@ -48,7 +48,7 @@ typedef struct {
 } parser_sapling_t;
 
 void view_tx_state() {
-#if !defined(TARGET_STAX)
+#if !defined(TARGET_STAX) && !defined(TARGET_FLEX)
     uint8_t state = get_state();
     switch (state) {
         case STATE_PROCESSED_INPUTS:
