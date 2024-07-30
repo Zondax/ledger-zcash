@@ -26,7 +26,7 @@ ifeq ($(BOLOS_SDK),)
 # When not using the SDK, we override and build the XL complete app
 
 ZXLIB_COMPILE_STAX ?= 1
-PRODUCTION_BUILD ?= 0
+PRODUCTION_BUILD ?= 1
 include $(CURDIR)/deps/ledger-zxlib/dockerized_build.mk
 
 else
@@ -38,8 +38,8 @@ default:
 endif
 
 
-prod: 
-	PRODUCTION_BUILD=1 make
+build_all:
+	APP_TESTING=1 PRODUCTION_BUILD=1 make
 
 zcashtools_build:
 	cd zcashtools/neon && yarn install
@@ -52,7 +52,7 @@ zcashtools_test_rs: zcashtools_build
 
 zemu_install: zcashtools_build
 
-test_all: prod
+test_all: build_all
 	make zemu_install
 	make zcashtools_test
 	make zcashtools_test_rs 
