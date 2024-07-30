@@ -14,7 +14,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 
-import Zemu, { ButtonKind, DEFAULT_START_OPTIONS } from '@zondax/zemu'
+import Zemu, { ButtonKind, DEFAULT_START_OPTIONS, isTouchDevice } from '@zondax/zemu'
 import ZCashApp from '@zondax/ledger-zcash'
 import { APP_SEED, defaultOptions as commonOpts, models } from './_config'
 
@@ -28,7 +28,12 @@ describe('Nullifier', function () {
   test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 0x01 + 0x80000000
@@ -53,7 +58,12 @@ describe('Nullifier', function () {
   test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const path = 0xff + 0x80000000
@@ -80,7 +90,12 @@ describe('Get_keys', function () {
   test.concurrent.each(models)('get ivk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -108,7 +123,12 @@ describe('Get_keys', function () {
   test.concurrent.each(models)('get ovk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
@@ -131,7 +151,12 @@ describe('Get_keys', function () {
   test.concurrent.each(models)('Get fvk', async function (m) {
     const sim = new Zemu(m.path)
     try {
-      await sim.start(defaultOptions(m, true))
+      await sim.start({
+        ...defaultOptions(m, true),
+        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+        approveAction: ButtonKind.ApproveTapButton
+      })
+
       const app = new ZCashApp(sim.getTransport())
 
       const zip32Account = 1000 + 0x80000000
