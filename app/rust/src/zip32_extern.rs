@@ -150,6 +150,7 @@ pub extern "C" fn get_pkd_from_seed(
     div_ptr: *mut Diversifier,
     pkd_ptr: *mut [u8; 32],
 ) {
+    crate::bolos::heartbeat();
     let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
     let start = unsafe { &mut *start_diversifier };
     let div_out = unsafe { &mut *div_ptr };
@@ -158,8 +159,10 @@ pub extern "C" fn get_pkd_from_seed(
     let dk = key_bundle.dk();
 
     div_out.copy_from_slice(&zip32::diversifier_find_valid(&dk, start));
+    crate::bolos::heartbeat();
 
     let ivk = sapling_asknsk_to_ivk(&key_bundle.ask(), &key_bundle.nsk());
+    crate::bolos::heartbeat();
     let tmp_pkd = zip32::pkd_default(&ivk, div_out);
 
     let pkd_out = unsafe { &mut *pkd_ptr };

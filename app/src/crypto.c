@@ -113,6 +113,7 @@ typedef struct {
 
 // NOTE: Uses global hdPath / HDPATH_LEN_DEFAULT
 static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
+    io_seproxyhal_io_heartbeat();
     if (pubKey == NULL || pubKeyLen < PK_LEN_SECP256K1) {
         return zxerr_invalid_crypto_settings;
     }
@@ -128,6 +129,7 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
     zxerr_t error = zxerr_unknown;
     CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, HDPATH_LEN_BIP44, privateKeyData, NULL));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
+    io_seproxyhal_io_heartbeat();
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
     CATCH_CXERROR(cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &cx_publicKey, &cx_privateKey, 1));
 
@@ -149,6 +151,7 @@ catch_cx_error:
 // handleGetAddrSecp256K1
 // NOTE: Uses global hdPath / HDPATH_LEN_DEFAULT (indirectly)
 zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint16_t *replyLen) {
+    io_seproxyhal_io_heartbeat();
     if (buffer_len < sizeof(answer_t)) {
         return zxerr_unknown;
     }
@@ -160,6 +163,7 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     answer_t *const answer = (answer_t *)buffer;
 
     CHECK_ZXERR(crypto_extractPublicKey(answer->publicKey, sizeof_field(answer_t, publicKey)));
+    io_seproxyhal_io_heartbeat();
 
     address_temp_t address_temp;
 
@@ -179,6 +183,7 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     // 7. 25 bytes BTC address = [extended ripemd-160][checksum]
     // Encode as base58
     size_t outLen = sizeof_field(answer_t, address);
+    io_seproxyhal_io_heartbeat();
     int err =
         encode_base58(address_temp.address, VERSION_SIZE + CX_RIPEMD160_SIZE + CHECKSUM_SIZE, answer->address, &outLen);
     if (err != 0) {
@@ -224,6 +229,7 @@ catch_cx_error:
 // handleInitTX step 1/2
 zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata, const uint16_t txdatalen) {
     ZEMU_LOGF(100, "crypto_extracttx_sapling\n");
+    io_seproxyhal_io_heartbeat();
 
     MEMZERO(buffer, bufferLen);
     uint8_t t_in_len = *txdata;
@@ -275,6 +281,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         }
         start += T_IN_INPUT_LEN;
     }
+    io_seproxyhal_io_heartbeat();
 
     for (int i = 0; i < t_out_len; i++) {
         uint8_t *addr = (uint8_t *)(start + INDEX_INPUT_TOUT_ADDR);
@@ -292,6 +299,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         }
         start += T_OUT_INPUT_LEN;
     }
+    io_seproxyhal_io_heartbeat();
 
     for (int i = 0; i < spend_len; i++) {
         pars_ctx.offset = 0;
@@ -325,6 +333,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         }
         start += SPEND_INPUT_LEN;
     }
+    io_seproxyhal_io_heartbeat();
 
     for (int i = 0; i < output_len; i++) {
         uint8_t *div = start + INDEX_INPUT_OUTPUTDIV;
@@ -362,6 +371,7 @@ zxerr_t crypto_extracttx_sapling(uint8_t *buffer, uint16_t bufferLen, const uint
         }
         start += OUTPUT_INPUT_LEN;
     }
+    io_seproxyhal_io_heartbeat();
 
     uint64_t tx_value__flash = get_totalvalue();
 #ifdef HAVE_ZIP0317
@@ -430,6 +440,7 @@ zxerr_t crypto_extract_spend_proofkeyandrnd(uint8_t *buffer, uint16_t bufferLen)
 
 // handleExtractOutputData
 zxerr_t crypto_extract_output_rnd(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen) {
+    io_seproxyhal_io_heartbeat();
     if (!outputlist_more_extract()) {
         return zxerr_unknown;
     }
@@ -469,6 +480,7 @@ zxerr_t crypto_check_prevouts(uint8_t *buffer, uint16_t bufferLen, const uint8_t
     if (get_state() != STATE_CHECKING_ALL_TXDATA) {
         return zxerr_unknown;
     }
+    io_seproxyhal_io_heartbeat();
 
     uint8_t hash[HASH_SIZE] = {0};
     size_t prevouts_hash_offset = 0;
@@ -499,6 +511,7 @@ zxerr_t crypto_check_sequence(uint8_t *buffer, uint16_t bufferLen, const uint8_t
 
     uint8_t hash[HASH_SIZE] = {0};
     size_t sequence_hash_offset = 0;
+    io_seproxyhal_io_heartbeat();
 
     if (tx_version == TX_VERSION_SAPLING) {
         sapling_transparent_sequence_hash(txdata, hash);
@@ -708,6 +721,7 @@ zxerr_t crypto_checkspend_sapling(
         }
 
         // NOTE: This use is probably correct
+         io_seproxyhal_io_heartbeat();
         compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step4.nsk, tmp_buf->nf);
         if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0) {
             CHECK_ZXERROR_AND_CLEAN(zxerr_unknown)
@@ -903,6 +917,7 @@ typedef struct {
 // handleCheckandSign step 8/11
 zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, const uint8_t *txdata) {
     zemu_log_stack("crypto_checkencryptions_sapling");
+    io_seproxyhal_io_heartbeat();
     MEMZERO(buffer, bufferLen);
     tmp_enc *tmp = (tmp_enc *)buffer;
 
@@ -927,6 +942,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         // get shared key (used as encryption key) from esk, epk and pkd
         ka_to_key(tmp->step1.esk, (uint8_t *)item->pkd, tmp->step1.epk, tmp->step2.sharedkey);
         CHECK_APP_CANARY()
+        io_seproxyhal_io_heartbeat();
         // encode (div, value rseed and memotype) into step2.compactout ready to be
         // encrypted
         prepare_compact_note((uint8_t *)item->div, item->value, (uint8_t *)item->rseed, item->memotype,
@@ -938,6 +954,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         // step2.compactoutput (reusing the same memory for input and output)
         chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, tmp->step2.chachanonce,
                1);
+        io_seproxyhal_io_heartbeat();
         CHECK_APP_CANARY()
         // check that the computed encryption is the same as that provided in the
         // transaction data
@@ -997,6 +1014,7 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             // that provided in the transaction data
             chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,
                    1);
+            io_seproxyhal_io_heartbeat();
             if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0) {
                 return zxerr_unknown;
             }
@@ -1135,6 +1153,7 @@ zxerr_t crypto_sign_and_check_transparent(
         size_t signatureLen = DER_MAX_SIZE;
         CATCH_CXERROR(cx_ecdsa_sign_no_throw(&cx_privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA256, message_digest,
                                              CX_SHA256_SIZE, signature->step1.der_signature, &signatureLen, &info));
+        io_seproxyhal_io_heartbeat();
 
         if (convertDERtoRSV(signature->step1.der_signature, info, signature->step1.r, signature->step1.s,
                             &signature->step1.v) != no_error ||
@@ -1262,6 +1281,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32_a
 
     tmp_sapling_ivk_and_default_div *out = (tmp_sapling_ivk_and_default_div *)buffer;
     MEMZERO(buffer, bufferLen);
+    io_seproxyhal_io_heartbeat();
 
     CHECK_APP_CANARY()
     // get incomming viewing key
@@ -1270,6 +1290,7 @@ zxerr_t crypto_ivk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32_a
     CHECK_APP_CANARY()
     // get default diversifier for start index 0
     diversifier_find_valid(zip32_account, out->default_div);
+    io_seproxyhal_io_heartbeat();
 
     CHECK_APP_CANARY()
     *replyLen = IVK_SIZE + DIV_SIZE;
@@ -1421,6 +1442,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     if (bufferLen < sizeof(tmp_buf_addr_s)) {
         return zxerr_unknown;
     }
+    io_seproxyhal_io_heartbeat();
 
     zemu_log_stack("crypto_fillAddress_sapling");
     tmp_buf_addr_s *const out = (tmp_buf_addr_s *)buffer;
@@ -1429,6 +1451,7 @@ zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t
     get_pkd_from_seed(p, out->startindex, out->diversifier, out->pkd);
     MEMZERO(out + DIV_SIZE, MAX_SIZE_BUF_ADDR - DIV_SIZE);
     CHECK_APP_CANARY()
+    io_seproxyhal_io_heartbeat();
 
     if (bech32EncodeFromBytes(out->address_bech32, sizeof_field(tmp_buf_addr_s, address_bech32), BECH32_HRP,
                               out->address_raw, sizeof_field(tmp_buf_addr_s, address_raw), 1,
