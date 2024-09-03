@@ -19,7 +19,7 @@
     "format:check": "FORCE_COLOR=1 prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "test": "jest",
+    "test": "jest --maxConcurrency 1",
     "try": "node try.ts",
     "upgrade": "bunx npm-check-updates -i"
   },
