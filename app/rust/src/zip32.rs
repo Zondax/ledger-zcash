@@ -263,6 +263,8 @@ fn zip32_sapling_derive_child(
     path_i: u32,
     key_bundle_i: &mut SaplingKeyBundle,
 ) {
+    crate::bolos::heartbeat();
+
     let hardened = (path_i & 0x8000_0000) != 0;
     let c = path_i & 0x7FFF_FFFF;
 
@@ -321,6 +323,7 @@ fn zip32_sapling_derive_child(
 pub fn zip32_sapling_derive(path: &Zip32Path) -> SaplingKeyBundle {
     // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
     let mut ik = zip32_master_key_i();
+    crate::bolos::heartbeat();
 
     let mut key_bundle_i = SaplingKeyBundle::new(
         zip32_sapling_ask_m(&ik.spending_key()),
