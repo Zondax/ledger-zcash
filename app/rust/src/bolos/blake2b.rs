@@ -241,11 +241,23 @@ pub fn blake2b_expand_v4(
         .hash_length(64)
         .personal(PRF_EXPAND_PERSONALIZATION)
         .to_state();
+    crate::bolos::heartbeat();
+
     blake2b_state.update(in_a);
+    crate::bolos::heartbeat();
+
     blake2b_state.update(in_b);
+    crate::bolos::heartbeat();
+
     blake2b_state.update(in_c);
+    crate::bolos::heartbeat();
+
     blake2b_state.update(in_d);
+    crate::bolos::heartbeat();
+
     blake2b_state.update(in_e);
+    crate::bolos::heartbeat();
+
     let mut hash = [0u8; 64];
     hash.copy_from_slice(blake2b_state.finalize().as_bytes());
     hash
