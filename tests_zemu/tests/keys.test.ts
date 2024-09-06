@@ -25,166 +25,386 @@ const defaultOptions = (model: any, is_address = false) => {
 }
 
 describe('Nullifier', function () {
-  test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({
-        ...defaultOptions(m, true),
-        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
-        approveAction: ButtonKind.ApproveTapButton
-      })
+  describe('Non Expert', function () {
+    test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton,
+        })
 
-      const app = new ZCashApp(sim.getTransport())
+        const app = new ZCashApp(sim.getTransport())
 
-      const zip32Account = 0x01 + 0x80000000
-      const pos = BigInt(0)
-      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+        const zip32Account = 0x01 + 0x80000000
+        const pos = BigInt(0)
+        const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
-      const promise_resp = app.getNullifierSapling(zip32Account, pos, cmu)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0x1`)
+        const promise_resp = app.getNullifierSapling(zip32Account, pos, cmu)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0x1`)
 
-      const resp = await promise_resp
+        let resp = await promise_resp
 
-      const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
-      const nfRaw = resp.nfRaw?.toString('hex')
-      console.log(nfRaw)
-      expect(nfRaw).toEqual(expected_nfRaw)
-    } finally {
-      await sim.close()
-    }
+        const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
+        let nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+
+        resp = await app.getNullifierSapling(zip32Account, pos, cmu)
+        nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const path = 0xff + 0x80000000
+        const pos = BigInt(0)
+        const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+
+        const promise_resp = app.getNullifierSapling(path, pos, cmu)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0xFF`)
+
+        let resp = await promise_resp
+
+        const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
+        let nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+
+        resp = await app.getNullifierSapling(path, pos, cmu)
+        nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } finally {
+        await sim.close()
+      }
+    })
   })
 
-  test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({
-        ...defaultOptions(m, true),
-        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
-        approveAction: ButtonKind.ApproveTapButton
-      })
 
-      const app = new ZCashApp(sim.getTransport())
+  describe('Expert', function () {
+    test.concurrent.each(models)('get nullifier account 0x01', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton,
+        })
 
-      const path = 0xff + 0x80000000
-      const pos = BigInt(0)
-      const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+        await sim.toggleExpertMode()
 
-      const promise_resp = app.getNullifierSapling(path, pos, cmu)
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0xFF`)
+        const app = new ZCashApp(sim.getTransport())
 
-      const resp = await promise_resp
+        const zip32Account = 0x01 + 0x80000000
+        const pos = BigInt(0)
+        const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
 
-      const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
-      const nfRaw = resp.nfRaw?.toString('hex')
-      console.log(nfRaw)
-      expect(nfRaw).toEqual(expected_nfRaw)
-    } finally {
-      await sim.close()
-    }
+        const promise_resp = app.getNullifierSapling(zip32Account, pos, cmu)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0x1-expert`)
+
+        const resp = await promise_resp
+
+        const expected_nfRaw = '42cf7491d0b97afc77fb463054f6554ecad6dd79ce1c9e412058d9544cadef8f'
+        const nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('get_nullifier_account_0xFF', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        await sim.toggleExpertMode()
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const path = 0xff + 0x80000000
+        const pos = BigInt(0)
+        const cmu = Buffer.from('df7e8d004bd4e32f2fb022efd5aa4bcdc7c89f919bbac9309d6e21ca83ce93ea', 'hex')
+
+        const promise_resp = app.getNullifierSapling(path, pos, cmu)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-show_nullifier-0xFF-expert`)
+
+        const resp = await promise_resp
+
+        const expected_nfRaw = 'ca1466808b1d503eea8b1fad31e16379247f8bf9fbe2fcb046d28b82af2e1e7d'
+        const nfRaw = resp.nfRaw?.toString('hex')
+        console.log(nfRaw)
+        expect(nfRaw).toEqual(expected_nfRaw)
+      } finally {
+        await sim.close()
+      }
+    })
   })
 })
+
+
 
 describe('Get_keys', function () {
-  test.concurrent.each(models)('get ivk', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({
-        ...defaultOptions(m, true),
-        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
-        approveAction: ButtonKind.ApproveTapButton
-      })
+  describe('Non expert', function () {
+    test.concurrent.each(models)('get ivk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
 
-      const app = new ZCashApp(sim.getTransport())
+        const app = new ZCashApp(sim.getTransport())
 
-      const zip32Account = 1000 + 0x80000000
-      const ivkreq = app.getIvkSapling(zip32Account)
+        const zip32Account = 1000 + 0x80000000
+        const ivkreq = app.getIvkSapling(zip32Account)
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk`)
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk`)
 
-      const ivk = await ivkreq
-      console.log(ivk)
+        let ivk = await ivkreq
+        console.log(ivk)
 
-      const expected_ivkRaw = 'd660cd8b883afbcc0c145d0bf4241d3b26fff391b0ad3389e39f717995202801'
-      const expected_div = '71635f26c1b4a2332abeb7'
+        const expected_ivkRaw = 'd660cd8b883afbcc0c145d0bf4241d3b26fff391b0ad3389e39f717995202801'
+        const expected_div = '71635f26c1b4a2332abeb7'
 
-      const ivkRaw = ivk.ivkRaw?.toString('hex')
-      const default_div = ivk.defaultDiversifier?.toString('hex')
+        let ivkRaw = ivk.ivkRaw?.toString('hex')
+        let default_div = ivk.defaultDiversifier?.toString('hex')
 
-      expect(ivkRaw).toEqual(expected_ivkRaw)
-      expect(default_div).toEqual(expected_div)
-    } finally {
-      await sim.close()
-    }
+        expect(ivkRaw).toEqual(expected_ivkRaw)
+        expect(default_div).toEqual(expected_div)
+
+
+        ivk = await app.getIvkSapling(zip32Account)
+
+        ivkRaw = ivk.ivkRaw?.toString('hex')
+        default_div = ivk.defaultDiversifier?.toString('hex')
+
+        expect(ivkRaw).toEqual(expected_ivkRaw)
+        expect(default_div).toEqual(expected_div)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('get ovk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const zip32Account = 1000 + 0x80000000
+        const ovkreq = app.getOvkSapling(zip32Account)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
+
+        let ovk = await ovkreq
+        console.log(ovk)
+
+        const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
+        let ovkRaw = ovk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+
+        ovk = await app.getOvkSapling(zip32Account)
+
+        ovkRaw = ovk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('Get fvk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const zip32Account = 1000 + 0x80000000
+        let fvkreq = app.getFvkSapling(zip32Account)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-fvk`)
+
+        let fvk = await fvkreq
+
+        console.log(fvk)
+
+        const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
+        let akRaw = fvk.akRaw?.toString('hex')
+        expect(akRaw).toEqual(expected_akRaw)
+
+        const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
+        let nkRaw = fvk.nkRaw?.toString('hex')
+        expect(nkRaw).toEqual(expected_nkRaw)
+
+        const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
+        let ovkRaw = fvk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+
+        console.log(fvk)
+
+        fvk = await app.getFvkSapling(zip32Account)
+
+        akRaw = fvk.akRaw?.toString('hex')
+        expect(akRaw).toEqual(expected_akRaw)
+
+        nkRaw = fvk.nkRaw?.toString('hex')
+        expect(nkRaw).toEqual(expected_nkRaw)
+
+        ovkRaw = fvk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+      } finally {
+        await sim.close()
+      }
+    })
   })
 
-  test.concurrent.each(models)('get ovk', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({
-        ...defaultOptions(m, true),
-        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
-        approveAction: ButtonKind.ApproveTapButton
-      })
 
-      const app = new ZCashApp(sim.getTransport())
+  describe('Expert', function () {
+    test.concurrent.each(models)('get ivk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
 
-      const zip32Account = 1000 + 0x80000000
-      const ovkreq = app.getOvkSapling(zip32Account)
+        await sim.toggleExpertMode()
 
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk`)
+        const app = new ZCashApp(sim.getTransport())
 
-      const ovk = await ovkreq
-      console.log(ovk)
+        const zip32Account = 1000 + 0x80000000
+        const ivkreq = app.getIvkSapling(zip32Account)
 
-      const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
-      const ovkRaw = ovk.ovkRaw?.toString('hex')
-      expect(ovkRaw).toEqual(expected_ovkRaw)
-    } finally {
-      await sim.close()
-    }
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ivk-expert`)
+
+        const ivk = await ivkreq
+        console.log(ivk)
+
+        const expected_ivkRaw = 'd660cd8b883afbcc0c145d0bf4241d3b26fff391b0ad3389e39f717995202801'
+        const expected_div = '71635f26c1b4a2332abeb7'
+
+        const ivkRaw = ivk.ivkRaw?.toString('hex')
+        const default_div = ivk.defaultDiversifier?.toString('hex')
+
+        expect(ivkRaw).toEqual(expected_ivkRaw)
+        expect(default_div).toEqual(expected_div)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('get ovk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        await sim.toggleExpertMode()
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const zip32Account = 1000 + 0x80000000
+        const ovkreq = app.getOvkSapling(zip32Account)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ovk-expert`)
+
+        const ovk = await ovkreq
+        console.log(ovk)
+
+        const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
+        const ovkRaw = ovk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+      } finally {
+        await sim.close()
+      }
+    })
+
+    test.concurrent.each(models)('Get fvk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        await sim.toggleExpertMode()
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const zip32Account = 1000 + 0x80000000
+        const fvkreq = app.getFvkSapling(zip32Account)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-fvk-expert`)
+
+        const fvk = await fvkreq
+
+        console.log(fvk)
+
+        const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
+        const akRaw = fvk.akRaw?.toString('hex')
+        expect(akRaw).toEqual(expected_akRaw)
+
+        const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
+        const nkRaw = fvk.nkRaw?.toString('hex')
+        expect(nkRaw).toEqual(expected_nkRaw)
+
+        const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
+        const ovkRaw = fvk.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+      } finally {
+        await sim.close()
+      }
+    })
   })
 
-  test.concurrent.each(models)('Get fvk', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({
-        ...defaultOptions(m, true),
-        approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
-        approveAction: ButtonKind.ApproveTapButton
-      })
-
-      const app = new ZCashApp(sim.getTransport())
-
-      const zip32Account = 1000 + 0x80000000
-      const fvkreq = app.getFvkSapling(zip32Account)
-
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-fvk`)
-
-      const fvk = await fvkreq
-
-      console.log(fvk)
-
-      const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
-      const akRaw = fvk.akRaw?.toString('hex')
-      expect(akRaw).toEqual(expected_akRaw)
-
-      const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
-      const nkRaw = fvk.nkRaw?.toString('hex')
-      expect(nkRaw).toEqual(expected_nkRaw)
-
-      const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
-      const ovkRaw = fvk.ovkRaw?.toString('hex')
-      expect(ovkRaw).toEqual(expected_ovkRaw)
-    } finally {
-      await sim.close()
-    }
-  })
 })
+
+
 
 describe('Diversifiers', function () {
   test.concurrent.each(models)('Div list with startindex', async function (m) {
