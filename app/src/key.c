@@ -49,36 +49,51 @@ zxerr_t key_getItem(int8_t displayIdx,
     }
 
     zemu_log_stack("key_getItem");
-    char tmpBuffer[200];
+    char tmpBuffer[200] = "";
 
     switch (displayIdx) {
         case 0: {
             zemu_log_stack("case 0");
             MEMZERO(tmpBuffer, sizeof(tmpBuffer));
-            switch (key_state.kind) {
-                case key_ovk:
-                    snprintf(outKey, outKeyLen, "Send OVK?");
-                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
-                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
-                    return zxerr_ok;
-                case key_ivk:
-                    snprintf(outKey, outKeyLen, "Send IVK?");
-                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
-                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
-                    return zxerr_ok;
-                case key_fvk:
-                    snprintf(outKey, outKeyLen, "Send FVK?\n");
-                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
-                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
-                    return zxerr_ok;
-                case nf:
-                    zemu_log_stack("Send NF?");
-                    snprintf(outKey, outKeyLen, "Send NF?");
-                    array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
-                    pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
-                    return zxerr_ok;
-                default:
-                    return zxerr_unknown;
+
+            if (app_mode_expert()) {
+                switch (key_state.kind) {
+                    case key_ovk:
+                        snprintf(outKey, outKeyLen, "Send OVK?");
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return zxerr_ok;
+                    case key_ivk:
+                        snprintf(outKey, outKeyLen, "Send IVK?");
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return zxerr_ok;
+                    case key_fvk:
+                        snprintf(outKey, outKeyLen, "Send FVK?\n");
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return zxerr_ok;
+                    case nf:
+                        zemu_log_stack("Send NF?");
+                        snprintf(outKey, outKeyLen, "Send NF?");
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return zxerr_ok;
+                    default:
+                        return zxerr_unknown;
+                }
+            } else {
+                switch (key_state.kind) {
+                    case key_ovk:
+                    case key_ivk:
+                    case key_fvk:
+                    case nf:
+                        snprintf(outKey, outKeyLen, "Retrieve data?");
+                        snprintf(outVal, outValLen, "IVKs, OVKs, FVKs or NFs");
+                        return zxerr_ok;
+                    default:
+                        return zxerr_unknown;
+                }
             }
         }
         case 1: {

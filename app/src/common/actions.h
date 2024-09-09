@@ -31,6 +31,7 @@
 
 extern address_state_t action_addrResponse;
 extern key_state_t key_state;
+extern bool keys_permission_granted;
 
 __Z_INLINE void app_reject() {
     transaction_reset();
@@ -41,6 +42,7 @@ __Z_INLINE void app_reject() {
 }
 
 __Z_INLINE void app_reply_key() {
+    keys_permission_granted = true;
     set_code(G_io_apdu_buffer, key_state.len, APDU_CODE_OK);
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, key_state.len + 2);
 }

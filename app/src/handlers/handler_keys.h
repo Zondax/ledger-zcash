@@ -34,6 +34,8 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
+
+
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)
 // to decrypt the note (so that she can subsequently send it).
@@ -61,9 +63,15 @@ __Z_INLINE void handleGetKeyIVK(volatile uint32_t *flags, volatile uint32_t *tx,
     }
     key_state.len = (uint8_t)replyLen;
 
-    view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_GENERIC);
-    *flags |= IO_ASYNCH_REPLY;
+    if (app_mode_expert() || !keys_permission_granted) {
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show(REVIEW_GENERIC);
+        *flags |= IO_ASYNCH_REPLY;
+        return;
+    }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
 }
 
 // If Bob sends a note to Alice (stored on the blockchain in encrypted form),
@@ -89,9 +97,14 @@ __Z_INLINE void handleGetKeyOVK(volatile uint32_t *flags, volatile uint32_t *tx,
     }
     key_state.len = (uint8_t)replyLen;
 
-    view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_GENERIC);
-    *flags |= IO_ASYNCH_REPLY;
+    if (app_mode_expert() || !keys_permission_granted) {
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show(REVIEW_GENERIC);
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
 }
 
 // Get the sapling full viewing key (ak, nk, ovk)
@@ -119,9 +132,14 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     }
     key_state.len = (uint8_t)replyLen;
 
-    view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_GENERIC);
-    *flags |= IO_ASYNCH_REPLY;
+    if (app_mode_expert() || !keys_permission_granted) {
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show(REVIEW_GENERIC);
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
 }
 
 // Computing the note nullifier nf is required in order to spend the note.
@@ -164,9 +182,14 @@ __Z_INLINE void handleGetNullifier(volatile uint32_t *flags, volatile uint32_t *
     }
     key_state.len = (uint8_t)replyLen;
 
-    view_review_init(key_getItem, key_getNumItems, app_reply_key);
-    view_review_show(REVIEW_GENERIC);
-    *flags |= IO_ASYNCH_REPLY;
+    if (app_mode_expert() || !keys_permission_granted) {
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show(REVIEW_GENERIC);
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
 }
 
 __Z_INLINE void handleGetDiversifierList(volatile uint32_t *tx, uint32_t rx) {
