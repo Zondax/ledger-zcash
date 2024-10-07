@@ -721,7 +721,7 @@ zxerr_t crypto_checkspend_sapling(
         }
 
         // NOTE: This use is probably correct
-         io_seproxyhal_io_heartbeat();
+        io_seproxyhal_io_heartbeat();
         compute_nullifier(tmp_buf->ncm_full, notepos, tmp.step4.nsk, tmp_buf->nf);
         if (MEMCMP(tmp_buf->nf, start_spenddata + INDEX_SPEND_NF + i * SPEND_TX_LEN, NULLIFIER_SIZE) != 0) {
             CHECK_ZXERROR_AND_CLEAN(zxerr_unknown)
@@ -952,8 +952,8 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
         MEMZERO(tmp->step2.chachanonce, CHACHA_NONCE_SIZE);
         // encrypt the previously obtained encoding, and store it in
         // step2.compactoutput (reusing the same memory for input and output)
-        chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey, tmp->step2.chachanonce,
-               1);
+        CHECK_ZXERR(chacha(tmp->step2.compactout, tmp->step2.compactout, COMPACT_OUT_SIZE, tmp->step2.sharedkey,
+                           tmp->step2.chachanonce, 1));
         io_seproxyhal_io_heartbeat();
         CHECK_APP_CANARY()
         // check that the computed encryption is the same as that provided in the
@@ -985,7 +985,8 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             // tmp->step6.encciph = tmp->step5.pkd || tmp->step5.esk
             // encrypt that, using as encryption key the output of the blake2b PRF
             // store resulting ciphertext in tmp->step6.encciph
-            chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey, tmp->step6.chachanonce, 1);
+            CHECK_ZXERR(chacha(tmp->step6.encciph, tmp->step6.encciph, ENC_CIPHER_SIZE, tmp->step6.outkey,
+                               tmp->step6.chachanonce, 1));
             CHECK_APP_CANARY()
 
             // check that the computed encryption is the same as that provided in the
@@ -1012,8 +1013,8 @@ zxerr_t crypto_checkencryptions_sapling(uint8_t *buffer, uint16_t bufferLen, con
             // tmp->step4b.encciph = tmp->step3b.encciph_part1 ||
             // tmp->step3b.encciph_part2 encrypt and compare computed encryption to
             // that provided in the transaction data
-            chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey, tmp->step4b.chachanonce,
-                   1);
+            CHECK_ZXERR(chacha(tmp->step4b.encciph, tmp->step4b.encciph, ENC_CIPHER_SIZE, tmp->step4b.outkey,
+                               tmp->step4b.chachanonce, 1));
             io_seproxyhal_io_heartbeat();
             if (MEMCMP(tmp->step4b.encciph, start_outputdata + INDEX_OUTPUT_OUT + i * OUTPUT_TX_LEN, ENC_CIPHER_SIZE) != 0) {
                 return zxerr_unknown;
