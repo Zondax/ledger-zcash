@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "zxmacros.h"
 
 #if defined(__cplusplus)
 extern "C" {
