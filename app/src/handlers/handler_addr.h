@@ -38,6 +38,11 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32
     ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");
     *tx = 0;
 
+    if (rx < APDU_MIN_LENGTH) {
+        ZEMU_LOGF(100, "rx: %d\n", rx);
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
     extractHDPathTransparent(rx, OFFSET_DATA);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
