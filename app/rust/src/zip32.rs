@@ -289,7 +289,6 @@ fn zip32_sapling_derive_child(
         // NOTE: WARNING: CURRENTLY COMPUTING NON-HARDENED PATHS DO NOT FIT IN MEMORY
         LittleEndian::write_u32(&mut le_i, c);
 
-        // FIXME: Duplicated work?
         let s_k = &ik.spending_key();
 
         let ask = zip32_sapling_ask_m(s_k);

@@ -26,7 +26,6 @@ pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
     let ak = sapling_ask_to_ak(ask);
     let nk = sapling_nsk_to_nk(nsk);
 
-    // FIXME: not using bolos blake!?
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_IVK_PERSONALIZATION)
@@ -42,7 +41,6 @@ pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
 
 #[inline(never)]
 pub fn sapling_aknk_to_ivk(ak: &AkBytes, nk: &NkBytes) -> IvkBytes {
-    // FIXME: not using bolos blake!?
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_IVK_PERSONALIZATION)

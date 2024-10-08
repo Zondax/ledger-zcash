@@ -89,7 +89,7 @@ void chacha_core(uint8_t *output, const uint32_t *input) {
     }
 }
 
-void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, const uint8_t *nonce, uint32_t counter) {
+zxerr_t chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, const uint8_t *nonce, uint32_t counter) {
     uint32_t input[16];
     uint8_t buf[64];
     size_t todo, i;
@@ -110,6 +110,10 @@ void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, 
     input[14] = U8TO32_LITTLE(nonce + 4);
     input[15] = U8TO32_LITTLE(nonce + 8);
     while (in_len > 0) {
+        if (input[12] == UINT32_MAX) {
+            return zxerr_out_of_bounds;
+        }
+
         todo = sizeof(buf);
         if (in_len < todo) {
             todo = in_len;
@@ -124,4 +128,6 @@ void chacha(uint8_t *out, const uint8_t *in, size_t in_len, const uint8_t *key, 
         in_len -= todo;
         input[12]++;
     }
+
+    return zxerr_ok;
 }

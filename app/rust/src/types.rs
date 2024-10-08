@@ -6,7 +6,6 @@ pub fn diversifier_zero() -> Diversifier {
     [0u8; 11]
 }
 
-// FIXME: This is not good design. Mayeb something like
 pub type DiversifierList4 = [u8; 44];
 pub type DiversifierList10 = [u8; 110];
 
@@ -33,7 +32,7 @@ pub type DkBytes = [u8; 32];
 pub type NfBytes = [u8; 32];
 
 // This can be between 32 and 252 bytes
-// FIXME: move to 64 to align with ed25519 private key?
+// TODO: move to 64 to align with ed25519 private key?
 pub type Zip32Seed = [u8; 32];
 
 pub type Zip32Path = [u32];
@@ -105,7 +104,6 @@ create_ztruct! {
         pub diversifier: Diversifier,
         pub value: [u8; 8],
         pub rcm: DkBytes,
-        // FIXME: why an additional byte?
         pub memotype: u8
     }
 }

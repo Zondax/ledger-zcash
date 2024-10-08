@@ -202,7 +202,6 @@ pub fn blake2s_diversification(tag: &[u8]) -> [u8; 32] {
     pub const GH_FIRST_BLOCK: &[u8; 64] =
         b"096b36a5804bfacef1691e173c366a47ff5ba84a44f26ddd7e8d9f79d5b42df0";
 
-    // FIXME: not using bolos blake!?
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(KEY_DIVERSIFICATION_PERSONALIZATION)
