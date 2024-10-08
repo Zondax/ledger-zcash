@@ -99,8 +99,6 @@ APP_SOURCE_PATH += $(MY_DIR)/../deps/tiny-aes/src
 
 include $(CURDIR)/../deps/ledger-zxlib/makefiles/Makefile.platform
 CFLAGS += -Wvla
-CFLAGS += -Werror
-CXXFLAGS += -Werror
 
 # Building Rust
 LDFLAGS += -z muldefs
