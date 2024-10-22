@@ -306,7 +306,7 @@ parser_error_t parser_getItem(uint8_t displayIdx,
         }
 
         case type_txfee: {
-            snprintf(outKey, outKeyLen, "Fee");
+            snprintf(outKey, outKeyLen, "Fee (ZEC)");
             return parser_sapling_display_value(get_totalvalue(), outVal, outValLen, pageIdx, pageCount);
         }
 
