@@ -58,6 +58,15 @@ create_ztruct! {
     }
 }
 
+create_ztruct! {
+    pub struct DiversifiableFullViewingKey {
+        pub ak: AkBytes,
+        pub nk: NkBytes,
+        pub ovk: OvkBytes,
+        pub dk: DkBytes
+    }
+}
+
 // https://zips.z.cash/zip-0032#specification-sapling-key-derivation
 create_ztruct! {
     pub struct SaplingExtendedFullViewingKey {

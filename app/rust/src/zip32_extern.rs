@@ -5,11 +5,8 @@ use crate::constants::{DIV_DEFAULT_LIST_LEN, DIV_SIZE, ZIP32_COIN_TYPE, ZIP32_PU
 use crate::sapling::{
     sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_asknsk_to_ivk, sapling_nsk_to_nk,
 };
-use crate::types::{
-    diversifier_zero, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4,
-    FullViewingKey, IvkBytes, NskBytes, Zip32Seed,
-};
-use crate::zip32::{diversifier_group_hash_light, zip32_sapling_derive, zip32_sapling_fvk};
+use crate::types::{diversifier_zero, DiversifiableFullViewingKey, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4, FullViewingKey, IvkBytes, NskBytes, Zip32Seed};
+use crate::zip32::{diversifier_group_hash_light, zip32_sapling_derive, zip32_sapling_fvk, zip32_sapling_dfvk};
 use crate::{sapling, zip32};
 
 #[no_mangle]
@@ -66,6 +63,18 @@ pub extern "C" fn zip32_fvk(account: u32, fvk_ptr: *mut FullViewingKey) {
     let fvk = zip32_sapling_fvk(&key_bundle);
 
     fvk_out.to_bytes_mut().copy_from_slice(fvk.to_bytes());
+}
+
+#[no_mangle]
+pub extern "C" fn zip32_dfvk(account: u32, dfvk_ptr: *mut DiversifiableFullViewingKey) {
+    let path = [ZIP32_PURPOSE, ZIP32_COIN_TYPE, account];
+    let dfvk_out = unsafe { &mut *dfvk_ptr };
+
+    let key_bundle = zip32_sapling_derive(&path);
+
+    let dfvk = zip32_sapling_dfvk(&key_bundle);
+
+    dfvk_out.to_bytes_mut().copy_from_slice(dfvk.to_bytes());
 }
 
 #[no_mangle]
