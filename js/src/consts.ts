@@ -30,6 +30,7 @@ export const INS = {
   GET_OVK_SAPLING: 0xf1,
   GET_NF_SAPLING: 0xf2,
   GET_FVK_SAPLING: 0xf3,
+  GET_DFVK_SAPLING: 0xf4,
 
   INIT_TX: 0xa0,
   KEY_EXCHANGE: 0xaa,
@@ -55,6 +56,7 @@ export const SAPLING_ADDR_LEN = 43
 export const SAPLING_DIV_LEN = 11
 export const SAPLING_IVK_LEN = 32
 export const SAPLING_OVK_LEN = 32
+export const SAPLING_DK_LEN = 32
 export const SAPLING_NF_LEN = 32
 export const SAPLING_AK_LEN = 32
 export const SAPLING_NK_LEN = 32

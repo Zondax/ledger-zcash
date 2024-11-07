@@ -25,7 +25,7 @@ import {
   P1_VALUES,
   SAPLING_ADDR_LEN,
   SAPLING_AK_LEN,
-  SAPLING_DIV_LEN,
+  SAPLING_DIV_LEN, SAPLING_DK_LEN,
   SAPLING_IVK_LEN,
   SAPLING_NF_LEN,
   SAPLING_NK_LEN,
@@ -33,7 +33,7 @@ import {
   TRANSPARENT_PK_LEN,
 } from './consts'
 import {
-  AddressResponse,
+  AddressResponse, DfvkResponse,
   DiversifierListResponse,
   ExtractSpendResponse,
   FvkResponse,
@@ -241,6 +241,32 @@ export default class ZCashApp extends GenericApp {
         akRaw,
         nkRaw,
         ovkRaw,
+      }
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
+  }
+
+  async getDfvkSapling(zip32Account: number): Promise<DfvkResponse> {
+    const sentToDevice = Buffer.alloc(4)
+    sentToDevice.writeUInt32LE(zip32Account, 0)
+
+    try {
+      const responseBuffer = await this.transport.send(CLA, INS.GET_DFVK_SAPLING, 0, 0, sentToDevice, [0x9000])
+      const response = processResponse(responseBuffer)
+
+      console.log(response.length())
+
+      const akRaw = response.readBytes(SAPLING_AK_LEN)
+      const nkRaw = response.readBytes(SAPLING_NK_LEN)
+      const ovkRaw = response.readBytes(SAPLING_OVK_LEN)
+      const dkRaw = response.readBytes(SAPLING_DK_LEN)
+
+      return {
+        akRaw,
+        nkRaw,
+        ovkRaw,
+        dkRaw
       }
     } catch (error) {
       throw processErrorResponse(error)
