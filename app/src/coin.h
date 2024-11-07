@@ -86,6 +86,7 @@ extern "C" {
 #define INS_GET_OVK                       0xf1
 #define INS_GET_NF                        0xf2
 #define INS_GET_FVK                       0xf3
+#define INS_GET_DFVK                      0xf4
 #define INS_CRASH_TEST                    0xff
 
 typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3, key_dfvk = 4 } key_type_e;

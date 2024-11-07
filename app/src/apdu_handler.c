@@ -91,6 +91,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+                case INS_GET_DFVK: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetKeyDFVK(flags, tx, rx);
+                    break;
+                }
+
                 case INS_INIT_TX: {
                     CHECK_PIN_VALIDATED()
                     handleInitTX(flags, tx, rx);
