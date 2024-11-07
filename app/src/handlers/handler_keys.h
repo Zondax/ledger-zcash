@@ -34,8 +34,6 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-
-
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)
 // to decrypt the note (so that she can subsequently send it).
@@ -142,7 +140,6 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     THROW(APDU_CODE_OK);
 }
 
-
 // Get the sapling diversifiable full viewing key (ak, nk, ovk)
 __Z_INLINE void handleGetKeyDFVK(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
     zemu_log("----[handleGetKeyDFVK]\n");
@@ -160,7 +157,7 @@ __Z_INLINE void handleGetKeyDFVK(volatile uint32_t *flags, volatile uint32_t *tx
 
     zxerr_t err = crypto_dfvk_sapling(G_io_apdu_buffer,
 
-                                     IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
+                                      IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
 
     if (err != zxerr_ok) {
         *tx = 0;

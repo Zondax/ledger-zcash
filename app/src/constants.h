@@ -17,7 +17,7 @@
 #pragma once
 
 // CRYPTO File
-#define CHECKSUM_LENGTH          4
+#define CHECKSUM_LENGTH 4
 
 #define ED25519_SK_SIZE 64
 
