@@ -32,7 +32,7 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-__Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset) {
+__Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset, bool isUnified) {
     uint8_t pathLen = HDPATH_LEN_BIP44;
     if(isUnified){
         pathLen = HDPATH_LEN_UNIFIED;
