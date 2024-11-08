@@ -34,7 +34,7 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-__Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+__Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx, bool isUnified) {
     ZEMU_LOGF(100, "----[handleGetAddrSecp256K1]\n");
     *tx = 0;
 
@@ -43,7 +43,7 @@ __Z_INLINE void handleGetAddrSecp256K1(volatile uint32_t *flags, volatile uint32
         THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
     }
 
-    extractHDPathTransparent(rx, OFFSET_DATA);
+    extractHDPathTransparent(rx, OFFSET_DATA, isUnified);
 
     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
     uint16_t replyLen = 0;

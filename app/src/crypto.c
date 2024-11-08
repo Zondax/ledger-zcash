@@ -127,7 +127,7 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
     uint8_t privateKeyData[64] = {0};
 
     zxerr_t error = zxerr_unknown;
-    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, HDPATH_LEN_BIP44, privateKeyData, NULL));
+    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, hdPath.pathLen, privateKeyData, NULL));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
     io_seproxyhal_io_heartbeat();
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
