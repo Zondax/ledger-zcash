@@ -33,7 +33,8 @@ import {
   TRANSPARENT_PK_LEN,
 } from './consts'
 import {
-  AddressResponse, DfvkResponse,
+  AddressResponse,
+  DfvkResponse,
   DiversifierListResponse,
   ExtractSpendResponse,
   FvkResponse,
@@ -45,6 +46,7 @@ import {
   SignResponse,
   SpendSignatureResponse,
   TransaparentSignatureResponse,
+  UfvkResponse,
 } from './types'
 import { signSendChunkv1 } from './utils'
 
@@ -69,6 +71,7 @@ export default class ZCashApp extends GenericApp {
   ////////////////////////////////////////////
   ////////////////////////////////////////////
   ////////////////////////////////////////////
+
 
   async getAddressTransparent(path: string, showInScreen = true): Promise<AddressResponse> {
     try {
@@ -323,6 +326,45 @@ export default class ZCashApp extends GenericApp {
       const nfraw = Buffer.from(response.readBytes(SAPLING_NF_LEN))
 
       return { nfRaw: nfraw } as NullifierResponse
+    } catch (error) {
+      throw processErrorResponse(error)
+    }
+  }
+
+  async getUfvk(zip32Account: number): Promise<UfvkResponse> {
+    try {
+      const serializedZip32Acc = Buffer.alloc(4)
+      serializedZip32Acc.writeUInt32LE(zip32Account + 0x80000000, 0)
+      let responseBuffer = await this.transport.send(CLA, INS.GET_DFVK_SAPLING, 0, 0, serializedZip32Acc, [0x9000])
+      let response = processResponse(responseBuffer)
+
+      console.log(response.length())
+
+      const akRaw = response.readBytes(SAPLING_AK_LEN)
+      const nkRaw = response.readBytes(SAPLING_NK_LEN)
+      const ovkRaw = response.readBytes(SAPLING_OVK_LEN)
+      const dkRaw = response.readBytes(SAPLING_DK_LEN)
+
+      const serializedUnifiedTransparentAcc = serializePath(`m/44'/133'/${zip32Account}'`, [3])
+      responseBuffer = await this.transport.send(CLA, INS.GET_UNIFIED_ADDR_SECP256K1, 0, 0, serializedUnifiedTransparentAcc, [0x9000])
+      response = processResponse(responseBuffer)
+
+      console.log(response.length())
+
+      const pkRaw = response.readBytes(TRANSPARENT_PK_LEN)
+
+      return {
+        sapling: {
+          akRaw,
+          nkRaw,
+          ovkRaw,
+          dkRaw
+        },
+        transparent: {
+          pkRaw
+        },
+        orchard: null
+      }
     } catch (error) {
       throw processErrorResponse(error)
     }

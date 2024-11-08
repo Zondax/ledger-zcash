@@ -443,6 +443,54 @@ describe('Get_keys', function () {
         await sim.close()
       }
     })
+
+    test.concurrent.each(models)('Get ufvk', async function (m) {
+      const sim = new Zemu(m.path)
+      try {
+        await sim.start({
+          ...defaultOptions(m, true),
+          approveKeyword: isTouchDevice(m.name) ? 'Approve' : '',
+          approveAction: ButtonKind.ApproveTapButton
+        })
+
+        await sim.toggleExpertMode()
+
+        const app = new ZCashApp(sim.getTransport())
+
+        const account = 1000
+        const ufvkreq = app.getUfvk(account)
+
+        await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
+        await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-get-ufvk-expert`)
+
+        const ufvk = await ufvkreq
+
+        console.log(ufvk)
+
+        const expected_akRaw = '0bbb1d4bfe70a4f4fc762e2f980ab7c600a060c28410ccd03972931fe310f2a5'
+        const akRaw = ufvk.sapling.akRaw?.toString('hex')
+        expect(akRaw).toEqual(expected_akRaw)
+
+        const expected_nkRaw = '9f552de44e5c38db16de3165aaa4627e352e00b6863dd627cc58df02a39deec7'
+        const nkRaw = ufvk.sapling.nkRaw?.toString('hex')
+        expect(nkRaw).toEqual(expected_nkRaw)
+
+        const expected_ovkRaw = '199be731acfa8bf5d525eade16451edf6e818f27db0164ff1f428bd8bf432f69'
+        const ovkRaw = ufvk.sapling.ovkRaw?.toString('hex')
+        expect(ovkRaw).toEqual(expected_ovkRaw)
+
+        const expected_dkRaw = '702c87a33c31670b463df27f43ad02942f68ef9071d5547b0ead7b5ae425b079'
+        const dkRaw = ufvk.sapling.dkRaw?.toString('hex')
+        expect(dkRaw).toEqual(expected_dkRaw)
+
+        const expected_pkRaw = '025b92d7edb1d5acaa9e4eafd9c220d0d4ca2d63fcfd464ca95b9329d91d98cb5b'
+        const pkRaw = ufvk.transparent.pkRaw?.toString('hex')
+        expect(pkRaw).toEqual(expected_pkRaw)
+
+      } finally {
+        await sim.close()
+      }
+    })
   })
 
 })

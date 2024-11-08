@@ -41,6 +41,19 @@ export type DfvkResponse = {
   dkRaw: Buffer
 }
 
+export type UfvkResponse = {
+  sapling: {
+    akRaw: Buffer
+    nkRaw: Buffer
+    ovkRaw: Buffer
+    dkRaw: Buffer
+  },
+  transparent: {
+    pkRaw: Buffer
+  },
+  orchard: {} | null
+}
+
 export type DiversifierListResponse = {
   diversifiers: Buffer[]
 }
