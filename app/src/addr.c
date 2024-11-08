@@ -84,7 +84,7 @@ zxerr_t addr_getItem(int8_t displayIdx,
                 case addr_secp256k1: {
                     snprintf(outKey, outKeyLen, "BIP44 Path");
 
-                    bip32_to_str(buffer, sizeof(buffer), hdPath.secp256k1_path, HDPATH_LEN_BIP44);
+                    bip32_to_str(buffer, sizeof(buffer), hdPath.secp256k1_path, hdPath.pathLen);
                     pageString(outVal, outValLen, buffer, pageIdx, pageCount);
 
                     return zxerr_ok;

@@ -71,6 +71,7 @@ extern "C" {
 #define INS_GET_ADDR_SAPLING_DIV          0x10
 #define INS_GET_ADDR_SAPLING              0x11
 #define INS_SIGN_SAPLING                  0x12
+#define INS_GET_UNIFIED_ADDR_SECP256K1    0x13
 
 #define INS_GET_DIV_LIST                  0x09
 
@@ -107,6 +108,7 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3, key_dfvk = 4 } key
 
 #define HDPATH_LEN_BIP44              5
 #define HDPATH_LEN_SAPLING            3
+#define HDPATH_LEN_UNIFIED            3
 
 typedef enum {
     addr_not_set = 0,
@@ -120,6 +122,7 @@ typedef struct {
     union {
         struct {
             uint32_t secp256k1_path[HDPATH_LEN_MAX];
+            uint8_t pathLen;
         };
         struct {
             uint32_t sapling_path[3];

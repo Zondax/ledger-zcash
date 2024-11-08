@@ -33,18 +33,32 @@
 #include "zxmacros.h"
 
 __Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset) {
-    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_BIP44) {
+    uint8_t pathLen = HDPATH_LEN_BIP44;
+    if(isUnified){
+        pathLen = HDPATH_LEN_UNIFIED;
+    }
+
+    if ((rx - offset) < sizeof(uint32_t) * pathLen) {
         THROW(APDU_CODE_WRONG_LENGTH);
     }
     hdPath.addressKind = addr_not_set;
 
-    MEMCPY(hdPath.secp256k1_path, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_BIP44);
+    MEMCPY(hdPath.secp256k1_path, G_io_apdu_buffer + offset, sizeof(uint32_t) * pathLen);
+    hdPath.pathLen = pathLen;
 
     const bool mainnet = hdPath.secp256k1_path[0] == HDPATH_0_DEFAULT && hdPath.secp256k1_path[1] == HDPATH_1_DEFAULT;
     const bool testnet = hdPath.secp256k1_path[0] == HDPATH_0_TESTNET && hdPath.secp256k1_path[1] == HDPATH_1_TESTNET;
 
     if (!mainnet && !testnet) {
         THROW(APDU_CODE_DATA_INVALID);
+    }
+
+    if(isUnified){
+        // Validate data
+        if ((hdPath.secp256k1_path[2] & MASK_HARDENED) == 0) {
+            ZEMU_LOGF(100, "error validating hardening\n");
+            THROW(APDU_CODE_DATA_INVALID);
+        }
     }
 
     hdPath.addressKind = addr_secp256k1;
