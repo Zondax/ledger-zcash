@@ -34,8 +34,6 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-
-
 // Transmitted notes are stored on the blockchain in encrypted form.
 // If the note was sent to Alice, she uses her incoming viewing key (IVK)
 // to decrypt the note (so that she can subsequently send it).
@@ -125,6 +123,41 @@ __Z_INLINE void handleGetKeyFVK(volatile uint32_t *flags, volatile uint32_t *tx,
     zxerr_t err = crypto_fvk_sapling(G_io_apdu_buffer,
 
                                      IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
+
+    if (err != zxerr_ok) {
+        *tx = 0;
+        THROW(APDU_CODE_DATA_INVALID);
+    }
+    key_state.len = (uint8_t)replyLen;
+
+    if (app_mode_expert() || !keys_permission_granted) {
+        view_review_init(key_getItem, key_getNumItems, app_reply_key);
+        view_review_show(REVIEW_GENERIC);
+        *flags |= IO_ASYNCH_REPLY;
+    }
+
+    *tx = replyLen;
+    THROW(APDU_CODE_OK);
+}
+
+// Get the sapling diversifiable full viewing key (ak, nk, ovk)
+__Z_INLINE void handleGetKeyDFVK(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
+    zemu_log("----[handleGetKeyDFVK]\n");
+
+    *tx = 0;
+    if (rx - APDU_MIN_LENGTH != APDU_DATA_LENGTH_GET_DFVK) {
+        ZEMU_LOGF(100, "Wrong length! %d\n", rx);
+        THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
+    }
+
+    extractHDPathSapling(rx, OFFSET_DATA);
+
+    key_state.kind = key_dfvk;
+    uint16_t replyLen = 0;
+
+    zxerr_t err = crypto_dfvk_sapling(G_io_apdu_buffer,
+
+                                      IO_APDU_BUFFER_SIZE - 2, hdPath.sapling_path[2], &replyLen);
 
     if (err != zxerr_ok) {
         *tx = 0;

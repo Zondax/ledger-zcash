@@ -127,7 +127,7 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
     uint8_t privateKeyData[64] = {0};
 
     zxerr_t error = zxerr_unknown;
-    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, HDPATH_LEN_BIP44, privateKeyData, NULL));
+    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, hdPath.pathLen, privateKeyData, NULL));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
     io_seproxyhal_io_heartbeat();
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
@@ -1315,6 +1315,10 @@ typedef struct {
     uint8_t fvk[AK_SIZE + NK_SIZE + OVK_SIZE];
 } tmp_sapling_fvk;
 
+typedef struct {
+    uint8_t dfvk[AK_SIZE + NK_SIZE + OVK_SIZE + DK_SIZE];
+} tmp_sapling_dfvk;
+
 // handleGetKeyFVK: return the full viewing key for a given path
 zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Account, uint16_t *replyLen) {
     zemu_log_stack("crypto_fvk_sapling");
@@ -1331,6 +1335,25 @@ zxerr_t crypto_fvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Ac
     CHECK_APP_CANARY()
 
     *replyLen = AK_SIZE + NK_SIZE + OVK_SIZE;
+    return zxerr_ok;
+}
+
+// handleGetKeyDFVK: return the diversifiable full viewing key for a given path
+zxerr_t crypto_dfvk_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t zip32Account, uint16_t *replyLen) {
+    zemu_log_stack("crypto_dfvk_sapling");
+
+    MEMZERO(buffer, bufferLen);
+    tmp_sapling_dfvk *out = (tmp_sapling_dfvk *)buffer;
+
+    if (bufferLen < AK_SIZE + NK_SIZE + OVK_SIZE + DK_SIZE) {
+        return zxerr_buffer_too_small;
+    }
+
+    // get diversifiable full viewing key
+    zip32_dfvk(zip32Account, out->dfvk);
+    CHECK_APP_CANARY()
+
+    *replyLen = AK_SIZE + NK_SIZE + OVK_SIZE + DK_SIZE;
     return zxerr_ok;
 }
 

@@ -73,6 +73,11 @@ zxerr_t key_getItem(int8_t displayIdx,
                         array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
                         pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
                         return zxerr_ok;
+                    case key_dfvk:
+                        snprintf(outKey, outKeyLen, "Send DFVK?\n");
+                        array_to_hexstr(tmpBuffer, sizeof(tmpBuffer), G_io_apdu_buffer, 32);
+                        pageString(outVal, outValLen, tmpBuffer, pageIdx, pageCount);
+                        return zxerr_ok;
                     case nf:
                         zemu_log_stack("Send NF?");
                         snprintf(outKey, outKeyLen, "Send NF?");
@@ -87,9 +92,10 @@ zxerr_t key_getItem(int8_t displayIdx,
                     case key_ovk:
                     case key_ivk:
                     case key_fvk:
+                    case key_dfvk:
                     case nf:
                         snprintf(outKey, outKeyLen, "Retrieve data?");
-                        snprintf(outVal, outValLen, "IVKs, OVKs, FVKs or NFs");
+                        snprintf(outVal, outValLen, "IVKs, OVKs, FVKs, DFVKs or NFs");
                         return zxerr_ok;
                     default:
                         return zxerr_unknown;

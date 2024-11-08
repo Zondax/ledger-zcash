@@ -63,7 +63,13 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
 
                 case INS_GET_ADDR_SECP256K1: {
                     CHECK_PIN_VALIDATED()
-                    handleGetAddrSecp256K1(flags, tx, rx);
+                    handleGetAddrSecp256K1(flags, tx, rx, false);
+                    break;
+                }
+
+                case INS_GET_UNIFIED_ADDR_SECP256K1: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetAddrSecp256K1(flags, tx, rx, true);
                     break;
                 }
 
@@ -88,6 +94,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 case INS_GET_FVK: {
                     CHECK_PIN_VALIDATED()
                     handleGetKeyFVK(flags, tx, rx);
+                    break;
+                }
+
+                case INS_GET_DFVK: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetKeyDFVK(flags, tx, rx);
                     break;
                 }
 

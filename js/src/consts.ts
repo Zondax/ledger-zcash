@@ -22,6 +22,7 @@ export const INS = {
   GET_ADDR_SECP256K1: 0x01,
   SIGN_SECP256K1: 0x02,
   SIGN_SAPLING: 0x12,
+  GET_UNIFIED_ADDR_SECP256K1: 0x13,
 
   GET_DIV_LIST: 0x09,
   GET_ADDR_SAPLING_DIV: 0x10,
@@ -30,6 +31,7 @@ export const INS = {
   GET_OVK_SAPLING: 0xf1,
   GET_NF_SAPLING: 0xf2,
   GET_FVK_SAPLING: 0xf3,
+  GET_DFVK_SAPLING: 0xf4,
 
   INIT_TX: 0xa0,
   KEY_EXCHANGE: 0xaa,
@@ -55,6 +57,7 @@ export const SAPLING_ADDR_LEN = 43
 export const SAPLING_DIV_LEN = 11
 export const SAPLING_IVK_LEN = 32
 export const SAPLING_OVK_LEN = 32
+export const SAPLING_DK_LEN = 32
 export const SAPLING_NF_LEN = 32
 export const SAPLING_AK_LEN = 32
 export const SAPLING_NK_LEN = 32

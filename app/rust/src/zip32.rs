@@ -18,12 +18,7 @@ use crate::personalization::ZIP32_SAPLING_MASTER_PERSONALIZATION;
 use crate::sapling::{
     sapling_aknk_to_ivk, sapling_ask_to_ak, sapling_asknsk_to_ivk, sapling_nsk_to_nk,
 };
-use crate::types::{
-    diversifier_zero, AskBytes, Diversifier, DiversifierList10, DiversifierList20,
-    DiversifierList4, DkBytes, FullViewingKey, IvkBytes, NskBytes, OvkBytes,
-    SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterKey, Zip32MasterSpendingKey,
-    Zip32Path, Zip32Seed,
-};
+use crate::types::{diversifier_zero, AskBytes, DiversifiableFullViewingKey, Diversifier, DiversifierList10, DiversifierList20, DiversifierList4, DkBytes, FullViewingKey, IvkBytes, NskBytes, OvkBytes, SaplingExpandedSpendingKey, SaplingKeyBundle, Zip32MasterKey, Zip32MasterSpendingKey, Zip32Path, Zip32Seed};
 use crate::zip32_extern::diversifier_is_valid;
 use crate::{cryptoops, zip32};
 
@@ -255,6 +250,16 @@ pub(crate) fn zip32_sapling_fvk(k: &SaplingKeyBundle) -> FullViewingKey {
         sapling_ask_to_ak(&k.ask()),
         sapling_nsk_to_nk(&k.nsk()),
         k.ovk(),
+    )
+}
+
+#[inline(never)]
+pub(crate) fn zip32_sapling_dfvk(k: &SaplingKeyBundle) -> DiversifiableFullViewingKey {
+    DiversifiableFullViewingKey::new(
+        sapling_ask_to_ak(&k.ask()),
+        sapling_nsk_to_nk(&k.nsk()),
+        k.ovk(),
+        k.dk(),
     )
 }
 

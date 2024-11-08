@@ -26,3 +26,5 @@ void zip32_ovk(uint32_t zip32_account, uint8_t *ovk);
 void zip32_ivk(uint32_t zip32_account, uint8_t *ivk);
 
 void zip32_fvk(uint32_t zip32_account, uint8_t *fvk_ptr);
+
+void zip32_dfvk(uint32_t zip32_account, uint8_t *dfvk_ptr);
