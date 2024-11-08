@@ -35,8 +35,8 @@ extern "C" {
 #define HDPATH_3_DEFAULT (0u)
 #define HDPATH_4_DEFAULT (0u)
 
-#define HDPATH_0_TESTNET   (0x80000000u | 0x2cu)
-#define HDPATH_1_TESTNET   (0x80000000u | 0x1u)
+#define HDPATH_0_TESTNET (0x80000000u | 0x2cu)
+#define HDPATH_1_TESTNET (0x80000000u | 0x1u)
 
 #define HDPATH_0_ZIP32   (0x80000000u | 0x20u)
 #define HDPATH_1_ZIP32   (0x80000000u | 0x85u)
@@ -59,6 +59,7 @@ extern "C" {
 #define APDU_DATA_LENGTH_GET_IVK          4   // ZIP32-path
 #define APDU_DATA_LENGTH_GET_OVK          4   // ZIP32-path
 #define APDU_DATA_LENGTH_GET_FVK          4   // ZIP32-path
+#define APDU_DATA_LENGTH_GET_DFVK         4   // ZIP32-path
 #define APDU_DATA_LENGTH_GET_NF           44  // ZIP32-path + 8-byte note position + 32-byte note commitment
 #define APDU_DATA_LENGTH_GET_ADDR_SAPLING 4   // ZIP32-path
 #define APDU_DATA_LENGTH_GET_DIV_LIST     15  // ZIP32-path + 11-byte index
@@ -85,9 +86,10 @@ extern "C" {
 #define INS_GET_OVK                       0xf1
 #define INS_GET_NF                        0xf2
 #define INS_GET_FVK                       0xf3
+#define INS_GET_DFVK                      0xf4
 #define INS_CRASH_TEST                    0xff
 
-typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
+typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3, key_dfvk = 4 } key_type_e;
 
 #define VIEW_ADDRESS_OFFSET_SECP256K1 PK_LEN_SECP256K1
 #define VIEW_ADDRESS_OFFSET_SAPLING   ADDR_LEN_SAPLING

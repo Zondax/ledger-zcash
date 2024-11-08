@@ -34,6 +34,13 @@ export type FvkResponse = {
   ovkRaw: Buffer
 }
 
+export type DfvkResponse = {
+  akRaw: Buffer
+  nkRaw: Buffer
+  ovkRaw: Buffer
+  dkRaw: Buffer
+}
+
 export type DiversifierListResponse = {
   diversifiers: Buffer[]
 }
