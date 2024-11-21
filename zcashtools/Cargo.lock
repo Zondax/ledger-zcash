@@ -52,9 +52,9 @@ checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
 name = "async-trait"
-version = "0.1.80"
+version = "0.1.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6fa2087f2753a7da8cc1c0dbfcf89579dd57458e36769de5ac750b4671737ca"
+checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -458,16 +458,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "equihash"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab579d7cf78477773b03e80bc2f89702ef02d7112c711d54ca93dcdce68533d5"
-dependencies = [
- "blake2b_simd",
- "byteorder",
-]
-
-[[package]]
 name = "ff"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -546,25 +536,7 @@ dependencies = [
  "bitvec",
  "ff",
  "group",
- "halo2_proofs 0.1.0",
- "lazy_static",
- "pasta_curves",
- "rand",
- "subtle",
- "uint",
-]
-
-[[package]]
-name = "halo2_gadgets"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85e10bf9924da1754e443641c9e7f9f00483749f8fb837fde696ef6ed6e2f079"
-dependencies = [
- "arrayvec",
- "bitvec",
- "ff",
- "group",
- "halo2_proofs 0.2.0",
+ "halo2_proofs",
  "lazy_static",
  "pasta_curves",
  "rand",
@@ -584,21 +556,6 @@ dependencies = [
  "pasta_curves",
  "rand_core",
  "rayon",
-]
-
-[[package]]
-name = "halo2_proofs"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cff771b9a2445cd2545c9ef26d863c290fbb44ae440c825a20eb7156f67a949a"
-dependencies = [
- "blake2b_simd",
- "ff",
- "group",
- "pasta_curves",
- "rand_core",
- "rayon",
- "tracing",
 ]
 
 [[package]]
@@ -731,7 +688,7 @@ dependencies = [
  "sha2 0.10.8",
  "thiserror",
  "tokio",
- "zcash_primitives 0.6.0",
+ "zcash_primitives",
  "zx-bip44",
 ]
 
@@ -764,7 +721,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae)",
- "zcash_primitives 0.6.0",
+ "zcash_primitives",
  "zcash_proofs",
 ]
 
@@ -1020,8 +977,8 @@ dependencies = [
  "ff",
  "fpe",
  "group",
- "halo2_gadgets 0.1.0",
- "halo2_proofs 0.1.0",
+ "halo2_gadgets",
+ "halo2_proofs",
  "hex",
  "incrementalmerkletree",
  "lazy_static",
@@ -1032,34 +989,6 @@ dependencies = [
  "reddsa",
  "serde",
  "subtle",
- "zcash_note_encryption 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "orchard"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7619db7f917afd9b1139044c595fab1b6166de2db62317794b5f5e34a2104ae1"
-dependencies = [
- "aes",
- "bitvec",
- "blake2b_simd",
- "ff",
- "fpe",
- "group",
- "halo2_gadgets 0.2.0",
- "halo2_proofs 0.2.0",
- "hex",
- "incrementalmerkletree",
- "lazy_static",
- "memuse",
- "nonempty",
- "pasta_curves",
- "rand",
- "reddsa",
- "serde",
- "subtle",
- "tracing",
  "zcash_note_encryption 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -1505,37 +1434,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tracing"
-version = "0.1.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3523ab5a71916ccf420eebdf5521fcef02141234bbc0b8a49f2fdc4544364ef"
-dependencies = [
- "pin-project-lite",
- "tracing-attributes",
- "tracing-core",
-]
-
-[[package]]
-name = "tracing-attributes"
-version = "0.1.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34704c8d6ebcbc939824180af020566b01a7c01f80641264eba0999f6c2b6be7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.61",
-]
-
-[[package]]
-name = "tracing-core"
-version = "0.1.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06d3da6113f116aaee68e4d601191614c9053067f9ab7f6edbcb161237daa54"
-dependencies = [
- "once_cell",
-]
-
-[[package]]
 name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1694,16 +1592,6 @@ dependencies = [
 [[package]]
 name = "zcash_encoding"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fb61ea88eb539bc0ac2068e5da99411dd4978595b3d7ff6a4b1562ddc8e8710"
-dependencies = [
- "byteorder",
- "nonempty",
-]
-
-[[package]]
-name = "zcash_encoding"
-version = "0.1.0"
 source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
 dependencies = [
  "byteorder",
@@ -1747,7 +1635,7 @@ dependencies = [
  "bs58",
  "byteorder",
  "chacha20poly1305",
- "equihash 0.1.0",
+ "equihash",
  "ff",
  "fpe",
  "group",
@@ -1758,52 +1646,15 @@ dependencies = [
  "lazy_static",
  "memuse",
  "nonempty",
- "orchard 0.1.0",
+ "orchard",
  "rand",
  "rand_core",
  "ripemd",
  "secp256k1 0.21.3",
  "sha2 0.9.9",
  "subtle",
- "zcash_encoding 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae)",
+ "zcash_encoding",
  "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae)",
-]
-
-[[package]]
-name = "zcash_primitives"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fbb401f5dbc482b831954aaa7cba0a8fe148241db6d19fe7cebda78252ca680"
-dependencies = [
- "aes",
- "bip0039",
- "bitvec",
- "blake2b_simd",
- "blake2s_simd",
- "bls12_381",
- "bs58",
- "byteorder",
- "chacha20poly1305",
- "equihash 0.2.0",
- "ff",
- "fpe",
- "group",
- "hdwallet",
- "hex",
- "incrementalmerkletree",
- "jubjub",
- "lazy_static",
- "memuse",
- "nonempty",
- "orchard 0.2.0",
- "rand",
- "rand_core",
- "ripemd",
- "secp256k1 0.21.3",
- "sha2 0.9.9",
- "subtle",
- "zcash_encoding 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "zcash_note_encryption 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1821,7 +1672,7 @@ dependencies = [
  "jubjub",
  "lazy_static",
  "rand_core",
- "zcash_primitives 0.6.0",
+ "zcash_primitives",
 ]
 
 [[package]]
@@ -1839,7 +1690,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "snafu",
- "zcash_primitives 0.7.0",
+ "zcash_primitives",
  "zcashtool",
 ]
 
