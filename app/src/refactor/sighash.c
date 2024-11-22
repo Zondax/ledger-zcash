@@ -36,6 +36,7 @@ const uint8_t CTX_ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[] = "ZcashSOutputH
 
 const uint8_t CONSENSUS_BRANCH_ID_SAPLING[4] = {0xBB, 0x09, 0xB8, 0x76};  // sapling
 const uint8_t CONSENSUS_BRANCH_ID_ORCHARD[4] = {0xB4, 0xD0, 0xD6, 0xC2};  // orchard
+const uint8_t CONSENSUS_BRANCH_ID_NU6[4] = {0x55, 0x10, 0xE7, 0xC8};      // nu6
 
 zxerr_t sapling_transparent_prevouts_hash(const uint8_t *input, uint8_t *output) {
     const uint8_t n = t_inlist_len();
@@ -148,7 +149,7 @@ static zxerr_t signature_hash_v4(const uint8_t *input, uint16_t inputlen, uint8_
     cx_blake2b_t ctx = {0};
 
     uint8_t personalization[16] = "ZcashSigHash";
-    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_NU6, 4);
 
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)personalization, PERSONALIZATION_SIZE));
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, CX_LAST, input, inputlen, output, HASH_SIZE));
@@ -166,7 +167,7 @@ static zxerr_t signature_hash_v5(
     cx_blake2b_t ctx = {0};
 
     uint8_t personalization[16] = "ZcashTxHash_";
-    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_NU6, 4);
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)personalization, PERSONALIZATION_SIZE));
 
     uint8_t header_digest[32] = {0};
@@ -215,7 +216,7 @@ static zxerr_t signature_script_hash_v4(
 
     cx_blake2b_t ctx = {0};
     uint8_t personalization[16] = "ZcashSigHash";
-    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_ORCHARD, 4);
+    MEMCPY(personalization + 12, CONSENSUS_BRANCH_ID_NU6, 4);
 
     CHECK_CX_OK(cx_blake2b_init2_no_throw(&ctx, 256, NULL, 0, (uint8_t *)personalization, PERSONALIZATION_SIZE));
     CHECK_CX_OK(cx_hash_no_throw(&ctx.header, 0, input, inputlen, NULL, 0));
