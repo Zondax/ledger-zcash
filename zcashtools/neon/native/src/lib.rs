@@ -218,7 +218,7 @@ impl ZcashBuilderBridge {
             AuthorisationStatus::Unauthorized(mut builder) => {
                 let mut prover =
                     txprover::LocalTxProver::new(Path::new(spendpath), Path::new(outputpath));
-                let res = builder.build(consensus::BranchId::Nu5, tx_ver, &mut prover);
+                let res = builder.build(consensus::BranchId::Nu6, tx_ver, &mut prover);
                 match res {
                     Ok(_) => self.zcashbuilder = AuthorisationStatus::Unauthorized(builder),
                     Err(ref e) => {
