@@ -1,6 +1,6 @@
 use env_logger::Env;
-use ledger_zcash::builder::Builder as ZcashBuilder;
-use ledger_zcash_builder::{
+use ledger_zcash_app_builder::builder::Builder as ZcashBuilder;
+use ledger_zcash_chain_builder::{
     data::{TransparentInputBuilderInfo, TransparentOutputBuilderInfo},
     txbuilder::Builder,
 };
