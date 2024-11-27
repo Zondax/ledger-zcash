@@ -68,7 +68,7 @@ The general structure of commands and responses is as follows:
 
 ---
 
-### GET_VERSION
+### INS_GET_VERSION
 
 #### Command
 
@@ -560,7 +560,7 @@ Data is defined as:
 
 ---
 
-### INS_GET_EXTRACT_TRANSSSIG
+### INS_EXTRACT_TRANSSIG
 
 Returns a SECP256K1 signature for a sapling transparent input if available. Othrewise, it returns only an error code.
 
