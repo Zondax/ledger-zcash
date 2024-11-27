@@ -198,7 +198,7 @@ If a diversifier was not valid, zero-bytes are returned (so always 220 bytes are
 
 ---
 
-### INS_GET_IVK_SAPLING
+### INS_GET_IVK
 
 Returns a sapling incoming viewing key.
 Forced user confirmation (So P1 needs to be 0x01).
@@ -225,7 +225,7 @@ Also returns the default diversifier (starting from index 0).
 
 ---
 
-### INS_GET_OVK_SAPLING
+### INS_GET_OVK
 
 Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to be 0x01).
 
@@ -249,7 +249,7 @@ Returns a sapling outgoing viewing key. Forced user confirmation (So P1 needs to
 
 ---
 
-### INS_GET_FVK_SAPLING
+### INS_GET_FVK
 
 Returns a sapling full viewing key fvk = (ak, nk, ovk). Forced user confirmation (So P1 needs to be 0x01).
 
@@ -275,7 +275,7 @@ Returns a sapling full viewing key fvk = (ak, nk, ovk). Forced user confirmation
 
 ---
 
-### INS_GET_NF_SAPLING
+### INS_GET_NF
 
 Returns a sapling nullifier. TODO: Forced user confirmation (So P1 needs to be 0x01).
 
@@ -397,7 +397,7 @@ Data is defined as:
 
 Returns a proof generating key (PGK) and randomness (rcv and alpha) for a sapling spend.
 
-- This command requires you already called the INS_INIT_TX_SAPLING.
+- This command requires you already called the INS_INIT_TX.
 - This command requires that it is needed to extract spendinfo.
 
 #### Command
@@ -425,7 +425,7 @@ Returns a proof generating key (PGK) and randomness (rcv and alpha) for a saplin
 
 Returns randomness (rcv and rseed (after ZIP202) and optional Hash_Seed) for a sapling output.
 
-- This command requires you already called the INS_INIT_TX_SAPLING.
+- This command requires you already called the INS_INIT_TX.
 - This command requires you already called the correct number of INS_GET_SPENDINFO.
 - This command requires that it is needed to extract outputinfo.
 
