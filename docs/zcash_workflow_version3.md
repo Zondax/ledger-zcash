@@ -127,7 +127,7 @@ Zcash ledger, make shielded transaction phase 4
 - Ledger signs the necessary parts and shares with host
 - Host sends transaction blob to network
 
-  ```mermaid
+```mermaid
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
@@ -185,7 +185,7 @@ LC ->> H: all_ok
 Zcash ledger, make shielded transaction phase 5
 - Finalize tx
 
-  ```mermaid
+```mermaid
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
