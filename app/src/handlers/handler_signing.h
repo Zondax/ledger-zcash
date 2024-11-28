@@ -333,7 +333,3 @@ __Z_INLINE void handleCheckandSign(volatile uint32_t *tx, uint32_t rx) {
     *tx = 32;
     THROW(APDU_CODE_OK);
 }
-
-__Z_INLINE void handleSignSapling() {
-    THROW(APDU_CODE_COMMAND_NOT_ALLOWED);
-}

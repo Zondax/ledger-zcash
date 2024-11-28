@@ -8,8 +8,8 @@ opt-level = "s"
 overflow-checks = true
 
 [patch.crates-io]
-ledger-zcash-builder = { git = "https://github.com/Zondax/ledger-zcash-rs", rev = "3bad2fa4a7870270627edc25ebdb5b4818fd1855" }
-ledger-zcash = { git = "https://github.com/Zondax/ledger-zcash-rs", rev = "3bad2fa4a7870270627edc25ebdb5b4818fd1855" }
+ledger-zcash-chain-builder = { git = "https://github.com/Zondax/ledger-zcash-tools", tag = "v2.0.0" }
+ledger-zcash-app-builder = { git = "https://github.com/Zondax/ledger-zcash-tools", tag = "v2.0.0" }
 
-# ledger-zcash-builder = { path = "../../ledger-zcash-rs/ledger-zcash-builder" }
-# ledger-zcash = { path = "../../ledger-zcash-rs/ledger-zcash" }
+# ledger-zcash-chain-builder = { path = "../../ledger-zcash-tools/ledger-zcash-chain-builder" }
+# ledger-zcash-app-builder = { path = "../../ledger-zcash-tools/ledger-zcash-app-builder" }

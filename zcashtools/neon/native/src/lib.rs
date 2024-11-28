@@ -1,9 +1,9 @@
-use ledger_zcash_builder::data::{
+use ledger_zcash_chain_builder::data::{
     HsmTxData, InitData, OutputBuilderInfo, SpendBuilderInfo, TransactionSignatures,
     TransparentInputBuilderInfo, TransparentOutputBuilderInfo,
 };
-use ledger_zcash_builder::errors::Error;
-use ledger_zcash_builder::{hsmauth, txbuilder, txprover};
+use ledger_zcash_chain_builder::errors::Error;
+use ledger_zcash_chain_builder::{hsmauth, txbuilder, txprover};
 use neon::prelude::*;
 use std::cell::RefCell;
 use std::path::Path;
@@ -45,7 +45,7 @@ fn calculate_zip0317_fee(mut cx: FunctionContext) -> JsResult<JsNumber> {
     ];
 
     let fee: u64 =
-        ledger_zcash::builder::Builder::calculate_zip0317_fee(n_tin, n_tout, n_spend, n_sout)
+        ledger_zcash_app_builder::builder::Builder::calculate_zip0317_fee(n_tin, n_tout, n_spend, n_sout)
             .into();
 
     Ok(cx.number(fee as f64))

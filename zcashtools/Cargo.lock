@@ -451,7 +451,7 @@ dependencies = [
 [[package]]
 name = "equihash"
 version = "0.1.0"
-source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
+source = "git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c#ce278848fef35903db46c3dced41658e90bbeb3c"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -665,8 +665,28 @@ dependencies = [
 
 [[package]]
 name = "ledger-zcash"
+version = "2.0.0"
+source = "git+https://github.com/Zondax/ledger-zcash-rs?tag=v2.0.0#e5f3e6d633ea316759b153c7edacaaabf580f32c"
+dependencies = [
+ "byteorder",
+ "cfg-if",
+ "educe",
+ "hex",
+ "lazy_static",
+ "ledger-transport",
+ "ledger-zondax-generic",
+ "log",
+ "serde",
+ "sha2 0.10.8",
+ "thiserror",
+ "tokio",
+ "zx-bip44",
+]
+
+[[package]]
+name = "ledger-zcash-app-builder"
 version = "0.11.2"
-source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=3bad2fa4a7870270627edc25ebdb5b4818fd1855#3bad2fa4a7870270627edc25ebdb5b4818fd1855"
+source = "git+https://github.com/Zondax/ledger-zcash-tools?tag=v2.0.0#5e8588cc0fef85a74c22d1012ed951b7b44a5097"
 dependencies = [
  "arrayvec",
  "byteorder",
@@ -678,7 +698,8 @@ dependencies = [
  "jubjub",
  "lazy_static",
  "ledger-transport",
- "ledger-zcash-builder",
+ "ledger-zcash",
+ "ledger-zcash-chain-builder",
  "ledger-zondax-generic",
  "log",
  "rand_core",
@@ -693,9 +714,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "ledger-zcash-builder"
+name = "ledger-zcash-chain-builder"
 version = "0.11.2"
-source = "git+https://github.com/Zondax/ledger-zcash-rs?rev=3bad2fa4a7870270627edc25ebdb5b4818fd1855#3bad2fa4a7870270627edc25ebdb5b4818fd1855"
+source = "git+https://github.com/Zondax/ledger-zcash-tools?tag=v2.0.0#5e8588cc0fef85a74c22d1012ed951b7b44a5097"
 dependencies = [
  "bellman",
  "blake2b_simd",
@@ -720,7 +741,7 @@ dependencies = [
  "sha2 0.10.8",
  "thiserror",
  "tokio",
- "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae)",
+ "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c)",
  "zcash_primitives",
  "zcash_proofs",
 ]
@@ -1592,7 +1613,7 @@ dependencies = [
 [[package]]
 name = "zcash_encoding"
 version = "0.1.0"
-source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
+source = "git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c#ce278848fef35903db46c3dced41658e90bbeb3c"
 dependencies = [
  "byteorder",
  "nonempty",
@@ -1613,7 +1634,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.1.0"
-source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
+source = "git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c#ce278848fef35903db46c3dced41658e90bbeb3c"
 dependencies = [
  "chacha20",
  "chacha20poly1305",
@@ -1624,7 +1645,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.6.0"
-source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
+source = "git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c#ce278848fef35903db46c3dced41658e90bbeb3c"
 dependencies = [
  "aes",
  "bip0039",
@@ -1654,13 +1675,13 @@ dependencies = [
  "sha2 0.9.9",
  "subtle",
  "zcash_encoding",
- "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae)",
+ "zcash_note_encryption 0.1.0 (git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c)",
 ]
 
 [[package]]
 name = "zcash_proofs"
 version = "0.6.0"
-source = "git+https://github.com/Zondax/librustzcash?rev=112eedd27b2e51b9e1b77603a776cd78e738c3ae#112eedd27b2e51b9e1b77603a776cd78e738c3ae"
+source = "git+https://github.com/Zondax/librustzcash?rev=ce278848fef35903db46c3dced41658e90bbeb3c#ce278848fef35903db46c3dced41658e90bbeb3c"
 dependencies = [
  "bellman",
  "blake2b_simd",
@@ -1680,8 +1701,8 @@ name = "zcashtool"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "ledger-zcash",
- "ledger-zcash-builder",
+ "ledger-zcash-app-builder",
+ "ledger-zcash-chain-builder",
  "log",
  "neon",
  "neon-serde",
