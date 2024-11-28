@@ -74,7 +74,7 @@ Zcash ledger, make shielded transaction phase 1
   end
   deactivate LC
   Note over LC,H: continue if all approved
-  ```
+```
 
   Zcash ledger, make shielded transaction phase 2
 - Process outputs and store in flash
@@ -114,7 +114,7 @@ Zcash ledger, make shielded transaction phase 1
   LC ->> H: shielded_output_hash
   LC ->> LF: shielded_output_hash
   deactivate LC
-  ```
+```
 
 Zcash ledger, make shielded transaction phase 3
 - Process spends and store in flash
