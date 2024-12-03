@@ -113,10 +113,10 @@ Zcash ledger, make shielded transaction phase 1
   end
 
   loop Every shielded output
-  H ->> LC: get_ouput_data ()
+  H ->> LC: get_output_data ()
   LF ->> LC: output_data
   LC ->> H: rnd (rcv/rcm/esk)
-  H ->> Z: add_sapling_outpu(txdata, rnd)
+  H ->> Z: add_sapling_output(txdata, rnd)
   end
   ```
 
