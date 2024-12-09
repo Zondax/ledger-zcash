@@ -7,7 +7,8 @@ Zcash ledger, first connect:
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
-  participant H as Host
+  participant H as Host (JS)
+  participant Z as Zcashtools
   participant N as Network
   H ->> LC: compute_address(path: u32)
   activate LC
@@ -27,7 +28,8 @@ Zcash ledger, syncing
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
-  participant H as Host
+  participant H as Host (JS)
+  participant Z as Zcashtools
   participant N as Network
   H ->> LC: get_ivk(path: u32)
   #add minor confirmation
@@ -47,153 +49,164 @@ Zcash ledger, syncing
 
 Zcash ledger, make shielded transaction phase 1
 - Verify outputs on screen
+- Verify enough balance
+- Put relevant data in flash storage
 
 ```mermaid
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
-  participant H as Host
+  participant H as Host (JS)
+  participant Z as Zcashtools
   participant N as Network
 
   Note over H: show amount, address, memo-fields per output
-  Note over H: validate amount <= total_amount
-  H ->> LC: initiate_transaction()
-N ->> H: anchor of note?
-N ->> H: metadata
-Note over H: input note selection (path, note)
-
-  activate LC
-  loop Every output note
-  H ->> LC: verify_output(d, pk_d, value, memo)
-  Note over H,LC: approve amount and address and verify on screens
-  Note over H,LC: approve hash of memo and verify on screens
-  LC ->> H: approval of output
-  LC ->> LF: store_output_data(d,pk_d,value,memo)
+  Note over H: Shuffle shielded spends/outputs
+  Note over H: Treat change address as regular output
+  Note over H: Make sure amount_in - amount_out = tx-fee
+  H ->> LC: TX_INPUT_LENGTHS 
+  H ->> LC: T_INPUT_DATA 
+  H ->> LC: T_OUTPUT_DATA
+  H ->> LC: S_SPEND_DATA
+  H ->> LC: S_OUTPUT_DATA
+  Note over LC,H: check input/outputdata on screen and verify
+  Note over LC: Continue if approved
+  loop Every transparent input
+  LC ->> LF: T_INPUT_DATA
   end
-  deactivate LC
-  #compute value balance and approve
-  Note over LC,H: continue if all approved
-  ```
+
+  loop Every transparent output
+  LC ->> LF: T_OUTPUT_DATA
+  end
+
+  loop Every shielded spend
+  Note over LC: Random numbers rcv/alpha
+  LC ->> LF: S_SPEND_DATA, RND_DATA
+  end
+
+  loop Every shielded output
+  Note over LC: Random numbers rcv/rcm/esk
+  LC ->> LF: S_OUTPUT_DATA, RND_DATA
+  end
+```
 
   Zcash ledger, make shielded transaction phase 2
-- Process outputs and store in flash
-- Compute hash of all outputs
+- Host processes everything, uses zcashtools builder
+- Host asks ledger for random values to use
+- Host initiates builder
 
 ```mermaid
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
-  participant H as Host
+  participant H as Host (JS)
+  participant Z as Zcashtools
   participant N as Network
-  activate LC
-  loop Every output note
-  H ->> LC: make_transaction(path) #TODO: which path??? fixed one makes sense??
-  Note over LC: compute random rcm
-  LC ->> LF: update_rcmnew(rcm)
-  LF ->> LC: (d,pk_d,value)
-  Note over LC: compute value/note commitments
-  LC ->> LF: update_valuecommitsum(vc)
-  LC ->> LF: value/note commitments
-  LC ->> H: value/note commitments
-  LF ->> LC: d,pk_d, value, memo
-  Note over LC: compute eph, c_out, c_enc 
-  LC ->> LF: eph, c_out, c_enc 
-  LC ->> H: eph, c_out, c_enc 
-  deactivate LC
-  activate H
-  H -->> LC: get_proof_key(path) #is this necessary?
-  LC -->> H: proof_key
-  Note over H: ZK proof of output note
-  H ->> LC: zk_proof
-  deactivate H
-  activate LC
-  LC ->> LF: zk_proof
+  H ->> Z: builder_init()
+  H ->> Z: add_transparent_inputs(txdata)
+  H ->> Z: add_transparent_outputs(txdata)
+  loop Every shielded spend
+  H ->> LC: get_spend_data ()
+  LF ->> LC: spend_data
+  LC ->> H: proofkey, rnd (rcv/alpha)
+  H ->> Z: add_sapling_spend(txdata, proofkey, rnd)
   end
-  Note over LC: perform shieldedoutput_hash
-  LC ->> H: shielded_output_hash
-  LC ->> LF: shielded_output_hash
-  deactivate LC
-  ```
 
-Zcash ledger, make shielded transaction phase 3
-- Process spends and store in flash
-- Store RCM values in flash
-- Compute hash of all outputs
-
-  ```mermaid
-  sequenceDiagram
-  participant LF as Ledger flash storage
-  participant LC as Ledger computation 
-  participant H as Host
-  participant N as Network
-  loop Every spend note
-  N ->> H: anchor of note?
-  H ->> LC: spend_this_note(path, valuecommit, rcm, anchor)  # Do we need to verify here that rcm is correct? Is the zkproof of the spend the old one in the blockchain? #what about the valuecommit?
-  LC ->> LF: (path, valuecommit, anchor)
-  LC -->> H: proof_gen_key(path) ? #is this needed
-
-  activate LC
-  LC ->> LF: update_rcmvalue(rcm)
-  LC ->> LF: update_valuecommitsum(vc) #???
-
-  note over LC: compute nullifier
-  LC ->> H: nullifier
-  LC ->> LF: nullifier
-
-  note over LC: compute randomized verification key
-  LC ->> H: randomized verification key
-  LC ->> LF: (path, randomizer value, randomized verification key)
-  deactivate LC
-
-  Note over H: ZK proof of spend note
-  H ->> LC: zk_proof
-  LC ->> LF: zk_proof
-
+  loop Every shielded output
+  H ->> LC: get_output_data ()
+  LF ->> LC: output_data
+  LC ->> H: rnd (rcv/rcm/esk)
+  H ->> Z: add_sapling_output(txdata, rnd)
   end
-  Note over LC: perform shieldedspend_hash
-  LC ->> LF: shieldedspend_hash #does the host actually need this?
-  LC ->> H: shieldedspend_hash
 ```
 
+
 Zcash ledger, make shielded transaction phase 4
-- Host gives all remaining transaction (meta) data
+- Host gives all remaining transaction data
 - Ledger does the complete TX_HASH_ALL
-- Final approval of transaction?
 - Ledger signs the necessary parts and shares with host
 - Host sends transaction blob to network
 
-  ```mermaid
+```mermaid
   sequenceDiagram
   participant LF as Ledger flash storage
   participant LC as Ledger computation 
-  participant H as Host
+  participant H as Host (JS)
+  participant Z as Zcashtools
   participant N as Network
   
   H -->> N: retrieve meta_data from network?
   N -->> H: meta_data
+  H ->> Z: build()
+  Z ->> H: raw_tx_blob
 
-  H ->> LC: meta_data transaction
-  LC ->> LF: meta_data transaction
+  H ->> LC: t_in_script_data
+  H ->> LC: spend_data
+  H ->> LC: output_data
+  H ->> LC: sighash_data
+  
+  LF ->> LC: t_output_data
+  Note over LC: outputshash = hash(t_output_data)
+  Note over LC: check outputshash == sighash_data[outputshash]
 
-  Note over LC: compute valuebalance and commitment
-  LC ->> LF: valuebalance and commitment
-  Note over LF,LC: verify rcm_secretkey/publickey
+  LF ->> LC: valuebalance
+  Note over LC: check valuebalance
 
-  Note over LF,LC: perform_tx_hash_all over all data in flash
+  Note over LC: check joinsplits (empty)
 
-  LC ->> H: tx_hash_all
-
-  Note over LC,H: final verification/approval of tx before signing?
-
-  LC ->> H: sign(rcm_secretkey, tx_hash_all)
-  loop Every spend note
-  LF ->> LC: randomized value
-  Note over LC: get_secret_key(path)
-  Note over LC: sign(sk, randomized value, tx_hash_all)
-  LC ->> H: spend_auth_sign
+  loop Every shielded spend
+  LF ->> LC: S_SPEND_DATA, RND_DATA
+  Note over LC: check spend data (CV, RK, NF)
   end
 
-  Note over H: make raw transaction blob
-  H ->> N: raw_transaction_blob
+  loop Every shielded output
+  LF ->> LC: S_OUTPUT_DATA, RND_DATA
+  Note over LC: check output data (CV, CMU, (ENC_C, ENC_OUT))
+  end
+
+  loop Every transparent input
+  LF ->> LC: T_INPUT_DATA
+  Note over LC: check t_input data (script, script_from_pk, value)
+  Note over LC: sighash_all_script = hash_sigall(sighash_data, t_in_script_data)
+  Note over LC: secp256k1_sign (sighash_all_script)
+  LC ->> LF: transparent_signature
+  end
+
+  loop Every shielded spend
+  LF ->> LC: S_SPEND_DATA, RND_DATA
+  Note over LC: sighash_all (sighash_data)
+  Note over LC: jubjub_sign(ask, alpha, sighash_all)
+  LC ->> LF: spend_signature
+  end
+LC ->> H: all_ok
+
+```
+
+Zcash ledger, make shielded transaction phase 5
+- Finalize tx
+
+```mermaid
+  sequenceDiagram
+  participant LF as Ledger flash storage
+  participant LC as Ledger computation 
+  participant H as Host (JS)
+  participant Z as Zcashtools
+  participant N as Network
+  
+  loop Every transparent input
+  H ->> LC: next_transparent_signature
+  LF ->> LC: transparent_signature
+  LC ->> H: transparent_signature
+  end
+  H ->> Z: add_transparent_signatures(t_signatures)
+
+  loop Every shielded spend
+  H ->> LC: next_spend_signature
+  LF ->> LC: spend_signature
+  LC ->> H: spend_signature
+  end
+  H ->> Z: add_spend_signatures(s_signatures)
+
+  Z ->> N: send_raw_tx
 
 ```

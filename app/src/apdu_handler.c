@@ -145,12 +145,6 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
-                case INS_SIGN_SAPLING: {
-                    CHECK_PIN_VALIDATED()
-                    handleSignSapling();
-                    break;
-                }
-
                 default:
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }
