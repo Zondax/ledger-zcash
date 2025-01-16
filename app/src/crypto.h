@@ -31,6 +31,8 @@ zxerr_t crypto_fillDeviceSeed(uint8_t *device_seed);
 
 zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
 
+zxerr_t crypto_fillAddress_extended_secp256k1(uint8_t *buffer, uint16_t bufferLen, uint16_t *replyLen);
+
 ///////////////////////////////
 
 zxerr_t crypto_fillAddress_sapling(uint8_t *buffer, uint16_t bufferLen, uint32_t p, uint16_t *replyLen);

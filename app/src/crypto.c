@@ -68,6 +68,15 @@ typedef struct {
     uint8_t address[50];
 } __attribute__((packed)) answer_t;
 
+
+typedef struct {
+    uint32_t version;
+    uint8_t depth;
+    uint32_t index;
+    uint8_t publicKey[PK_LEN_SECP256K1];
+    uint8_t chainCode[CHAIN_CODE_LEN_SECP256K1];
+} __attribute__((packed)) answer_extended_t;
+
 zxerr_t ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
     if (in == NULL || out == NULL) {
         return zxerr_no_data;
@@ -111,14 +120,18 @@ typedef struct {
     };
 } __attribute__((packed)) address_temp_t;
 
-// NOTE: Uses global hdPath / HDPATH_LEN_DEFAULT
-static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
+// NOTE: Uses global hdPath
+static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen, uint8_t *chainCode, uint16_t chainCodeLen) {
     io_seproxyhal_io_heartbeat();
     if (pubKey == NULL || pubKeyLen < PK_LEN_SECP256K1) {
         return zxerr_invalid_crypto_settings;
     }
 
-    if (hdPath.addressKind != addr_secp256k1) {
+    if (chainCode != NULL && chainCodeLen < CHAIN_CODE_LEN_SECP256K1) {
+        return zxerr_invalid_crypto_settings;
+    }
+
+    if (hdPath.addressKind != addr_secp256k1 && hdPath.addressKind != addr_secp256k1_ext) {
         return zxerr_invalid_crypto_settings;
     }
 
@@ -127,7 +140,7 @@ static zxerr_t crypto_extractPublicKey(uint8_t *pubKey, uint16_t pubKeyLen) {
     uint8_t privateKeyData[64] = {0};
 
     zxerr_t error = zxerr_unknown;
-    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, HDPATH_LEN_BIP44, privateKeyData, NULL));
+    CATCH_CXERROR(os_derive_bip32_no_throw(CX_CURVE_256K1, hdPath.secp256k1_path, hdPath.len, privateKeyData, chainCode));
     CATCH_CXERROR(cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1, privateKeyData, SK_SECP256K1_SIZE, &cx_privateKey));
     io_seproxyhal_io_heartbeat();
     CATCH_CXERROR(cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1, NULL, 0, &cx_publicKey));
@@ -143,13 +156,16 @@ catch_cx_error:
 
     if (error != zxerr_ok) {
         MEMZERO(pubKey, pubKeyLen);
+        if (chainCode != NULL){
+            MEMZERO(chainCode, chainCodeLen);
+        }
     }
 
     return error;
 }
 
 // handleGetAddrSecp256K1
-// NOTE: Uses global hdPath / HDPATH_LEN_DEFAULT (indirectly)
+// NOTE: Uses global hdPath
 zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint16_t *replyLen) {
     io_seproxyhal_io_heartbeat();
     if (buffer_len < sizeof(answer_t)) {
@@ -162,7 +178,7 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
     MEMZERO(buffer, buffer_len);
     answer_t *const answer = (answer_t *)buffer;
 
-    CHECK_ZXERR(crypto_extractPublicKey(answer->publicKey, sizeof_field(answer_t, publicKey)));
+    CHECK_ZXERR(crypto_extractPublicKey(answer->publicKey, sizeof_field(answer_t, publicKey), NULL, 0));
     io_seproxyhal_io_heartbeat();
 
     address_temp_t address_temp;
@@ -190,6 +206,40 @@ zxerr_t crypto_fillAddress_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint1
         return zxerr_unknown;
     }
     *replyLen = PK_LEN_SECP256K1 + outLen;
+    return zxerr_ok;
+}
+
+
+// handleGetExtendedPkSecp256K1
+// NOTE: Uses global hdPath
+zxerr_t crypto_fillAddress_extended_secp256k1(uint8_t *buffer, uint16_t buffer_len, uint16_t *replyLen) {
+    io_seproxyhal_io_heartbeat();
+    if (buffer_len < sizeof(answer_extended_t)) {
+        return zxerr_unknown;
+    }
+
+    zemu_log_stack("crypto_fillAddress_extended_secp256k1");
+
+    *replyLen = 0;
+    MEMZERO(buffer, buffer_len);
+    answer_extended_t *const answer = (answer_extended_t *)buffer;
+
+    CHECK_ZXERR(crypto_extractPublicKey(
+        answer->publicKey, sizeof_field(answer_t, publicKey), 
+        answer->chainCode, sizeof_field(answer_extended_t, chainCode))
+    );
+    io_seproxyhal_io_heartbeat();
+
+
+    answer->depth = hdPath.len;
+    answer->index = hdPath.secp256k1_path[hdPath.len - 1];
+    if(hdPath.is_mainnet == 1){
+        answer->version = PK_VERSION_MAINNET;
+    } else {
+        answer->version = PK_VERSION_TESTNET;
+    }
+
+    *replyLen = PK_LEN_SECP256K1 + CHAIN_CODE_LEN_SECP256K1 + DEPTH_LEN + INDEX_LEN + VERSION_LEN;
     return zxerr_ok;
 }
 
