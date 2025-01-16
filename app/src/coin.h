@@ -45,6 +45,16 @@ extern "C" {
 // compressed key
 #define PK_LEN_SECP256K1 33u
 
+// data for extended public key
+#define CHAIN_CODE_LEN_SECP256K1 32u
+#define VERSION_LEN 4u
+#define INDEX_LEN 4u
+#define DEPTH_LEN 1u
+
+
+#define PK_VERSION_MAINNET 0x0488B21E;
+#define PK_VERSION_TESTNET 0x043587CF;
+
 // sapling address [11+32]
 #define ADDR_LEN_SAPLING 43u
 
@@ -68,6 +78,7 @@ extern "C" {
 #define INS_GET_ADDR_SECP256K1            0x01
 #define INS_GET_ADDR_SAPLING_DIV          0x10
 #define INS_GET_ADDR_SAPLING              0x11
+#define INS_GET_EXT_PK_SECP256K1          0x12
 
 #define INS_GET_DIV_LIST                  0x09
 
@@ -100,6 +111,7 @@ typedef enum { key_ivk = 0, key_ovk = 1, key_fvk = 2, nf = 3 } key_type_e;
 #define CRYPTO_BLOB_SKIP_BYTES        0
 
 #define HDPATH_LEN_BIP44              5
+#define HDPATH_LEN_BIP44_EXTENDED     3
 #define HDPATH_LEN_SAPLING            3
 
 typedef enum {
@@ -107,6 +119,7 @@ typedef enum {
     addr_secp256k1 = 1,
     addr_sapling = 2,
     addr_sapling_div = 3,
+    addr_secp256k1_ext = 4,
 } address_kind_e;
 
 typedef struct {
@@ -114,6 +127,8 @@ typedef struct {
     union {
         struct {
             uint32_t secp256k1_path[HDPATH_LEN_MAX];
+            uint8_t len;
+            uint8_t is_mainnet;
         };
         struct {
             uint32_t sapling_path[3];
