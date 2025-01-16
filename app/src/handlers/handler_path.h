@@ -32,22 +32,35 @@
 #include "view_internal.h"
 #include "zxmacros.h"
 
-__Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset) {
-    if ((rx - offset) < sizeof(uint32_t) * HDPATH_LEN_BIP44) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
+__Z_INLINE void extractHDPathTransparent(uint32_t rx, uint32_t offset, bool extended) {
     hdPath.addressKind = addr_not_set;
 
-    MEMCPY(hdPath.secp256k1_path, G_io_apdu_buffer + offset, sizeof(uint32_t) * HDPATH_LEN_BIP44);
+    uint8_t len = HDPATH_LEN_BIP44;
+    if (extended){
+        len = HDPATH_LEN_BIP44_EXTENDED;
+    }
+    if ((rx - offset) != sizeof(uint32_t) * len){
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    MEMCPY(hdPath.secp256k1_path, G_io_apdu_buffer + offset, sizeof(uint32_t) * len);
+    hdPath.len = len;
 
     const bool mainnet = hdPath.secp256k1_path[0] == HDPATH_0_DEFAULT && hdPath.secp256k1_path[1] == HDPATH_1_DEFAULT;
     const bool testnet = hdPath.secp256k1_path[0] == HDPATH_0_TESTNET && hdPath.secp256k1_path[1] == HDPATH_1_TESTNET;
 
-    if (!mainnet && !testnet) {
+    if(mainnet){
+        hdPath.is_mainnet = 1;
+    } else if(testnet){
+        hdPath.is_mainnet = 0;
+    } else {
         THROW(APDU_CODE_DATA_INVALID);
     }
 
     hdPath.addressKind = addr_secp256k1;
+    if(extended){
+        hdPath.addressKind = addr_secp256k1_ext;
+    }
 }
 
 __Z_INLINE void extractHDPathSapling(uint32_t rx, uint32_t offset) {
