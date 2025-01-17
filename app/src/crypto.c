@@ -73,8 +73,8 @@ typedef struct {
     uint32_t version;
     uint8_t depth;
     uint32_t index;
-    uint8_t publicKey[PK_LEN_SECP256K1];
     uint8_t chainCode[CHAIN_CODE_LEN_SECP256K1];
+    uint8_t publicKey[PK_LEN_SECP256K1];
 } __attribute__((packed)) answer_extended_t;
 
 zxerr_t ripemd160(uint8_t *in, uint16_t inLen, uint8_t *out) {
