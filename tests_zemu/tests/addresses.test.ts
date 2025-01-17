@@ -103,6 +103,7 @@ describe('Addresses', function () {
       const app = new ZCashApp(sim.getTransport())
       const expectedPk = '0378e0db93ebe9b03fb04f08931038822b75db3a6089f54443b4e8ca1865811b79'
       const expectedChainCode = 'd293abfd48452b107be8a5895c721addca628c0ae36353bac34d13a1d8c5e73e'
+      const expectedExtendedPk = 'd293abfd48452b107be8a5895c721addca628c0ae36353bac34d13a1d8c5e73e'
 
       const addrReq = app.getAddressTransparentExtended(`m/44'/133'/5'`, true)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
@@ -115,6 +116,7 @@ describe('Addresses', function () {
       expect(addr?.publicKey.toString('hex')).toEqual(expectedPk)
       expect(addr?.index).toEqual(0x80000000 + 5)
       expect(addr?.depth).toEqual(3)
+      expect(addr?.extendedPk).toEqual(3)
     } finally {
       await sim.close()
     }
