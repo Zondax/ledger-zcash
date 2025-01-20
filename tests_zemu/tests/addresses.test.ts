@@ -51,16 +51,21 @@ describe('Addresses', function () {
       const app = new ZCashApp(sim.getTransport())
       const expectedPk = '0378e0db93ebe9b03fb04f08931038822b75db3a6089f54443b4e8ca1865811b79'
       const expectedChainCode = 'd293abfd48452b107be8a5895c721addca628c0ae36353bac34d13a1d8c5e73e'
-      const expectedExtendedPk = '2JcqaJaGEDfcv3TLvsnVL3tcM47pQ3nN24B7tVGcUEhPqaawqCrCtvvwWcgT7ExDmK2eGDtoikKsrqkwXpVjw77c4SaJyxBqrJm3W'
+      const expectedIndex = 0x80000000 + 5
+      const expectedDepth = 3
+      const expectedVersion = 0x0488B21E
+      const expectedFingerprint = "f4abeb80"
+      const expectedExtendedPk = '9XpNiCCC7BPCmQdqhAWdTVZJpNsDQUfxnnXDYpnqFgtyPxB4mBsMjp12a1s4SUM9qjSc9jn1W5btMvGPQYgPHBasdp2jJYdQkS3K8xQx4g'
 
       const addr = await app.getAddressTransparentExtended(`m/44'/133'/5'`, false)
       console.log(addr)
 
-      expect(addr?.version).toEqual(0x0488B21E)
+      expect(addr?.version).toEqual(expectedVersion)
+      expect(addr?.parentFingerprint.toString("hex")).toEqual(expectedFingerprint)
       expect(addr?.chainCode.toString('hex')).toEqual(expectedChainCode)
       expect(addr?.publicKey.toString('hex')).toEqual(expectedPk)
-      expect(addr?.index).toEqual(0x80000000 + 5)
-      expect(addr?.depth).toEqual(3)
+      expect(addr?.index).toEqual(expectedIndex)
+      expect(addr?.depth).toEqual(expectedDepth)
       expect(addr?.extendedPk).toEqual(expectedExtendedPk)
     } finally {
       await sim.close()
@@ -105,7 +110,11 @@ describe('Addresses', function () {
       const app = new ZCashApp(sim.getTransport())
       const expectedPk = '0378e0db93ebe9b03fb04f08931038822b75db3a6089f54443b4e8ca1865811b79'
       const expectedChainCode = 'd293abfd48452b107be8a5895c721addca628c0ae36353bac34d13a1d8c5e73e'
-      const expectedExtendedPk = '2JcqaJaGEDfcv3TLvsnVL3tcM47pQ3nN24B7tVGcUEhPqaawqCrCtvvwWcgT7ExDmK2eGDtoikKsrqkwXpVjw77c4SaJyxBqrJm3W'
+      const expectedIndex = 0x80000000 + 5
+      const expectedDepth = 3
+      const expectedVersion = 0x0488B21E
+      const expectedFingerprint = "f4abeb80"
+      const expectedExtendedPk = '9XpNiCCC7BPCmQdqhAWdTVZJpNsDQUfxnnXDYpnqFgtyPxB4mBsMjp12a1s4SUM9qjSc9jn1W5btMvGPQYgPHBasdp2jJYdQkS3K8xQx4g'
 
       const addrReq = app.getAddressTransparentExtended(`m/44'/133'/5'`, true)
       await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
@@ -113,11 +122,12 @@ describe('Addresses', function () {
 
       const addr = await addrReq
 
-      expect(addr?.version).toEqual(0x0488B21E)
+      expect(addr?.version).toEqual(expectedVersion)
+      expect(addr?.parentFingerprint.toString("hex")).toEqual(expectedFingerprint)
       expect(addr?.chainCode.toString('hex')).toEqual(expectedChainCode)
       expect(addr?.publicKey.toString('hex')).toEqual(expectedPk)
-      expect(addr?.index).toEqual(0x80000000 + 5)
-      expect(addr?.depth).toEqual(3)
+      expect(addr?.index).toEqual(expectedIndex)
+      expect(addr?.depth).toEqual(expectedDepth)
       expect(addr?.extendedPk).toEqual(expectedExtendedPk)
     } finally {
       await sim.close()

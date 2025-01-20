@@ -72,6 +72,7 @@ typedef struct {
 typedef struct {
     uint32_t version;
     uint8_t depth;
+    uint32_t parentFingerprint;
     uint32_t index;
     uint8_t chainCode[CHAIN_CODE_LEN_SECP256K1];
     uint8_t publicKey[PK_LEN_SECP256K1];
@@ -230,6 +231,13 @@ zxerr_t crypto_fillAddress_extended_secp256k1(uint8_t *buffer, uint16_t buffer_l
     );
     io_seproxyhal_io_heartbeat();
 
+    // FIXME this needs to be calculated over the pk calculated for the previous level (parent pk), instead of the current level (current pk)
+    uint8_t sha256_pk[CX_SHA256_SIZE] = {0}; 
+    uint8_t ripe_sha256_pk[CX_RIPEMD160_SIZE] = {0}; 
+    cx_hash_sha256(answer->publicKey, PK_LEN_SECP256K1, sha256_pk, CX_SHA256_SIZE);  // SHA256
+    CHECK_ZXERR(ripemd160(sha256_pk, CX_SHA256_SIZE, ripe_sha256_pk));  // RIPEMD-160
+
+    memcpy(&answer->parentFingerprint, ripe_sha256_pk, PARENT_FINGERPRINT_LEN);
 
     answer->depth = hdPath.len;
     answer->index = hdPath.secp256k1_path[hdPath.len - 1];
@@ -239,7 +247,7 @@ zxerr_t crypto_fillAddress_extended_secp256k1(uint8_t *buffer, uint16_t buffer_l
         answer->version = PK_VERSION_TESTNET;
     }
 
-    *replyLen = PK_LEN_SECP256K1 + CHAIN_CODE_LEN_SECP256K1 + DEPTH_LEN + INDEX_LEN + VERSION_LEN;
+    *replyLen = PK_LEN_SECP256K1 + CHAIN_CODE_LEN_SECP256K1 + DEPTH_LEN + INDEX_LEN + VERSION_LEN + PARENT_FINGERPRINT_LEN;
     return zxerr_ok;
 }
 

@@ -48,6 +48,7 @@ extern "C" {
 // data for extended public key
 #define CHAIN_CODE_LEN_SECP256K1 32u
 #define VERSION_LEN 4u
+#define PARENT_FINGERPRINT_LEN 4u
 #define INDEX_LEN 4u
 #define DEPTH_LEN 1u
 
