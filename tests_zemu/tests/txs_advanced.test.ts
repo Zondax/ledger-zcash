@@ -81,13 +81,13 @@ describe('End to end transactions', function () {
 
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       // Check the hash of the return
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata).toEqual(h)
+      expect(req.txDataHash.toString("hex")).toEqual(h)
 
       // Now we start building the transaction using the builder.
 
@@ -304,7 +304,7 @@ describe('End to end transactions', function () {
       // const req = await app.initNewTx(ledgerblob_initdata);
       console.log(req)
 
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       /*
       Check the hash of the return
@@ -312,7 +312,7 @@ describe('End to end transactions', function () {
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata).toEqual(h)
+      expect(req.txDataHash.toString("hex")).toEqual(h)
 
       /*
       Now we start building the transaction using the builder.
@@ -546,13 +546,13 @@ describe('End to end transactions', function () {
 
         // const req = await app.initNewTx(ledgerblob_initdata);
         console.log(req)
-        expect(req.txdata.length).toEqual(64)
+        expect(req.txDataHash.length).toEqual(32)
 
         // Check the hash of the return
         let hash = crypto.createHash('sha256')
         hash.update(Buffer.from(ledgerblob_initdata))
         let h = hash.digest('hex')
-        expect(req.txdata).toEqual(h)
+        expect(req.txDataHash.toString("hex")).toEqual(h)
 
         // Now we start building the transaction using the builder.
         //
@@ -750,12 +750,12 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       let hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       let h = hash.digest('hex')
-      expect(req.txdata).toEqual(h)
+      expect(req.txDataHash.toString("hex")).toEqual(h)
 
       // Now we start building the transaction using the builder.
 
@@ -861,7 +861,7 @@ describe('End to end transactions', function () {
       await sim.deleteEvents()
 
       const req = await reqinit
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       const req2 = await app.extractSpendData()
       console.log(req2)
@@ -926,7 +926,7 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       await expect(app.extractOutputData()).rejects.toThrow('Data is invalid')
     } finally {
@@ -979,7 +979,7 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-ext-more-sigs-than-needed-for-tx`)
 
       const req = await reqinit
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1190,7 +1190,7 @@ describe('Failing transactions', function () {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-not-using-ledger-rnd-for-tx`)
 
       const req = await reqinit
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1360,7 +1360,7 @@ describe('Failing transactions', function () {
 
       const req = await reqinit
 
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       // Now we start building the transaction using the builder.
       //
@@ -1586,12 +1586,12 @@ describe('Failing transactions', function () {
 
       console.log(req)
 
-      expect(req.txdata.length).toEqual(64)
+      expect(req.txDataHash.length).toEqual(32)
 
       const hash = crypto.createHash('sha256')
       hash.update(Buffer.from(ledgerblob_initdata))
       const h = hash.digest('hex')
-      expect(req.txdata).toEqual(h)
+      expect(req.txDataHash.toString("hex")).toEqual(h)
 
       const req2 = await app.extractSpendData()
       console.log(req2)
