@@ -15,8 +15,8 @@ export var OUTPUT_PATH = resolve(__dirname, "..", "params/sapling-output.params"
 export class ZcashBuilderBridge {
     private readonly boxed: ZcashBuilder;
 
-    constructor(fee: number) {
-        this.boxed = addon.builderNew(fee)
+    constructor(fee: number, height: number) {
+        this.boxed = addon.builderNew(fee, height)
     }
 
     add_transparent_input(t_input: TransparentInputInfo) {
