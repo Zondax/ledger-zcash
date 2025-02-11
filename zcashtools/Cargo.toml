@@ -1,15 +1,38 @@
-[workspace]
+[package]
+name = "zcashtool"
+version = "0.1.0"
+authors = ["Zondax AG <hello@zondax.ch>"]
+license = "Apache-2.0"
+edition = "2021"
+exclude = ["artifacts.json", "index.node"]
 resolver = "2"
 
-members = ["neon/native"]
+[lib]
+name = "zcashtool"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
 
-[profile.release]
-opt-level = "s"
-overflow-checks = true
+# https://github.com/rust-bitcoin/rust-secp256k1/pull/254#issuecomment-879588601
+# https://github.com/KomodoPlatform/komodo-defi-framework/issues/1176#issuecomment-1000784537
 
-[patch.crates-io]
-ledger-zcash-chain-builder = { git = "https://github.com/Zondax/ledger-zcash-tools", tag = "v2.0.0" }
-ledger-zcash-app-builder = { git = "https://github.com/Zondax/ledger-zcash-tools", tag = "v2.0.0" }
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"  # Updated to latest version
+getrandom = { version = "0.2", features = ["js"] }  # Required for WASM
+rand_core = { version = "0.6.4", features = ["getrandom"] }
+serde_derive = "1"
+log = "0.4"
+snafu = { version = "0.8.2" }
+console_error_panic_hook = "0.1"
+zcash_primitives = { git = "https://github.com/Zondax/librustzcash", rev = "ce278848fef35903db46c3dced41658e90bbeb3c", features = ["transparent-inputs"], package = "zcash_primitives" }
 
-# ledger-zcash-chain-builder = { path = "../../ledger-zcash-tools/ledger-zcash-chain-builder" }
-# ledger-zcash-app-builder = { path = "../../ledger-zcash-tools/ledger-zcash-app-builder" }
+ledger-zcash-chain-builder = { git = "https://github.com/Zondax/ledger-zcash-tools", rev = "23e77dcdcfbd2d6fd823ba3559f0385e55c05a2a", package = "ledger-zcash-chain-builder"  }
+ledger-zcash-app-builder =  { git = "https://github.com/Zondax/ledger-zcash-tools", rev = "23e77dcdcfbd2d6fd823ba3559f0385e55c05a2a", package = "ledger-zcash-app-builder"  }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.117"
+zcashtool = { path = "." }
+env_logger = { version = "0.11", default-features = false }
+log = "0.4"
