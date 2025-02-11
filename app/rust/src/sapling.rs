@@ -1,5 +1,6 @@
 use crate::bolos::blake2b::blake2b32_with_personalization;
 use crate::bolos::jubjub::scalarmult_spending_base;
+use crate::bolos::c_zemu_log_stack;
 use crate::constants::PROVING_KEY_BASE;
 use crate::cryptoops::niels_multbits;
 use crate::cryptoops::{bytes_to_extended, extended_to_bytes, mul_by_cofactor};
@@ -23,9 +24,11 @@ pub fn sapling_nsk_to_nk(nsk: &NskBytes) -> NkBytes {
 
 #[inline(never)]
 pub fn sapling_asknsk_to_ivk(ask: &AskBytes, nsk: &NskBytes) -> IvkBytes {
+    crate::bolos::heartbeat();
     let ak = sapling_ask_to_ak(ask);
+    crate::bolos::heartbeat();
     let nk = sapling_nsk_to_nk(nsk);
-
+    crate::bolos::heartbeat();
     let h = Blake2sParams::new()
         .hash_length(32)
         .personal(CRH_IVK_PERSONALIZATION)

@@ -5,6 +5,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use jubjub::{AffinePoint, ExtendedPoint, Fr};
 use log::debug;
 
+use crate::bolos::c_zemu_log_stack;
 use crate::bolos::aes::AesBOLOS;
 use crate::bolos::blake2b;
 use crate::bolos::blake2b::{
@@ -313,14 +314,18 @@ fn zip32_sapling_derive_child(
 
     // https://zips.z.cash/zip-0032#deriving-a-child-extended-spending-key
     zip32_sapling_ask_i_update(&ik.spending_key(), key_bundle_i.ask_mut());
+    crate::bolos::heartbeat();
     zip32_sapling_nsk_i_update(&ik.spending_key(), key_bundle_i.nsk_mut());
+    crate::bolos::heartbeat();
     zip32_sapling_ovk_i_update(&ik.spending_key(), key_bundle_i.ovk_mut());
+    crate::bolos::heartbeat();
     zip32_sapling_dk_i_update(&ik.spending_key(), key_bundle_i.dk_mut());
 }
 
 #[inline(never)]
 pub fn zip32_sapling_derive(path: &Zip32Path) -> SaplingKeyBundle {
     // ik as in capital I (https://zips.z.cash/zip-0032#sapling-child-key-derivation)
+    crate::bolos::heartbeat();
     let mut ik = zip32_master_key_i();
     crate::bolos::heartbeat();
 
@@ -335,6 +340,7 @@ pub fn zip32_sapling_derive(path: &Zip32Path) -> SaplingKeyBundle {
         zip32_sapling_derive_child(&mut ik, path_i, &mut key_bundle_i);
         c_check_app_canary();
     }
+    crate::bolos::heartbeat();
 
     key_bundle_i
 }
