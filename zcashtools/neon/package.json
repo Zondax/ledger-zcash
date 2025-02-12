@@ -4,14 +4,19 @@
   "version": "0.1.0",
   "description": "",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "author": "Zondax AG <hello@zondax.ch>",
   "license": "Apache-2.0",
-  "files": ["params/*"],
+  "files": [
+    "params/*",
+    "build/*",
+    "native/index.node"
+  ],
   "dependencies": {
     "neon-cli": "^0.10.1"
   },
   "scripts": {
-    "install": "./node_modules/.bin/neon build",
+    "build": "./node_modules/.bin/neon build",
     "prepare": "tsc",
     "test": "node -e 'require(\"./\")'"
   },

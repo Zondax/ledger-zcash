@@ -81,7 +81,7 @@ interface NativeModule {
 
     calculate_zip317_fee(n_tin: number, n_tout: number, n_sspend: number, n_sout: number): number
 
-  builderNew(fee: number): ZcashBuilder;
+  builderNew(fee: number, height: number): ZcashBuilder;
 
     builderAddTransparentInput(this: ZcashBuilder, tin: TransparentInputInfo): boolean;
     builderAddTransparentOutput(this: ZcashBuilder, tout: TransparentOutputInfo): boolean;

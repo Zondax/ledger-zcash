@@ -58,6 +58,12 @@ zxerr_t addr_getItem(int8_t displayIdx,
                     return zxerr_ok;
                 }
 
+                case addr_secp256k1_ext: {
+                    snprintf(outKey, outKeyLen, "Unshielded Ext");
+                    pageString(outVal, outValLen, "FIXME", pageIdx, pageCount);
+                    return zxerr_ok;
+                }
+
                 case addr_sapling: {
                     snprintf(outKey, outKeyLen, "Shielded");
                     pageString(outVal, outValLen, (char *)(G_io_apdu_buffer + VIEW_ADDRESS_OFFSET_SAPLING), pageIdx,
@@ -82,6 +88,14 @@ zxerr_t addr_getItem(int8_t displayIdx,
 
             switch (hdPath.addressKind) {
                 case addr_secp256k1: {
+                    snprintf(outKey, outKeyLen, "BIP44 Path");
+
+                    bip32_to_str(buffer, sizeof(buffer), hdPath.secp256k1_path, HDPATH_LEN_BIP44);
+                    pageString(outVal, outValLen, buffer, pageIdx, pageCount);
+
+                    return zxerr_ok;
+                }
+                case addr_secp256k1_ext: {
                     snprintf(outKey, outKeyLen, "BIP44 Path");
 
                     bip32_to_str(buffer, sizeof(buffer), hdPath.secp256k1_path, HDPATH_LEN_BIP44);

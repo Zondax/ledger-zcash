@@ -145,6 +145,12 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                     break;
                 }
 
+                case INS_GET_EXT_PK_SECP256K1: {
+                    CHECK_PIN_VALIDATED()
+                    handleGetExtendedPkSecp256K1(flags, tx, rx);
+                    break;
+                }
+
                 default:
                     THROW(APDU_CODE_INS_NOT_SUPPORTED);
             }

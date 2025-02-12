@@ -271,8 +271,9 @@ impl ZcashBuilderBridge {
 // Methods exposed to javascript
 impl ZcashBuilderBridge {
     fn js_create_builder(mut cx: FunctionContext) -> JsResult<BoxedBuilder> {
-        let f = cx.argument::<JsNumber>(0)?.value(&mut cx);
-        let zcashbuilder = txbuilder::Builder::new_with_fee(TestNetwork, 0, f as u64);
+        let fee = cx.argument::<JsNumber>(0)?.value(&mut cx);
+        let height = cx.argument::<JsNumber>(1)?.value(&mut cx);
+        let zcashbuilder = txbuilder::Builder::new_with_fee(TestNetwork, height as u32, fee as u64);
         let zcashbuilder = AuthorisationStatus::Unauthorized(zcashbuilder);
         let boxed_builder = RefCell::new(ZcashBuilderBridge { zcashbuilder });
         Ok(cx.boxed(boxed_builder))
