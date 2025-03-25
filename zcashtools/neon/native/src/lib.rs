@@ -20,7 +20,7 @@ use zcash_primitives::{
 use rand_core::OsRng;
 
 // reference
-// https://neon-bindings.com/docs/primitives
+// https://neon-rs.dev/docs/primitive-types
 
 //bridge stuff only
 
